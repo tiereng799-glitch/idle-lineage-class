@@ -18,6 +18,7 @@ export const DATA_OUT = path.join(ROOT, 'js', '00y-my-tweaks-data.js');
 export const CONFIG = path.join(ROOT, 'sheet-config.json');
 export const ID_HEAD = 'ID(不要改)';
 export const TPL_HEAD = '範本ID(新增用)';
+export const CUSTOM_IMG_DIR = 'assets/custom/';   // 自訂圖檔放這裡;試算表只填檔名
 export const NEW_PREFIX = 'my_';   // 試算表新增的東西一律用這個開頭,打錯既有 ID 才不會被當成新增
 
 // 在 Node 裡跑 js/00-data.js + js/01-drops-config.js 拿到原始 DB 與 MOB_DROPS(瀏覽器全域用最小替身頂著)
@@ -91,6 +92,7 @@ const C = {
   req: () => ({ key: 'req', zh: '可用職業', type: 'req', width: 22 }),
   show: (zhName, fn, width) => ({ key: null, zh: zhName, type: 'show', show: fn, width }),
   // 新增物品用:照哪一件現有的做(類型、外觀、特殊效果都照它);既有物品這格留白
+  img: () => ({ key: 'img', zh: '圖檔(自訂)', type: 'img', width: 16, note: '用自己的圖:先把圖上傳到 GitHub 的 assets/custom 資料夾,這格填檔名(例:測試神劍.png)。空白=照原本的圖' }),
   tpl: () => ({ key: null, zh: TPL_HEAD, type: 'tpl', width: 18, note: '新增東西時才填:照哪一件現有的做(ID)。新東西的 ID 要用 my_ 開頭' }),
 };
 const STATS = [C.int('str', '力量'), C.int('dex', '敏捷'), C.int('con', '體質'), C.int('int', '智力'), C.int('wis', '精神'), C.int('cha', '魅力')];
@@ -110,23 +112,23 @@ export const RECORD_SHEETS = [
     cols: [
       C.text('n', '名稱', 16), C.int('dmgS', '對小怪傷害'), C.int('dmgL', '對大怪傷害'), C.int('hit', '命中'), C.int('dmgBonus', '額外傷害'),
       C.num('spd', '攻擊間隔(秒)', '每幾秒攻擊一次,數字越小越快'), C.int('safe', '安定值', '強化到這個數字以內不會爆'), C.int('p', '價格'),
-      ...STATS.slice(0, 5), C.req(), C.show('雙手武器', d => (d.w2h ? '是' : '')), C.text('d', '說明', 40), C.tpl(),
+      ...STATS.slice(0, 5), C.req(), C.show('雙手武器', d => (d.w2h ? '是' : '')), C.text('d', '說明', 40), C.img(), C.tpl(),
     ],
   },
   {
     sheet: '防具', store: 'items', allowNew: 'item', filter: d => d.type === 'arm', rows: itemRows(d => d.type === 'arm'),
-    cols: [C.text('n', '名稱', 16), C.show('部位', d => zh(SLOT_ZH)(d.slot)), ...GEAR_COMMON, C.req(), C.text('d', '說明', 40), C.tpl()],
+    cols: [C.text('n', '名稱', 16), C.show('部位', d => zh(SLOT_ZH)(d.slot)), ...GEAR_COMMON, C.req(), C.text('d', '說明', 40), C.img(), C.tpl()],
   },
   {
     sheet: '飾品', store: 'items', allowNew: 'item', filter: d => d.type === 'acc', rows: itemRows(d => d.type === 'acc'),
-    cols: [C.text('n', '名稱', 16), C.show('部位', d => zh(SLOT_ZH)(d.slot)), ...GEAR_COMMON, C.int('weightCap', '負重上限'), C.req(), C.text('d', '說明', 40), C.tpl()],
+    cols: [C.text('n', '名稱', 16), C.show('部位', d => zh(SLOT_ZH)(d.slot)), ...GEAR_COMMON, C.int('weightCap', '負重上限'), C.req(), C.text('d', '說明', 40), C.img(), C.tpl()],
   },
   {
     sheet: '道具', store: 'items', allowNew: 'item', filter: d => !['wpn', 'arm', 'acc'].includes(d.type), rows: itemRows(d => !['wpn', 'arm', 'acc'].includes(d.type)),
     cols: [
       C.text('n', '名稱', 18), C.show('類型', d => zh(TYPE_ZH)(d.type ?? '')), C.int('p', '價格'),
       C.int('val', '回復量'), C.int('valMin', '最少回復'), C.int('valMax', '最多回復'), C.int('dur', '持續秒數'),
-      C.req(), C.text('d', '說明', 50), C.tpl(),
+      C.req(), C.text('d', '說明', 50), C.img(), C.tpl(),
     ],
   },
   {

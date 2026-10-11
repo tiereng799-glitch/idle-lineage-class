@@ -27,6 +27,7 @@ jobs:
             js
             css
             scripts
+            assets/custom
 
       - uses: actions/setup-node@v4
         with:

@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ExcelJS from 'exceljs';
 import {
-  ROOT, DATA_OUT, ID_HEAD, loadGame, getPath, setPath, RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS,
+  ROOT, CUSTOM_IMG_DIR, DATA_OUT, ID_HEAD, loadGame, getPath, setPath, RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS,
   reqToZh, dropHidden, mobNamer,
 } from './sheet-lib.mjs';
 
@@ -57,6 +57,7 @@ help.columns = [{ width: 100 }];
   '新增武器/防具/飾品/道具:在該分頁最下面加一列——',
   '   ID 用 my_ 開頭(例:my_sword1,只能英文數字底線)、填「範本ID(新增用)」= 照哪一件現有的做、取一個新名稱,再改你要的數值。',
   '   外觀圖、類型、特殊效果都照範本;沒填的數值也照範本。要讓人拿得到,記得到「掉落」分頁加一列。',
+  '自訂圖檔:把圖(建議 64x64 的 PNG)上傳到 GitHub 的 assets/custom 資料夾,再到「圖檔(自訂)」欄填檔名。新的、舊的東西都可以換圖。',
   '   新東西上線後就不能從表裡刪掉(玩家可能已經有了);不想再出現,刪掉它的掉落即可。',
   '新增怪物魔法:在「怪物魔法」分頁加一列,ID 寫「怪物ID:mag」(已經有 mag 就用 mag2、mag3…),每一欄都要填。',
   '查東西:「查詢」分頁輸入怪物ID或物品ID,會列出牠的掉落、魔法、出現地圖,或哪些怪會掉這件東西。',
@@ -95,6 +96,7 @@ for (const def of RECORD_SHEETS) {
     const row = ws.addRow([rowKey, ...def.cols.map(c => {
       if (c.type === 'show') return c.show(rec, sub, recId) ?? '';
       if (c.type === 'tpl') return rec._tpl || '';
+      if (c.type === 'img') { const v = getPath(rec, c.key); return typeof v === 'string' && v.startsWith(CUSTOM_IMG_DIR) ? v.slice(CUSTOM_IMG_DIR.length) : ''; }
       const v = getPath(rec, prefix + c.key);
       if (v == null) return '';
       if (c.type === 'req') return reqToZh(v);

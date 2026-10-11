@@ -7,9 +7,10 @@
 // 錯誤用白話列出「哪個分頁、哪一列、哪一欄、該怎麼改」(GitHub Actions 上也寫進執行摘要)。
 // 分頁整個不見 = 那一類維持原樣(不是清空),方便之後才補分頁。
 import fs from 'node:fs';
+import path from 'node:path';
 import ExcelJS from 'exceljs';
 import {
-  DATA_OUT, CONFIG, ID_HEAD, TPL_HEAD, NEW_PREFIX, MAGIC_SLOTS, loadGame, getPath, setPath, newItemFrom,
+  ROOT, CUSTOM_IMG_DIR, DATA_OUT, CONFIG, ID_HEAD, TPL_HEAD, NEW_PREFIX, MAGIC_SLOTS, loadGame, getPath, setPath, newItemFrom,
   RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS, zhToReq, dropHidden, mobNamer,
 } from './sheet-lib.mjs';
 
@@ -94,6 +95,12 @@ function parseCell(c, raw, where) {
     return v;
   }
   if (c.type === 'req') { try { return zhToReq(raw); } catch (e) { err(`${where}「${c.zh}」:${e.message}`); return undefined; } }
+  if (c.type === 'img') {
+    const name = String(raw).trim();
+    if (!/^[^/\\]+\.(png|jpg|jpeg|webp|gif)$/i.test(name)) { err(`${where}「${c.zh}」:只填檔名就好(例:測試神劍.png),要是 png/jpg/webp/gif。`); return undefined; }
+    if (!fs.existsSync(path.join(ROOT, CUSTOM_IMG_DIR, name))) { err(`${where}「${c.zh}」:GitHub 的 assets/custom 資料夾裡找不到「${name}」,先把圖上傳上去(檔名大小寫要一樣)。`); return undefined; }
+    return CUSTOM_IMG_DIR + name;
+  }
   return String(raw);
 }
 const newItems = {};      // my_ 開頭的新物品(整筆)
@@ -108,7 +115,7 @@ for (const def of RECORD_SHEETS) {
   if (!ws) continue;
   if (def.store === 'items') seenItemSheets.add(def.sheet);
   const edit = def.cols.filter(c => c.type !== 'show' && c.type !== 'tpl');
-  const colOf = columnsOf(ws, def.sheet, [ID_HEAD, ...edit.map(c => c.zh)]);
+  const colOf = columnsOf(ws, def.sheet, [ID_HEAD, ...edit.filter(c => c.type !== 'img').map(c => c.zh)]);   // 圖檔欄是後來加的,舊表沒有也照樣能用
   if (!colOf[ID_HEAD]) continue;
   const valid = new Map(def.rows(G).map(([rowKey, recId, prefix]) => [rowKey, [recId, prefix]]));
   const base = { items: G.DB.items, mobs: G.DB.mobs, skills: G.DB.skills }[def.store];
