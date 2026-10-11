@@ -159,17 +159,25 @@ if (mapWs) {
 // ── 掉落 ────────────────────────────────────────────────
 const dropWs = wb.getWorksheet('掉落');
 if (dropWs) {
-  const H = ['怪物名稱', '物品ID', '機率(%)'];
+  const H = ['怪物ID', '怪物名稱', '物品ID', '機率(%)'];
   const colOf = columnsOf(dropWs, '掉落', H);
   const knownMobs = new Set([...Object.keys(G.MOB_DROPS), ...Object.values(G.DB.mobs).map(m => m.n)]);
   const sheet = {};
   if (H.every(h => colOf[h])) dropWs.eachRow((row, i) => {
     if (i === 1) return;
-    const mob = val(row.getCell(colOf['怪物名稱']));
+    const mid = val(row.getCell(colOf['怪物ID']));
+    let mob = val(row.getCell(colOf['怪物名稱']));
     const item = val(row.getCell(colOf['物品ID']));
     const raw = val(row.getCell(colOf['機率(%)']));
-    if (mob == null && item == null && raw == null) return;
+    if (mid == null && mob == null && item == null && raw == null) return;
     const where = `掉落 第 ${i} 列`;
+    // 怪物ID / 怪物名稱 填一個就好;兩個都填就要對得上(掉落表以名稱為鍵)
+    if (mid != null) {
+      const m = G.DB.mobs[mid];
+      if (!m) { err(`${where}:找不到怪物ID「${mid}」,可以到怪物分頁查 ID。`); return; }
+      if (mob != null && String(mob) !== m.n) { err(`${where}:怪物ID「${mid}」是「${m.n}」,跟怪物名稱「${mob}」對不上,兩格只要留一格。`); return; }
+      mob = m.n;
+    }
     if (mob == null || !knownMobs.has(String(mob))) { err(`${where}:找不到怪物「${mob ?? ''}」(名稱要跟怪物分頁一模一樣)。`); return; }
     if (item == null || !G.DB.items[item]) { err(`${where}(${mob}):找不到物品 ID「${item ?? ''}」,可以到武器/防具/飾品/道具分頁查 ID。`); return; }
     const p = toNumber(raw);

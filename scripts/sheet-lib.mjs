@@ -80,7 +80,7 @@ const zh = (map) => (v) => (v == null || v === '' ? '' : (map[v] ?? v));
 
 // ── 欄位小工具 ───────────────────────────────────────────
 // type:int=整數、num=可有小數、pct=存小數/顯示百分比、text=文字、req=可用職業
-// show=只給人看(灰底,不會套用),值由 show(record, rowKey) 算出
+// show=只給人看(灰底,不會套用),值由 show(紀錄, 子物件, 紀錄ID) 算出
 const C = {
   int: (key, zhName, note) => ({ key, zh: zhName, type: 'int', note }),
   num: (key, zhName, note) => ({ key, zh: zhName, type: 'num', note }),
@@ -139,7 +139,7 @@ export const RECORD_SHEETS = [
     rows: (G) => Object.entries(G.DB.mobs).flatMap(([id, m]) =>
       ['mag', 'mag2', 'mag3', 'mag4', 'mag5'].filter(k => m[k]).map(k => [`${id}:${k}`, id, k + '.'])),
     cols: [
-      C.show('怪物', (d, sub) => d.n, 16), C.text('skn', '魔法名稱', 14),
+      C.show('怪物ID', (d, sub, id) => id, 16), C.show('怪物', (d) => d.n, 16), C.text('skn', '魔法名稱', 14),
       C.int('cd', '冷卻(回合)', '怪物每攻擊一次算一回合'), C.pct('chance', '發動機率(%)'),
       C.int('dmg.0', '傷害骰(顆)'), C.int('dmg.1', '傷害骰(面)'), C.show('屬性', (d, sub) => zh(ELE_ZH)(sub?.ele)),
     ],
@@ -172,16 +172,18 @@ export const HOME_DEFAULTS = { title: '放置天堂 - 日出之國', subtitle: '
 // 掉落表不列遺物(遺物系統已隱藏,afk-norelic 會在遊戲裡再切掉);套用時原樣保留
 export const dropHidden = (G, itemId) => !!G.DB.items[itemId]?.relic;
 
-// 怪物 ID ↔ 中文(地圖分頁用)。同名的怪寫成「名稱(ID)」才分得出來
+// 怪物 ID ↔ 中文(地圖分頁用)。匯出寫「名稱(ID)」(ID 跟名稱一樣時只寫名稱);讀回時名稱、ID、名稱(ID) 都認。
+//   ⚠️ 有些怪的 ID 本身就是中文(例:侏儒),名稱也可能自帶括號(白目玩家(王族))
+//   → 只有「最後一組括號裡是真的怪物 ID」才當 ID,否則整串當名稱/ID 查。
 export function mobNamer(G) {
   const count = {};
   for (const m of Object.values(G.DB.mobs)) count[m.n] = (count[m.n] || 0) + 1;
-  const toText = (id) => { const m = G.DB.mobs[id]; if (!m) return id; return count[m.n] > 1 ? `${m.n}(${id})` : m.n; };
+  const toText = (id) => { const m = G.DB.mobs[id]; return !m ? id : m.n === id ? id : `${m.n}(${id})`; };
   const byName = {};
   for (const [id, m] of Object.entries(G.DB.mobs)) if (count[m.n] === 1) byName[m.n] = id;
   const toId = (t) => {
-    const s = t.trim(); const m = s.match(/[(（]([\w-]+)[)）]$/);
-    if (m && G.DB.mobs[m[1]]) return m[1];
+    const s = t.trim(); const m = s.match(/[(（]([^()（）]+)[)）]$/);
+    if (m && G.DB.mobs[m[1].trim()]) return m[1].trim();
     if (G.DB.mobs[s]) return s;
     if (byName[s]) return byName[s];
     return null;

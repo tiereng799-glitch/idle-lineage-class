@@ -55,8 +55,8 @@ help.columns = [{ width: 100 }];
   '5. 填錯(例如數字欄填了文字)不會上線,GitHub 上會顯示是哪一格要改。',
   '',
   '可用職業:用「、」分隔,例如:騎士、妖精。全部職業可用就填:全職業',
-  '地圖:「出現怪物」欄填怪物名稱,用「、」分隔。同名的怪會寫成「名稱(ID)」,照抄即可。',
-  '掉落:一列 = 一隻怪掉一樣東西。要新增掉落就加一列(填怪物名稱、物品ID、機率);整列刪掉 = 不再掉。',
+  '地圖:「出現怪物」欄用「、」分隔,每隻寫成「名稱(ID)」;只填名稱或只填 ID 也可以。怪物 ID 可到怪物分頁查。',
+  '掉落:一列 = 一隻怪掉一樣東西。要新增就加一列:怪物ID 或怪物名稱填一個、物品ID、機率;整列刪掉 = 不再掉。',
   '      機率是百分比:填 1 代表 1%,填 0.01 代表 0.01%。物品 ID 可以到武器/防具/飾品/道具分頁查。',
 ].forEach(t => help.addRow([t]));
 help.getRow(1).font = { bold: true };
@@ -83,7 +83,7 @@ for (const def of RECORD_SHEETS) {
     const rec = base[recId];
     const sub = prefix ? getPath(rec, prefix.slice(0, -1)) : rec;
     const row = ws.addRow([rowKey, ...def.cols.map(c => {
-      if (c.type === 'show') return c.show(rec, sub) ?? '';
+      if (c.type === 'show') return c.show(rec, sub, recId) ?? '';
       const v = getPath(rec, prefix + c.key);
       if (v == null) return '';
       if (c.type === 'req') return reqToZh(v);
@@ -112,13 +112,19 @@ for (const def of RECORD_SHEETS) {
 // ── 掉落 ────────────────────────────────────────────────
 {
   const ws = wb.addWorksheet('掉落');
-  const cols = [{ zh: '怪物名稱', width: 22 }, { zh: '物品ID', width: 24 }, { zh: '物品名稱', width: 20 }, { zh: '機率(%)', width: 10, note: '填 1 = 1%' }];
-  header(ws, cols, 1);
+  const cols = [
+    { zh: '怪物ID', width: 18, note: '新增掉落時填怪物ID或怪物名稱其中一個就好' }, { zh: '怪物名稱', width: 22 },
+    { zh: '物品ID', width: 24 }, { zh: '物品名稱', width: 20 }, { zh: '機率(%)', width: 10, note: '填 1 = 1%' },
+  ];
+  header(ws, cols, 2);
+  // 掉落表以「名稱」為鍵;同名的怪(例:白目玩家 1/2 代)共用一份,ID 欄寫第一個
+  const idOf = {};
+  for (const [id, m] of Object.entries(G.DB.mobs)) idOf[m.n] ??= id;
   for (const [mob, list] of Object.entries(G.MOB_DROPS)) {
     for (const [itemId, p] of list) {
       if (dropHidden(G, itemId)) continue;
-      const row = ws.addRow([mob, itemId, G.DB.items[itemId]?.n || '', p]);
-      row.getCell(3).fill = LOCK;
+      const row = ws.addRow([idOf[mob] || '', mob, itemId, G.DB.items[itemId]?.n || '', p]);
+      row.getCell(4).fill = LOCK;
     }
   }
 }
