@@ -1457,6 +1457,15 @@
       skipNote('上次在「時空裂痕」中：時間排名挑戰依設計不結算離線收益（該次挑戰已作廢）。');
       return;
     }
+    // ⏸ 天堂M介面的 AUTO 暫停中（afk-lmui 寫 my_autopause_<slot>）：暫停＝不打怪，離線也不該有收益。
+    //   直接讀 localStorage＋開關，不依賴 afk-lmui 有沒有載入；它被關掉時暫停本來就失效，這裡跟著不擋。
+    var _autoPaused = false;
+    try { _autoPaused = localStorage.getItem('my_autopause_' + currentSlot) === '1' && (!window.AFK_TOGGLES || AFK_TOGGLES.enabled('lmui')); } catch (e) {}
+    if (_autoPaused) {
+      console.info('[AFK] 上次離開時 AUTO 是暫停的：不結算離線收益。');
+      skipNote('上次離開時自動戰鬥是暫停的，離線期間沒有收益。');
+      return;
+    }
     if (savedMap === 'afk_dummy') {
       // 🥊 木人場(afk-training 外掛):打不死的木人、純測 DPS,沒有經驗/掉落/金錢。關在木人場時 afk_map 戳成 afk_dummy
       //   → 離線一律不結算(本來就沒收益可算);重開後 loadGame 強制回村(setMapSelectors+changeMap(true)),假地圖/假怪都被覆蓋。

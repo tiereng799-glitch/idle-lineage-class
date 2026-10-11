@@ -8,7 +8,7 @@
  *     ＝上游原本的回村/瞬移/黑市/地圖選單）
  *   ・下方：HP/MP 長條、F1~F6 快捷列（先放已學會的手動技能，剩下的格子放身上的藥水/瞬移卷軸，
  *     顯示數量）、聊天框（一般/世界/戰鬥/掉落 分頁，點了開完整日誌）、最底下經驗 %
- *   ・按鈕：AUTO＝自動化設定分頁、回村鈕＝回村（搖桿/攻擊/鎖定/PVP 玩家要求拿掉）
+ *   ・按鈕：AUTO＝暫停／繼續（灰＝暫停中）、回村鈕＝回村（搖桿/攻擊/鎖定/PVP 玩家要求拿掉）
  *   ・底部導覽列換成只有圖示的樣式
  *
  * 資料來源一律讀核心 DOM / 全域（st-lv / st-ac / txt-hp / bar-hp… / player / mapState），
@@ -188,6 +188,8 @@
       /* AUTO：小紅球，壓在血條上緣正中 */
       '#lmui-auto{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;width:40px;height:40px;padding:0;border-radius:50%;font:700 10px/1 inherit;letter-spacing:.3px;border:1px solid rgba(255,200,150,.7);background:radial-gradient(circle at 40% 35%,#f87171,#991b1b 55%,#3b0a0a);color:#fff;text-shadow:0 1px 1px #000;box-shadow:0 0 10px rgba(239,68,68,.55),0 1px 4px #000;cursor:pointer;}',
       '#lmui-auto:active{filter:brightness(1.3);}',
+      /* AUTO 暫停中：灰掉、不發光 */
+      '#lmui-auto.off{border-color:rgba(255,255,255,.35);background:radial-gradient(circle at 40% 35%,#9ca3af,#4b5563 55%,#1f2937);box-shadow:0 1px 4px #000;color:#e5e7eb;}',
 
       /* ── 下方堆疊：血條 → 快捷列 → 聊天框 ── */
       '#lmui-vit{position:absolute;left:0;right:0;top:calc(var(--lmui-mtop) - var(--lmui-vit) - var(--orig-bar-h,0px));height:var(--lmui-vit);padding:3px 4px 0;display:flex;flex-direction:column;justify-content:center;gap:2px;background:linear-gradient(#1d1711,#0e0b08);border-top:1px solid #4a3f30;box-shadow:0 -3px 8px rgba(0,0,0,.6);pointer-events:auto;z-index:3;}',
@@ -560,7 +562,10 @@
     el.mapname.addEventListener('click', function () { closeAllWindows(); toggleMaps(); });
     el.mini.addEventListener('click', toggleMap);
     $('lmui-buffbtn').addEventListener('click', function () { document.body.classList.toggle('lmui-nobuff'); });
-    $('lmui-auto').addEventListener('click', function () { openRightTab('btn-automation'); });
+    $('lmui-auto').addEventListener('click', function () {
+      var p = !isPaused(); setPaused(p);
+      try { logSys(p ? '⏸ 已暫停，再按一次 AUTO 繼續' : '▶ 自動戰鬥繼續'); } catch (e) {}
+    });
     $('lmui-town').addEventListener('click', function (e) { e.stopPropagation(); try { returnToTown(); } catch (err) { console.warn('[AFK-lmui] 回村失敗', err); } });
     el.tabs.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-t]'); if (!b) return;
@@ -578,6 +583,28 @@
   }
 
   // ── 按鈕動作（全部是遊戲既有功能）──────────────────────
+  // ── AUTO＝暫停／繼續 ──────────────────────────────────
+  // 暫停＝核心 tick 整個不跑（怪物、回血、增益倒數一起凍結），不是「人站著被打」。
+  //   狀態按角色存 localStorage（my_autopause_<slot>）→ 重開遊戲照樣暫停；
+  //   afk-offline 讀同一個鍵（且本外掛開著）時不結算離線收益——暫停中關掉瀏覽器不該還在掛機賺。
+  //   本外掛被關掉時 wrapper 透明放行，暫停自然失效（按鈕也不在了，不能留一個解不開的暫停）。
+  function pauseKey() { return 'my_autopause_' + (typeof currentSlot !== 'undefined' ? currentSlot : ''); }
+  function isPaused() { try { return localStorage.getItem(pauseKey()) === '1'; } catch (e) { return false; } }
+  function setPaused(v) {
+    try { if (v) localStorage.setItem(pauseKey(), '1'); else localStorage.removeItem(pauseKey()); } catch (e) {}
+    renderAuto();
+  }
+  function renderAuto() { var b = $('lmui-auto'); if (b) b.classList.toggle('off', hasP() && isPaused()); }
+  function hookPause() {
+    if (typeof window.tick !== 'function') { console.warn('[AFK-lmui] 找不到核心 tick，AUTO 暫停停用。'); return; }
+    var _origTick = window.tick;
+    window.tick = function () {
+      if (on() && hasP() && isPaused()) return;
+      return _origTick.apply(this, arguments);
+    };
+    setInterval(renderAuto, 500);
+  }
+
   function navBtn(view) { var n = $('m-nav'); return n ? n.querySelector('.m-nav-btn[data-view="' + view + '"]') : null; }
   function openRightTab(btnId) {
     var nb = navBtn('right'); if (nb) nb.click();
@@ -1675,6 +1702,7 @@
     }
     // 怪物重畫（換怪/換目標）後立刻把名字＋血條擺回頭頂，不等下一個 tick（否則會先在卡片頂端閃一下）
     try { hookHunt(); } catch (e) {}
+    try { hookPause(); } catch (e) { console.warn('[AFK-lmui] AUTO 暫停掛不上', e); }
     //   包 _renderMobsImpl（真正寫 DOM 的那支）：戰鬥 tick 中 renderMobs 只標記 dirty，之後由 flushTickRender 直呼 _renderMobsImpl，包外層會漏掉
     var MOB_RENDER = typeof window._renderMobsImpl === 'function' ? '_renderMobsImpl' : 'renderMobs';
     if (typeof window[MOB_RENDER] === 'function') {
