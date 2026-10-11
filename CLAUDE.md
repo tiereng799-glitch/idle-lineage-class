@@ -12,28 +12,27 @@
 | 做「存檔搬家 / 跨裝置轉移」 | `docs/save-transfer.md`(**評估·尚未實作**;整包 localStorage 的打包/還原做法、五種方案的優缺點) |
 | 改 sw.js / 快取 / PWA | `docs/sw-pwa.md` |
 | 改手機或平板版面、覆寫上游手機樣式 | `docs/mobile.md` |
-| 同步上游 | 跑 `/sync-upstream`;背景與 CI 見 `docs/sync-upstream.md` |
+| ~~同步上游~~ | **2026-10-11 起已停止同步**(見下方「專案性質」);`/sync-upstream` 與 CI 不要再用 |
 | 改小百科 / 掉落查詢內容 | 跑 `/update-wiki`(內容準則與版面預算都在那支 skill 裡) |
 | 準備 push | 跑 `/prepush`;發版跑 `/release` |
 
-## 專案性質與架構（2026-07-19 起・純上游鏡像＋外掛層）
+## 專案性質與架構（2026-10-11 起・自有分支，不再同步原作者）
 
 - 網頁放置遊戲。遊戲本體由原作者(巴哈姆特 秋玥)製作,原版:**https://shines871.github.io/idle-lineage-class/**;本站(加掛版):https://pp771007.github.io/idle-lineage-class/。
-- **架構=「上游原版鏡像＋外掛層」**:核心(`js/NN-*.js`、`css/*`、`index.html`、`assets/`、`public/`)永遠是上游原文/原檔的位元組級鏡像;我們的所有功能都在**外掛層**——根目錄 `afk-*.js`(73 支)＋`sw.js`(PWA,上游沒有)＋極少量**錨點式核心補丁**(`scripts/apply-core-patches.mjs`)。
-- 上游本機 clone:`D:/otherPersonRepos/idle-lineage-class`。**引用上游做任何判斷前先 `git -C <clone> fetch`**——舊 clone 會讓「上游也是這樣」的結論整個相反(踩過)。
-- 同步狀態記在 `upstream-checkpoint.json`(`syncedUpstreamCommit`=目前鏡像的上游 commit)。
-- ⚠️ **`assets/`、`public/` 下不可放我方獨有檔案**——CI 同步用 `rsync --delete` 鏡像,會被刪掉。外掛需要圖優先引用上游既有檔。
+- **2026-10-11 起不再同步原作者**:最後一次同步的上游 commit 記在 `upstream-checkpoint.json`(`syncedUpstreamCommit`,原版 v3.8.34)。之後原作者的更新**不會自動進來**,要的話只能人工挑著移植。
+  - 已停用:`.github/workflows/sync-upstream.yml`(job 設 `if: false`)、`core-file-guard` hook、prepush 的「核心補丁就位」檢查。**不要再跑 `/sync-upstream` 或 `scripts/sync-upstream.mjs`**——它會用原作者的檔案整包蓋掉直接改過的核心檔。
+- **架構**:核心(`js/NN-*.js`、`css/*`、`index.html`、`assets/`、`public/`)＋外掛層(根目錄 `afk-*.js`、`sw.js`)。核心**可以直接改**;既有外掛照舊運作。
+- `scripts/apply-core-patches.mjs` 的 13 組錨點補丁已經套在核心裡,之後不必再跑(直接改核心即可,不用再寫新補丁)。
 
-## ⭐ 修改原則(鐵則)
+## ⭐ 修改原則
 
-**🚨 絕不直接手改核心檔(`js/NN-*.js`/`css/*`/`index.html`)——下次同步上游會整包覆蓋,改了就丟。** 要動遊戲行為,依序考慮:
+**改遊戲行為,選最直接、最好維護的寫法:**
 
-1. **外掛 monkey-patch(首選)**:核心函式都是全域,外掛包裝(`var _orig = fn; fn = function(){...}`)能解決絕大多數需求。afk-offline 連整套離線結算都是這樣掛的。
-2. **錨點式核心補丁(最後手段)**:只有「外掛包不住」的才用——要抽函式、改函式簽名、改寫死的字面值、或改核心的熱點寫法。加進 `scripts/apply-core-patches.mjs`:靠「上游原文特徵字串」定位、冪等、**錨點找不到就 exit 1 大聲失敗**(不會默默壞)。補丁越少越好,現有 13 組(表在 `docs/plugins.md`)。
-3. **index.html 不手改**:它=上游 index＋`scripts/afk-plugin-block.html` 注入到 `</body>` 前(sync 時自動重組)。**新增外掛 → 改 `afk-plugin-block.html`**(載入順序也在那裡管:afk-toggles 最先、afk-skin 最後),再把它的 `<script>` 行同步補進現行 index.html(或重跑 sync),有 DOM 掛點的加進 `scripts/smoke-hooks.mjs` 的 `need`。
-4. **CSS 覆寫**寫在外掛注入的 `<style>` 裡(如 afk-mobile),不改 `css/*.css`。
-
-> 此規則已有 hook 強制:PreToolUse(Edit/Write/MultiEdit)的 `.claude/hooks/core-file-guard.mjs` 會擋下對 `js/*.js`、`css/*.css`、`index.html`、`assets/`、`public/` 的直接編輯(腳本經 node 寫檔不受影響)。被擋到就改走外掛/補丁,不要繞過。
+1. **直接改核心檔**(`js/NN-*.js`、`css/*`、`index.html`)是正常做法——改寫死的數值、改函式本體、改版面,都直接動原檔。
+2. **外掛仍然適合「可開關」的功能**:要讓玩家能在外掛面板關掉的(例如 afk-lmui 天堂M介面、隱藏職業/遺物/黑市),維持寫成 `afk-*.js`。
+3. **index.html**:可以直接改。新增外掛的 `<script>` 行加進 index.html,`scripts/afk-plugin-block.html` 也同步補一行(載入順序以那份為準:afk-toggles 最先、afk-skin 最後)。
+4. **改到外掛已經包住的核心函式時**:先 grep 有哪些 `afk-*.js` 包了它(`window.<函式名> = function`),確認外掛的假設還成立。
+5. `assets/`、`public/` 現在可以放我們自己的檔案(已經沒有 `rsync --delete` 同步會刪它)。
 
 **外掛開關(afk-toggles.js,載入順序第一)**:每支外掛可被玩家單獨關掉——某支壞掉時玩家關掉它就能用原版繼續玩(逃生門)。契約:
 - 純新增型外掛檔頭 `if (window.AFK_TOGGLES && !AFK_TOGGLES.enabled('<id>')) return;`;包核心函式型在 wrapper 內每次先問 `enabled()`,關掉就透明放行原函式。

@@ -117,11 +117,12 @@ try {
   }
 } catch {}
 
-// ── 5+6+7. 直接跑既有的 --check 腳本(?v= 對齊 / 核心補丁就位 / 外掛 DOM 錨點還在)──
+// ── 5+6. 直接跑既有的 --check 腳本(?v= 對齊 / 外掛 DOM 錨點還在)──
 //   都是「漏跑會安靜壞掉、且腳本自己就會判」的東西,不要在這裡重刻一份算法。
+//   ⚠️ 2026-10-11 起不再同步上游、核心檔可直接改 → 拿掉「核心補丁就位」檢查(apply-core-patches --check):
+//      直接改到補丁附近的原文就會讓它誤判失敗、擋住正常的 push。
 for (const [script, why] of [
   ['scripts/stamp-code-versions.mjs', '先跑「node scripts/stamp-code-versions.mjs」再 push,否則玩家會拿到新舊混搭'],
-  ['scripts/apply-core-patches.mjs', '先跑「node scripts/apply-core-patches.mjs」再 push,否則靠補丁的外掛會安靜失效'],
   ['scripts/check-dom-ids.mjs', '跑「node scripts/check-dom-ids.mjs」看是哪個 id,改錨到還存在的元素——getElementById 拿到 null 不報錯,那段功能會安靜消失'],
 ]) {
   if (!existsSync(resolve(ROOT, script))) continue;

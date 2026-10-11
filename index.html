@@ -591,6 +591,8 @@
     <style>:root{color-scheme:dark}</style>
     <!-- afk-toggles 必須最先載入：外掛開關中樞（逃生門，自己不可被關；某支外掛壞掉時玩家關掉它就能用原版繼續玩） -->
     <script src="afk-toggles.js?v=ca7ad4d1d4"></script>
+    <!-- afk-forcemobile：一律使用手機版面——寬螢幕導去 phone.html（手機寬 iframe 包 index.html）；緊接 afk-toggles，越早導走外層白跑越少 -->
+    <script src="afk-forcemobile.js"></script>
     <!-- afk-banner：非官方轉載橫幅讓位（基礎設施、無開關；不可掛在 afk-mobile 裡，玩家關掉手機版面就會整個頂端被蓋住） -->
     <script src="afk-banner.js?v=29fa2d5746"></script>
     <!-- afk-nobanner：隱藏非官方橫幅（預設關；只藏不刪＝不跟 gameLoop 的重掛打架，確認過才生效） -->
@@ -683,6 +685,8 @@
     <script src="afk-battlebuffs.js?v=35a733966e"></script>
     <!-- 手機戰鬥框下方的主動技能列：排在 afk-battlebuffs 之後 → 插入時看得到 #m-battle-buffs，才排得到它上面（那支關掉就直接接戰鬥框） -->
     <script src="afk-skillbar.js?v=496ea95617"></script>
+    <!-- afk-lmui：天堂M風格介面（afk-mobile 子選項）——戰鬥滿版＋浮動 HUD／技能列／聊天框、導覽列圖示化；排在 afk-skillbar 之後 -->
+    <script src="afk-lmui.js"></script>
     <script src="afk-toast.js?v=f6bc41ad16"></script>
     <!-- 手機長按 .tip-host 顯示原版資料框（倉庫清單由 afk-warehouse 自理，故排在它之前無妨） -->
     <script src="afk-touchtip.js?v=e26211cc66"></script>
@@ -692,6 +696,14 @@
     <script src="afk-dollcursor.js?v=dd9163f19b"></script>
     <!-- afk-anyclass：去除裝備職業限制（預設關）——包 checkCanEquip，執行期間暫時放行職業那幾關 -->
     <script src="afk-anyclass.js?v=533d290037"></script>
+    <!-- afk-noclass：創角不開放幻術士、龍騎士——藏按鈕＋包 selectClassBase/selectClass 改成王族；舊角色不受影響 -->
+    <script src="afk-noclass.js"></script>
+    <!-- afk-noclassitems：戰士/幻術士/龍騎士專屬裝備與技能書不開放取得——載入時切掉掉落表/商店/製作/抽獎/遺物池，gainItem 兜底 -->
+    <script src="afk-noclassitems.js"></script>
+    <!-- afk-norelic：隱藏遺物系統——遺物不再掉落/販售/製作/抽到，收藏遺物冊與黑市遺物布告欄隱藏；已擁有的不動 -->
+    <script src="afk-norelic.js"></script>
+    <!-- afk-noblackmarket：隱藏黑市——村莊潘朵拉、地圖面板黑市鈕、世界頻道黑市跑馬燈隱藏，interactNPC 擋 npc_pandora -->
+    <script src="afk-noblackmarket.js"></script>
     <!-- afk-locksafe：上鎖的裝備不會被潘朵拉收購/遺物布告欄拿走 -->
     <script src="afk-locksafe.js?v=a1ab38bb29"></script>
     <!-- afk-buyercompat：收購 NPC 向下兼容（收 +6 也可以繳 +15）——需搭配 apply-core-patches 補丁 13 的 __afkBuyerEnMatch 鉤子；排在 afk-locksafe 之後＝在最外層 -->

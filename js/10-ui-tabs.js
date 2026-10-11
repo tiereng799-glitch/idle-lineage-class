@@ -1256,11 +1256,12 @@ function buildItemDescHTML(item) {
 
     // 🛡️ 適用職業：以職業 logo 顯示可裝備此裝備的職業（騎士/妖精/法師/黑暗妖精/幻術士；黑暗妖精走 darkEquipOk 真實規則）
     if (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') {
-        const _EQ_CLASSES = [['knight','騎士'], ['elf','妖精'], ['mage','法師'], ['dark','黑暗妖精'], ['illusion','幻術士'], ['dragon','龍騎士'], ['warrior','戰士'], ['royal','王族']];
+        // 本分支不開放幻術士／龍騎士／戰士 → 不列；改用文字顯示（logo 太小認不出）
+        const _EQ_CLASSES = [['knight','騎士'], ['elf','妖精'], ['mage','法師'], ['dark','黑暗妖精'], ['royal','王族']];
         let _logos = _EQ_CLASSES
-            .filter(([c]) => isRelic(d) ? reqAllowsClass(d, c) : (c === 'dark') ? darkEquipOk(d, item.id) : (c === 'illusion') ? illusionEquipOk(d, item.id) : (c === 'dragon') ? dragonEquipOk(d, item.id) : (c === 'warrior') ? warriorEquipOk(d, item.id) : (c === 'royal') ? royalEquipOk(d, item.id) : reqAllowsClass(d, c))   // 🏺 遺物：職業適用純以 req 白名單判定（同 checkCanEquip 短路）
-            .map(([, nm]) => `<img src="assets/logo/${nm}icon.png" alt="${nm}" title="${nm}" class="class-eq-icon" onerror="this.style.display='none';">`)
-            .join('');
+            .filter(([c]) => isRelic(d) ? reqAllowsClass(d, c) : (c === 'dark') ? darkEquipOk(d, item.id) : (c === 'royal') ? royalEquipOk(d, item.id) : reqAllowsClass(d, c))   // 🏺 遺物：職業適用純以 req 白名單判定（同 checkCanEquip 短路）
+            .map(([, nm]) => `<span class="text-amber-200">${nm}</span>`)
+            .join('<span class="text-slate-500">、</span>');
         if (_logos) desc += `<br><span class="text-slate-400">適用職業：</span>${_logos}`;
     }
 
@@ -1342,8 +1343,10 @@ function openModal(item, isEq, slot) {
         
         // 把販賣按鈕移出來，讓所有道具都可以賣
         if (!item.lock) {
-            act += `<button class="btn border-orange-700 bg-orange-900 hover:bg-orange-800 py-2 text-base font-bold" onclick="sellItem('${item.uid}', 1, ${sellPrice})">販賣</button>
-                    <button class="btn border-orange-700 bg-orange-900 hover:bg-orange-800 py-2 text-base font-bold" onclick="sellItem('${item.uid}', ${item.cnt}, ${sellPrice})">全部賣出</button>`;
+            // 按鈕直接寫出會拿到多少金幣：賣出一件＝單價、全部賣出＝單價 × 持有數量（非堆疊物品 cnt 未定義＝1 件）
+            let _sellCnt = item.cnt || 1;
+            act += `<button class="btn border-orange-700 bg-orange-900 hover:bg-orange-800 py-2 text-base font-bold" onclick="sellItem('${item.uid}', 1, ${sellPrice})">賣出一件　${sellPrice.toLocaleString()} 金幣</button>
+                    <button class="btn border-orange-700 bg-orange-900 hover:bg-orange-800 py-2 text-base font-bold" onclick="sellItem('${item.uid}', ${item.cnt}, ${sellPrice})">全部賣出　${(sellPrice * _sellCnt).toLocaleString()} 金幣</button>`;
         }
     }
 
