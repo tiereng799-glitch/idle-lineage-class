@@ -43,7 +43,7 @@
         <div id="login-meta-layer">
             <!-- 🏷️ 版本號（由 js/14 window.onload 依 GAME_VERSION 填入；此處 v2.4.0 僅為 JS 失效時的後備文字） -->
             <div id="login-version" class="text-center text-sm text-slate-300 font-medium tracking-wide select-none">v2.4.0</div>
-            <div id="login-disclaimer" class="text-center text-xs text-slate-400 leading-relaxed mx-auto">本遊戲為非官方免費同人作品，絕無營利意圖；遊戲內圖片與音樂版權歸原權利方 NCSOFT 所有，其餘程式為獨立開發，嚴禁商業販售。</div>
+            <div id="login-disclaimer" class="text-center text-xs text-slate-400 leading-relaxed mx-auto">本遊戲為非官方免費同人作品，絕無營利意圖；遊戲內圖片與音樂版權歸原權利方 NCSOFT 所有，其餘程式為獨立開發，嚴禁商業販售。<br>原作：巴哈姆特 秋玥 ・ 原版：<a href="https://shines871.github.io/idle-lineage-class/" target="_blank" rel="noopener" style="text-decoration:underline">shines871.github.io/idle-lineage-class</a></div>
         </div>
       </div>
 
@@ -598,7 +598,7 @@
     <script src="afk-forcemobile.js?v=de0117561e"></script>
     <!-- afk-banner：非官方轉載橫幅讓位（基礎設施、無開關；不可掛在 afk-mobile 裡，玩家關掉手機版面就會整個頂端被蓋住） -->
     <script src="afk-banner.js?v=29fa2d5746"></script>
-    <!-- afk-nobanner：隱藏非官方橫幅（預設關；只藏不刪＝不跟 gameLoop 的重掛打架，確認過才生效） -->
+    <!-- afk-nobanner：隱藏非官方橫幅（已鎖定一律隱藏；原作出處改由 #login-disclaimer 固定顯示） -->
     <script src="afk-nobanner.js?v=07adf6960c"></script>
     <!-- 存檔解壓快取：必須排在所有會讀 localStorage 的外掛之前（核心每殺一隻怪都重解壓一次血盟狀態） -->
     <script src="afk-lzcache.js?v=1b86b3d102"></script>
