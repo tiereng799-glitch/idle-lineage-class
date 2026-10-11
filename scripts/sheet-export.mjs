@@ -22,6 +22,8 @@ if (fs.existsSync(DATA_OUT)) {
   new Function('window', fs.readFileSync(DATA_OUT, 'utf8'))(ctx);
   T = ctx.MY_TWEAKS || {};
 }
+for (const [id, o] of Object.entries(T.newItems || {})) G.DB.items[id] = o;
+for (const [mid, slots] of Object.entries(T.newMagic || {})) if (G.DB.mobs[mid]) Object.assign(G.DB.mobs[mid], slots);
 for (const store of ['items', 'mobs', 'skills']) {
   const base = { items: G.DB.items, mobs: G.DB.mobs, skills: G.DB.skills }[store];
   for (const [id, kv] of Object.entries(T[store] || {})) for (const [p, v] of Object.entries(kv)) if (base[id]) setPath(base[id], p, v);
@@ -51,6 +53,14 @@ help.columns = [{ width: 100 }];
   '1. 到下方分頁直接改數字或文字。',
   '2. 灰底的欄位不要改(ID 是遊戲用來認東西的;其他灰底欄只是給你參考,改了也不會套用)。',
   '3. 格子留空白 = 維持原本的數值。想設成 0 就填 0。',
+  '',
+  '新增武器/防具/飾品/道具:在該分頁最下面加一列——',
+  '   ID 用 my_ 開頭(例:my_sword1,只能英文數字底線)、填「範本ID(新增用)」= 照哪一件現有的做、取一個新名稱,再改你要的數值。',
+  '   外觀圖、類型、特殊效果都照範本;沒填的數值也照範本。要讓人拿得到,記得到「掉落」分頁加一列。',
+  '   新東西上線後就不能從表裡刪掉(玩家可能已經有了);不想再出現,刪掉它的掉落即可。',
+  '新增怪物魔法:在「怪物魔法」分頁加一列,ID 寫「怪物ID:mag」(已經有 mag 就用 mag2、mag3…),每一欄都要填。',
+  '查東西:「查詢」分頁輸入怪物ID或物品ID,會列出牠的掉落、魔法、出現地圖,或哪些怪會掉這件東西。',
+  '',
   '4. 改完到 GitHub → Actions → 「更新遊戲」→ Run workflow,約 5 分鐘後上線。',
   '5. 填錯(例如數字欄填了文字)不會上線,GitHub 上會顯示是哪一格要改。',
   '',
@@ -84,6 +94,7 @@ for (const def of RECORD_SHEETS) {
     const sub = prefix ? getPath(rec, prefix.slice(0, -1)) : rec;
     const row = ws.addRow([rowKey, ...def.cols.map(c => {
       if (c.type === 'show') return c.show(rec, sub, recId) ?? '';
+      if (c.type === 'tpl') return rec._tpl || '';
       const v = getPath(rec, prefix + c.key);
       if (v == null) return '';
       if (c.type === 'req') return reqToZh(v);
@@ -127,6 +138,31 @@ for (const def of RECORD_SHEETS) {
       row.getCell(4).fill = LOCK;
     }
   }
+}
+
+// ── 查詢(只給人看,套用時不讀;公式由 Google 試算表計算) ─────────────
+//   欄位位置對應:掉落 A怪物ID B怪物名稱 C物品ID D物品名稱 E機率;怪物魔法 A列ID B怪物ID … D~I;地圖 A ID B名稱 C出現怪物
+{
+  const ws = wb.addWorksheet('查詢');
+  const INPUT = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF08A' } };
+  ws.columns = [12, 22, 10, 2, 14, 10, 10, 10, 10, 8, 2, 16, 18, 2, 14, 22, 16, 18, 10].map(w => ({ width: w }));
+  const put = (addr, v, bold) => { const c = ws.getCell(addr); c.value = v; if (bold) c.font = { bold: true }; return c; };
+  // 怪物查詢
+  put('A1', '怪物ID ▶', true); const m = put('B1', 'orc'); m.fill = INPUT;
+  put('A2', '名稱'); put('B2', { formula: 'IFERROR(VLOOKUP(B1,怪物!A:B,2,FALSE),"找不到這個怪物ID")' });
+  put('A4', '會掉落', true); ['物品ID', '物品名稱', '機率(%)'].forEach((h, i) => put(String.fromCharCode(65 + i) + '5', h, true));
+  put('A6', { formula: 'IFERROR(FILTER(掉落!C2:E,(掉落!A2:A=B1)+(掉落!B2:B=B2)),"沒有")' });
+  put('E4', '會用的魔法', true); ['魔法名稱', '冷卻', '機率(%)', '骰(顆)', '骰(面)', '屬性'].forEach((h, i) => put(String.fromCharCode(69 + i) + '5', h, true));
+  put('E6', { formula: 'IFERROR(FILTER(怪物魔法!D2:I,LEFT(怪物魔法!A2:A,LEN(B1)+1)=B1&":"),"沒有")' });
+  put('L4', '出現在地圖', true); put('L5', '地圖ID', true); put('M5', '地圖名稱', true);
+  put('L6', { formula: 'IFERROR(FILTER(地圖!A2:B,ISNUMBER(SEARCH("("&B1&")",地圖!C2:C))+REGEXMATCH("、"&地圖!C2:C&"、","、"&B1&"、")),"沒有")' });
+  // 物品查詢
+  put('O1', '物品ID ▶', true); const it = put('P1', 'wpn_katana'); it.fill = INPUT;
+  put('O2', '名稱');
+  put('P2', { formula: 'IFERROR(VLOOKUP(P1,武器!A:B,2,FALSE),IFERROR(VLOOKUP(P1,防具!A:B,2,FALSE),IFERROR(VLOOKUP(P1,飾品!A:B,2,FALSE),IFERROR(VLOOKUP(P1,道具!A:B,2,FALSE),"找不到這個物品ID"))))' });
+  put('O4', '哪些怪會掉', true); ['怪物ID', '怪物名稱', '物品ID', '物品名稱', '機率(%)'].forEach((h, i) => put(String.fromCharCode(79 + i) + '5', h, true));
+  put('O6', { formula: 'IFERROR(FILTER(掉落!A2:E,掉落!C2:C=P1),"沒有")' });
+  ws.views = [{ state: 'frozen', ySplit: 5 }];
 }
 
 await wb.xlsx.writeFile(out);

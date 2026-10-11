@@ -9,8 +9,8 @@
 import fs from 'node:fs';
 import ExcelJS from 'exceljs';
 import {
-  DATA_OUT, CONFIG, ID_HEAD, loadGame, getPath, RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS,
-  zhToReq, dropHidden, mobNamer,
+  DATA_OUT, CONFIG, ID_HEAD, TPL_HEAD, NEW_PREFIX, MAGIC_SLOTS, loadGame, getPath, setPath, newItemFrom,
+  RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS, zhToReq, dropHidden, mobNamer,
 } from './sheet-lib.mjs';
 
 const errors = [];
@@ -80,49 +80,106 @@ if (home) {
 }
 
 // ── 一般分頁 ─────────────────────────────────────────────
+// 每一格:空白＝維持原值;既有的東西記「差異」,新增的東西(my_ 開頭)記「整筆」。
+function parseCell(c, raw, where) {
+  if (c.type === 'int' || c.type === 'num' || c.type === 'pct') {
+    let v = toNumber(raw);
+    if (!Number.isFinite(v)) { err(`${where}「${c.zh}」:要填數字,現在是「${raw}」。`); return undefined; }
+    if (c.type === 'int' && !Number.isInteger(v)) { err(`${where}「${c.zh}」:要填整數,現在是「${raw}」。`); return undefined; }
+    if (c.type === 'pct') {
+      if (v < 0 || v > 100) { err(`${where}「${c.zh}」:要在 0 到 100 之間。`); return undefined; }
+      v = Math.round(v * 1e4) / 1e6;
+    }
+    if ((c.key === 'spd' || c.key === 'atkSpd') && v <= 0) { err(`${where}「${c.zh}」:要大於 0。`); return undefined; }
+    return v;
+  }
+  if (c.type === 'req') { try { return zhToReq(raw); } catch (e) { err(`${where}「${c.zh}」:${e.message}`); return undefined; } }
+  return String(raw);
+}
+const newItems = {};      // my_ 開頭的新物品(整筆)
+const newMagic = {};      // 新增的怪物魔法 { 怪物ID: { mag2: {...} } }
+const prevNew = (() => {  // 目前遊戲裡已經有的新物品:不准從試算表刪掉(玩家背包裡可能已經有)
+  try { const c = {}; new Function('window', fs.readFileSync(DATA_OUT, 'utf8'))(c); return Object.keys(c.MY_TWEAKS?.newItems || {}); } catch { return []; }
+})();
+const seenItemSheets = new Set();
+
 for (const def of RECORD_SHEETS) {
   const ws = wb.getWorksheet(def.sheet);
   if (!ws) continue;
-  const edit = def.cols.filter(c => c.type !== 'show');
+  if (def.store === 'items') seenItemSheets.add(def.sheet);
+  const edit = def.cols.filter(c => c.type !== 'show' && c.type !== 'tpl');
   const colOf = columnsOf(ws, def.sheet, [ID_HEAD, ...edit.map(c => c.zh)]);
   if (!colOf[ID_HEAD]) continue;
   const valid = new Map(def.rows(G).map(([rowKey, recId, prefix]) => [rowKey, [recId, prefix]]));
   const base = { items: G.DB.items, mobs: G.DB.mobs, skills: G.DB.skills }[def.store];
+  const seen = new Map();
 
   ws.eachRow((row, i) => {
     if (i === 1) return;
     const rowKey = val(row.getCell(colOf[ID_HEAD]));
     if (rowKey == null) return;
-    const hit = valid.get(String(rowKey));
-    if (!hit) { err(`${def.sheet} 第 ${i} 列:ID「${rowKey}」對不到遊戲裡的東西,ID 欄不能改。`); return; }
-    const [recId, prefix] = hit;
+    const key = String(rowKey);
+    if (seen.has(key)) { err(`${def.sheet} 第 ${i} 列:ID「${key}」跟第 ${seen.get(key)} 列重複了,同一個東西只能有一列。`); return; }
+    seen.set(key, i);
+
+    // ── 新增 ──
+    if (!valid.has(key)) {
+      if (def.allowNew === 'item') {
+        if (!key.startsWith(NEW_PREFIX)) { err(`${def.sheet} 第 ${i} 列:ID「${key}」對不到遊戲裡的東西。要新增的話 ID 請用 ${NEW_PREFIX} 開頭;既有的東西 ID 不能改。`); return; }
+        if (G.DB.items[key] || newItems[key]) { err(`${def.sheet} 第 ${i} 列:ID「${key}」已經被用過了,換一個。`); return; }
+        if (!/^my_[A-Za-z0-9_]+$/.test(key)) { err(`${def.sheet} 第 ${i} 列:新 ID「${key}」只能用英文、數字、底線。`); return; }
+        const tplId = colOf[TPL_HEAD] ? val(row.getCell(colOf[TPL_HEAD])) : null;
+        const tpl = tplId != null && G.DB.items[tplId];
+        if (!tpl || !def.filter(tpl)) { err(`${def.sheet} 第 ${i} 列(${key}):「${TPL_HEAD}」要填一個這個分頁裡現有的 ID,新東西會照它做。`); return; }
+        const rec = newItemFrom(String(tplId), tpl);
+        const where = `${def.sheet} 第 ${i} 列(${key})`;
+        for (const c of edit) {
+          const raw = colOf[c.zh] ? val(row.getCell(colOf[c.zh])) : null;
+          if (raw == null) continue;
+          const v = parseCell(c, raw, where);
+          if (v !== undefined) setPath(rec, c.key, v);
+        }
+        if (!rec.n || rec.n === tpl.n) { err(`${where}:新東西要取一個跟範本不一樣的「名稱」。`); return; }
+        newItems[key] = rec;
+        return;
+      }
+      if (def.allowNew === 'magic') {
+        const [mid, slot] = key.split(':');
+        const mob = G.DB.mobs[mid];
+        if (!mob || !MAGIC_SLOTS.includes(slot)) { err(`${def.sheet} 第 ${i} 列:ID「${key}」格式要是「怪物ID:mag」(第二招 mag2、第三招 mag3…)。`); return; }
+        if (mob[slot]) { err(`${def.sheet} 第 ${i} 列:「${mob.n}」已經有 ${slot},ID 不能重複。`); return; }
+        const rec = { skn: '', cd: 0, chance: 0, dmg: [0, 0], ele: 'none' };
+        const where = `${def.sheet} 第 ${i} 列(${mob.n} 新增魔法)`;
+        for (const c of edit) {
+          const raw = colOf[c.zh] ? val(row.getCell(colOf[c.zh])) : null;
+          if (raw == null) { err(`${where}「${c.zh}」:新增魔法每一欄都要填。`); continue; }
+          const v = parseCell(c, raw, where);
+          if (v !== undefined) setPath(rec, c.key, v);
+        }
+        if (rec.cd < 1) err(`${where}「冷卻(回合)」:至少要 1。`);
+        (newMagic[mid] ||= {})[slot] = rec;
+        return;
+      }
+      err(`${def.sheet} 第 ${i} 列:ID「${key}」對不到遊戲裡的東西,ID 欄不能改。`);
+      return;
+    }
+
+    // ── 既有:只記差異 ──
+    const [recId, prefix] = valid.get(key);
     const rec = base[recId];
     const where = `${def.sheet} 第 ${i} 列(${rec.n || recId})`;
     for (const c of edit) {
       if (!colOf[c.zh]) continue;
       const raw = val(row.getCell(colOf[c.zh]));
-      if (raw == null) continue;                       // 空白 = 維持原值
+      if (raw == null) continue;
       const p = prefix + c.key;
       const o = getPath(rec, p);
       if (o === undefined && p.includes('.')) {          // 陣列/子物件本來就不存在(例:這招沒有治療骰)→ 無處可放
         const parent = getPath(rec, p.slice(0, p.lastIndexOf('.')));
         if (parent == null) { err(`${where}「${c.zh}」:這一筆沒有這個項目,請把這格清空。`); continue; }
       }
-      let v;
-      if (c.type === 'int' || c.type === 'num' || c.type === 'pct') {
-        v = toNumber(raw);
-        if (!Number.isFinite(v)) { err(`${where}「${c.zh}」:要填數字,現在是「${raw}」。`); continue; }
-        if (c.type === 'int' && !Number.isInteger(v)) { err(`${where}「${c.zh}」:要填整數,現在是「${raw}」。`); continue; }
-        if (c.type === 'pct') {
-          if (v < 0 || v > 100) { err(`${where}「${c.zh}」:要在 0 到 100 之間。`); continue; }
-          v = Math.round(v * 1e4) / 1e6;
-        }
-        if ((c.key === 'spd' || c.key === 'atkSpd') && v <= 0) { err(`${where}「${c.zh}」:要大於 0。`); continue; }
-      } else if (c.type === 'req') {
-        try { v = zhToReq(raw); } catch (e) { err(`${where}「${c.zh}」:${e.message}`); continue; }
-      } else {
-        v = String(raw);
-      }
+      const v = parseCell(c, raw, where);
+      if (v === undefined) continue;
       const same = c.type === 'req'
         ? String(o || '').split(',').sort().join() === v.split(',').sort().join()
         : c.type === 'pct' ? Math.abs((o ?? NaN) - v) < 1e-9
@@ -131,6 +188,12 @@ for (const def of RECORD_SHEETS) {
     }
   });
 }
+// 已經上線過的新物品不能消失(四個物品分頁都在才檢查,少一頁時無從判斷)
+if (seenItemSheets.size === RECORD_SHEETS.filter(d => d.store === 'items').length) {
+  for (const id of prevNew) if (!newItems[id]) err(`新增的物品「${id}」從試算表裡不見了。玩家可能已經拿到,不能刪;不想讓人再拿到,把它的掉落刪掉就好。`);
+}
+out.newItems = newItems;
+out.newMagic = newMagic;
 
 // ── 地圖 ────────────────────────────────────────────────
 const mapWs = wb.getWorksheet('地圖');
@@ -179,9 +242,10 @@ if (dropWs) {
       mob = m.n;
     }
     if (mob == null || !knownMobs.has(String(mob))) { err(`${where}:找不到怪物「${mob ?? ''}」(名稱要跟怪物分頁一模一樣)。`); return; }
-    if (item == null || !G.DB.items[item]) { err(`${where}(${mob}):找不到物品 ID「${item ?? ''}」,可以到武器/防具/飾品/道具分頁查 ID。`); return; }
+    if (item == null || !(G.DB.items[item] || newItems[item])) { err(`${where}(${mob}):找不到物品 ID「${item ?? ''}」,可以到武器/防具/飾品/道具分頁查 ID。`); return; }
     const p = toNumber(raw);
     if (raw == null || !Number.isFinite(p) || p < 0 || p > 100) { err(`${where}(${mob}):機率要填 0 到 100 的數字,現在是「${raw ?? ''}」。`); return; }
+    if ((sheet[mob] || []).some(([x]) => x === String(item))) { err(`${where}(${mob}):「${item}」這隻怪已經有一列掉它了,同一樣東西只能設一次。`); return; }
     (sheet[mob] ||= []).push([String(item), p]);
   });
   // 跟原始比:只比「試算表看得到的部分」;遺物等隱藏的掉落原樣接回去
@@ -209,7 +273,7 @@ const changed = !fs.existsSync(DATA_OUT) || fs.readFileSync(DATA_OUT, 'utf8').re
 if (changed) fs.writeFileSync(DATA_OUT, body);
 const cnt = (k) => Object.keys(out[k] || {}).length;
 const msg = changed
-  ? `✅ 已套用:首頁 ${cnt('home')} 項、物品 ${cnt('items')}、怪物 ${cnt('mobs')}、魔法 ${cnt('skills')}、地圖 ${cnt('maps')}、掉落 ${cnt('drops')} 隻怪有修改。`
+  ? `✅ 已套用:首頁 ${cnt('home')} 項、物品 ${cnt('items')}、怪物 ${cnt('mobs')}、魔法 ${cnt('skills')}、地圖 ${cnt('maps')}、掉落 ${cnt('drops')} 隻怪有修改;新增物品 ${cnt('newItems')}、新增怪物魔法 ${Object.values(out.newMagic || {}).reduce((a, m) => a + Object.keys(m).length, 0)}。`
   : '試算表跟目前遊戲一樣,沒有需要更新的。';
 console.log(msg);
 summary(msg);

@@ -14,6 +14,14 @@
     for (var i = 0; i < ks.length - 1; i++) { if (o[ks[i]] == null) return false; o = o[ks[i]]; }
     o[ks[ks.length - 1]] = v; return true;
   }
+  // ── 新增的物品(整筆,照範本做好的)與新增的怪物魔法 ─────────
+  try {
+    var ni = T.newItems || {};
+    for (var nid in ni) if (!DB.items[nid]) DB.items[nid] = ni[nid];
+    var nm = T.newMagic || {};
+    for (var mid0 in nm) if (DB.mobs[mid0]) for (var slot in nm[mid0]) if (!DB.mobs[mid0][slot]) DB.mobs[mid0][slot] = nm[mid0][slot];
+  } catch (e) { console.warn('[my-tweaks] 新增項目套用失敗', e); }
+
   [['items', DB.items], ['mobs', DB.mobs], ['skills', DB.skills]].forEach(function (pair) {
     try {
       var src = T[pair[0]] || {}, base = pair[1];
@@ -67,8 +75,17 @@
       }
     } catch (e) { console.warn('[my-tweaks] 首頁套用失敗', e); }
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyHome);
-  else applyHome();
+  // 新武器照範本的武器種類標籤(單手劍/匕首…;js/10 的 WEAPON_TAGS 以 ID 為鍵,要等所有核心檔載完才讀得到)
+  function copyWeaponTags() {
+    try {
+      if (typeof WEAPON_TAGS === 'undefined') return;
+      var ni = T.newItems || {};
+      for (var id in ni) if (ni[id]._tpl && WEAPON_TAGS[ni[id]._tpl] && !WEAPON_TAGS[id]) WEAPON_TAGS[id] = WEAPON_TAGS[ni[id]._tpl].slice();
+    } catch (e) { console.warn('[my-tweaks] 武器種類標籤複製失敗', e); }
+  }
+  function onReady() { copyWeaponTags(); applyHome(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
+  else onReady();
 
   // 樣式自帶(Tailwind 是預建置的,不能依賴沒出現過的 class)
   var css = document.createElement('style');
