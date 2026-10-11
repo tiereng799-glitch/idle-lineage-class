@@ -8,15 +8,28 @@
   var T = window.MY_TWEAKS;
   if (!T || typeof DB === 'undefined') return;
 
-  // ── 物品數值 ──────────────────────────────────────────
+  // ── 物品 / 怪物 / 魔法:{ 紀錄ID: { '路徑': 值 } },路徑可含點('dmg.0'、'mag2.cd') ──
+  function setPath(obj, p, v) {
+    var ks = p.split('.'), o = obj;
+    for (var i = 0; i < ks.length - 1; i++) { if (o[ks[i]] == null) return false; o = o[ks[i]]; }
+    o[ks[ks.length - 1]] = v; return true;
+  }
+  [['items', DB.items], ['mobs', DB.mobs], ['skills', DB.skills]].forEach(function (pair) {
+    try {
+      var src = T[pair[0]] || {}, base = pair[1];
+      for (var id in src) {
+        if (!base[id]) { console.warn('[my-tweaks] 找不到', pair[0], id); continue; }
+        for (var p in src[id]) if (!setPath(base[id], p, src[id][p])) console.warn('[my-tweaks] 套不上', pair[0], id, p);
+      }
+    } catch (e) { console.warn('[my-tweaks] 套用失敗', pair[0], e); }
+  });
+
+  // ── 地圖出怪:整張替換 ─────────────────────────────────
   try {
-    var items = T.items || {};
-    for (var id in items) {
-      var d = DB.items[id];
-      if (!d) { console.warn('[my-tweaks] 找不到物品', id); continue; }
-      for (var k in items[id]) d[k] = items[id][k];
-    }
-  } catch (e) { console.warn('[my-tweaks] 物品套用失敗', e); }
+    var maps = T.maps || {};
+    for (var mid in maps) if (Array.isArray(DB.maps[mid])) DB.maps[mid] = maps[mid].filter(function (m) { return DB.mobs[m]; });
+  } catch (e) { console.warn('[my-tweaks] 地圖套用失敗', e); }
+  // 掉落表(MOB_DROPS)在 js/01 才建立 → 由 js/01z-my-tweaks-drops.js 套用
 
   // ── 首頁 ──────────────────────────────────────────────
   var H = T.home || {};
