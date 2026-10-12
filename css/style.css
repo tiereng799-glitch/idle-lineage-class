@@ -271,8 +271,6 @@
         .tab-bar .btn { background: linear-gradient(180deg, #352b28 0%, #211d20 48%, #161519 100%); border-color: #765036; color: #e5e1dc; text-shadow: 1px 1px 0 #000; }
         .tab-bar .btn:hover:not(:disabled) { background: linear-gradient(180deg, #49372f 0%, #2d2526 52%, #1b181b 100%); border-color:#a8784d; }
         .tab-bar .btn.active { background: linear-gradient(180deg, #6e4932 0%, #3d2b25 52%, #211a1b 100%); border-color: #c0935d; color:#fff0d8; box-shadow:inset 0 0 7px rgba(210,155,88,.18); }
-        #btn-start { background: linear-gradient(135deg, #594720 0%, #786030 26%, #4a3c1a 48%, #6b5628 72%, #413518 100%); border-color: #6e5824; }  /* 開始冒險：金褐(同分頁鈕) */
-        #btn-start:hover:not(:disabled) { background: linear-gradient(135deg, #6e5828 0%, #927535 26%, #5f4d22 48%, #836a30 72%, #564621 100%); }
         #tab-stats .text-slate-400:not(.text-red-400):not(.text-blue-300):not(.text-blue-300) { color: #e2e8f0; }  /* 能力分頁：非顏色屬性的灰字改亮便於閱讀(屬抗/HP/MP恢復量等有色者不受影響) */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #17161b; border-radius: 2px; }
@@ -1159,398 +1157,137 @@ button.classic-skill-cell { cursor:pointer; }
 
 /* 📵 v3.0.74 移植參考版 UI 時移除其手機 media query（@media pointer:coarse）：本專案為「桌機專用」設計（見記憶 desktop-only-layout·手機改 viewport-meta 等比縮小），不再引入手機響應式版面。 */
 /* 🗑️ 移除 #slot-select-panel:not(.hidden) 孤兒規則：v3.5.83 已刪除 index.html 的 #slot-select-panel 元素與 openSlotSelect／chooseSlot／slotBackToMenu，零元素會套用（唯一存檔載入面板＝下方仍在用的 #load-select-panel）。 */
-#creation-panel:not(.hidden) { position:absolute; z-index:20; left:50%; top:50%; transform:translate(-50%,-50%); width:min(1000px,96vw); max-height:96vh; overflow:auto; padding:20px; border:2px solid #b89243; border-radius:14px; background:rgba(15,23,42,.96); box-shadow:0 20px 70px #000; }
-
-/* ===== 824.png 創角畫面：底圖框架、序列幀角色、原圖配點熱區 ===== */
+/* ===== 建立角色：照範本(1018×1544)排版 =====
+   #creation-stage 照範本比例縮放到「整張放得進畫面」，裡面全用百分比定位(座標＝範本 px ÷ 1018 或 1544)，
+   字級用 cqw 跟著舞台寬度走。標題/圖示/按鈕是從範本裁下來的圖(public/assets/create/)。桌機/手機同一套。 */
 #creation-panel:not(.hidden) {
-    position:absolute; z-index:20; left:50%; top:50%; transform:translate(-50%,-50%);
-    display:block !important; width:min(100vw,calc(100vh * 4 / 3)); aspect-ratio:4 / 3;
-    max-height:none; overflow:hidden; padding:0; border:0; border-radius:0; background:#050505; box-shadow:0 0 45px #000;
-}
-#creation-bg-image { position:absolute; inset:0; z-index:1; width:100%; height:100%; object-fit:contain; pointer-events:none; user-select:none; }
-/* 🖋️ v3.2.5 創角職業介紹排版重整（用戶要求）：①上下左右內距加大 ②行高 1.1 → 1.5、字距 +0.03em ③中文字體改正黑體系
-   （原 Georgia serif → CJK fallback 細明體難讀）。
-   ⚠️幾何陷阱：本框 position:absolute → padding/margin 的 % 相對「#creation-panel 寬 1440」而非框自身寬（492）——原 4.6% 就已是 66px。
-   佈局改 flex column：#class-desc 高度＝框內容高減標題（原 height:calc(100%-.25em) 會溢出框底 padding 蓋到美術）。
-   字級自動適配：js/13 selectClassBase 設完文案後若 scrollHeight 超框則逐步縮小（騎士 20 行最長）→ 任何視窗都不會無聲裁切。 */
-#creation-class-desc-frame {
-    position:absolute; z-index:4; left:7.4%; top:12.5%; width:34.2%; height:54.3%;
-    padding:5.6% 5.2% 4.1%; color:#efe1bd; text-shadow:0 1px 2px #000,0 0 5px #000;
-    font-family:Georgia,'Times New Roman',serif; overflow:hidden;
-    display:flex; flex-direction:column;
-}
-#creation-class-title { flex:0 0 auto; margin:0 0 4%; color:#f4d583; font-size:clamp(18px,1.9vw,26px); line-height:1.05; text-align:center; font-weight:700; letter-spacing:.1em; }
-#class-desc {
-    flex:1 1 auto;
-    min-height:0;
-    max-height:none;
+    position:fixed;
+    z-index:20;
+    inset:0;
+    top:var(--orig-bar-h, 0px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
     overflow:hidden;
-    color:#f0e3c4;
-    font-family:'Microsoft JhengHei','微軟正黑體','PingFang TC','Noto Sans TC',sans-serif;
-    font-size:clamp(12px,1.05vw,15px);
-    line-height:1.5;
-    letter-spacing:.03em;
-    white-space:pre-line;
+    /* 範本背景(頂端一束光、中間偏上微亮、底部石地)鋪滿整個畫面——畫在舞台上的話，舞台比例和螢幕不同時上下/左右會露出色帶 */
+    background:
+        radial-gradient(ellipse 30% 34% at 50% 4%, rgba(190,180,150,.16), transparent 70%),
+        radial-gradient(ellipse 70% 30% at 50% 30%, rgba(90,84,72,.22), transparent 75%),
+        radial-gradient(ellipse 80% 22% at 50% 94%, rgba(60,56,50,.35), transparent 80%),
+        linear-gradient(180deg, #0d0d0e 0%, #0a0a0b 55%, #0e0e0f 100%);
 }
-#creation-avatar-stage {
-    position:absolute; z-index:3; left:43.7%; top:18.2%; width:32%; height:44.5%;
-    display:flex; align-items:flex-end; justify-content:center; pointer-events:none; overflow:visible;
+#creation-stage {
+    position:relative;
+    flex:0 0 auto;
+    width:min(100vw, calc((100dvh - var(--orig-bar-h, 0px)) * 1018 / 1544));
+    aspect-ratio:1018 / 1544;
+    container-type:inline-size;
+    overflow:hidden;
+    font-family:"Microsoft JhengHei", "PingFang TC", sans-serif;
 }
-#class-preview-img { display:block; width:auto !important; height:100% !important; max-width:100%; object-fit:contain !important; object-position:center bottom; border:0 !important; border-radius:0 !important; filter:drop-shadow(0 12px 12px rgba(0,0,0,.85)) contrast(1.05) saturate(1.08); }
-#creation-class-list {
-    position:absolute; z-index:5; left:44.5%; top:5.6%; width:43%;
-    display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(2px,.35vw,5px);
-}
-.creation-class-btn {
-    min-width:0; height:clamp(15px,2.35vw,25px); padding:0 2px; border:1px solid rgba(174,132,56,.8); border-radius:2px;
-    background:linear-gradient(180deg,rgba(41,34,25,.88),rgba(11,12,16,.92)); color:#d9c796;
-    font-size:clamp(7px,.83vw,12px); font-weight:700; line-height:1; text-shadow:0 1px 2px #000; box-shadow:inset 0 0 5px rgba(238,198,95,.15),0 1px 2px #000;
-}
-.creation-class-btn:hover,.creation-class-btn.active { color:#fff0b8; border-color:#e1b45b; background:linear-gradient(180deg,rgba(91,63,25,.95),rgba(37,23,10,.95)); box-shadow:0 0 7px rgba(221,170,70,.55), inset 0 0 6px rgba(255,220,128,.2); }
-#stat-allocation { position:absolute; inset:0; z-index:6; width:100%; height:100%; padding:0; border:0; border-radius:0; background:transparent; pointer-events:none; }
-#creation-pts {
-    position:absolute; left:72.35%; top:68.72%; width:3.85%; height:5.05%; display:flex; align-items:center; justify-content:center;
-    color:#f3f6ff; font-size:clamp(9px,1.05vw,15px); font-weight:700; text-shadow:0 1px 2px #000; pointer-events:none;
-}
-.creation-stat-control { position:absolute; display:grid; grid-template-columns:1.45em 1.05em 1.05em; align-items:center; gap:.18em; height:3%; pointer-events:auto; }
-.creation-stat-value { color:#f3f6ff; font-size:clamp(8px,.92vw,13px); font-weight:700; line-height:1; text-align:right; text-shadow:0 1px 2px #000,0 0 3px #000; }
-.creation-stat-btn {
-    width:100%; aspect-ratio:1 / 1; min-width:0; padding:0; border:1px solid rgba(117,139,176,.85); border-radius:1px;
-    display:flex; align-items:center; justify-content:center; background:rgba(9,22,43,.74); color:#dfeeff;
-    font-size:clamp(7px,.75vw,11px); font-weight:700; line-height:1; box-shadow:inset 0 0 4px rgba(148,189,255,.35),0 1px 2px #000;
-}
-.creation-stat-btn:hover { color:#fff; border-color:#d5e5ff; background:rgba(25,55,96,.9); }
-.creation-stat-control.stat-str { left:62.6%; top:66.18%; }
-.creation-stat-control.stat-dex { left:62.6%; top:69.32%; }
-.creation-stat-control.stat-con { left:62.6%; top:72.35%; }
-.creation-stat-control.stat-wis { left:75.9%; top:66.18%; }
-.creation-stat-control.stat-cha { left:75.9%; top:69.32%; }
-.creation-stat-control.stat-int { left:75.9%; top:72.35%; }
-#classic-mode-control {
-    position:absolute; z-index:7; left:52.5%; top:78.9%; display:flex; align-items:center; gap:.35em;
-    color:#d8c08a; font-size:clamp(8px,.86vw,12px); font-weight:700; text-shadow:0 1px 2px #000; cursor:pointer; user-select:none;
-}
-#classic-mode-control input { width:clamp(9px,1vw,14px); height:clamp(9px,1vw,14px); accent-color:#8b5e22; }
-#creation-back-button {
-    position:absolute; z-index:7; left:52.5%; top:84.0%; width:11%; height:4.1%; padding:0; border:1px solid #7e6330; border-radius:2px;
-    background:linear-gradient(180deg,rgba(39,31,20,.92),rgba(11,10,9,.96)); color:#d7c293; font-size:clamp(8px,.9vw,13px); font-weight:700; text-shadow:0 1px 2px #000;
-}
-#creation-back-button:hover { color:#ffe7a6; border-color:#d3a64d; }
-#btn-start.creation-start-button {
-    position:absolute; z-index:7; left:68.25%; top:78.7%; width:16.65%; height:4.45%; padding:0; border:1px solid #9f7b36; border-radius:2px;
-    background:linear-gradient(180deg,rgba(60,42,17,.72),rgba(13,10,6,.75)); color:#f5e7bd;
-    font-size:clamp(9px,1.02vw,15px); font-weight:700; line-height:1; text-shadow:0 1px 2px #000,0 0 4px #000; box-shadow:inset 0 0 8px rgba(234,184,83,.18);
-}
-#btn-start.creation-start-button:hover:not(:disabled) { color:#fff3c7; border-color:#d7ae57; background:linear-gradient(180deg,rgba(96,65,24,.82),rgba(31,20,8,.82)); }
-#btn-start.creation-start-button:disabled { opacity:.52; cursor:not-allowed; filter:grayscale(.45); }
-/* ===== 創角配置調整：職業 logo 環繞動圖、性別獨立於第 2 區 ===== */
-#creation-avatar-stage { left:52.4%; top:17.8%; width:25.8%; height:43.4%; }
-#creation-class-list {
-    position:absolute; z-index:6; left:43.3%; top:11.5%; width:46.2%; height:49.8%;
-    display:block; pointer-events:none;
-}
-.creation-class-btn {
-    position:absolute; width:15.2%; height:18%; min-width:0; padding:0; border:0; border-radius:50%;
-    background:radial-gradient(circle,rgba(255,232,160,.25) 0%,rgba(69,45,13,.22) 42%,rgba(0,0,0,0) 72%);
-    box-shadow:none; pointer-events:auto; display:flex; align-items:center; justify-content:center;
-    transition:filter .15s ease, transform .15s ease;
-}
-.creation-class-btn img { width:100%; height:100%; object-fit:contain; pointer-events:none; filter:drop-shadow(0 0 7px rgba(255,221,135,.42)) drop-shadow(0 2px 4px #000); }
-.creation-class-btn:hover,.creation-class-btn.active { transform:scale(1.08); background:radial-gradient(circle,rgba(255,241,190,.42) 0%,rgba(110,74,20,.34) 44%,rgba(0,0,0,0) 76%); }
-.creation-class-btn.active img { filter:drop-shadow(0 0 12px rgba(255,232,151,.9)) drop-shadow(0 2px 5px #000) brightness(1.18); }
-.creation-class-btn.class-left { left:2.2%; }
-.creation-class-btn.class-right { right:2.2%; }
-.creation-class-btn.class-pos-1 { top:1%; }
-.creation-class-btn.class-pos-2 { top:26%; }
-.creation-class-btn.class-pos-3 { top:51%; }
-.creation-class-btn.class-pos-4 { top:76%; }
-#creation-gender-panel {
-    position:absolute; z-index:7; left:50.5%; top:60.9%; width:35.7%; height:6.6%;
-    display:flex; align-items:center; justify-content:space-between; padding:0 7.4%; pointer-events:none;
-}
-.creation-gender-btn {
-    width:clamp(30px,4.6vw,54px); height:clamp(30px,4.6vw,54px); padding:0; border:1px solid rgba(224,183,88,.58); border-radius:50%;
-    display:flex; align-items:center; justify-content:center; pointer-events:auto;
-    background:radial-gradient(circle,rgba(250,236,178,.26),rgba(32,25,13,.82) 66%,rgba(0,0,0,.3)); color:#f8edcb;
-    font-family:Georgia,'Times New Roman',serif; font-size:clamp(22px,3.2vw,42px); line-height:1; text-shadow:0 0 8px rgba(255,231,168,.72),0 2px 3px #000;
-    box-shadow:0 0 9px rgba(218,167,61,.25), inset 0 0 8px rgba(255,226,151,.14);
-}
-.creation-gender-btn:hover,.creation-gender-btn.active { color:#fff8d7; border-color:#f2c766; box-shadow:0 0 14px rgba(243,196,88,.72), inset 0 0 9px rgba(255,230,164,.24); transform:scale(1.04); }
-#classic-mode-control { left:52.2%; top:83.5%; }
-#creation-back-button { left:52.5%; top:87.0%; }
-#btn-start.creation-start-button { left:68.25%; top:78.7%; }
+/* 範本裁下來的圖帶著原本的深色底：lighten 讓底色透出畫面背景，只留比背景亮的橫幅本身 */
+#creation-title { position:absolute; left:24.07%; top:2.33%; width:52.06%; height:auto; mix-blend-mode:lighten; pointer-events:none; user-select:none; }
 
-/* ===== 創角右側介面微調：整組往右上、補能力名稱、拉開配點控制 ===== */
-#creation-avatar-stage { left:56.1%; top:13.6%; width:25.8%; height:43.4%; }
-#creation-class-list { left:47.0%; top:7.3%; width:46.2%; height:49.8%; }
-#creation-gender-panel { left:54.2%; top:56.7%; width:35.7%; }
-#creation-pts { left:75.95%; top:64.85%; }
-.creation-stat-control {
-    grid-template-columns:1.9em 1.24em 1.24em;
-    gap:.46em;
-    overflow:visible;
+/* 中間立繪：腳下一圈火光(範本的法陣)，立繪黑底用 lighten 融進背景 */
+#creation-avatar-stage { position:absolute; left:29.5%; top:9.7%; width:41%; height:39.8%; display:flex; align-items:flex-end; justify-content:center; pointer-events:none; }
+#creation-avatar-stage::before {
+    content:""; position:absolute; left:8%; right:8%; bottom:-3%; height:16%;
+    background:radial-gradient(ellipse closest-side, rgba(255,170,60,.55), rgba(200,90,20,.28) 45%, rgba(120,40,0,0) 100%);
+    filter:blur(2px);
 }
-.creation-stat-control::before {
+#class-preview-img { position:relative; display:block; width:100%; height:100%; object-fit:contain; object-position:center bottom; mix-blend-mode:lighten; }
+
+/* 左右兩欄：職業(左 3、右 2)＋最下一列男/女。每格＝圖示＋字；選中＝金色底光＋上下金線 */
+#creation-class-list { position:absolute; inset:0; pointer-events:none; }
+.creation-tile {
     position:absolute;
-    top:50%;
-    transform:translateY(-50%);
-    color:#f0df9f;
-    font-family:Georgia,'Times New Roman',serif;
-    font-size:clamp(12px,1.58vw,22px);
-    font-weight:700;
-    line-height:1;
-    letter-spacing:0;
-    white-space:nowrap;
-    pointer-events:none;
-    text-shadow:
-        0 0 3px #000,
-        0 0 5px rgba(255,239,177,.9),
-        0 0 12px rgba(228,177,76,.55),
-        1px 2px 2px #000;
+    top:calc(12.6% + var(--row) * 7.8%);
+    width:17.7%;
+    height:7.8%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:.6cqw;
+    padding:0;
+    border:0;
+    background:transparent;
+    color:#e8dcc0;
+    font-size:2.7cqw;
+    letter-spacing:.12em;
+    cursor:pointer;
+    pointer-events:auto;
+    touch-action:manipulation;
 }
-.creation-stat-control.stat-str::before { content:"Strength"; }
-.creation-stat-control.stat-dex::before { content:"Dexterity"; }
-.creation-stat-control.stat-con::before { content:"Constitution"; }
-.creation-stat-control.stat-wis::before { content:"Wisdom"; }
-.creation-stat-control.stat-cha::before { content:"Charisma"; }
-.creation-stat-control.stat-int::before { content:"Intelligence"; }
-.creation-stat-control.stat-str,
-.creation-stat-control.stat-dex,
-.creation-stat-control.stat-con { left:65.65%; }
-.creation-stat-control.stat-wis,
-.creation-stat-control.stat-cha,
-.creation-stat-control.stat-int { left:76.75%; }
-.creation-stat-control.stat-str { top:62.35%; }
-.creation-stat-control.stat-dex { top:65.45%; }
-.creation-stat-control.stat-con { top:68.55%; }
-.creation-stat-control.stat-wis { top:62.35%; }
-.creation-stat-control.stat-cha { top:65.45%; }
-.creation-stat-control.stat-int { top:68.55%; }
-.creation-stat-control.stat-str::before,
-.creation-stat-control.stat-dex::before,
-.creation-stat-control.stat-con::before { right:calc(100% + .6em); text-align:right; }
-.creation-stat-control.stat-wis::before,
-.creation-stat-control.stat-cha::before,
-.creation-stat-control.stat-int::before { left:calc(100% + .55em); text-align:left; }
-.creation-stat-value {
-    min-width:1.9em;
-    text-align:center;
+.creation-tile::after {   /* 格與格之間的細分隔線 */
+    content:""; position:absolute; left:6%; right:6%; bottom:0; height:1px;
+    background:linear-gradient(90deg, transparent, rgba(150,130,95,.35), transparent);
 }
-.creation-stat-btn {
-    width:1.24em;
-    height:1.24em;
+.creation-tile.tile-left { left:5.4%; }
+.creation-tile.tile-right { right:5.4%; }
+.creation-tile img { height:5.4cqw; width:auto; max-width:80%; object-fit:contain; mix-blend-mode:lighten; pointer-events:none; }
+#btn-class-base-royal img { filter:contrast(1.7) brightness(.8); }   /* 範本的王族是選中狀態，裁下來的皇冠帶著選中的金色底光 → 壓掉淡光只留皇冠 */
+.creation-tile img.ico-recolor { filter:invert(1) sepia(1) saturate(1.6) hue-rotate(-8deg) brightness(.92); }   /* 範本沒有黑暗妖精圖示：現有白底銀色圖示反相後調成金色 */
+.creation-tile span { text-shadow:0 1px 2px #000; }
+.creation-tile:hover { color:#fff1c8; }
+.creation-tile.active {
+    color:#f6e2a8;
+    background:linear-gradient(90deg, rgba(214,170,80,.26), rgba(214,170,80,.06) 85%);
+    box-shadow:inset 0 1px 0 rgba(232,196,110,.75), inset 0 -1px 0 rgba(232,196,110,.75), 0 0 14px rgba(214,170,80,.18);
 }
-#classic-mode-control { left:55.9%; top:79.25%; }
-#creation-back-button { left:56.2%; top:82.85%; }
-#btn-start.creation-start-button { left:71.9%; top:74.55%; }
+.creation-tile.tile-right.active { background:linear-gradient(270deg, rgba(214,170,80,.26), rgba(214,170,80,.06) 85%); }
+.creation-tile.active img { filter:drop-shadow(0 0 6px rgba(255,214,120,.55)); }
+#btn-class-base-royal.active img { filter:contrast(1.7) brightness(.8) drop-shadow(0 0 6px rgba(255,214,120,.55)); }
+.creation-tile.active img.ico-recolor { filter:invert(1) sepia(1) saturate(1.6) hue-rotate(-8deg) brightness(.92) drop-shadow(0 0 6px rgba(255,214,120,.55)); }
 
-/* ===== 創角右側控制區二次微調：人物去黑底、按鈕縮小、底部控制重排 ===== */
-#class-preview-img {
-    mix-blend-mode:screen;
-    filter:drop-shadow(0 12px 12px rgba(0,0,0,.72)) contrast(1.08) saturate(1.08);
+/* 名字 */
+#creation-name-row { position:absolute; left:10.3%; right:19.2%; top:50%; height:4.1%; display:flex; align-items:center; gap:5.5cqw; }
+#creation-name-row label { color:#e8dcc0; font-size:2.7cqw; letter-spacing:.12em; white-space:nowrap; }
+#creation-name {
+    flex:1 1 auto; min-width:0; height:100%; box-sizing:border-box;
+    padding:0 2cqw; border:1px solid rgba(160,140,105,.55); border-radius:.6cqw;
+    background:rgba(8,8,9,.85); box-shadow:inset 0 0 1.2cqw rgba(0,0,0,.8), 0 0 0 1px rgba(0,0,0,.6);
+    color:#f2ead6; font:inherit; font-size:2.4cqw; text-align:center; outline:none;
 }
-.creation-class-btn {
-    width:12.6%;
-    height:14.9%;
-}
-.creation-class-btn.class-left { left:5.3%; }
-.creation-class-btn.class-right { right:5.3%; }
-.creation-class-btn.class-pos-1 { top:3.2%; }
-.creation-class-btn.class-pos-2 { top:28.2%; }
-.creation-class-btn.class-pos-3 { top:53.2%; }
-.creation-class-btn.class-pos-4 { top:78.2%; }
-#creation-gender-panel {
-    left:56.0%;
-    top:57.0%;
-    width:31.8%;
-    padding:0 8.2%;
-}
-.creation-gender-btn {
-    width:clamp(25px,3.8vw,46px);
-    height:clamp(25px,3.8vw,46px);
-    font-size:clamp(19px,2.65vw,35px);
-}
-#creation-pts {
-    left:72.95%;
-    top:65.25%;
-}
-#classic-mode-control {
-    left:62.7%;
-    top:75.55%;
-    width:8.5%;
-    justify-content:flex-end;
-    font-size:clamp(7px,.78vw,11px);
-}
-#btn-start.creation-start-button {
-    left:71.9%;
-    top:74.55%;
-    width:16.65%;
-}
-#creation-back-button {
-    left:71.9%;
-    top:80.15%;
-    width:16.65%;
-}
+#creation-name::placeholder { color:#7d7668; }
+#creation-name:focus { border-color:rgba(226,190,110,.85); }
+#creation-name.invalid { border-color:rgba(214,92,80,.85); }
 
-/* ===== 創角最終排版：右側資訊區依參考圖對齊 ===== */
-#creation-avatar-stage {
-    left:63.2%;
-    top:15.2%;
-    width:22.8%;
-    height:39.6%;
-}
-#creation-class-list {
-    left:53.1%;
-    top:8.5%;
-    width:43.7%;
-    height:47.4%;
-}
-.creation-class-btn {
-    width:11.2%;
-    height:13.4%;
-}
-.creation-class-btn.class-left { left:2.6%; }
-.creation-class-btn.class-right { right:3.5%; }
-.creation-class-btn.class-pos-1 { top:2.5%; }
-.creation-class-btn.class-pos-2 { top:28.0%; }
-.creation-class-btn.class-pos-3 { top:53.5%; }
-.creation-class-btn.class-pos-4 { top:79.0%; }
-#creation-gender-panel {
-    left:64.0%;
-    top:56.9%;
-    width:24.1%;
-    padding:0 6.5%;
-}
-.creation-gender-btn {
-    width:clamp(22px,3.4vw,42px);
-    height:clamp(22px,3.4vw,42px);
-    font-size:clamp(17px,2.35vw,31px);
-}
-#creation-pts {
-    left:73.05%;
-    top:66.75%;
-    width:3.2%;
-    height:3.8%;
-    font-size:clamp(10px,1.15vw,16px);
-}
-.creation-stat-control {
-    grid-template-columns:1.75em 1.12em 1.12em;
-    gap:.5em;
-}
-.creation-stat-control::before {
-    font-size:clamp(11px,1.43vw,20px);
-}
-.creation-stat-control.stat-str,
-.creation-stat-control.stat-dex,
-.creation-stat-control.stat-con { left:66.35%; }
-.creation-stat-control.stat-wis,
-.creation-stat-control.stat-cha,
-.creation-stat-control.stat-int { left:77.7%; }
-.creation-stat-control.stat-str,
-.creation-stat-control.stat-wis { top:63.72%; }
-.creation-stat-control.stat-dex,
-.creation-stat-control.stat-cha { top:67.02%; }
-.creation-stat-control.stat-con,
-.creation-stat-control.stat-int { top:70.32%; }
-.creation-stat-control.stat-str::before,
-.creation-stat-control.stat-dex::before,
-.creation-stat-control.stat-con::before { right:calc(100% + .85em); }
-.creation-stat-control.stat-wis::before,
-.creation-stat-control.stat-cha::before,
-.creation-stat-control.stat-int::before { left:calc(100% + .85em); }
-.creation-stat-btn {
-    width:1.12em;
-    height:1.12em;
-}
-.creation-stat-value {
-    min-width:1.75em;
-}
-#classic-mode-control {
-    left:65.85%;
-    top:77.35%;
-    width:7.0%;
-    height:3.1%;
-    justify-content:flex-start;
-    font-size:clamp(7px,.72vw,10px);
-}
-#classic-mode-control input {
-    width:clamp(8px,.82vw,12px);
-    height:clamp(8px,.82vw,12px);
-}
-#btn-start.creation-start-button {
-    left:72.55%;
-    top:76.95%;
-    width:20.2%;
-    height:4.65%;
-}
-#creation-back-button {
-    left:72.55%;
-    top:82.65%;
-    width:20.2%;
-    height:4.35%;
-}
+/* 能力配點：6 列(範本 y 882 起、每列 68px) */
+#stat-allocation { position:absolute; left:18.7%; right:18.5%; top:56.2%; height:27.6%; display:flex; flex-direction:column; border-top:1px solid rgba(150,130,95,.25); }
+.creation-stat-row { position:relative; flex:1 1 0; display:grid; grid-template-columns:22% 10.6% 1fr 14.6%; align-items:center; border-bottom:1px solid rgba(150,130,95,.18); }
+.creation-stat-label { padding-left:2.5%; color:#e8dcc0; font-size:2.7cqw; letter-spacing:.12em; }
+.creation-stat-value { color:#f4efe3; font-size:3cqw; font-weight:600; text-align:center; font-variant-numeric:tabular-nums; }
+.creation-stat-btn { height:78%; aspect-ratio:68 / 58; justify-self:start; padding:0; border:0; background:center / contain no-repeat; cursor:pointer; touch-action:manipulation; }
+.creation-stat-btn.minus { background-image:url("../public/assets/create/btn-minus.png"); }
+.creation-stat-btn.plus { aspect-ratio:92 / 60; justify-self:end; background-image:url("../public/assets/create/btn-plus.png"); }
+.creation-stat-btn:hover { filter:brightness(1.2); }
+.creation-stat-btn:active { filter:brightness(.9); }
 
-/* ===== 創角底部按鈕與性別對稱微調 ===== */
-#creation-gender-panel {
-    left:68.7%;
-    top:56.45%;
-    width:20.0%;
-    height:5.7%;
-    padding:0 2.9%;
+/* 剩餘點數：兩側細線 */
+#creation-pts-row {
+    position:absolute; left:18%; right:18%; top:84.8%; height:2.4%;
+    display:flex; align-items:center; justify-content:center; gap:1.2cqw;
+    color:#e2c27a; font-size:2.7cqw; letter-spacing:.1em; white-space:nowrap;
 }
-.creation-gender-btn {
-    width:clamp(20px,3.0vw,38px);
-    height:clamp(20px,3.0vw,38px);
-    font-size:clamp(16px,2.1vw,28px);
-}
-#classic-mode-control {
-    left:68.05%;
-    top:77.95%;
-    width:6.2%;
-    height:3.0%;
-}
-#btn-start.creation-start-button {
-    left:74.5%;
-    top:77.55%;
-    width:16.1%;
-    height:4.25%;
-}
-#creation-back-button {
-    left:74.5%;
-    top:83.3%;
-    width:16.1%;
-    height:4.05%;
-}
+#creation-pts-row::before, #creation-pts-row::after { content:""; flex:1 1 auto; height:1px; background:linear-gradient(90deg, transparent, rgba(200,170,110,.55)); }
+#creation-pts-row::after { background:linear-gradient(270deg, transparent, rgba(200,170,110,.55)); }
+#creation-pts { color:#f2d27c; font-weight:700; }
 
-/* ===== 創角性別與底部按鈕整組左移 ===== */
-#creation-gender-panel {
-    left:65.25%;
+/* 返回／建立角色：範本按鈕圖 */
+#creation-back-button, #btn-start.creation-start-button {
+    position:absolute; top:88.92%; height:6.35%; padding:0; border:0; background:transparent; cursor:pointer; touch-action:manipulation;
 }
-#classic-mode-control {
-    left:64.6%;
-}
-#btn-start.creation-start-button {
-    left:70.95%;
-}
-#creation-back-button {
-    left:70.95%;
-}
-
-/* ===== 創角底部控制再左移對齊配點 ===== */
-#classic-mode-control {
-    left:61.6%;
-}
-#btn-start.creation-start-button {
-    left:67.95%;
-}
-#creation-back-button {
-    left:67.95%;
-}
+#creation-back-button { left:15.52%; width:30.84%; }
+#btn-start.creation-start-button { left:52.85%; width:31.83%; }
+#creation-back-button img, #btn-start.creation-start-button img { display:block; width:100%; height:100%; mix-blend-mode:lighten; pointer-events:none; }
+#creation-back-button:hover, #btn-start.creation-start-button:hover:not(:disabled) { filter:brightness(1.12); }
+#btn-start.creation-start-button:disabled { cursor:not-allowed; filter:grayscale(.75) brightness(.7); }
 
 /* ===== 開始遊戲角色選擇畫面：標題「選擇角色」＋3 個拱門各放 1 張角色卡（一個帳號只能 3 隻角色）=====
    點有角色的卡＝直接進遊戲；點空卡＝直接進創角。沒有分頁、資訊欄與按鈕列。
-   select3.png(381×219)畫了 3 個拱門；#load-select-frame 照圖片比例縮放，卡片用百分比對準拱門開口。
-   桌機/手機同一套。 */
+   select.webp(572×1024)是直式全畫面圖，3 個拱門裡已畫好「New Character」；
+   #load-select-frame 照圖片比例縮放到「整張放得進畫面」，標題與卡片用百分比疊在圖上。桌機/手機同一套。 */
 #load-select-panel:not(.hidden) {
     position:fixed;
     z-index:24;
@@ -1567,36 +1304,21 @@ button.classic-skill-cell { cursor:pointer; }
     width:100%;
     height:100%;
     display:flex;
-    flex-direction:column;
     align-items:center;
     justify-content:center;
-    gap:clamp(14px, 3.2vh, 34px);
-    padding:16px 0;
-    box-sizing:border-box;
     overflow:hidden;
     background:#030303;
-}
-#load-select-title {
-    position:relative;
-    z-index:2;
-    margin:0;
-    color:#f2d77f;
-    font-family:Georgia, "Times New Roman", "Microsoft JhengHei", serif;
-    font-size:clamp(22px, 4.2vw, 40px);
-    font-weight:700;
-    letter-spacing:.18em;
-    text-shadow:0 2px 4px #000, 0 0 12px rgba(231,194,91,.45);
 }
 #load-select-frame {
     position:relative;
     flex:0 0 auto;
-    width:min(100%, 820px, calc((100dvh - var(--orig-bar-h, 0px) - 120px) * 381 / 219));
-    aspect-ratio:381 / 219;
+    width:min(100vw, calc((100dvh - var(--orig-bar-h, 0px)) * 572 / 1024));
+    aspect-ratio:572 / 1024;
+    container-type:inline-size;
 }
 #load-select-bg {
     position:absolute;
     inset:0;
-    z-index:0;
     width:100%;
     height:100%;
     max-width:none;
@@ -1604,17 +1326,32 @@ button.classic-skill-cell { cursor:pointer; }
     pointer-events:none;
     user-select:none;
 }
-/* 三個拱門開口(原圖 x)：16~122、140~248、265~371；上緣約 13% 起到底 */
+#load-select-title {
+    position:absolute;
+    left:0;
+    right:0;
+    top:3.5%;
+    margin:0;
+    color:#f2d77f;
+    font-family:Georgia, "Times New Roman", "Microsoft JhengHei", serif;
+    font-size:7.5cqw;
+    font-weight:700;
+    letter-spacing:.18em;
+    text-align:center;
+    text-shadow:0 2px 4px #000, 0 0 10px #000, 0 0 18px rgba(0,0,0,.9), 0 0 12px rgba(231,194,91,.45);
+    pointer-events:none;
+}
+/* 三個拱門開口(原圖 x)：24~180、212~368、400~556；y 370~770 */
 #load-slot-grid {
     position:absolute;
     left:4.2%;
-    width:93.2%;
-    top:13%;
-    bottom:1%;
+    width:93%;
+    top:36.1%;
+    bottom:24.8%;
     /* 不設 z-index：卡片立繪用 mix-blend-mode 把黑底融進拱門，這層一旦成為 stacking context 就混不到底圖 */
     display:grid;
     grid-template-columns:repeat(3, minmax(0, 1fr));
-    column-gap:5.2%;
+    column-gap:6%;
 }
 .load-slot-card {
     position:relative;
@@ -1625,7 +1362,7 @@ button.classic-skill-cell { cursor:pointer; }
     justify-content:center;
     padding:0;
     border:0;
-    border-radius:48% 48% 0 0 / 22% 22% 0 0;   /* 頂端圓弧貼著拱門，hover 光暈才不會露出方角 */
+    border-radius:50% 50% 0 0 / 20% 20% 0 0;   /* 頂端圓弧貼著拱門，hover 光暈才不會露出方角 */
     background:transparent;
     overflow:hidden;
     cursor:pointer;
@@ -1652,20 +1389,15 @@ button.classic-skill-cell { cursor:pointer; }
 .load-slot-card[data-key="f_warrior"] img {
     transform:scale(1.16);   /* 戰士幀為200x270，其餘職業為160x270；補回 contain 因較寬畫布造成的高度縮小 */
 }
-.load-slot-card.empty img {
-    opacity:.8;
-    filter:drop-shadow(0 0 14px rgba(235,207,130,.28)) brightness(.9);
-}
-/* 空卡提示字：疊在圖上「New Character」下方 */
+/* 空卡提示字：在底圖「New Character」正下方 */
 .load-slot-hint {
     position:absolute;
-    z-index:2;
     left:0;
     right:0;
-    top:60%;
+    top:44%;
     color:#d8c8a2;
     font-family:"Microsoft JhengHei", sans-serif;
-    font-size:clamp(11px, 2.4vw, 16px);
+    font-size:3cqw;
     text-align:center;
     text-shadow:0 1px 3px #000;
     pointer-events:none;
@@ -1676,11 +1408,19 @@ button.classic-skill-cell { cursor:pointer; }
     z-index:2;
     left:0;
     right:0;
-    bottom:0;
-    padding:0 4px 6px;
+    top:32%;
+    height:14%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:0 4px;
+    /* 名牌疊在底圖「New Character」那行字上(字在拱門內 x 20%~83%、y 37%~40.5%)，暗色橢圓底把字蓋掉；
+       立繪頂端有留白，頭約在 49%，名牌不會擋到臉 */
+    background:radial-gradient(ellipse closest-side, rgba(16,12,8,.96) 62%, rgba(16,12,8,0) 100%);
     color:#f4edda;
     font-family:"Microsoft JhengHei", sans-serif;
-    font-size:clamp(11px, 2.2vw, 15px);
+    font-size:3cqw;
     line-height:1.3;
     text-align:center;
     text-shadow:0 1px 2px #000, 0 0 6px #000, 0 0 10px #000;
@@ -1863,132 +1603,10 @@ button.classic-skill-cell { cursor:pointer; }
         -webkit-overflow-scrolling: touch;
     }
     #login-art-stage,
-    #load-art-stage,
-    #creation-panel:not(.hidden) {
+    #load-art-stage {
         max-width: 100vw;
         max-height: 100dvh;
         box-shadow: none;
-    }
-    #main-menu > button,
-    #creation-back-button,
-    #btn-start.creation-start-button,
-    .creation-gender-btn,
-    .creation-class-btn,
-    .creation-stat-btn { touch-action: manipulation; }
-}
-
-@media (max-width: 600px) and (orientation: portrait) {
-    #creation-screen { align-items: flex-start; justify-content: flex-start; }
-
-
-    /* Character creation: a scrollable portrait composition with no overlapping controls. */
-    #creation-panel:not(.hidden) {
-        position: absolute;
-        left: 0;
-        top: 0;
-        transform: none;
-        width: 100%;
-        height: 1120px;
-        min-height: 1120px;
-        max-height: none;
-        aspect-ratio: auto;
-        flex: 0 0 auto;
-        overflow: hidden;
-        background: #090807;
-    }
-    #creation-bg-image { object-fit: cover; object-position: 62% top; opacity: .48; }
-    #creation-class-desc-frame {
-        left: 12px;
-        top: 14px;
-        width: calc(100% - 24px);
-        height: 252px;
-        padding: 18px 20px;
-        box-sizing: border-box;
-        border: 1px solid rgba(163, 124, 60, .68);
-        background: rgba(20, 15, 10, .79);
-    }
-    #creation-class-title { margin-bottom: 10px; font-size: 24px; }
-    #class-desc { overflow-y: auto; padding-right: 5px; font-size: 15px; line-height: 1.62; }
-    #creation-avatar-stage { left: 24%; top: 278px; width: 52%; height: 290px; }
-    #creation-class-list {
-        left: 12px;
-        top: 578px;
-        width: calc(100% - 24px);
-        height: 140px;
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        grid-template-rows: repeat(2, 64px);
-        gap: 10px 6px;
-        pointer-events: auto;
-    }
-    .creation-class-btn,
-    .creation-class-btn.class-left,
-    .creation-class-btn.class-right,
-    .creation-class-btn.class-pos-1,
-    .creation-class-btn.class-pos-2,
-    .creation-class-btn.class-pos-3,
-    .creation-class-btn.class-pos-4 {
-        position: relative;
-        left: auto;
-        right: auto;
-        top: auto;
-        width: 64px;
-        height: 64px;
-        justify-self: center;
-    }
-    #creation-gender-panel {
-        left: 50%;
-        top: 736px;
-        width: 210px;
-        height: 58px;
-        padding: 0;
-        transform: translateX(-50%);
-    }
-    .creation-gender-btn { width: 52px; height: 52px; font-size: 36px; }
-    #creation-pts { left: 46%; top: 808px; width: 8%; height: 36px; font-size: 16px; }
-    .creation-stat-control {
-        grid-template-columns: 30px 28px 28px;
-        gap: 7px;
-        width: 100px;
-        height: 34px;
-    }
-    .creation-stat-control::before { right: calc(100% + 6px) !important; left: auto !important; font-size: 15px; text-align: right !important; }
-    .creation-stat-control.stat-str,
-    .creation-stat-control.stat-dex,
-    .creation-stat-control.stat-con { left: 30%; }
-    .creation-stat-control.stat-wis,
-    .creation-stat-control.stat-cha,
-    .creation-stat-control.stat-int { left: 74%; }
-    .creation-stat-control.stat-str,
-    .creation-stat-control.stat-wis { top: 852px; }
-    .creation-stat-control.stat-dex,
-    .creation-stat-control.stat-cha { top: 900px; }
-    .creation-stat-control.stat-con,
-    .creation-stat-control.stat-int { top: 948px; }
-    .creation-stat-value { min-width: 30px; font-size: 14px; }
-    .creation-stat-btn { width: 28px; height: 28px; font-size: 14px; }
-    #classic-mode-control {
-        left: 16px;
-        top: 1011px;
-        width: 116px;
-        height: 48px;
-        justify-content: flex-start;
-        font-size: 13px;
-    }
-    #classic-mode-control input { width: 18px; height: 18px; }
-    #btn-start.creation-start-button {
-        left: 142px;
-        top: 1008px;
-        width: calc(100% - 158px);
-        height: 48px;
-        font-size: 15px;
-    }
-    #creation-back-button {
-        left: 142px;
-        top: 1064px;
-        width: calc(100% - 158px);
-        height: 42px;
-        font-size: 14px;
     }
 }
 

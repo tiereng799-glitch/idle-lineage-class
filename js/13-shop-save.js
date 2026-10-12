@@ -897,10 +897,11 @@ function renderLoadSelect(){
         _loadSlotMeta[n] = _slotBadgeMeta(n, sum);
         const title = sum ? `${sum.name || '未命名'} ${sum.cls} Lv.${sum.lv}` : '建立角色';
         html += `<button type="button" onclick="loadPickSlot(${n})" data-slot="${n}" data-key="${key}" class="load-slot-card ${selected ? 'selected' : ''} ${empty ? 'empty' : 'filled'}" title="${loadEsc(title)}">`
-            + `<img src="${loadFrameSrc(key, frame)}" alt="${loadEsc(title)}" draggable="false">`
+            // 空格：底圖拱門已畫好 New Character，只補提示字；有角色：立繪＋名牌(名牌蓋在 New Character 那行字上)
             + (empty
                 ? `<span class="load-slot-hint">(點擊建立角色)</span>`
-                : `<span class="load-slot-label"><strong>${loadEsc(sum.name || '未命名')}</strong>Lv.${loadEsc(sum.lv)} ${loadEsc(sum.cls)}</span>`)
+                : `<img src="${loadFrameSrc(key, frame)}" alt="${loadEsc(title)}" draggable="false">`
+                + `<span class="load-slot-label"><strong>${loadEsc(sum.name || '未命名')}</strong>Lv.${loadEsc(sum.lv)} ${loadEsc(sum.cls)}</span>`)
             + _slotBadgeHtml(_slotPartyStatusNow(_loadSlotMeta[n]))
             + `</button>`;
     }
@@ -1039,25 +1040,28 @@ function loadDeleteSelected(){
 })();
 let creationClassAnim = { key: 'prince', frame: 714, first: 714, last: 798, lastAt: 0, stepMs: 82, static: false };
 function creationAnimKey(c){ if(!c || c === 'none') return 'none'; return c === 'm_royal' ? 'prince' : (c === 'f_royal' ? 'princess' : c); }
+// 可創的職業：王族、騎士、法師、妖精、黑暗妖精
 const CREATION_CLASS_BASE_TO_RAW = {
     royal: { m: 'm_royal', f: 'f_royal' }, knight: { m: 'm_knight', f: 'f_knight' },
     mage: { m: 'm_mage', f: 'f_mage' }, elf: { m: 'm_elf', f: 'f_elf' },
-    dark: { m: 'm_dark', f: 'f_dark' }, illusionist: { m: 'm_illusionist', f: 'f_illusionist' },
-    Dknight: { m: 'm_Dknight', f: 'f_Dknight' }, warrior: { m: 'm_warrior', f: 'f_warrior' }
+    dark: { m: 'm_dark', f: 'f_dark' }
 };
 let creationSelectedClassBase = null;
 let creationSelectedGender = 'm';
 function creationClassBaseFromRaw(raw){
     if(!raw) return null;
     if(raw.includes('royal')) return 'royal';
-    if(raw.includes('Dknight')) return 'Dknight';
-    if(raw.includes('illusionist')) return 'illusionist';
     if(raw.includes('dark')) return 'dark';
     if(raw.includes('knight')) return 'knight';
     if(raw.includes('mage')) return 'mage';
     if(raw.includes('elf')) return 'elf';
-    if(raw.includes('warrior')) return 'warrior';
     return null;
+}
+// 名字：2~12 字，中文／英文／數字
+const CREATION_NAME_RE = /^[㐀-䶿一-鿿A-Za-z0-9]{2,12}$/;
+function creationNameValue(){
+    const el = document.getElementById('creation-name');
+    return el ? el.value.trim() : '';
 }
 function rawClassFromBaseAndGender(base, gender){
     const pair = CREATION_CLASS_BASE_TO_RAW[base] || CREATION_CLASS_BASE_TO_RAW.royal;
@@ -1082,20 +1086,6 @@ function updateCreationChoiceButtons(raw){
     const genderBtn = document.getElementById('btn-gender-' + creationSelectedGender);
     if(classBtn) classBtn.classList.add('active');
     if(genderBtn) genderBtn.classList.add('active');
-}
-function resetCreationSelection(){
-    creationSelectedClassBase = null;
-    creationSelectedGender = 'm';
-    curCreate.rawCls = null;
-    curCreate.cls = null;
-    curCreate.str = 0; curCreate.dex = 0; curCreate.con = 0; curCreate.int = 0; curCreate.wis = 0; curCreate.cha = 0;
-    document.querySelectorAll('.creation-class-btn,.creation-gender-btn').forEach(btn => btn.classList.remove('active'));
-    const titleEl = document.getElementById('creation-class-title');
-    if(titleEl) titleEl.innerText = '選擇職業';
-    const descEl = document.getElementById('class-desc');
-    if(descEl) descEl.innerText = '';
-    setCreationClassAnimation('none');
-    updateCreateUI();
 }
 function setCreationClassAnimation(c){
     const key = creationAnimKey(c);
@@ -1143,8 +1133,8 @@ function showCreation() {
     if(main) main.classList.add('hidden');
     if(load) load.classList.add('hidden');
     if(creation) creation.classList.remove('hidden');
-    const classicToggle = document.getElementById('create-classic-toggle');
-    if(classicToggle) classicToggle.checked = false;   // 刪角後同頁重創時不得沿用上一輪的經典模式勾選
+    const nameEl = document.getElementById('creation-name');
+    if(nameEl){ nameEl.value = ''; nameEl.classList.remove('invalid'); }   // 同頁重創時不得沿用上一輪輸入的名字
 
     creationSelectedClassBase = 'royal';
     creationSelectedGender = 'm';
@@ -1173,44 +1163,12 @@ function selectClass(c) {
 
     setCreationClassAnimation(c);
 
-    // 2. 判斷底層職業（⚠️ Dknight 含 'knight' 子字串，須先判斷；royal 無子字串衝突）
+    // 2. 判斷底層職業
     if(c.includes('royal')) curCreate.cls = 'royal';   // 👑 王族
-    else if(c.includes('Dknight')) curCreate.cls = 'dragon';
-    else if(c.includes('illusionist')) curCreate.cls = 'illusion';
     else if(c.includes('dark')) curCreate.cls = 'dark';
     else if(c.includes('knight')) curCreate.cls = 'knight';
     else if(c.includes('mage')) curCreate.cls = 'mage';
     else if(c.includes('elf')) curCreate.cls = 'elf';
-    else if(c.includes('warrior')) curCreate.cls = 'warrior';   // ⚔️ 戰士
-
-    const titleEl = document.getElementById('creation-class-title');
-    if(titleEl){
-        const titleMap = { royal:'王族', knight:'騎士', mage:'法師', elf:'妖精', dark:'黑暗妖精', illusion:'幻術士', dragon:'龍騎士', warrior:'戰士' };
-        titleEl.innerText = titleMap[curCreate.cls] || '角色介紹';
-    }
-    // 3. 更新說明文字
-    const classDescMap = {
-        royal: "召集成員克服險惡的苦難與逆境\n只為了建立自己國家的遠大夢想\n就能夠犧牲所有的一切，那麼你就\n具備了王族最重要的「心」。\n\n『王族』是個非常特別的職業\n在天堂世界中只有\n『王族』才能創造血盟。\n雖然王族在戰鬥的時候\n沒有任何一個職業的優點\n但是如果想在天堂世界裡\n實現自己遠大的夢想，\n那麼唯有王族才能滿足你的夢想。\n王族必須聚集擁有相同夢想的成員\n並建立屬於自己的城堡。",
-        knight: "沒有什麼特別突出的才能\n只有默默地不間斷地修練，\n奮勇地擋在前端面對危險，\n就像主角一樣。\n\n騎士剛開始是以「自由騎士」\n的身份出發，並自由地到各地旅遊\n與冒險。但是騎士是個最重視\n自己要服從的王族與組織血盟\n並為他們奉獻、\n團體生活時騎士能夠表現出\n他的強大，並擁有堅忍的毅力。\n騎士是戰鬥最基本的職業，\n能夠使用多種武器與與盔甲等\n騎士強大的攻擊力及優越的防禦\n是其他職業無法比擬的\n尤其在近距離戰鬥時\n所表現出的強大戰鬥力。\n但是他們對於魔法的耐性不是很好，\n受到魔法的傷害比其他職業還高。",
-        elf: "妖精擁有比人類更長的壽命\n與美麗的外貌，他們順應自然\n追求融合安定的生活\n並對所有的事情表現較為保守\n因此妖精不喜歡與人類接觸\n在『森林之母』的保護之下\n建立獨自的文化生活。\n\n妖精能夠使用的武器比騎士少\n但是他可以使用大部分的武器\n尤其可以使用遠距離攻擊的弓箭\n比其他武器擁有更多的優勢\n而且能夠使用法師的多種魔法\n可謂是個最均衡的職業。\n\n你想要以妖精的身份存活\n就必須取得妖森守護者\n『那魯帕』的協助，妖精所使用的\n物品都是透過她製造出來的。",
-        mage: "將此世界的神秘現象體制地處理\n並在現實中完成這些事的人\n被人們尊稱為「賢者」\n他們利用「瑪那」的力量\n釋放出神般的偉大力量\n他們的力量甚至能夠導致世界\n的滅亡，在幻想的世界中最為突出\n成為他人最具威脅\n又最受尊崇的對象。\n\n法師優先於精神上的發展與學習\n並能使用多種魔法\n因此法師比其他職業在剛開始時\n看似非常地軟弱\n但是透過冒險逐漸成長後\n最後一定能受到所有人的肯定。\n法師在戰鬥時總是在後方\n給予成員多種的魔法協助。",
-        dark: "黑暗妖精承襲妖精的敏銳與長壽\n卻選擇在陰影中磨練自己的道路。\n他們不以守護森林為使命，\n而是追求更快速、更致命的力量，\n在寂靜之中完成一次決定勝負的攻擊。\n\n黑暗妖精能夠使用匕首、雙刀、鋼爪\n與十字弓等武器，\n並以毒與閃避牽制敵人的行動。\n他們的防禦並不穩固，\n但是敏捷的身手與爆發性的殺傷力\n足以在短時間內扭轉戰局。\n\n你若想以黑暗妖精的身份生存，\n就必須習慣孤獨與危險，\n並相信藏在黑暗中的刀鋒。",
-        illusion: "幻術士研究精神與幻象的力量，\n並將不可見的意志化為現實。\n他們不以強壯的肉體戰鬥，\n而是藉由奇古獸與神秘魔法\n動搖敵人的判斷，支援同伴的行動。\n\n幻術士能夠使用獨特的幻術，\n讓敵人在混亂中失去方向，\n也能以魔法強化自己與隊伍。\n在冒險剛開始時他們並不顯眼，\n但當知識與經驗累積之後，\n幻術士便能在戰場上展現\n任何人都難以忽視的影響力。\n\n若你選擇幻術士的道路，\n就必須學會看穿表象，\n並操縱他人看不見的真實。",
-        dragon: "龍騎士繼承龍的血脈與戰鬥本能，\n他們相信真正的力量\n來自承受痛苦後仍向前踏出的意志。\n在戰場上，龍騎士總是以強韌的身體\n突破敵人的防線，\n並用龍之力量壓制對手。\n\n龍騎士能夠使用鎖鏈劍與龍魔法，\n以生命力換取強大的攻擊能力。\n他們的戰鬥方式比騎士更加猛烈，\n也比一般戰士更具危險性。\n只要掌握敵人的弱點，\n龍騎士便能在瞬間爆發出\n令人畏懼的破壞力。\n\n若你想成為龍騎士，\n就必須接受血脈的代價，\n並將痛楚化為勝利的力量。",
-        warrior: "戰士是在無數戰場中成長的鬥士，\n他們沒有華麗的魔法，\n也不依靠血統或神秘力量，\n只憑強健的身體、沉重的武器\n以及永不退縮的意志生存。\n\n戰士能夠使用斧頭與鈍器，\n並以連續而沉重的攻擊壓迫敵人。\n他們在近距離戰鬥中擁有\n非常可靠的耐久力與破壞力，\n即使被包圍也能站在最前方\n為同伴開出前進的道路。\n\n想以戰士的身份冒險，\n就必須相信自己的雙手，\n並在每一次揮擊中證明力量。"
-    };
-    document.getElementById('class-desc').innerText = classDescMap[curCreate.cls] || "";
-    // 🖋️ v3.2.5 排版自動適配：先重設回 CSS 預設（15px/行高1.5），若文案超出框高（overflow:hidden 會無聲裁切）則
-    //    ①字級 0.5px 步進縮小（地板 11px）→ ②仍超出再微收行高（1.5 → 最低 1.2·仍優於舊版 1.1）。
-    //    行高/字距為相對單位會等比縮放；面板隱藏時 clientHeight=0 → 跳過（開啟創角時 selectClassBase 會再跑一次）。
-    (function () {
-        let _de = document.getElementById('class-desc'); if (!_de || !_de.clientHeight) return;
-        _de.style.fontSize = ''; _de.style.lineHeight = '';
-        let _fs = parseFloat(getComputedStyle(_de).fontSize) || 15;
-        while (_fs > 11 && _de.scrollHeight > _de.clientHeight + 1) { _fs -= 0.5; _de.style.fontSize = _fs + 'px'; }
-        let _lh = 1.5;
-        while (_lh > 1.2 && _de.scrollHeight > _de.clientHeight + 1) { _lh -= 0.05; _de.style.lineHeight = _lh.toFixed(2); }
-    })();
 
     curCreate.str = 0; curCreate.dex = 0; curCreate.con = 0; curCreate.int = 0; curCreate.wis = 0; curCreate.cha = 0;
     updateCreateUI();
@@ -1242,16 +1200,17 @@ function updateCreateUI() {
     ['str','dex','con','int','wis','cha'].forEach(s => document.getElementById(`c-${s}`).innerText = b[s] + curCreate[s]);
     let left = b.pts - (curCreate.str + curCreate.dex + curCreate.con + curCreate.int + curCreate.wis + curCreate.cha);
     document.getElementById('creation-pts').innerText = left;
-    document.getElementById('btn-start').disabled = left <= 0 ? false : true;
+    // 名字有打但不合格才標紅框（空白時不標，免得一進畫面就是紅的）
+    const name = creationNameValue(), nameOk = CREATION_NAME_RE.test(name);
+    const nameEl = document.getElementById('creation-name');
+    if(nameEl) nameEl.classList.toggle('invalid', !!name && !nameOk);
+    document.getElementById('btn-start').disabled = !(left <= 0 && nameOk);
 }
 
-function onToggleClassic(el) {
-    if (!el.checked) return;   // 取消勾選不需確認
-    let ok = confirm('⚔ 經典模式（硬核挑戰）\n\n開啟後，此角色將「永久」套用下列規則，建立後無法關閉：\n\n‧ 死亡 → 損失該等級 5% 最大經驗（不會降等）\n‧ 無法進行職業精通\n‧ 無法進入「席琳的世界」\n\n確定要以「經典模式」創建此角色嗎？');   // 🎮 v3.2.9 文案精簡：移除「無法賦予裝備祝福」與「掉落率/經驗值/金幣相同」說明（用戶要求）
-    if (!ok) { el.checked = false; return; }
-}
 function startGame() {
     if(!curCreate.cls || !curCreate.rawCls) return;
+    const createName = creationNameValue();
+    if(!CREATION_NAME_RE.test(createName)) return;
     if(slotSummary(currentSlot)){
         alert(`存檔 ${currentSlot} 已有角色，無法直接覆蓋。請返回角色選擇畫面並先刪除原角色。`);
         backToMenu();
@@ -1290,8 +1249,8 @@ function startGame() {
     player.avatar = avatarMap[curCreate.rawCls] || '男騎士';
     player.cls = curCreate.cls;
     player.bloodPledge = null;   // 血盟改由同模式王族花費金幣創立，不再於創角時自動加入。
-    player.classicMode = !!(document.getElementById('create-classic-toggle') && document.getElementById('create-classic-toggle').checked);   // 🎮 經典模式：依創角開關決定（此角色永久生效）；🏛️v3.0.83 傳統模式已取消（traditionalMode 由 SAVE_DEFAULTS 恆 false）
-    player.name = null;   // 預設未取名，狀態欄顯示「點擊取名」，玩家可點擊命名
+    player.classicMode = false;   // 🎮 創角畫面已拿掉經典模式勾選：新角色一律一般模式（舊的經典模式角色不受影響）
+    player.name = createName;     // 創角時必填名字（2~12 字）；之後仍可在狀態欄改名
     player.enSeed = 'es' + uid() + uid();   // 🎲 強化決定論種子（創角產生一次、存進存檔永久固定）：讓強化成敗由種子決定、不可用 save/load 刷
     player._roleEpoch = _roleEpoch();        // 🛡️ 角色世代：刪除後舊分頁不得把同欄位的舊角色寫回
     if (typeof clanSyncCurrentPlayer === 'function') clanSyncCurrentPlayer();   // 同模式已有血盟時，新角色自動成為成員。
