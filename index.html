@@ -23,27 +23,16 @@
     <!-- 🖥️ v2.5.8 流動式版面：#app-stage 由 CSS position:fixed;inset:0 填滿整個視窗，內層三欄 flex 隨視窗大小自然撐開（無固定 1920×1080、無 transform 縮放、無 letterbox）。VFX/提示/游標光點掛在 body（舞台外）→ getBoundingClientRect 取真實視窗座標、天生相容。 -->
     <div id="app-stage">
 
-    <!-- 創角畫面（🎨 v3.0.40 起始UI：310.png 固定底圖＋273~300 左下逐幀動畫·標題/選單/版號絕對定位於 4:3 藝術舞台上） -->
+    <!-- 登入首頁：login.webp 直式底圖（帳密框/登錄鈕都畫在圖上）。首頁只留「開始遊戲」＝圖上的登錄鈕；
+         帳密框只是圖案，上面蓋一行提示字。外掛往 #main-menu 塞的入口一律由 css/style.css 藏起來。 -->
     <div id="creation-screen">
       <div id="login-art-stage">
-        <img id="login-bg-image" src="public/assets/login/310.png" alt="登入畫面背景">
-        <img id="login-anim-image" src="public/assets/login/273.png" alt="登入畫面動畫">
-        <div id="login-title-layer" class="text-center">
-            <h1 class="text-4xl font-bold text-yellow-400 mb-2">放置天堂 - 日出之國</h1>
-            <p class="text-base text-slate-400">創造您的角色並開始冒險</p>
-        </div>
+        <img id="login-bg-image" src="public/assets/login/login.webp" alt="" draggable="false">
+        <div class="login-field-hint login-field-account" aria-hidden="true">目前不須輸入帳號</div>
+        <div class="login-field-hint login-field-password" aria-hidden="true">目前不須輸入密碼</div>
 
-        <div id="main-menu" class="flex flex-col gap-5 items-center my-12">
-            <button onclick="openLoadSelect()" id="btn-start-menu" class="btn text-xl w-72 py-4 bg-blue-700 hover:bg-blue-600 border-blue-500">開始遊戲</button>
-            <button onclick="toggleVfxPref()" id="btn-vfx-toggle" class="btn text-base w-72 py-2.5 bg-slate-700 hover:bg-slate-600 border-slate-500">✨ 戰鬥特效：開啟</button>
-            <button onclick="toggleVfxNumPref()" id="btn-vfxnum-toggle" class="btn text-base w-72 py-2.5 bg-slate-700 hover:bg-slate-600 border-slate-500">🔢 傷害數字：開啟</button>
-            <p class="text-xs text-slate-500 -mt-2 w-72 text-center">效果較弱/卡頓的裝置可關閉戰鬥特效；「傷害數字」可獨立關閉、其餘特效保留（開始前設定，遊戲中不再提供）</p>
-        </div>
-
-        <div id="login-meta-layer">
-            <!-- 🏷️ 版本號（由 js/14 window.onload 依 GAME_VERSION 填入；此處 v2.4.0 僅為 JS 失效時的後備文字） -->
-            <div id="login-version" class="text-center text-sm text-slate-300 font-medium tracking-wide select-none">v2.4.0</div>
-            <div id="login-disclaimer" class="text-center text-xs text-slate-400 leading-relaxed mx-auto">本遊戲為非官方免費同人作品，絕無營利意圖；遊戲內圖片與音樂版權歸原權利方 NCSOFT 所有，其餘程式為獨立開發，嚴禁商業販售。</div>
+        <div id="main-menu">
+            <button onclick="openLoadSelect()" id="btn-start-menu" type="button" aria-label="開始遊戲"></button>
         </div>
       </div>
 
@@ -129,35 +118,6 @@
             <button onclick="startGame()" id="btn-start" class="creation-start-button" type="button" disabled>開始遊戲</button>
         </div>
     </div>
-
-    <script>
-      // 登入頁逐幀動畫：273.png～300.png，使用相對路徑，GitHub Pages 可直接部署。
-      (function(){
-        var first=273,last=300,frame=first,lastAt=0,stepMs=90,ready=false;
-        var base='public/assets/login/';
-        // 首頁 BGM 優先；頁面載入完成後再逐張載入動畫，避免 28 張圖片同時與音樂搶讀取／解碼資源。
-        function preloadFrame(n){
-          if(n>last){ready=true;return;}
-          var p=new Image();
-          p.onload=p.onerror=function(){preloadFrame(n+1);};
-          p.src=base+n+'.png';
-        }
-        function beginPreload(){setTimeout(function(){preloadFrame(first+1);},500);}
-        if(document.readyState==='complete') beginPreload();
-        else window.addEventListener('load',beginPreload,{once:true});
-        function animateLogin(now){
-          var screen=document.getElementById('creation-screen');
-          var img=document.getElementById('login-anim-image');
-          if(ready&&img&&screen&&!screen.classList.contains('hidden')&&now-lastAt>=stepMs){
-            frame=frame>=last?first:frame+1;
-            img.src=base+frame+'.png';
-            lastAt=now;
-          }
-          requestAnimationFrame(animateLogin);
-        }
-        requestAnimationFrame(animateLogin);
-      })();
-    </script>
 
     <!-- 遊戲主畫面 -->
     <div id="game-screen" class="hidden flex gap-4">

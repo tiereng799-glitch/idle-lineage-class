@@ -111,14 +111,8 @@
             //   ⑦b 上游 floating-ui.css 給裝備框/倉庫框寫死 touch-action:none(桌機用來讓滑鼠拖曳視窗不被瀏覽器搶手勢)。
             //      祖先只要有一層不允許捏合,整個子樹就縮放不了 → 手機在倉庫裡怎麼捏都沒反應。改成 pinch-zoom:
             //      單指原生捲動照舊關著(拖曳視窗邏輯不受影響),只把兩指縮放放行。
-            + 'body.m-mobile :is(.equipment-window-frame, .warehouse-window-frame){ touch-action: pinch-zoom !important; }\n'
-            // 登入頁：上游用「絕對定位藝術舞台」——#main-menu(top:31%) 與 #login-meta-layer(版權·pin bottom:4%) 各自絕對定位。
-            //   我方往 #main-menu 注入了掉落查詢/小百科/外掛框後它變很高 → 蓋到底部版權層(文字重疊·使用者回報)。
-            //   手機改成「流式堆疊」(DOM 序 title→menu→meta 自然由上而下排)，不再重疊；藝術背景圖 absolute inset:0 照樣鋪滿。
-            + 'body.m-mobile #login-art-stage{ height:auto !important; min-height:100dvh; aspect-ratio:auto !important; display:flex !important; flex-direction:column !important; justify-content:flex-start !important; }\n'
-            + 'body.m-mobile #login-title-layer, body.m-mobile #main-menu, body.m-mobile #login-meta-layer{ position:static !important; left:auto !important; right:auto !important; top:auto !important; bottom:auto !important; width:auto !important; transform:none !important; }\n'
-            + 'body.m-mobile #login-title-layer{ margin-top:14px; }\n'
-            + 'body.m-mobile #login-meta-layer{ margin:10px auto 18px !important; text-align:center; }';
+            + 'body.m-mobile :is(.equipment-window-frame, .warehouse-window-frame){ touch-action: pinch-zoom !important; }';
+            // (登入頁不再需要手機專屬規則:首頁改成直式底圖+單一按鈕,桌機手機同一套,見 css/style.css)
         (document.head || document.documentElement).appendChild(st);
     }
 

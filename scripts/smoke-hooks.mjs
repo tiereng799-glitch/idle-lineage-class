@@ -228,11 +228,14 @@ const toggleOffProblems = await opage.evaluate(() => {
     if (!(r.width > 0 && r.height > 0)) bad.push('逃生門按鈕沒有尺寸');
     else if (!(top === btn || btn.contains(top))) bad.push(`逃生門按鈕被「${(top && (top.id || top.tagName)) || '未知元素'}」蓋住,點不到`);
   }
-  // 入口(掉落查詢/小百科)在手機上必須直接可見,不可被收進桌機用的 Modal
-  for (const [sel, nm] of [['.m-dex-entry-main', '掉落查詢入口'], ['.m-wiki-entry-main', '小百科入口']]) {
-    const el = document.querySelector(sel);
-    if (!el) { bad.push(nm + '不存在'); continue; }
-    if (el.getBoundingClientRect().height <= 0) bad.push(nm + '高度為 0(被收進桌機 Modal?)');
+  // 首頁唯一的入口「開始遊戲」(圖上的登錄鈕)關掉手機版面後仍要點得到
+  const start = document.getElementById('btn-start-menu');
+  if (!start) bad.push('首頁「開始遊戲」按鈕不存在');
+  else {
+    const r = start.getBoundingClientRect();
+    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    if (!(r.width > 0 && r.height > 0)) bad.push('「開始遊戲」沒有尺寸');
+    else if (!(hit === start || start.contains(hit))) bad.push(`「開始遊戲」被「${(hit && (hit.id || hit.tagName)) || '未知元素'}」蓋住,點不到`);
   }
   return bad;
 });
@@ -326,29 +329,20 @@ const untranslatedMaps = await page.evaluate(() => {
 //   症狀完全不像我們的 bug(重繪/重登/清快取都無效、重裝才好),沒有這道檢查掉了不會有人發現。
 const colorScheme = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme);
 
-// 🔌 桌機外掛入口區塊(afk-skin 的 #afk-plugin-panel):整塊絕對定位在左欄「版本號正上方」。
-//   座標是照上游 4:3 舞台的百分比放的 → 上游改首頁版面(標題變高、搬 #login-meta-layer、換舞台元素)時,
-//   入口不會消失、只會疊到標題/版號上或被舞台的 overflow:hidden 切掉,肉眼不掃根本看不出來。
+// 🔌 首頁只留「開始遊戲」(圖上的登錄鈕):外掛照樣往 #main-menu/舞台塞入口,靠 css/style.css 藏起來。
+//   要驗兩件事:①開始遊戲點得到 ②舞台上沒有漏網的外掛入口(新外掛換了掛法就會冒出來疊在底圖上)。
 const pluginPanelProblems = await page.evaluate(() => {
   const bad = [];
-  const rectOf = (s) => { const el = document.querySelector(s); return el && el.getBoundingClientRect(); };
-  const panel = document.getElementById('afk-plugin-panel');
-  if (!panel) { bad.push('#afk-plugin-panel 不存在(桌機入口沒被放到左欄)'); return bad; }
-  const kids = [...panel.children].map((c) => c.getBoundingClientRect());
-  if (!kids.length) { bad.push('#afk-plugin-panel 是空的(入口沒被搬進來)'); return bad; }
-  const top = Math.min(...kids.map((r) => r.top)), bottom = Math.max(...kids.map((r) => r.bottom));
-  const ver = rectOf('#login-version'), title = rectOf('#login-title-layer'), stage = rectOf('#login-art-stage');
-  if (ver && bottom > ver.top) bad.push(`入口區塊底端(${Math.round(bottom)}px)壓到版本號(頂端 ${Math.round(ver.top)}px)`);
-  if (title && top < title.bottom) bad.push(`入口區塊頂端(${Math.round(top)}px)壓到標題(底端 ${Math.round(title.bottom)}px)`);
-  if (stage && (top < stage.top || bottom > stage.bottom)) bad.push('入口區塊超出 4:3 舞台,會被 overflow:hidden 切掉');
-  for (const [sel, nm] of [['.m-dex-entry-main', '掉落查詢入口'], ['.m-wiki-entry-main', '小百科入口'], ['#afk-stg-gear', '⚙ 其他功能']]) {
-    const r = rectOf(sel);
-    if (!r) { bad.push(nm + '不存在'); continue; }
-    if (!(r.width > 0 && r.height > 0)) { bad.push(nm + '沒有尺寸'); continue; }
-    const el = document.querySelector(sel);
-    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-    if (!(hit === el || el.contains(hit))) bad.push(`${nm}被「${(hit && (hit.id || hit.tagName)) || '未知元素'}」蓋住,點不到`);
-  }
+  const start = document.getElementById('btn-start-menu');
+  if (!start) { bad.push('首頁「開始遊戲」按鈕不存在'); return bad; }
+  const r = start.getBoundingClientRect();
+  const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+  if (!(r.width > 0 && r.height > 0)) bad.push('「開始遊戲」沒有尺寸');
+  else if (!(hit === start || start.contains(hit))) bad.push(`「開始遊戲」被「${(hit && (hit.id || hit.tagName)) || '未知元素'}」蓋住,點不到`);
+  const allowed = (el) => el === start || el.id === 'login-bg-image' || el.id === 'main-menu' || el.id === 'login-art-stage' || el.classList.contains('login-field-hint');
+  const stray = [...document.querySelectorAll('#login-art-stage *')]
+    .filter((el) => !allowed(el) && el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
+  if (stray.length) bad.push('首頁舞台上多出看得到的元素:' + stray.slice(0, 5).map((el) => el.id || el.className || el.tagName).join('、'));
   return bad;
 });
 
@@ -454,10 +448,9 @@ if (toggleOffProblems.length) {
 }
 
 if (pluginPanelProblems.length) {
-  console.error('冒煙測試失敗:桌機首頁左欄的外掛入口區塊位置不對(玩家會看到入口疊在標題/版號上或被切掉):');
+  console.error('冒煙測試失敗:首頁不是「只剩開始遊戲」:');
   for (const p of pluginPanelProblems) console.error('  ' + p);
-  console.error('  判準:#afk-plugin-panel 的座標(left/width/top/bottom)是照上游 4:3 舞台算的,');
-  console.error('       上游搬動 #login-title-layer / #login-meta-layer 就要跟著調(見 afk-skin.js 的 CSS)。');
+  console.error('  判準:首頁藏外掛入口的規則在 css/style.css 登入首頁那段(#login-art-stage / #main-menu 的 :not 選擇器)。');
   die();
 }
 

@@ -1065,42 +1065,28 @@
 .classic-sort-menu button:hover,.classic-sort-menu button.active { color:#ffe49a; border-color:#b88a35; background:#3b2d17; }
 .classic-sort-menu label { display:flex; align-items:center; gap:5px; margin-top:2px; padding-top:5px; border-top:1px solid #3d4655; white-space:nowrap; cursor:pointer; }
 
-/* ===== 登入首頁：310 固定底圖＋273～300 左下逐幀動畫 ===== */
-#creation-screen { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; overflow:auto; padding:0; background:#050505; }
+/* ===== 登入首頁：login.webp 直式底圖（576×1024），按鈕與提示字以百分比疊在圖上的位置 =====
+   桌機/手機同一套：舞台照圖片比例縮放到「整張放得進視窗」，四周補黑。
+   高度扣 --orig-bar-h：afk-banner（不可停用）讓開非官方橫幅後 #creation-screen 會變矮。
+   首頁只留開始遊戲：外掛往 #main-menu／舞台塞的入口（查詢、小百科、設定、公告…）一律藏起來；
+   左上角「外掛開關」逃生門掛在 body 上，不受影響。 */
+#creation-screen { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:0; background:#050505; }
 #creation-screen.hidden { display:none !important; }
-#login-art-stage { position:relative; width:min(100vw,calc(100vh * 4 / 3)); aspect-ratio:4 / 3; flex:0 0 auto; overflow:hidden; background:#050505; box-shadow:0 0 45px #000; }
-#login-bg-image { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; user-select:none; }
-#login-anim-image { position:absolute; left:0; top:63.75%; width:78.28125%; height:36.25%; object-fit:fill; pointer-events:none; user-select:none; }
-#login-title-layer { position:absolute; z-index:3; left:3.1%; top:14%; width:30.8%; color:#f7df91; text-shadow:0 2px 4px #000,0 0 6px #000; container-type:inline-size; }
-/* 🔤 v3.4.22 標題字級改用 cqw（跟隨標題框寬度）而非 vw：修正「寬而矮視窗下框縮小但字仍撐到 vw 上限→標題超框」；並整體略縮 */
-#login-title-layer h1 { margin:0 0 2.5%; font-size:clamp(13px,8cqw,30px); line-height:1.15; color:#f5d46c; }
-#login-title-layer p { margin:0; font-size:clamp(9px,1.05vw,16px); color:#e7d7b5; }
-#main-menu { position:absolute; z-index:4; left:50.4%; top:48.5%; width:25%; margin:0 !important; display:flex; flex-direction:column; align-items:stretch; gap:clamp(10px,1.45vw,22px) !important; }
+#creation-screen #login-art-stage { position:relative; width:min(100vw, calc((100dvh - var(--orig-bar-h, 0px)) * 576 / 1024)); height:auto; min-height:0; aspect-ratio:576 / 1024; flex:0 0 auto; margin:auto; display:block; overflow:hidden; background:#050505; box-shadow:0 0 45px #000; container-type:inline-size; }
+#creation-screen #login-bg-image { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; opacity:1; pointer-events:none; user-select:none; }
+#creation-screen #login-art-stage > :not(#login-bg-image):not(.login-field-hint):not(#main-menu) { display:none !important; }
+/* 帳密框是圖案：蓋掉圖上的「遊戲帳號/遊戲密碼」，改寫提示字 */
+.login-field-hint { position:absolute; left:27.5%; width:51%; height:4.1%; display:flex; align-items:center; padding-left:1.5%; background:#0c0c0c; color:#a89f8e; font-size:2.9cqw; letter-spacing:.08em; pointer-events:none; user-select:none; }
+.login-field-account { top:68.9%; }
+.login-field-password { top:74.75%; }
+/* 開始遊戲＝圖上的「登錄」鈕：透明熱區 */
+#creation-screen #main-menu { position:absolute; z-index:4; left:26.5%; top:81.4%; width:47%; height:5.8%; margin:0 !important; display:block; }
 #main-menu.hidden { display:none !important; }
-#main-menu > button {
-    width:100% !important;
-    padding:clamp(8px,1.08vw,17px) 4px !important;
-    border:1px solid rgba(198,156,74,.82) !important;
-    border-radius:2px !important;
-    background:linear-gradient(180deg, rgba(29,22,12,.96), rgba(7,5,3,.98)) !important;
-    color:#f7e79d !important;
-    font-family:Georgia, "Times New Roman", "Microsoft JhengHei", serif;
-    font-size:clamp(11px,1.22vw,20px) !important;
-    font-weight:700;
-    line-height:1.12;
-    text-shadow:0 1px 2px #000, 0 0 7px rgba(231,194,91,.45);
-    box-shadow:inset 0 1px 0 rgba(255,232,167,.13), inset 0 -14px 18px rgba(0,0,0,.34), 0 0 12px rgba(0,0,0,.75);
-}
-#main-menu > button:hover {
-    color:#fff1ba !important;
-    border-color:rgba(241,199,92,.95) !important;
-    background:linear-gradient(180deg, rgba(42,32,16,.98), rgba(12,8,4,.98)) !important;
-    box-shadow:inset 0 1px 0 rgba(255,232,167,.22), inset 0 -14px 18px rgba(0,0,0,.28), 0 0 16px rgba(216,179,80,.36);
-}
-#main-menu > p { width:150% !important; margin:1% 0 0 -25% !important; font-size:clamp(9px,.78vw,14px) !important; line-height:1.42; color:#eee2c7; text-shadow:0 1px 3px #000,0 0 3px #000; }
-#login-meta-layer { position:absolute; z-index:3; left:5.8%; top:41.5%; width:25.4%; color:#d8c8a2; text-shadow:0 1px 3px #000; }   /* 🔧 v3.0.41 用戶：版權文字縮小+寬度縮短不超框 */
-#login-version { margin-bottom:3%; font-size:clamp(12px,1.05vw,18px) !important; font-weight:700; color:#f2d77f; }
-#login-disclaimer { max-width:none !important; padding:0 !important; margin:0 !important; font-size:clamp(8px,.6vw,11px) !important; line-height:1.45; color:#eee2c7; }
+#creation-screen #main-menu > :not(#btn-start-menu) { display:none !important; }
+#btn-start-menu { display:block; width:100%; height:100%; padding:0; border:0; border-radius:4px; background:transparent; cursor:pointer; touch-action:manipulation; transition:background-color .15s, box-shadow .15s; }
+#btn-start-menu:hover { background:rgba(255,222,150,.07); box-shadow:0 0 14px rgba(216,179,80,.35); }
+#btn-start-menu:active { background:rgba(255,222,150,.14); }
+#btn-start-menu:focus-visible { outline:2px solid #e3bd55; outline-offset:2px; }
 
 /* ===== 🎨 新版技能欄位（4 欄 × 6 排）＋底部 S.power(魔法傷害)/M.resist(MR) 數值 ===== */
 #tab-skill { padding:0 !important; overflow:auto !important; align-items:center; justify-content:flex-start; background:#08090d; }
@@ -2049,41 +2035,6 @@ button.classic-skill-cell { cursor:pointer; }
 
 @media (max-width: 600px) and (orientation: portrait) {
     #creation-screen { align-items: flex-start; justify-content: flex-start; }
-
-    /* Login: retain the artwork while keeping every action comfortably tappable. */
-    #login-art-stage {
-        width: 100vw;
-        height: 100dvh;
-        min-height: 640px;
-        aspect-ratio: auto;
-        overflow: hidden;
-    }
-    #login-bg-image { width: 100%; height: 100%; object-fit: cover; object-position: 54% center; opacity: .84; }
-    #login-anim-image { left: -28%; top: 70%; width: 142%; height: 30%; object-fit: fill; opacity: .78; }
-    #login-title-layer { left: 7%; top: 7%; width: 86%; }
-    #login-title-layer h1 { margin-bottom: 8px; font-size: clamp(24px, 7vw, 32px); }
-    #login-title-layer p { font-size: 14px; }
-    #main-menu {
-        left: 8%;
-        top: 31%;
-        width: 84%;
-        gap: 12px !important;
-    }
-    #main-menu > button {
-        min-height: 48px;
-        padding: 10px 8px !important;
-        font-size: 16px !important;
-    }
-    #main-menu > p {
-        width: 100% !important;
-        margin: 2px 0 0 !important;
-        padding: 0 6px;
-        font-size: 11px !important;
-        line-height: 1.5;
-    }
-    #login-meta-layer { left: 8%; top: auto; bottom: 4%; width: 84%; }
-    #login-version { margin-bottom: 6px; font-size: 14px !important; }
-    #login-disclaimer { font-size: 9px !important; line-height: 1.45; }
 
     /* Character select: two portrait rows, readable details, then compact actions. */
     #load-select-panel:not(.hidden) {
