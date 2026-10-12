@@ -135,7 +135,7 @@ for (const def of RECORD_SHEETS) {
   for (const [id, m] of Object.entries(G.DB.mobs)) idOf[m.n] ??= id;
   for (const [mob, list] of Object.entries(G.MOB_DROPS)) {
     for (const [itemId, p] of list) {
-      if (dropHidden(G, itemId)) continue;
+      if (!G.DB.items[itemId] || dropHidden(G, itemId)) continue;   // 遊戲裡已經沒有的物品(被刪掉的)不列
       const row = ws.addRow([idOf[mob] || '', mob, itemId, G.DB.items[itemId]?.n || '', p]);
       row.getCell(4).fill = LOCK;
     }

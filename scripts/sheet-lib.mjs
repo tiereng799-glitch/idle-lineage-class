@@ -14,8 +14,10 @@ import path from 'node:path';
 import vm from 'node:vm';
 
 export const ROOT = path.resolve(import.meta.dirname, '..');
-export const DATA_OUT = path.join(ROOT, 'js', '00y-my-tweaks-data.js');
+export const DATA_OUT = process.env.SHEET_DATA_OUT || path.join(ROOT, 'js', '00y-my-tweaks-data.js');   // SHEET_DATA_OUT：sheet-rebuild 用暫存檔，不動遊戲裡那份
 export const CONFIG = path.join(ROOT, 'sheet-config.json');
+// 讀遊戲原始資料的位置;sheet-rebuild 會指到「舊版本」的 js/ 來分辨「誰改的」
+const GAME_ROOT = process.env.SHEET_GAME_ROOT || ROOT;
 export const ID_HEAD = 'ID(不要改)';
 export const TPL_HEAD = '範本ID(新增用)';
 export const CUSTOM_IMG_DIR = 'assets/custom/';   // 自訂圖檔放這裡;試算表只填檔名
@@ -34,7 +36,7 @@ export function loadGame() {
   };
   ctx.window = ctx;
   vm.createContext(ctx);
-  const read = f => fs.readFileSync(path.join(ROOT, 'js', f), 'utf8');
+  const read = f => fs.readFileSync(path.join(GAME_ROOT, 'js', f), 'utf8');
   vm.runInContext(read('00-data.js') + '\n;globalThis.__DB = DB;', ctx);
   vm.runInContext(read('01-drops-config.js') + '\n;globalThis.__MD = MOB_DROPS;', ctx);
   return { DB: ctx.__DB, MOB_DROPS: ctx.__MD, MAP_NAMES: loadMapNames() };
@@ -43,7 +45,7 @@ export const loadDB = () => loadGame().DB;
 
 // 地圖中文名:js/11-world-map.js 的 {v:'zone_15',t:'眠龍洞穴1樓'}(只拿來顯示)
 function loadMapNames() {
-  const src = fs.readFileSync(path.join(ROOT, 'js', '11-world-map.js'), 'utf8');
+  const src = fs.readFileSync(path.join(GAME_ROOT, 'js', '11-world-map.js'), 'utf8');
   const names = {};
   for (const m of src.matchAll(/\{\s*v\s*:\s*'([\w-]+)'\s*,\s*t\s*:\s*'([^']+)'/g)) names[m[1]] ??= m[2];
   return names;
