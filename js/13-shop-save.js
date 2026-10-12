@@ -1012,17 +1012,20 @@ function loadDeleteSelected(){
             _loadAnimState.noneFrame = _loadAnimState.noneFrame >= LOAD_NONE_ANIM_FRAMES[1] ? LOAD_NONE_ANIM_FRAMES[0] : _loadAnimState.noneFrame + 1;
             document.querySelectorAll('.load-slot-card.empty img').forEach(img => { img.src = loadFrameSrc('none', _loadAnimState.noneFrame); });
             const selected = document.querySelector('.load-slot-card.selected.filled');
-            if(selected){
+            const img = selected && selected.querySelector('img');   // 停用職業的卡片沒有立繪
+            if(img){
                 const key = selected.dataset.key || 'prince';
                 const range = CREATION_CLASS_ANIM_FRAMES[key] || CREATION_CLASS_ANIM_FRAMES.prince;
                 if(_loadAnimState.key !== key){
                     _loadAnimState.key = key;
                     _loadAnimState.frame = range[0];
+                    for(let n = range[0]; n <= range[1]; n++) startFrame(key, n);   // 整組排進下載
                 } else {
-                    _loadAnimState.frame = _loadAnimState.frame >= range[1] ? range[0] : _loadAnimState.frame + 1;
+                    // 同創角：下一幀還沒下載完就停在目前這張(避免網路慢時立繪變空白)，載入失敗的幀直接跳過
+                    const next = _loadAnimState.frame >= range[1] ? range[0] : _loadAnimState.frame + 1;
+                    if(startFrameReady(key, next)){ _loadAnimState.frame = next; img.src = loadFrameSrc(key, next); }
+                    else if(startFrameBroken(key, next)) _loadAnimState.frame = next;
                 }
-                const img = selected.querySelector('img');
-                if(img) img.src = loadFrameSrc(key, _loadAnimState.frame);
             }
             _loadAnimState.lastAt = now;
         }
@@ -1099,20 +1102,35 @@ function setCreationClassAnimation(c){
         img.style.display = 'block';
     }
     if(typeof playCreationFrameSfx === 'function') playCreationFrameSfx(key, range[0]);
-    for(let n = range[0]; n <= Math.min(range[1], range[0] + 10); n++){
-        const pre = new Image(); pre.src = `assets/start/${key}/${n}.png`;
-    }
+    for(let n = range[0]; n <= range[1]; n++) startFrame(key, n);   // 整組排進下載；動畫只播已經到的幀
 }
+// 🖼️ 立繪逐幀動畫的幀快取（創角＋選角共用，路徑 assets/start/<key>/<n>.png）。
+//   動畫每 82ms 換一張：網路慢時「下一張還沒下載完就切過去」→ <img> 變空白（手機/線上實測一進創角就看不到角色）。
+//   所以換幀前先問 startFrameReady：還沒到就停在目前這張，等到了再播；壞圖(載入失敗)直接跳過，免得卡死。
+const _startFrameCache = {};
+function startFrame(key, n){
+    const c = _startFrameCache[key] || (_startFrameCache[key] = {});
+    if(!c[n]){ const im = new Image(); im.src = `assets/start/${key}/${n}.png`; c[n] = im; }
+    return c[n];
+}
+function startFrameReady(key, n){ const im = startFrame(key, n); return im.complete && im.naturalWidth > 0; }
+function startFrameBroken(key, n){ const im = startFrame(key, n); return im.complete && im.naturalWidth === 0; }
 (function animateCreationClassPreview(){
     function tick(now){
         const panel = document.getElementById('creation-panel');
         const img = document.getElementById('class-preview-img');
         const gs = document.getElementById('game-screen');   // 🔊 v3.4.17 已進遊戲→停創角動畫（防 creation-panel classList 殘留→動畫續跑並每 loop 重觸發創角音效）
         if(panel && img && !panel.classList.contains('hidden') && (!gs || gs.classList.contains('hidden')) && !creationClassAnim.static && now - creationClassAnim.lastAt >= creationClassAnim.stepMs){
-            creationClassAnim.frame = creationClassAnim.frame >= creationClassAnim.last ? creationClassAnim.first : creationClassAnim.frame + 1;
-            img.src = `assets/start/${creationClassAnim.key}/${creationClassAnim.frame}.png`;
-            if(creationClassAnim.frame === creationClassAnim.first && typeof playCreationFrameSfx === 'function') playCreationFrameSfx(creationClassAnim.key, creationClassAnim.frame);
-            creationClassAnim.lastAt = now;
+            const A = creationClassAnim;
+            const next = A.frame >= A.last ? A.first : A.frame + 1;
+            if(startFrameReady(A.key, next)){
+                A.frame = next;
+                img.src = `assets/start/${A.key}/${next}.png`;
+                if(next === A.first && typeof playCreationFrameSfx === 'function') playCreationFrameSfx(A.key, next);
+                A.lastAt = now;
+            } else if(startFrameBroken(A.key, next)){
+                A.frame = next;   // 這張載入失敗：跳過，不換圖
+            }   // 還沒下載完：停在目前這張，下一輪再看
         }
         requestAnimationFrame(tick);
     }
