@@ -32,10 +32,7 @@
   var cutDrops = 0;
   [typeof MOB_DROPS !== 'undefined' ? MOB_DROPS : null,
    typeof DARK_WEAPON_DROPS !== 'undefined' ? DARK_WEAPON_DROPS : null,
-   typeof DARK_CRYSTAL_DROPS !== 'undefined' ? DARK_CRYSTAL_DROPS : null,
-   typeof DRAGON_DROPS !== 'undefined' ? DRAGON_DROPS : null,
-   typeof WARRIOR_DROPS !== 'undefined' ? WARRIOR_DROPS : null,
-   typeof MEM_DROPS !== 'undefined' ? MEM_DROPS : null].forEach(function (tbl) {
+   typeof DARK_CRYSTAL_DROPS !== 'undefined' ? DARK_CRYSTAL_DROPS : null].forEach(function (tbl) {
     if (!tbl || typeof tbl !== 'object') return;
     Object.keys(tbl).forEach(function (mob) {
       var arr = tbl[mob]; if (!Array.isArray(arr)) return;
@@ -58,7 +55,6 @@
   try {
     if (typeof CRAFT_RECIPES === 'object' && CRAFT_RECIPES) Object.keys(CRAFT_RECIPES).forEach(function (k) { stripRecipes(CRAFT_RECIPES[k]); });
     if (typeof DEMONKING_RECIPES !== 'undefined') stripRecipes(DEMONKING_RECIPES);
-    if (typeof LUMIEL_RECIPES !== 'undefined') stripRecipes(LUMIEL_RECIPES);
     if (typeof MYSTICWAND_RECIPES !== 'undefined') stripRecipes(MYSTICWAND_RECIPES);
     if (typeof SLAYER_RECIPES !== 'undefined') stripRecipes(SLAYER_RECIPES);
   } catch (e) {}

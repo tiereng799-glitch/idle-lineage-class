@@ -19,7 +19,7 @@
     const WANDERER_CARD_CHANCE = 0.10;
 
     // 🚫 v3.5.53 出沒排除（用戶拍板）：攻城三城（限持城者進入·NPC 形同碰不到）＋炎魔謁見所＋席琳神殿；
-    //    其餘安全區皆可出沒（含 傲慢之塔入口/時空裂痕入口/沉默洞穴/長老會議廳/希培利亞村莊/貝希摩斯）。
+    //    其餘安全區皆可出沒（含 傲慢之塔入口/時空裂痕入口/沉默洞穴/長老會議廳）。
     const EXCLUDED_TOWNS = new Set([
         'town_sherine',           // 席琳神殿
         'town_kent_castle',       // 肯特城（攻城據點）
@@ -31,7 +31,7 @@
 
     const PLAYER_AVATARS = [
         '王子', '公主', '男騎士', '女騎士', '男法師', '女法師', '男妖精', '女妖精',
-        '男黑暗妖精', '女黑暗妖精', '男幻術士', '女幻術士', '男龍騎士', '女龍騎士', '男戰士', '女戰士'
+        '男黑暗妖精', '女黑暗妖精'
     ];
     const SILENCE_COMPLAINTS = [
         '吵死了', '安靜一點', '別再喊了', '不要一直廣播', '別洗了', '可以停一下嗎', '別再洗頻了', '安靜啦',
@@ -424,7 +424,7 @@
             : _normalizeAlignmentValue(w.alignmentValue);
         let chase = {
             n: w.name,
-            avatar: w.avatar || '男戰士',
+            avatar: w.avatar || '男騎士',
             alignmentValue: alignmentValue,
             until: Date.now() + 2 * 60 * 60 * 1000
         };
@@ -484,7 +484,7 @@
             try {
                 let res = npcClanAssignOpponent({
                     n: n,
-                    avatar: w.avatar || '男戰士',
+                    avatar: w.avatar || '男騎士',
                     alignmentValue: _normalizeAlignmentValue(w.alignmentValue),
                     levelOffset: 0,
                     pvpRandom: true

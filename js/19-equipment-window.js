@@ -20,7 +20,7 @@
             { k: 'cloak',   x: 80.1, y: 31.50, w: 19.67, h: 8.82 },
             { k: 'tshirt',  x: 50.0, y: 42.77, w: 19.67, h: 8.82 },
             { k: 'wpn',     x: 19.4, y: 44.98, w: 19.67, h: 8.82 },
-            { k: 'shield', alt: 'offwpn', x: 80.1, y: 44.98, w: 19.67, h: 8.82 },
+            { k: 'shield',  x: 80.1, y: 44.98, w: 19.67, h: 8.82 },
             { k: 'armor',   x: 50.0, y: 52.08, w: 19.67, h: 8.82 },
             { k: 'ring1',   x: 19.4, y: 58.46, w: 19.67, h: 8.82 },
             { k: 'ring2',   x: 80.1, y: 58.46, w: 19.67, h: 8.82 },
@@ -51,7 +51,7 @@
 
     const EQUIPMENT_TEMPLATE_CLASS = {
         royal: '王族', knight: '騎士', mage: '法師', elf: '妖精',
-        dark: '黑妖', illusion: '幻術', dragon: '龍騎', warrior: '戰士'
+        dark: '黑妖'
     };
     function equipmentTemplateUrl() {
         const cls = typeof player !== 'undefined' && player ? EQUIPMENT_TEMPLATE_CLASS[player.cls] : '';
@@ -89,7 +89,7 @@
         const host = el('equipment-window-slots');
         host.innerHTML = '';
         PAGE_SLOTS[page].forEach(pos => {
-            const actualKey = pos.alt && player.eq[pos.alt] ? pos.alt : pos.k;
+            const actualKey = pos.k;
             const item = player.eq[actualKey];
             const data = item && typeof DB !== 'undefined' && DB.items[item.id];
             const slot = document.createElement('button');

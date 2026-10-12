@@ -176,7 +176,7 @@
         var st = player.trialStage || 0, nStages = cfg.stages.length;
         if (st < nStages + 1) return out;   // 還沒走到最終兌換階段：維持原版
         // 記錄「這位 NPC 的重繪函式」給 ex50 就地重繪用（核心沒把呼叫端函式名傳進來，改由已知對照）
-        var R50 = { '迪嘉勒廷': 'renderDigallatin', '希蓮恩': 'renderShenien', '多文': 'renderDuwen', '普洛凱爾': 'renderProcel' };
+        var R50 = { '迪嘉勒廷': 'renderDigallatin' };
         window['AFK_RETRIAL_R50_' + npcName] = R50[npcName] ? window[R50[npcName]] : null;
         var need = cfg.exMatCnt || 1;
         var matsHtml = cfg.exMatNm + '×' + questCountId(cfg.exMat) + '（每份需 ' + need + ' 個）';

@@ -39,7 +39,7 @@
   var TICKS_PER_SEC = 10;   // 核心 TICK_MS=100 → manualCd 是 tick 數
   var HOT_SLOTS = 6;
   var CHAT_LINES = 60;   // 聊天框可往上捲，保留最近幾行（取代 afk-mobile 的完整日誌面板）
-  var CLASS_LOGO = { royal: '王族', knight: '騎士', mage: '法師', elf: '妖精', dark: '黑暗妖精', illusion: '幻術士', dragon: '龍騎士', warrior: '戰士' };
+  var CLASS_LOGO = { royal: '王族', knight: '騎士', mage: '法師', elf: '妖精', dark: '黑暗妖精' };
   // 快捷列的道具順序：治癒藥水由強到弱 → 藍水 → 加速/勇敢 → 瞬移卷軸；其餘 type:'pot' 排最後
   var HOT_ITEM_ORDER = ['potion_ult', 'potion_strong', 'potion_heal', 'potion_blue', 'potion_haste', 'potion_brave', 'scroll_teleport'];
 
@@ -630,10 +630,7 @@
     return [
       typeof MOB_DROPS !== 'undefined' ? MOB_DROPS : null,
       typeof DARK_WEAPON_DROPS !== 'undefined' ? DARK_WEAPON_DROPS : null,
-      typeof DARK_CRYSTAL_DROPS !== 'undefined' ? DARK_CRYSTAL_DROPS : null,
-      typeof DRAGON_DROPS !== 'undefined' ? DRAGON_DROPS : null,
-      typeof WARRIOR_DROPS !== 'undefined' ? WARRIOR_DROPS : null,
-      typeof MEM_DROPS !== 'undefined' ? MEM_DROPS : null
+      typeof DARK_CRYSTAL_DROPS !== 'undefined' ? DARK_CRYSTAL_DROPS : null
     ];
   }
   function mobDropList(name) {

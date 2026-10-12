@@ -61,7 +61,7 @@ const CRAFT_RECIPES = {
         { result: 'acc_ear_clan',     req: [{ id: 'acc_ear_phantom', cnt: 1 }, { id: 'mat_soulstone_shard', cnt: 1000 }] },
         { result: 'acc_ear_slave',    req: [{ id: 'acc_ear_clan', cnt: 1 }, { id: 'mat_soulstone_shard', cnt: 2500 }] }
     ],
-    // 🔮 巴特爾（希培利亞村莊）：龜裂之核＝時空裂痕碎片×100；黑曜石奇古獸＝四種高品質寶石×10＋龜裂之核×2＋原石碎片×30＋精靈粉末×30＋金幣 100 萬
+    // 🔮 巴特爾（威頓村）：龜裂之核＝時空裂痕碎片×100；妖魂；歐西里斯／庫庫爾坎寶箱
     npc_bartel: [
         { result: 'mat_crack_core', req: [{ id: 'mat_rift_shard', cnt: 100 }] },
         { result: 'mat_gasha_soul', req: [{ id: 'mat_youkai_soul', cnt: 100 }] },   // 🌅 日出之國：巨大骷髏的妖魂（使用+100萬經驗·可批量）
@@ -69,11 +69,7 @@ const CRAFT_RECIPES = {
         { result: 'item_osiris_box_basic', req: [{ id: 'mat_osiris_basic_up', cnt: 1 }, { id: 'mat_osiris_basic_down', cnt: 1 }] },
         { result: 'item_osiris_box_high', req: [{ id: 'mat_osiris_high_up', cnt: 1 }, { id: 'mat_osiris_high_down', cnt: 1 }] },
         { result: 'item_kukulkan_box_basic', req: [{ id: 'mat_kukulkan_basic_up', cnt: 1 }, { id: 'mat_kukulkan_basic_down', cnt: 1 }] },   // 🐍 提卡爾 初級寶箱
-        { result: 'item_kukulkan_box_high', req: [{ id: 'mat_kukulkan_high_up', cnt: 1 }, { id: 'mat_kukulkan_high_down', cnt: 1 }] },   // 🐍 提卡爾 高級寶箱
-        { result: 'wpn_qigu_obsidian', req: [
-            { id: 'new_item_153', cnt: 10 }, { id: 'new_item_159', cnt: 10 }, { id: 'new_item_162', cnt: 10 }, { id: 'new_item_156', cnt: 10 },
-            { id: 'mat_crack_core', cnt: 2 }, { id: 'mat_rough_stone', cnt: 30 }, { id: 'new_item_170', cnt: 30 }, { id: 'gold', cnt: 1000000 }
-        ] }
+        { result: 'item_kukulkan_box_high', req: [{ id: 'mat_kukulkan_high_up', cnt: 1 }, { id: 'mat_kukulkan_high_down', cnt: 1 }] }   // 🐍 提卡爾 高級寶箱
     ],
     // 🗼 烏普尼（亞丁）：支配符 = 傳送符×1 + 移動卷軸×100（11F~91F 共 9 組）
     npc_upni: [11, 21, 31, 41, 51, 61, 71, 81, 91].map(N => ({
@@ -366,10 +362,8 @@ const CRAFT_RECIPES = {
         { result: 'rng_wind', req: [{ id: 'mat_legion_necro', cnt: 10 }, { id: 'mat_legion_law', cnt: 10 }, { id: 'mat_legion_beast', cnt: 10 }, { id: 'mat_legion_assassin', cnt: 10 }, { id: 'mat_crest_assassin', cnt: 1 }] },
         { result: 'rng_fire', req: [{ id: 'mat_legion_necro', cnt: 10 }, { id: 'mat_legion_law', cnt: 10 }, { id: 'mat_legion_beast', cnt: 10 }, { id: 'mat_legion_assassin', cnt: 10 }, { id: 'mat_crest_necro', cnt: 1 }] }
     ],
-    // 🏛️ 威頓村・客盧亞：古代神之槍／斧（古代臂甲×2 已改由貝希摩斯・皮爾製作）
-    'npc_zeus_golem': [
-        { result: 'wpn_demon_axehead', req: [{ id: 'wpn_demon_axe', cnt: 1 }, { id: 'mat_blackmithril_plate', cnt: 5 }] }
-    ],
+    // 🔥 威頓村・宙斯之熔岩高崙：僅有滅魔裝備客製配方（見 buildSlayerCraftHTML），空陣列讓 renderUniversalCraft 通過並附加客製區塊
+    'npc_zeus_golem': [],
     // 👑 拉比安尼（說話之島）：王族特殊級魔法書＝飛龍之心＋高崙之心＋冰之女王之心＋不死鳥之心 各1
     'npc_rabiani': [
         { result: 'bk_royal_burnweapon', req: [{ id: 'mat_dragon_heart', cnt: 1 }, { id: 'mat_golem_heart', cnt: 1 }, { id: 'mat_icequeen_heart', cnt: 1 }, { id: 'new_phoenix_heart', cnt: 1 }] },
@@ -377,9 +371,9 @@ const CRAFT_RECIPES = {
         { result: 'bk_royal_shield',     req: [{ id: 'mat_dragon_heart', cnt: 1 }, { id: 'mat_golem_heart', cnt: 1 }, { id: 'mat_icequeen_heart', cnt: 1 }, { id: 'new_phoenix_heart', cnt: 1 }] },
         { result: 'bk_royal_kingguard',  req: [{ id: 'mat_dragon_heart', cnt: 1 }, { id: 'mat_golem_heart', cnt: 1 }, { id: 'mat_icequeen_heart', cnt: 1 }, { id: 'new_phoenix_heart', cnt: 1 }] }
     ],
+    // 🏛️ 威頓村・客盧亞：古代神之槍（古代臂甲×2 已改由皮爾製作）
     'npc_keluya': [
-        { result: 'wpn_ancient_spear', req: [{ id: 'item_unknown_spear', cnt: 1 }, { id: 'item_ancient_scroll', cnt: 10 }, { id: 'new_item_153', cnt: 10 }, { id: 'new_phoenix_heart', cnt: 1 }, { id: 'new_item_178', cnt: 50 }, { id: 'mat_soulstone_shard', cnt: 500 }] },
-        { result: 'wpn_ancient_axe', req: [{ id: 'mat_unknown_axe', cnt: 1 }, { id: 'item_ancient_scroll', cnt: 10 }, { id: 'new_item_159', cnt: 10 }, { id: 'new_phoenix_heart', cnt: 1 }, { id: 'new_item_177', cnt: 50 }, { id: 'mat_soulstone_shard', cnt: 500 }] }
+        { result: 'wpn_ancient_spear', req: [{ id: 'item_unknown_spear', cnt: 1 }, { id: 'item_ancient_scroll', cnt: 10 }, { id: 'new_item_153', cnt: 10 }, { id: 'new_phoenix_heart', cnt: 1 }, { id: 'new_item_178', cnt: 50 }, { id: 'mat_soulstone_shard', cnt: 500 }] }
     ],
     // 🐉 v3.7.57 威頓村・米米：地龍之魔眼解封＋4 古代龍鱗盔甲＋4 安塔瑞斯系列盔甲（規格書配方）
     'npc_mimi': [
@@ -393,9 +387,8 @@ const CRAFT_RECIPES = {
         { result: 'arm_antharas_spring',  req: [{ id: 'arm_ancient_dragonscale_earth', cnt: 1 }, { id: 'mat_antharas_heart', cnt: 2 }, { id: 'new_item_153', cnt: 3 }, { id: 'new_item_150', cnt: 500 }, { id: 'new_item_195', cnt: 500 }] },
         { result: 'arm_antharas_majesty', req: [{ id: 'arm_ancient_dragonscale_earth', cnt: 1 }, { id: 'mat_antharas_heart', cnt: 2 }, { id: 'new_item_153', cnt: 3 }, { id: 'new_item_150', cnt: 500 }, { id: 'new_item_195', cnt: 500 }] }
     ],
-    // 🐉 貝希摩斯・皮爾：破滅者鎖鏈劍 ＋ 古代臂甲（×2，自客盧亞移交）
+    // 🐉 威頓村・皮爾：古代臂甲（×2，自客盧亞移交）
     'npc_pir': [
-        { result: 'wpn_chain_destroyer', req: [{ id: 'item_forgotten_greatsword', cnt: 1 }, { id: 'new_item_171', cnt: 20 }, { id: 'new_item_182', cnt: 20 }, { id: 'new_item_192', cnt: 1 }, { id: 'gold', cnt: 1000000 }] },
         { result: 'armguard_archer', req: [{ id: 'item_forgotten_leather', cnt: 1 }, { id: 'new_item_175', cnt: 20 }, { id: 'new_item_172', cnt: 50 }, { id: 'mat_blackmithril_plate', cnt: 3 }, { id: 'new_item_174', cnt: 50 }, { id: 'new_item_elfwing', cnt: 20 }] },
         { result: 'armguard_fighter', req: [{ id: 'item_forgotten_plate', cnt: 1 }, { id: 'mat_blackmithril_plate', cnt: 5 }, { id: 'new_item_174', cnt: 50 }, { id: 'gold', cnt: 1000000 }] }
     ],
@@ -478,7 +471,6 @@ function renderUniversalCraft(div, npcId) {
     });
     div.innerHTML = html;
     if (npcId === 'npc_flame_shadow') div.innerHTML += buildDemonKingCraftHTML();   // 👑 炎魔之影：在通用配方下方附加惡魔王武器客製製作區
-    if (npcId === 'npc_lumiel') div.innerHTML += buildLumielCraftHTML();   // ⚔️ 琉米埃爾：在通用配方下方附加神聖執行團裝備客製製作區
     if (npcId === 'npc_mystic_mage') div.innerHTML += buildMysticWandCraftHTML();   // 🔷🔶 神秘的魔法師：鋼鐵瑪那魔杖客製製作區（該 NPC 無通用配方）
     if (npcId === 'npc_zeus_golem') div.innerHTML += buildSlayerCraftHTML();   // 🔥 宙斯之熔岩高崙：在通用配方下方附加滅魔裝備客製製作區
 }
@@ -551,70 +543,6 @@ function doDemonKingCraft(idx) {
     updateUI(); renderTabs(true); saveGame();
     renderUniversalCraft(document.getElementById('interaction-content'), 'npc_flame_shadow');
 }
-// ===== ⚔️ 琉米埃爾（海音）神聖執行團裝備客製製作：消耗 +7 以上「戰士團」頭盔／斗篷，繼承其強化值／詞綴 =====
-const LUMIEL_RECIPES = [
-    { result: 'hlm_holy_corps', src: 'hlm_warrior_corps', srcName: '戰士團頭盔', mats: [{ id: 'new_item_153', cnt: 1 }, { id: 'new_item_158', cnt: 5 }, { id: 'new_item_160', cnt: 30 }, { id: 'new_item_154', cnt: 30 }] },
-    { result: 'clk_holy_corps', src: 'clk_warrior_corps', srcName: '戰士團斗篷', mats: [{ id: 'new_item_156', cnt: 1 }, { id: 'new_item_161', cnt: 5 }, { id: 'new_item_157', cnt: 30 }, { id: 'new_item_151', cnt: 30 }] },
-];
-function findLumielSource(srcId) {
-    let cands = player.inv.filter(i => i.id === srcId && (i.en || 0) >= 7 && !i.lock);
-    try { loadWarehouse().items.filter(i => i.id === srcId && (i.en || 0) >= 7 && !i.lock).forEach(i => cands.push(Object.assign({}, i, { _whSource: true }))); } catch (e) {}   // 🔧 倉庫中的 +7 戰士團裝備亦可作素材
-    if (!cands.length) return null;
-    let withSet = cands.filter(i => i.seteff);
-    let pool = (withSet.length ? withSet : cands).slice().sort((a, b) => (b.en || 0) - (a.en || 0));
-    return pool[0];
-}
-function buildLumielCraftHTML() {
-    let html = `<div class="text-amber-300 font-bold text-sm mt-4 mb-2 px-1 border-t border-slate-700 pt-3">⚔️ 神聖執行團裝備（消耗 +7 以上戰士團裝備，繼承其強化值／詞綴）</div>`;
-    LUMIEL_RECIPES.forEach((r, idx) => {
-        let resItem = DB.items[r.result];
-        let imgUrl = getIconUrl(resItem);
-        let matsOk = r.mats.every(m => materialObtainable(m.id, m.cnt));   // 🔧 含可遞迴合成（與惡魔王武器/通用製作 doCraft 一致）
-        let src = findLumielSource(r.src);
-        let canMake = matsOk && !!src;
-        let srcColor = src ? 'text-green-400' : 'text-red-400';
-        let srcExtra = src ? `（將消耗 +${src.en || 0}${src.seteff ? '・席琳套裝' : ''}）` : '';
-        let reqHtml = craftReqHtml(r.mats)
-            + `<span class="text-slate-500 mx-2 leading-none">+</span><span class="text-sm font-bold leading-none ${srcColor}">+7以上 ${r.srcName} ×1</span><span class="text-amber-300 text-xs ml-0.5">${srcExtra}</span>`;
-        html += `
-        <div class="list-item bg-slate-800 rounded mb-2 border border-slate-700 p-3" style="display:flex !important; justify-content:space-between !important; align-items:center !important; width:100% !important; box-sizing:border-box !important;">
-            <div class="flex items-center gap-4 min-w-0 flex-1">
-                <div class="w-12 h-12 bg-slate-900 rounded border border-slate-600 flex items-center justify-center shrink-0 tip-host" data-tip-id="${r.result}" data-tip-craft="1">
-                    <img src="${imgUrl}" onerror="this.style.display='none';" class="w-10 h-10 object-contain pointer-events-none">
-                </div>
-                <div class="flex flex-col items-start gap-1.5">
-                    <span class="${getItemColor({ id: r.result })} font-bold text-lg leading-none truncate">${resItem.n}</span>
-                    <div class="flex items-center gap-2 flex-wrap"><span class="text-slate-400 text-sm">需求：</span>${reqHtml}</div>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-                <button class="btn ${canMake ? 'bg-blue-700 hover:bg-blue-600 border-blue-500' : 'bg-slate-700 border-slate-600 opacity-60'} py-2 px-6 font-bold shadow" ${canMake ? '' : 'disabled'} onclick="doLumielCraft(${idx})">製作</button>
-            </div>
-        </div>`;
-    });
-    return html;
-}
-function doLumielCraft(idx) {
-    let r = LUMIEL_RECIPES[idx];
-    if (!r) return;
-    if (!RECIPE_BY_RESULT) buildRecipeIndex();
-    let lack = r.mats.filter(m => !materialObtainable(m.id, m.cnt)).map(m => `${DB.items[m.id].n} ${Math.max(0, m.cnt - invCountId(m.id))}`);   // 🔧 可遞迴合成者不算缺
-    let src = findLumielSource(r.src);
-    if (!src) lack.push(`+7以上 ${r.srcName} ×1`);
-    if (lack.length) { logSys(`<span class="text-red-400 font-bold">材料不足，無法製作。</span><span class="text-red-300">（尚缺：${lack.join('、')}）</span>`); return; }
-    r.mats.forEach(m => ensureMaterial(m.id, m.cnt, 0));   // 🔧 先自動補製可合成的中間物，玩家不需先手動製作
-    r.mats.forEach(m => consumeMaterialById(m.id, m.cnt));
-    let inherit = { en: src.en || 0, attr: src.attr || false, bless: src.bless ? src.bless : rollAffixesNew(0.10).bless, anc: src.anc || false, seteff: src.seteff || false };   // 🔧 祝福傳承：來源祝福/詛咒→沿用；來源無詞綴→製作 10% 重骰祝福
-    if (src._whSource) { whRemoveStackByUid(src.uid, 1); }   // 來源裝備在倉庫：自倉庫精準消耗
-    else if ((src.cnt || 1) > 1) src.cnt -= 1; else player.inv = player.inv.filter(i => i.uid !== src.uid);   // 消耗 1 件來源戰士團裝備（背包）
-    let inst = { id: r.result, uid: uid(), cnt: 1, en: inherit.en, attr: inherit.attr, bless: inherit.bless, anc: inherit.anc, seteff: inherit.seteff, lock: false };
-    invAddOrStack(inst);
-    if (typeof registerEquipObtained === 'function') registerEquipObtained(inst.id);   // 🗡️ 客製製作直推 inv（未經 gainItem）→ 需手動登錄裝備收集冊，否則圖鑑保持暗直到重登(ensureEquipBook 補登)
-    logSys(`<span class="text-amber-200 font-bold">琉米埃爾</span> 製作完成：<span class="${getItemColor(inst)} font-bold">${getItemFullName(inst)}</span>`);
-    updateUI(); renderTabs(true); saveGame();
-    renderUniversalCraft(document.getElementById('interaction-content'), 'npc_lumiel');
-}
-
 // ===== 🔷🔶 鋼鐵瑪那魔杖客製製作（象牙塔・神秘的魔法師）：消耗 +7 以上的來源魔杖，成品恆為 +0 白板（不繼承強化值／屬性／詞綴） =====
 const MYSTICWAND_MATS = [{ id: 'new_item_150', cnt: 50 }, { id: 'new_item_180', cnt: 100 }];   // 魔法寶石 ×50 ＋ 金屬塊 ×100
 const MYSTICWAND_RECIPES = [
@@ -1646,7 +1574,7 @@ function pandoraRenderMarket(div) {
     let orderItem = order && DB.items[order.id];
     let buyerName = String(player.name || '').trim() || ({
         royal: '王族', knight: '騎士', mage: '法師', elf: '妖精',
-        dark: '黑暗妖精', illusion: '幻術士', dragon: '龍騎士', warrior: '戰士'
+        dark: '黑暗妖精'
     }[player.cls] || '玩家');
     let orderName = orderItem ? orderItem.n : '';
     let orderPrice = order && Number.isSafeInteger(order.price) ? String(order.price) : '';
@@ -1803,7 +1731,7 @@ window.onload = () => {
         let meta = [];
         let needLv = (typeof skillReqLv==='function') ? skillReqLv(sk, sid) : undefined;
         if(needLv !== undefined) meta.push('需求 Lv.'+needLv);
-        { let _costs = []; if(sk.hpCost) _costs.push('HP '+sk.hpCost); if(sk.mp) _costs.push('MP '+sk.mp); if(sk.costItem){ let _ci = DB.items[sk.costItem.id]; _costs.push((_ci ? _ci.n : '材料')+'×'+(sk.costItem.qty||1)); } if(_costs.length) meta.push('消耗 '+_costs.join('、')); }   // 🐉 同時消耗 HP＋MP 的技能(覺醒/冥想/隱身/堅固防護/幻術士混亂等)：兩者並列顯示；🌀 costItem 為可選施法材料
+        { let _costs = []; if(sk.hpCost) _costs.push('HP '+sk.hpCost); if(sk.mp) _costs.push('MP '+sk.mp); if(sk.costItem){ let _ci = DB.items[sk.costItem.id]; _costs.push((_ci ? _ci.n : '材料')+'×'+(sk.costItem.qty||1)); } if(_costs.length) meta.push('消耗 '+_costs.join('、')); }   // 🐉 同時消耗 HP＋MP 的技能(冥想/隱身/堅固防護等)：兩者並列顯示；🌀 costItem 為可選施法材料
         if(sk.dur) meta.push('持續 '+sk.dur+' 秒');
         if(sk.cd) meta.push('冷卻 '+(sk.cd/10)+' 秒');
         if(meta.length) parts.push(`<div class="text-slate-300">${meta.join(' ・ ')}</div>`);
@@ -1844,7 +1772,7 @@ window.onload = () => {
             }
             if(s.length) eff.push(s.join('、'));
         }
-        if(sk.desc) eff.push(sk.desc);   // 📜 v3.1.79 稽核修：被動效果說明（戰士印記/王者加護等寫在 desc·原 tooltip 不讀→玩家 hover 看不到效果）
+        if(sk.desc) eff.push(sk.desc);   // 📜 v3.1.79 稽核修：被動效果說明（王者加護等寫在 desc·原 tooltip 不讀→玩家 hover 看不到效果）
         if(sk.d && typeof sk.d === 'string') eff.push(sk.d);   // 📜 v3.1.79 稽核修：字串型 d 說明（粉碎能量/心靈破壞·與物件型 d(數值加成) 同名不同型）
         if(eff.length) parts.push(`<div class="text-rose-300" style="font-size:12px;">${eff.join(' ／ ')}</div>`);
         if(sk.msg) parts.push(`<div class="text-slate-400" style="font-size:11px;margin-top:4px;">${sk.msg}</div>`);
@@ -1886,7 +1814,6 @@ window.onload = () => {
             if(d.eff === 'crush')      _eff.push('重擊（提高重擊機率，重擊取武器最大傷害）');
             if(d.eff === 'cleave')     _eff.push('切割（重擊時攻速+20%，持續2秒）');
             if(d.eff === 'combo')      _eff.push('雙擊 ' + (d.comboRate||0) + '%（追加一次完整一般攻擊）');   // 🔧 鋼爪/雙刀：雙擊特效
-            if(d.weakExpose)           _eff.push('弱點曝光（命中12%疊加，供屠宰者增傷）');   // 🐉 鎖鏈劍
             if(d.vampPct)              _eff.push('吸取HP ' + Math.round(d.vampPct * 100) + '%（依本次傷害恢復）');   // 🐉 嗜血者鎖鏈劍
             if(d.ignHardSkin)          _eff.push('貫穿（無視硬皮額外減傷）');   // 🗡️ 暗黑十字弓
             if(d.redSpecter)           _eff.push('紅惡靈逆襲（4%＋每強化1%，造成水魔傷並吸取10%HP）');   // 👹 隱藏的魔族武器

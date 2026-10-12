@@ -165,8 +165,8 @@
     return _castleEntry[mapName] || '';
   }
   function itemNameOf(id) { return (DB.items[id] && DB.items[id].n) ? DB.items[id].n : id; }
-  // 職業限定掉落附註:試煉/兌換道具(TRIAL_ITEM_CLASS)僅該職業擊殺才掉,標「🔒僅X」讓所有職業都看得到是誰限定;非限定道具(書板/鎖鏈劍/印記等全職可掉)不在表內→回 null 不附註。
-  var _CLS_CN = { knight: '騎士', mage: '法師', elf: '妖精', dark: '黑暗妖精', illusion: '幻術士', dragon: '龍騎士', warrior: '戰士', royal: '王族' };
+  // 職業限定掉落附註:試煉/兌換道具(TRIAL_ITEM_CLASS)僅該職業擊殺才掉,標「🔒僅X」讓所有職業都看得到是誰限定;非限定道具(全職可掉)不在表內→回 null 不附註。
+  var _CLS_CN = { knight: '騎士', mage: '法師', elf: '妖精', dark: '黑暗妖精', royal: '王族' };
   function trialClassOf(id) {
     try {
       if (typeof TRIAL_ITEM_CLASS !== 'undefined' && TRIAL_ITEM_CLASS[id]) {
@@ -201,18 +201,15 @@
       // 去重:原作者的地圖怪物清單可能把同一隻怪列兩次(如 windwood 重複列杜賓狗),否則出沒地圖會出現兩個同名
       // ⚠ 不可寫 .map(mapNameOf):Array.map 會把 index 當第二個參數餵進去(＝村莊名覆寫)，地圖名會變成數字
       var maps = (mobToMaps[id] || []).map(function (mid) { return mapNameOf(mid); }).filter(function (n, i, a) { return a.indexOf(n) === i; });
-      // 合併「全部掉落表」——必須與原作 _auditMobDrops 讀的「同一組」表,否則他統計查得到、我們查不到(戰士印記那批踩過)。
-      // 目前 6 張:MOB_DROPS、黑暗武器(DARK_WEAPON_DROPS)、三階黑精靈水晶(DARK_CRYSTAL_DROPS)、龍騎士(DRAGON_DROPS)、戰士印記(WARRIOR_DROPS)、記憶水晶(MEM_DROPS·幻術士法術書)。
-      // 都用「怪物名」當 key、格式 [[id,%]]。任何表裡的職業限定試煉道具(TRIAL_ITEM_CLASS)一律附註「🔒僅X」;非限定道具(書板/鎖鏈劍/戰士印記/記憶水晶等全職可掉)→trialClassNote 回 null、不附註。
+      // 合併「全部掉落表」——必須與原作 _auditMobDrops 讀的「同一組」表,否則他統計查得到、我們查不到。
+      // 目前 3 張:MOB_DROPS、黑暗武器(DARK_WEAPON_DROPS)、三階黑精靈水晶(DARK_CRYSTAL_DROPS)。
+      // 都用「怪物名」當 key、格式 [[id,%]]。任何表裡的職業限定試煉道具(TRIAL_ITEM_CLASS)一律附註「🔒僅X」;非限定道具(全職可掉)→trialClassNote 回 null、不附註。
       function _tagged(list) { return (list || []).map(function (e) { return [e[0], e[1], trialClassNote(e[0])]; }); }
       function _allTables(nm) {
         return [].concat(
           _tagged((typeof MOB_DROPS !== 'undefined') ? MOB_DROPS[nm] : null),
           _tagged((typeof DARK_WEAPON_DROPS !== 'undefined') ? DARK_WEAPON_DROPS[nm] : null),
-          _tagged((typeof DARK_CRYSTAL_DROPS !== 'undefined') ? DARK_CRYSTAL_DROPS[nm] : null),
-          _tagged((typeof DRAGON_DROPS !== 'undefined') ? DRAGON_DROPS[nm] : null),
-          _tagged((typeof WARRIOR_DROPS !== 'undefined') ? WARRIOR_DROPS[nm] : null),
-          _tagged((typeof MEM_DROPS !== 'undefined') ? MEM_DROPS[nm] : null)
+          _tagged((typeof DARK_CRYSTAL_DROPS !== 'undefined') ? DARK_CRYSTAL_DROPS[nm] : null)
         );
       }
       var raw = _allTables(mob.n);
@@ -249,12 +246,12 @@
       var d = DB.items[id];
       if (!d || !d.n) continue;
       var isEquip = (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc');
-      // ③ 有手動「取得方式」(itemAcquire)的:如龍騎士書板(skillbk、非商店、無怪掉)→ 兌換取得,收進來才搜得到
+      // ③ 有手動「取得方式」(itemAcquire)的:如非商店、無怪掉的兌換品 → 收進來才搜得到
       var hasAcq = !!(window.AFK_EXTRA && AFK_EXTRA.itemAcquire && AFK_EXTRA.itemAcquire[id]);
       // ④ 會在潘朵拉黑市上架的(gachaWeight>0=上架權重):雖無固定來源,但確實買得到 → 也收進來,搜得到名字、詳情卡自動標「目前沒有固定取得途徑」
       //    (避免「明明拿得到卻完全查無」的死角;真正純內部用、gachaWeight=0 又無任何來源的維持排除、不灌爆搜尋)
       var inGacha = (d.gachaWeight > 0);
-      // ⑤ 被任一隻怪掉落的(DROPPED_SET,buildIndexes 已先建好):非裝備但有怪掉的法術書/材料(如記憶水晶=幻術士法術書·gachaWeight=0 那批)
+      // ⑤ 被任一隻怪掉落的(DROPPED_SET,buildIndexes 已先建好):非裝備但有怪掉的法術書/材料(gachaWeight=0 那批)
       //    才搜得到名字、詳情卡會列出哪些怪會掉。掉落查詢本就是查「掉落」,有怪掉的東西理應能直接搜名字。
       var isDropped = !!DROPPED_SET[id];
       // ⑥ 可製作的成品/中間材料(如「黑色米索莉金屬板」=炎魔鐵匠製作、無怪掉、非商店、gachaWeight=0)→ 收進來才搜得到名字,
@@ -414,14 +411,6 @@
         if (!r || !r.result) return;
         var req = [{ id: r.src, cnt: 1, plus11: true }].concat(dkMats);
         (_craftIndex[r.result] = _craftIndex[r.result] || []).push({ npcId: 'npc_flame_shadow', req: req, yield: 1, note: '消耗 +11 以上的指定惡魔武器，會繼承它的強化值／詞綴／席琳套裝效果' });
-      });
-    }
-    // ⚔️ 神聖執行團裝備:琉米埃爾客製製作(消耗 +7 以上戰士團頭盔/斗篷 + 素材,不在 CRAFT_RECIPES 裡,要另外補)
-    if (typeof LUMIEL_RECIPES !== 'undefined' && LUMIEL_RECIPES) {
-      LUMIEL_RECIPES.forEach(function (r) {
-        if (!r || !r.result) return;
-        var req = [{ id: r.src, cnt: 1, plus7: true }].concat(r.mats || []);
-        (_craftIndex[r.result] = _craftIndex[r.result] || []).push({ npcId: 'npc_lumiel', req: req, yield: 1, note: '消耗 +7 以上的「' + (r.srcName || r.src) + '」，會繼承它的強化值／詞綴／席琳套裝效果' });
       });
     }
     // 🔷🔶 鋼鐵瑪那魔杖:神秘的魔法師客製製作(消耗 +7 以上瑪那魔杖/力量魔法杖 + 素材,不在 CRAFT_RECIPES 裡,要另外補)

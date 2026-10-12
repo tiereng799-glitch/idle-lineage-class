@@ -22,10 +22,7 @@ const CREATION_FRAME_SFX = {
     f_elf: { frame: 166, sound: 1595 }, m_elf: { frame: 245, sound: 1596 },
     f_knight: { frame: 315, sound: 1601 }, m_knight: { frame: 378, sound: 1602 },
     f_mage: { frame: 452, sound: 1599 }, m_mage: { frame: 531, sound: 1600 },
-    princess: { frame: 629, sound: 1597 }, prince: { frame: 714, sound: 1598 },
-    m_Dknight: { frame: 841, sound: 4764 }, f_Dknight: { frame: 908, sound: 4765 },
-    m_illusionist: { frame: 968, sound: 4766 }, f_illusionist: { frame: 1039, sound: 4767 },
-    m_warrior: { frame: 1992, sound: 6779 }, f_warrior: { frame: 1908, sound: 6787 }
+    princess: { frame: 629, sound: 1597 }, prince: { frame: 714, sound: 1598 }
 };
 Object.keys(CREATION_FRAME_SFX).forEach(function (key) {
     SFX_DEFS['creation_' + key] = { file: '' + CREATION_FRAME_SFX[key].sound, vol: 0.65, throttle: 0 };
@@ -80,9 +77,9 @@ function setSfxOn(on) { _sfxCfg.on = !!on; _sfxSaveCfg(); if (on) playSfx('attac
 function setSfxVol(v) { _sfxCfg.vol = Math.max(0, Math.min(100, parseInt(v, 10) || 0)); _sfxSaveCfg(); }
 
 // 🔊 攻擊音效依「武器類型」分檔(attack_<weaponcat>·用 equipCatKey)；受傷依「職業群組+性別」分檔(hurt_<group>_<m|f>)；其餘事件共用單檔。缺對應變體檔→自動退回通用 key(attack/hurt)。
-//   受傷群組(4組)：knight=騎士/戰士/龍騎士、mage=法師/幻術士、elf=妖精/黑暗妖精、royal=王族；性別由 player.avatar(/女|公主/→f否則m) 判定。
+//   受傷群組(4組)：knight=騎士、mage=法師、elf=妖精/黑暗妖精、royal=王族；性別由 player.avatar(/女|公主/→f否則m) 判定。
 //   武器類型(equipCatKey·js/16)：dagger/sword1/sword2/katana/blunt1/blunt2/spear/claw/dual/chainsword/bow/xbow/wand/qigu/wpn_other；徒手→unarmed。
-var _SFX_GROUP = { knight: 'knight', warrior: 'knight', dragon: 'knight', mage: 'mage', illusion: 'mage', elf: 'elf', dark: 'elf', royal: 'royal' };
+var _SFX_GROUP = { knight: 'knight', mage: 'mage', elf: 'elf', dark: 'elf', royal: 'royal' };
 var _sfxVariantTried = {};
 function _sfxClassGroup() { return (typeof player !== 'undefined' && player && player.cls) ? (_SFX_GROUP[player.cls] || null) : null; }
 function _sfxGender() { var a = (typeof player !== 'undefined' && player && player.avatar) ? player.avatar : ''; return /女|公主/.test(a) ? 'f' : 'm'; }
@@ -574,14 +571,12 @@ var TOWN_BGM_LIST = [
     'town_witon',         // 威頓村
     'town_pride',         // 傲慢之塔入口
     'town_windwood_castle', // 風木城堡
-    'town_hyperia',       // 希培利亞村莊
-    'town_behemoth',      // 貝希摩斯
     'town_elder_council', // 🌑 v3.4.0 長老會議廳（黑暗妖精聖地.md：music 10）
 ];
-var TOWN_BGM_TRACKS = { 'town_hyperia': 'music97', 'town_behemoth': 'music99', 'town_elder_council': 'music10' };
+var TOWN_BGM_TRACKS = { 'town_elder_council': 'music10' };
 var CREATE_BGM = {
     royal: 'music1', knight: 'music2', elf: 'music3', mage: 'music4',
-    dark: 'music10', illusion: 'music96', dragon: 'music98', warrior: 'music175'
+    dark: 'music10'
 };
 var BGM_TRACKS = { title: 'title', create: 'create', town: 'town', battle: 'battle', boss: 'boss' };
 TOWN_BGM_LIST.forEach(function (id) { BGM_TRACKS[id] = TOWN_BGM_TRACKS[id] || id; });

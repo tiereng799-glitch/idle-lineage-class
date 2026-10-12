@@ -1385,10 +1385,11 @@ button.classic-skill-cell { cursor:pointer; }
     filter:contrast(1.08) saturate(1.05);
     mix-blend-mode:lighten;   /* 立繪幀是黑底：只留比拱門亮的部分(角色本身)，黑底透出拱門 */
 }
-.load-slot-card[data-key="m_warrior"] img,
-.load-slot-card[data-key="f_warrior"] img {
-    transform:scale(1.16);   /* 戰士幀為200x270，其餘職業為160x270；補回 contain 因較寬畫布造成的高度縮小 */
-}
+/* 已停用職業的舊角色：點了沒反應，不給 hover 光 */
+.load-slot-card.locked { cursor:not-allowed; }
+.load-slot-card.locked:hover { background:transparent; box-shadow:none; }
+.load-slot-card.locked .load-slot-label { color:#9a9286; }
+.load-slot-card.locked .load-slot-label strong { color:#b8ad98; }
 /* 空卡提示字：在底圖「New Character」正下方 */
 .load-slot-hint {
     position:absolute;

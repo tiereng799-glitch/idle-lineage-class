@@ -196,9 +196,6 @@ function _auditMobDrops(mobName) {
     if (typeof MOB_DROPS !== 'undefined') push(MOB_DROPS);
     if (typeof DARK_WEAPON_DROPS !== 'undefined') push(DARK_WEAPON_DROPS);
     if (typeof DARK_CRYSTAL_DROPS !== 'undefined') push(DARK_CRYSTAL_DROPS);
-    if (typeof DRAGON_DROPS !== 'undefined') push(DRAGON_DROPS);   // 🐉 龍騎士掉落表全職可掉（書板/鎖鏈劍）；妖魔搜索文件等試煉道具由 push 內 trialDropBlocked 對非龍騎士隱藏
-    if (typeof WARRIOR_DROPS !== 'undefined') push(WARRIOR_DROPS);   // ⚔️ 戰士技能印記掉落表（全職可掉）
-    if (typeof MEM_DROPS !== 'undefined') push(MEM_DROPS);   // 🔮 記憶水晶掉落表（全職可掉）
     return ids;
 }
 function renderAuditDrops(el) {
@@ -543,19 +540,6 @@ function killMob(idx) {
     // === 🔧 三階黑暗精靈水晶掉落 ===
     { let _dcd = (typeof DARK_CRYSTAL_DROPS !== 'undefined') ? DARK_CRYSTAL_DROPS[mob.n] : null;
       if (_dcd && !_kbNoReward) _dcd.forEach(e => { if (DB.items[e[0]] && Math.random() < (e[1] * _dropMult) / 100) gainItem(e[0], 1); }); }
-    // === 🐉 龍騎士掉落（任務道具／書板／鎖鏈劍）：僅龍騎士主玩家擊殺時判定 ===
-    { let _drd = (typeof DRAGON_DROPS !== 'undefined') ? DRAGON_DROPS[mob.n] : null;   // 🐉 龍騎士掉落表改為全職可掉（書板/鎖鏈劍·就算不能裝備也掉）；妖魔搜索文件等試煉道具由 trialDropBlocked 限定 dragon＋接取制
-      if (_drd && !_kbNoReward) _drd.forEach(e => { if (!DB.items[e[0]] || trialDropBlocked(e[0])) return;
-          if (typeof trialForced100 === 'function' && trialForced100(e[0])) { grantPartyTrialQuestDrop(e[0], 1); return; }   // 🔥 v3.0.78 接取制試煉道具：100% 掉落
-          if (Math.random() < (e[1] * _dropBase * partyRewardMult() * trialItemDropMult(e[0])) / 100) gainItem(e[0], 1); }); }   // 🐉 龍騎士試煉道具（trialItemDropMult 恆 1）
-    // === ⚔️ 戰士技能印記掉落（全職可掉·僅戰士可學）===
-    { let _wrd = (typeof WARRIOR_DROPS !== 'undefined') ? WARRIOR_DROPS[mob.n] : null;
-      if (_wrd && !_kbNoReward) _wrd.forEach(e => { if (!DB.items[e[0]] || trialDropBlocked(e[0])) return;   // 🔥 v3.0.78 戰士試煉道具（若列於此表）同樣吃接取制閘門
-          if (typeof trialForced100 === 'function' && trialForced100(e[0])) { grantPartyTrialQuestDrop(e[0], 1); return; }
-          if (Math.random() < (e[1] * _dropMult) / 100) gainItem(e[0], 1); }); }
-    // 🔮 記憶水晶掉落（幻術士法術書·全職可掉，獨立 roll·與 MOB_DROPS 並存）
-    { let _memd = (typeof MEM_DROPS !== 'undefined') ? MEM_DROPS[mob.n] : null;
-      if (_memd && !_kbNoReward) _memd.forEach(e => { if (DB.items[e[0]] && Math.random() < (e[1] * _dropMult) / 100) gainItem(e[0], 1); }); }
     // 🎴 卡片掉落（血盟標籤以外·一般＝經典機率·不乘 classicDropMult·一律進背包不自動賣）
     if (!_kbNoReward && typeof rollCardDrops === 'function') rollCardDrops(mob);   // 🗝️ 軍王之室小怪零產出（小怪固定 5 秒無限重生＝卡片無限刷）
 
@@ -955,6 +939,7 @@ function _antReadSlotStats(slotN) {   // 輕量讀取存檔位角色能力快照
         if (!raw) return null;
         let p = JSON.parse(raw).p;
         if (!p || !p.cls) return null;
+        if (typeof isRemovedClass === 'function' && isRemovedClass(p.cls)) return null;   // 已移除職業：不可擔任助戰者（既有指派由 antharasRefreshHelpers 自動解除）
         if (!!p.classicMode !== !!player.classicMode) return null;
         let d = p.d || {};
         return { slot: String(slotN), enSeed: p.enSeed || ('legacy|' + (p.name || '') + '|' + p.cls), name: p.name || ('存檔' + slotN), lv: p.lv || 1, mr: d.mr || 0, resEarth: d.resEarth || 0,
@@ -1050,10 +1035,10 @@ function antPointsExchange(itemId) {   // 兌換身上全部該材料
 }
 // 傳家之寶獎池（機率%·總和100）：裝備類 10% 機率附加祝福
 const ANT_HEIRLOOM_POOL = [
-    ['gold_1m', 20],
+    ['gold_1m', 28],   // 原 20＋已刪職業專屬武器（毀滅者鎖鏈劍／黑曜石奇古獸）各 4% 併入
     ['rng_water', 6], ['rng_earth', 6], ['rng_wind', 6], ['rng_fire', 6],
-    ['wpn_demon_axe', 4], ['wpn_ori_dagger', 4], ['wpn_official_2h', 4], ['wpn_dual_silver', 4], ['wpn_chain_destroyer', 4],
-    ['wpn_qigu_obsidian', 4], ['wpn_steel_manawand_red', 4], ['wpn_steel_manawand_blue', 4], ['wpn_rotten_longbow', 4],
+    ['wpn_demon_axe', 4], ['wpn_ori_dagger', 4], ['wpn_official_2h', 4], ['wpn_dual_silver', 4],
+    ['wpn_steel_manawand_red', 4], ['wpn_steel_manawand_blue', 4], ['wpn_rotten_longbow', 4],
     ['arm_ancient_dragonscale_wind', 3], ['arm_ancient_dragonscale_fire', 3], ['arm_ancient_dragonscale_earth', 3], ['arm_ancient_dragonscale_water', 3],
     ['armguard_archer', 3], ['armguard_fighter', 3],
     ['rng_sage', 0.5], ['acc_thebes_horus', 0.5], ['acc_thebes_anubis', 0.5], ['blt_thebes_osiris', 0.5]
@@ -1142,7 +1127,7 @@ function enterRift() {
     }
     if (player.riftRewardMs != null) { logSys('<span class="text-amber-300">請先在時空裂痕入口「領取獎勵」，才能再次進入。</span>'); return; }
     let _ci = player.inv.findIndex(i => i.id === 'mat_crack_core' && (i.cnt || 1) >= 1);
-    if (_ci < 0) { logSys('<span class="text-red-400">需要 1 顆 龜裂之核 才能進入時空裂痕（希培利亞村莊・巴特爾，以時空裂痕碎片×100 製作）。</span>'); return; }
+    if (_ci < 0) { logSys('<span class="text-red-400">需要 1 顆 龜裂之核 才能進入時空裂痕（威頓村莊・巴特爾，以時空裂痕碎片×100 製作）。</span>'); return; }
     let _c = player.inv[_ci]; if ((_c.cnt || 1) > 1) _c.cnt -= 1; else player.inv.splice(_ci, 1);
     renderTabs(true);
     state.riftRun = true;
@@ -1421,9 +1406,6 @@ function revive() {
     if (player.cls === 'mage') startMap = 'town_talking';
     else if (player.cls === 'elf') startMap = 'town_elf';
     else if (player.cls === 'dark') startMap = 'town_silent';
-    else if (player.cls === 'illusion') startMap = 'town_hyperia';
-    else if (player.cls === 'dragon') startMap = 'town_behemoth';
-    else if (player.cls === 'warrior') startMap = 'town_heine';   // ⚔️ 戰士：海音
     else if (player.cls === 'royal') startMap = 'town_talking';   // 👑 王族：說話之島
 
     setMapSelectors(startMap);

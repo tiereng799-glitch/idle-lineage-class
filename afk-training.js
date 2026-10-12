@@ -303,7 +303,7 @@
   //   每拍取增量即可，不必自己重做一套歸因。_dps 是 let 宣告→不在 window 上，用裸名讀。
   //   寵物與召喚：核心只有 pet／summon 兩個總桶 → 借 threatWrap／summonTick（每個實體的一次攻擊
   //   各自包一個快照視窗）逐實體量，再依名字併成「每種」一列。
-  //   兩邊的差額（走不到上面兩條的來源，如寵物的中毒出血 DoT、幻術立方）進「其他」列——
+  //   兩邊的差額（走不到上面兩條的來源，如寵物的中毒出血 DoT）進「其他」列——
   //   寧可有一列說不清楚，也不要讓各列相加對不上總 DPS。
   function coreDps() { return (typeof _dps !== 'undefined' && _dps) ? _dps : null; }
   function grow(now, before) { var d = (now || 0) - (before || 0); return d > 0 ? d : 0; }   // 中途被玩家按「重置」→ 桶歸零，增量以 0 計

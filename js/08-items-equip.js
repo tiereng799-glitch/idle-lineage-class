@@ -278,7 +278,7 @@ const BASE_TRIGGERED_SKILL_FIELDS = [
     'spellProc', 'procSkill', 'procSkill2', 'procStatusSkill', 'procFireSkillRate',
     'meleeHitSpell', 'onHitCastSkill', 'dragonStrike', 'hitEchoMagic',
     'procPoison', 'procPoisonPct', 'procBurstPoison', 'procBurn', 'procHealFlat',
-    'onHitEleDmg', 'windbladeProc', 'qiguProc', 'redSpecter',
+    'onHitEleDmg', 'windbladeProc', 'redSpecter',
     'selfBreakProc', 'procInstakill', 'strawCurse',
 ];
 // 純回魔（mpOnHit／blueSpecter）不屬於觸發技能；指定魔擊／魔爆武器依個別規則放行。
@@ -623,8 +623,6 @@ function useItem(u, silent = false, keepModal = false) {   // 🔌 加掛版補�
             if (player.cds.pot > 0) return;
             let h = Math.floor(potionHealBase(d) * (1 + (getConPotionPct(player.d.con) + dollFieldVal('potionBonus') + playerEquipPotionBonusPct() + (player._miscPotionBonus || 0)) / 100));   // 🍶 藥水基準改隨機區間 valMin~valMax（紅10~20/橙30~50/白60~80）；🪆 魔法娃娃 potionBonus%（吸血鬼）；🧰 道具收集冊 材料/其他全收集：藥水恢復%
             if (hasMastery('k_survive')) h = Math.floor(h * 1.25);   // 🏅 生存精通：治癒藥水恢復 +25%
-            if (hasMastery('k_tough') && player.hp < player.mhp * 0.4) h = Math.floor(h * 1.5);   // ⚔️ 堅韌精通：HP<40% 時藥水治癒量 +50%
-            if (hasMastery('k_dragonblood')) h = Math.floor(h * 1.15);   // 🐉 龍血精通：治癒藥水恢復 +15%
             if (player.hp < player.mhp * 0.2) { try { for (let _k in player.eq) { let _e = player.eq[_k]; if (_e && DB.items[_e.id] && DB.items[_e.id].lowHpPotionX2) { h = h * 2; break; } } } catch (e) {} }   // 🏺 v3.2.17 聖伯納的急救酒桶：HP<20% 時治癒藥水恢復量 ×2
             if (player.statuses && player.statuses.potionFrost > 0) h = Math.max(1, Math.floor(h * 0.5));   // 🌅 藥水霜化（巨大骷髏·枯竭詛咒）：治癒藥水恢復量 −50%
             if (player.statuses && player.statuses.foulWater > 0) h = Math.max(1, Math.floor(h * 0.5));   // 🌊 v3.6.20 汙濁之水（玩家NPC二模板）：治癒藥水也減半
@@ -799,7 +797,7 @@ function darkEquipOk(d, id) {
     if (d.type === 'wpn') {
         if (d.isArrow) return true;
         if (id === 'wpn_siruge') return false;                          // 瑟魯基：禁用
-        if (id === 'wpn_demon_sword_hidden') return false;              // 👹 隱藏的魔族之劍：適用王族/騎士/妖精/龍騎士（黑暗妖精改用 隱藏的魔族鋼爪）
+        if (id === 'wpn_demon_sword_hidden') return false;              // 👹 隱藏的魔族之劍：適用王族/騎士/妖精（黑暗妖精改用 隱藏的魔族鋼爪）
         let tags = getWeaponTags(id);
         if (tags.includes('匕首') || tags.includes('單手劍') || tags.includes('鋼爪') || tags.includes('雙刀') || tags.includes('武士刀')) return true;   // 🔧 黑暗妖精亦可使用武士刀
         if (d.isBow) {
@@ -816,76 +814,15 @@ function darkEquipOk(d, id) {
     if (nm === '水晶盔甲') return true;                                 // 可使用水晶盔甲
     return reqAllowsClass(d, 'elf') || reqAllowsClass(d, 'dark');   // 其餘比照妖精可用
 }
-// 🔮 幻術士裝備規則：全職業裝備(req:all/無req)除「匕首」外皆可用＋下列開放清單(特定職業限定→開放給幻術士)；不可使用任何匕首。
-const ILLUSION_WHITELIST = new Set([
-    '黑法師項鍊','蕾雅項鍊','法令軍王之鍊','冥法軍王之戒','古老的皮盔甲','鏈甲','抗魔法鏈甲','鱗甲','黑長者涼鞋','黑暗棲林者長靴','神官長靴',
-    '神官頭飾','銀光斗篷','巨蟻女皇的銀翅膀','神官斗篷','馬昆斯斗篷','水晶手套','神官手套','腕甲','抗魔法頭盔',
-    '精靈皮盔','古老的長袍','巫妖斗篷','黑長者長袍','神官法袍','拉斯塔巴德長袍','喚獸師長袍','黑法師長袍','蕾雅長袍','伊娃之盾',
-    '骷髏盾牌','神官魔法書','魔法能量之書','銀釘皮盾','梅杜莎盾牌','幻象眼魔的心眼','皮盾牌','木盾','小盾牌','阿克海盾牌',
-    '惡魔斧頭','牛人斧頭','巨斧','狂戰士斧','戰斧','侏儒鐵斧','銀斧','戰錘','流星錘','木棒',
-    '弗萊爾','釘錘','亞連','斧','力量魔法杖','神官魔杖','紅水晶魔杖','巴風特魔杖','瑪那魔杖','美基魔法杖',
-    '橡木魔法杖','冰之女王魔杖','拉斯塔巴德魔杖','巫術魔法杖','巴列斯魔杖','惡魔鐮刀','黑法師之杖','蕾雅魔杖','暗黑十字弓','十字弓',
-    '幽暗十字弓','尤米弓','古老的弩槍','拉斯塔巴德重十字弓','短弓','歐西斯弓','獵人之弓','精靈弓','拉斯塔巴德弓','黑暗十字弓'
-]);
-function illusionEquipOk(d, id) {
-    if (!d) return false;
-    if (d.type === 'wpn' && getWeaponTags(id).includes('匕首')) return false;   // 🔮 幻術士無法使用任何匕首（含全職業匕首）
-    if (d.type === 'wpn' && ['單手矛', '雙手矛'].includes(atkSpdFamily(id))) return false;   // 🔮 v3.0.90 用戶：幻術士不可使用任何矛（含全職業矛·早退→req:all／開放清單皆擋）
-    if (reqAllowsClass(d, 'illusion')) return true;   // 全職業(req:all/無req·匕首已排除)或 req 含 illusion（奇古獸/幻術士專屬裝備）
-    if (ILLUSION_WHITELIST.has(d.n || '')) return true;   // 開放清單（特定職業限定→開放給幻術士）
-    return false;
-}
-// 🐉 龍騎士裝備規則：全職業裝備(req:all/無req)除「匕首」外皆可用＋下列開放清單(特定職業限定→開放給龍騎士)；不可使用任何匕首。
-const DRAGON_WHITELIST = new Set([
-    '古老的鱗甲','金屬蜈蚣皮盔甲','死亡盔甲','鏈甲','抗魔法鏈甲','精靈鏈甲','鱗甲',
-    '巴列斯長靴','黑暗棲林者長靴','武官長靴','巨蟻女皇的金翅膀','銀光斗篷','武官斗篷','馬昆斯斗篷',
-    '水晶手套','巴蘭卡手套','墮落手套','武官手套','腕甲','抗魔法頭盔','巴蘭卡頭盔','武官頭盔','精靈皮盔',
-    '伊娃之盾','骷髏盾牌','武官之盾','銀釘皮盾','侏儒圓盾','拉斯塔巴德圓盾','大盾牌','反射之盾','梅杜莎盾牌','皮盾牌','木盾','小盾牌','阿克海盾牌','死亡之盾',
-    '巨斧','狂戰士斧','戰斧','侏儒鐵斧','銀斧','戰錘','流星錘','木棒','弗萊爾','釘錘','亞連','斧',
-    '古老的劍','惡魔之劍','黑燄之劍','瑟魯基之劍','克特之劍','黑暗之劍','細劍','大馬士革刀','武士刀','拉斯塔巴德長劍','侵略者之劍','精靈短劍','彎刀','長劍','紅騎士之劍','銀長劍','小侏儒短劍','銀劍','奧里哈魯根的劍身','歐西斯短劍','鎖子甲破壞者','闊劍','長劍的劍身','短劍的劍身',
-    '屠龍劍','古老的巨劍','騎士范德之劍','復仇之劍','巨劍','武官雙手劍','雙手劍','血色巨劍'
-]);
-function dragonEquipOk(d, id) {
-    if (!d) return false;
-    if (d.type === 'wpn' && getWeaponTags(id).includes('匕首')) return false;   // 🐉 龍騎士無法使用任何匕首（含全職業匕首）
-    if (d.type === 'wpn' && ['單手矛', '雙手矛'].includes(atkSpdFamily(id))) return false;   // 🐉 v3.0.90 用戶：龍騎士不可使用任何矛（含全職業矛·早退→req:all／開放清單皆擋）
-    if (reqAllowsClass(d, 'dragon')) return true;   // 全職業(req:all/無req·匕首已排除)或 req 含 dragon（龍騎士專屬裝備）
-    if (DRAGON_WHITELIST.has(d.n || '')) return true;   // 開放清單（特定職業限定→開放給龍騎士）
-    return false;
-}
+// 幻術士／龍騎士／戰士已移除：保留空殼（afk-wiki.js 以 typeof 呼叫），一律不可裝備。
+function illusionEquipOk(d, id) { return false; }
+function dragonEquipOk(d, id) { return false; }
+function warriorEquipOk(d, id) { return false; }
 // 🔧 物品職業限制（白名單）單一事實來源：無 req、'all'、或 req（逗號分隔）含該職業即可使用/裝備。
 //    全遊戲一律採「白名單」寫法（無「黑名單禁止職業」機制）；各處請呼叫此函式，勿再各自手寫 d.req 比對。
 function reqAllowsClass(d, cls) {
     if (!d || !d.req || d.req === 'all') return true;
     return typeof d.req === 'string' && d.req.split(',').includes(cls);
-}
-// ⚔️ 戰士裝備規則（白名單制）：武器僅限「單手鈍器／雙手鈍器」(或 req 含 warrior 的戰士專屬武器)；
-//    防具僅「標註全職業(req:all)的非盾牌防具」＋下列具名開放清單(含臂甲 slot:shield、職業限定防具、勇敢皮帶)；飾品＝全職業(req:all)的戒指／項鍊／腰帶皆可裝＋勇敢皮帶(req:knight 具名)；其餘(劍/弓/匕首/魔杖/盾牌/職業限定飾品)一律不可裝備。
-const WARRIOR_WHITELIST = new Set([
-    '勇敢皮帶','古老的金屬盔甲','巴風特盔甲','金屬蜈蚣皮盔甲','巴蘭卡盔甲','死亡盔甲','克特盔甲','金屬盔甲','鋼鐵金屬盔甲','死亡騎士盔甲','武官護鎧','皮甲','藤甲','青銅盔甲','精靈金屬盔甲','鏈甲','抗魔法鏈甲','精靈鏈甲','精靈護胸金屬板','鱗甲','歐西斯鏈甲','小藤甲',
-    '克特長靴','死亡騎士長靴','巴列斯長靴','黑暗棲林者長靴','武官長靴','巨蟻女皇的金翅膀',
-    '水晶手套','巴蘭卡手套','克特手套','死亡騎士手套','武官手套','腕甲','守護者臂甲','體力臂甲',
-    '騎士面甲','鋼鐵頭盔','克特頭盔','死亡騎士頭盔','巴蘭卡頭盔','武官頭盔','治癒魔法頭盔','敏捷魔法頭盔','力量魔法頭盔'
-]);
-// ⚔️ 戰士額外開放使用的具名武器（矛／槍類等非鈍器；使用者指定開放清單，依名稱比對 d.n）
-const WARRIOR_WEAPON_WHITELIST = new Set([
-    '古代神之槍','深紅長矛','貝卡合金','露西錘','法丘','吉薩','闊矛','拉斯塔巴德矛',
-    '覆上奧里哈魯根的角','精靈之矛','帕提森','槍','覆上米索莉的角','三叉戟','歐西斯之矛','潘的角'
-]);
-function warriorEquipOk(d, id) {
-    if (!d) return false;
-    if (d.type === 'wpn') {
-        if (d.isArrow) return false;                                                   // 戰士不用弓箭
-        let tags = getWeaponTags(id);
-        if (tags.includes('單手鈍器') || tags.includes('雙手鈍器')) return true;        // 所有單手／雙手鈍器
-        if (WARRIOR_WEAPON_WHITELIST.has(d.n || '')) return true;                       // ⚔️ 具名開放武器（矛／槍等）
-        return !!(d.req && typeof d.req === 'string' && d.req.split(',').includes('warrior'));   // 戰士專屬武器（保險；古代神之斧等本就具鈍器 tag）
-    }
-    if (WARRIOR_WHITELIST.has(d.n || '')) return true;                                 // 具名開放清單（職業限定防具／臂甲／勇敢皮帶[req:knight]）
-    if (d.type === 'acc' && reqAllowsClass(d, 'warrior')) return true;                 // ⚔️ 標註全職業(req:all)的飾品（戒指／項鍊／腰帶）皆可裝（2026-06 使用者要求）
-    if (d.type === 'arm' && d.slot !== 'shield' && reqAllowsClass(d, 'warrior')) return true;   // 標註全職業的非盾牌防具
-    if (d.type === 'arm' && d.armguard && reqAllowsClass(d, 'warrior')) return true;   // 🛡️ 全職業臂甲（req:all·副手非真盾）：戰士可用（古代鬥士/神射臂甲等；職業限定臂甲仍由 req 擋）
-    return false;
 }
 // 👑 王族裝備規則：全職業(req:all/無req)武器/飾品/防具＋req 含 royal（黃金權杖等）＋下列具名開放清單（特定職業限定→開放給王族）
 const ROYAL_WHITELIST = new Set([
@@ -908,15 +845,12 @@ function royalEquipOk(d, id) {
 function checkCanEquip(item) {
     let d = DB.items[item.id];
     if (d && d.reqAvatar && player && ((d.strictAvatar && player.avatar !== d.reqAvatar) || (!d.strictAvatar && player.avatar && player.avatar !== d.reqAvatar))) return false;   // 👸 性別頭像限定；strictAvatar（純潔少女的憐愛）要求必須明確為女妖精，舊檔缺 avatar 亦不放行
-    // 🏺 遺物：職業限制純以 req 白名單為準＝略過各職業專屬 *EquipOk 武器/防具清單（否則戰士等會被拒）。
+    // 🏺 遺物：職業限制純以 req 白名單為準＝略過各職業專屬 *EquipOk 武器/防具清單（否則黑暗妖精等會被拒）。
     //    ⚠️ v3.7.83 修：原本這裡是 `return reqAllowsClass(...)` 直接早退，連帶把下方共用尾段的**劍術精通例外**也跳過了
     //    → 妖精選劍術精通後，一般的騎士限定單手武器借得到、同條件的「遺物」卻裝不上（8 件）。改成只跳過 *EquipOk 分派、
     //    仍走同一條尾段，遺物與一般裝備的判定路徑就完全一致。
     if (!isRelic(d)) {
         if (player.cls === 'dark') return darkEquipOk(d, item.id);   // 🔧 黑暗妖精專屬裝備規則
-        if (player.cls === 'illusion') return illusionEquipOk(d, item.id);   // 🔮 幻術士專屬裝備規則（除匕首外的全職業裝備＋開放清單）
-        if (player.cls === 'dragon') return dragonEquipOk(d, item.id);   // 🐉 龍騎士專屬裝備規則（除匕首外的全職業裝備＋開放清單）
-        if (player.cls === 'warrior') return warriorEquipOk(d, item.id);   // ⚔️ 戰士專屬裝備規則（白名單制：鈍器＋全職非盾防具＋開放清單）
         if (player.cls === 'royal') return royalEquipOk(d, item.id);   // 👑 王族專屬裝備規則（全職業裝備＋具名開放清單）
     }
     // 1. 基本職業判定
@@ -955,8 +889,6 @@ function equipItem(item) {
     if (d && (d.slot === 'petwpn' || d.slot === 'petarm')) { logSys('<span class="text-amber-300">寵物裝備請到寵物保管（亞丁 包武／古魯丁 奧斯丁）為指定寵物裝上。</span>'); return; }
     let slot = d.type === 'wpn' ? 'wpn' : d.slot;
     if (d.isArrow) slot = 'arrow'; // 如果是箭矢，強制分配到 arrow 欄位
-    // ⚔️ 迅猛雙斧雙持：已學迅猛雙斧且主手已是單手鈍器時，再裝單手鈍器 → 放副手 offwpn 欄
-    if (slot === 'wpn' && !d.isArrow && warriorDualWieldWpnOk(item.id) && dualWieldOffhandOk()) slot = 'offwpn';
 
     // 職業/裝備資格統一走 checkCanEquip（含黑暗妖精規則、負重強化、劍術精通例外），與顯示用判定同一來源
     if (!checkCanEquip(item)) {
@@ -1009,27 +941,14 @@ function equipItem(item) {
     if (!invItem) { logSys('<span class="text-slate-400">該物品已不在背包中。</span>'); closeModal(); renderTabs(); return; }
     // 雙手武器（弓 / w2h）無法與盾牌並存：裝雙手武器自動卸盾、裝盾自動卸雙手武器
     // 🛡️ 臂甲（armguard）例外：可與雙手武器並用，故不互相卸下（仍與盾牌共用副手欄、自然互斥）
-    if (slot === 'wpn' && effTwoHanded(d, item.id) && player.eq.shield && !DB.items[player.eq.shield.id].armguard) {
+    if (slot === 'wpn' && isTwoHandedWpn(d) && player.eq.shield && !DB.items[player.eq.shield.id].armguard) {
         if (isEquipCursed('shield')) { logSys('<span class="text-red-400 font-bold">被詛咒的盾牌無法卸下，無法裝備雙手武器！</span>'); return; }
         returnEquipToInv('shield');
         logSys(`雙手武器無法持盾，已卸下盾牌。`);
-    } else if (slot === 'shield' && !d.armguard && player.eq.wpn && effTwoHanded(DB.items[player.eq.wpn.id], player.eq.wpn.id)) {
+    } else if (slot === 'shield' && !d.armguard && player.eq.wpn && isTwoHandedWpn(DB.items[player.eq.wpn.id])) {
         if (isEquipCursed('wpn')) { logSys('<span class="text-red-400 font-bold">被詛咒的雙手武器無法卸下，無法裝備盾牌！</span>'); return; }
         returnEquipToInv('wpn');
         logSys(`裝備盾牌，已卸下雙手武器。`);
-    }
-    // ⚔️ v3.4.21 副手位置互斥：戰士副手武器（迅猛雙斧 offwpn）與 盾牌／臂甲 共用副手位置，只能擇一裝備
-    if (slot === 'offwpn' && player.eq.shield) {   // 裝副手武器 → 卸下盾牌/臂甲
-        if (isEquipCursed('shield')) { logSys('<span class="text-red-400 font-bold">被詛咒的副手裝備無法卸下，無法持用副手武器！</span>'); return; }
-        let _sd = DB.items[player.eq.shield.id];
-        let _snm = (_sd && _sd.armguard) ? '臂甲' : '盾牌';
-        returnEquipToInv('shield');
-        logSys(`副手改持武器，已卸下${_snm}。`);
-    } else if (slot === 'shield' && player.eq.offwpn) {   // 裝盾牌/臂甲 → 卸下副手武器
-        if (isEquipCursed('offwpn')) { logSys('<span class="text-red-400 font-bold">被詛咒的副手武器無法卸下，無法裝備' + (d.armguard ? '臂甲' : '盾牌') + '！</span>'); return; }
-        let _on = DB.items[player.eq.offwpn.id];
-        returnEquipToInv('offwpn');
-        logSys(`副手改裝${d.armguard ? '臂甲' : '盾牌'}，已卸下副手武器${_on ? ' ' + _on.n : ''}。`);
     }
 
     let isStackable = (slot === 'arrow'); // 箭矢支援整組堆疊裝備
@@ -1059,7 +978,7 @@ function equipItem(item) {
     
     player.eq[slot] = singleItem;
     syncShahaArrow();   // 🏝️ 沙哈之弓：裝備/換武器後同步無限箭
-    syncDualWield();    // ⚔️ 迅猛雙斧：換主手後若副手條件失效則退回背包
+    syncDualWield();    // 舊存檔殘留的副手武器（雙持已移除）退回背包
 
     logSys(`裝備了 ${getItemFullName(singleItem)}。`);
     calcStats();
@@ -1082,7 +1001,7 @@ function unequipItem(slot) {
             player.eq[slot] = null;
         }
         syncShahaArrow();   // 🏝️ 卸下沙哈之弓 → 移除無限箭
-        syncDualWield();    // ⚔️ 迅猛雙斧：卸下主手後副手條件失效則退回背包
+        syncDualWield();    // 舊存檔殘留的副手武器（雙持已移除）退回背包
         calcStats();
         renderTabs();
         renderSkillSelects();   // 卸下裝備後即時更新自動化技能選項
@@ -1261,11 +1180,7 @@ const STATUS_ICON_SKILLS = {
     'sk_elf_physboost':'體能激發','sk_elf_energyboost':'能量激發','sk_elf_mirror':'鏡反射','sk_dark_str':'力量提升','sk_dark_mrup':'影之防護',
     'sk_dark_stealth':'暗隱術','sk_dark_poison':'附加劇毒','sk_dark_dex':'敏捷提升','sk_dark_poisonres':'毒性抵抗','sk_dark_burn':'燃燒鬥志',
     'sk_dark_walkhaste':'行走加速','sk_dark_fang':'暗影之牙','sk_dark_dodge':'暗影閃避','sk_dark_erup':'迴避提升','sk_dark_double':'雙重破壞',
-    'sk_illu_ogre':'幻覺：歐吉','sk_illu_cube_burn':'立方：燃燒','sk_illu_mirror':'鏡像','sk_illu_focus':'專注','sk_illu_lich':'幻覺：巫妖',
-    'sk_illu_cube_quake':'立方：地裂','sk_illu_golem':'幻覺：鑽石高崙','sk_illu_cube_shock':'立方：衝擊','sk_illu_endure':'耐力','sk_illu_avatar':'幻覺：化身',
-    'sk_illu_insight':'洞察','sk_illu_cube_harmony':'立方：和諧','sk_illu_pain':'疼痛的歡愉','sk_dragon_armor':'龍之護鎧','sk_dragon_flameslash':'燃燒擊砍','sk_dragon_awaken_antares':'覺醒：安塔瑞斯',
-    'sk_dragon_bloodlust':'血之渴望','sk_dragon_awaken_falion':'覺醒：法利昂','sk_dragon_deadlybody':'致命身軀','sk_dragon_awaken_baraka':'覺醒：巴拉卡斯','sk_royal_precise':'精準目標','sk_royal_burnweapon':'灼熱武器','sk_royal_bravewill':'勇猛意志','sk_royal_shield':'閃亮之盾',
-    'sk_warrior_throwaxe':'戰斧投擲','sk_warrior_endurance':'體能強化','sk_warrior_outlaw':'亡命之徒',
+    'sk_royal_precise':'精準目標','sk_royal_burnweapon':'灼熱武器','sk_royal_bravewill':'勇猛意志','sk_royal_shield':'閃亮之盾',
     // 裝備法術沿用原法術圖示。
     'sk_helm_dex1':'通暢氣脈術','sk_helm_dex2':'加速術','sk_helm_str1':'擬似魔法武器','sk_helm_str2':'無所遁形術','sk_helm_str3':'體魄強健術'
 };
@@ -1434,9 +1349,6 @@ function _updateUIImpl() {
     else if (player.cls === 'mage') clsDisplayName = '法師';
     else if (player.cls === 'elf') clsDisplayName = '妖精';
     else if (player.cls === 'dark') clsDisplayName = '黑暗妖精';   // 🔧 黑暗妖精職業名
-    else if (player.cls === 'illusion') clsDisplayName = '幻術士';   // 🔧 幻術士職業名
-    else if (player.cls === 'dragon') clsDisplayName = '龍騎士';   // 🐉 龍騎士職業名
-    else if (player.cls === 'warrior') clsDisplayName = '戰士';   // ⚔️ 戰士職業名
     else if (player.cls === 'royal') clsDisplayName = '王族';   // 👑 王族職業名
     if(document.getElementById('st-classname')) document.getElementById('st-classname').innerText = clsDisplayName;   // 🏅 精通徽記已移除，僅顯示職業名
     let _nameEl = document.getElementById('st-class');

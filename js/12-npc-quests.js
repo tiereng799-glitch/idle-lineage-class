@@ -14,9 +14,6 @@ const WH_NO_STORE = ['item_dk_insignia','item_mastery_proof',   // 🚫 v3.2.17 
     'new_item_204','new_item_205','new_item_203','new_item_214','new_item_212','new_item_240',
     'new_item_199','new_item_200','new_item_201','new_item_202','new_item_213','item_blueflute',
     'item_death_oath','item_orc_elder_head','item_yeti_head','item_fallen_key',
-    'item_ant_fruit','item_ant_branch','item_ant_bark','item_elmore_heart','item_time_orb','item_wyvern_blood',
-    'new_item_207','new_item_226','new_item_225','item_cyclops_blood','new_item_219','new_item_234',
-    'item_demon_search','item_demon_spy','item_yeti_heart','item_soulfire_ash',
     'new_item_197','new_item_211','item_lost_soul','mat_flame_sword','mat_flame_eye','mat_flame_claw','mat_flame_heart'];   // 🚫 禁止存入倉庫（現行陣列內容）：死亡騎士之印記、精通之證、傲慢之塔傳送符(11~91F)、各村莊搜索狀/信件等劇情道具、沙哈之箭、🔥50級試煉任務道具＋全部試煉道具。
     //    （🗑️ 已不在此列：四種項圈＝v3.2.17 隨項圈系統移除、🎴卡片/裝備收集冊＝v3.5.87 移除 DB 定義、潘朵拉抽獎卷＝v3.5.49 隨舊抽獎機移除）
 // 倉庫分類過濾（武器 / 防具 / 道具）：存入、取出共用同一個下拉清單
@@ -97,7 +94,6 @@ function _whBuildCraftMatIds(){
         for(let g of groups){ if(!Array.isArray(g)) continue; for(let r of g){ let ings = (r && (r.req || r.mats)) || []; for(let m of ings){ if(m && m.id && m.id !== 'gold') _whCraftMatIds[m.id] = true; } } } };
     try { _scan(typeof CRAFT_RECIPES !== 'undefined' && CRAFT_RECIPES); } catch(e){}
     try { _scan(typeof DEMONKING_RECIPES !== 'undefined' && DEMONKING_RECIPES); } catch(e){}
-    try { _scan(typeof LUMIEL_RECIPES !== 'undefined' && LUMIEL_RECIPES); } catch(e){}
 }
 // 道具子分類判定：卡片(eff:'card')／技能書(skillbk)／卷軸(scroll)／任務(type:'quest' 或 quest_ 前綴)／製作(配方原料∪mat_前綴∪type:'etc' 材料)／其他(藥水/misc 消耗品等)
 function whItemSubCat(id){
@@ -667,13 +663,13 @@ function doIoExchange(remId) {
     let _c = document.getElementById('interaction-content'); if (_c) renderIoExchange(_c);   // 就地重渲染（更新結晶持有數，可連續兌換）
 }
 // 菈克希絲：把「身上穿著、帶席琳詞綴」的裝備拆分＝裝備保留其他詞綴/強化值（僅席琳詞綴消失）＋獲得同詞綴的對應部位遺骸。
-//   部位映射＝SHERINE_REMAINS.eqSlot（武器→之爪…盔甲→之鱗）；⚔️ 戰士副手武器欄(offwpn)視同武器→之爪。
+//   部位映射＝SHERINE_REMAINS.eqSlot（武器→之爪…盔甲→之鱗）。
 function renderLachesisSplit(div) {
     let html = `<div class="p-4">
         <div class="text-slate-300 text-sm mb-1">菈克希絲：「命運的絲線纏在你的裝備上……讓我為你解開。裝備還是那件裝備，席琳的祝福則化為遺骸歸你。」</div>
         <div class="text-slate-400 text-xs mb-3">拆分「身上穿著」帶<span class="c-sherine">席琳套裝詞綴</span>的裝備：裝備保留強化值與其他詞綴（僅席琳詞綴消失），並獲得<span class="c-sherine">相同詞綴</span>的對應部位遺骸（如 +12 魔女 祝福的 闊劍 → +12 祝福的闊劍＋魔女之爪）。</div>`;
     let _rows = '';
-    let _slots = SHERINE_REMAINS.map(r => ({ slot: r.eqSlot, remId: r.id, remN: r.n })).concat([{ slot: 'offwpn', remId: 'rem_claw', remN: '之爪' }]);
+    let _slots = SHERINE_REMAINS.map(r => ({ slot: r.eqSlot, remId: r.id, remN: r.n }));
     _slots.forEach(m => {
         let e = player.eq && player.eq[m.slot];
         if (!e || !e.seteff) return;
@@ -690,7 +686,7 @@ function renderLachesisSplit(div) {
 function doLachesisSplit(slotKey) {
     let e = player.eq && player.eq[slotKey];
     if (!e || !e.seteff) return;
-    let _map = (slotKey === 'offwpn') ? SHERINE_REMAINS.find(r => r.eqSlot === 'wpn') : SHERINE_REMAINS.find(r => r.eqSlot === slotKey);
+    let _map = SHERINE_REMAINS.find(r => r.eqSlot === slotKey);
     if (!_map) return;   // 非映射部位（理論上不會發生：清單只列映射欄位）
     let _g = e.seteff.slice(0, 2);
     e.seteff = false;   // 僅席琳詞綴消失：強化值(en)/祝福(bless)/古代(anc)/屬性(attr) 全保留·裝備維持穿著
@@ -716,15 +712,6 @@ const TRIAL_Q = {
     dark15:     { cls:'dark',     lv:30, npc:'倫得',         reqs:[['item_death_oath',1]], rewards:['arm_shadowglove'] },   // 🔁 v3.1.39 需求等級與 dark30 交換（15→30·NPC倫得/獎勵暗影手套/需求死亡誓約不變）
     dark30:     { cls:'dark',     lv:15, npc:'康',           reqs:[['item_orc_elder_head',1]], rewards:['arm_shadowmask'] },   // 🔁 v3.1.39 需求等級與 dark15 交換（30→15·NPC康/獎勵暗影面具/需求妖魔長老之首不變）
     dark45:     { cls:'dark',     lv:45, npc:'布魯迪卡',     reqs:[['item_yeti_head',1]], rewards:['arm_shadowboots'] },
-    illusion15: { cls:'illusion', lv:15, npc:'希蓮恩',       reqs:[['item_ant_fruit',1],['item_ant_branch',1],['item_ant_bark',1]], rewards:['wpn_illu_wand','mem_cube_burn'] },
-    illusion30: { cls:'illusion', lv:30, npc:'希蓮恩',       reqs:[['item_elmore_heart',1]], rewards:['shd_illu_book','mem_cube_shock'] },
-    illusion45: { cls:'illusion', lv:45, npc:'希蓮恩',       reqs:[['item_time_orb',1]], rewards:['clk_illu'] },
-    warrior15:  { cls:'warrior',  lv:15, npc:'多文',         reqs:[['new_item_207',1]], rewards:['wpn_warrior_trial_axe','bk_warrior_dualaxe'] },
-    warrior30:  { cls:'warrior',  lv:30, npc:'多文',         reqs:[['new_item_226',1],['new_item_225',1]], rewards:['clk_warrior_corps','bk_warrior_roar'] },
-    warrior45:  { cls:'warrior',  lv:45, npc:'多文',         reqs:[['item_cyclops_blood',1]], rewards:['hlm_warrior_corps'] },
-    dragon15:   { cls:'dragon',   lv:15, npc:'普洛凱爾',     reqs:[['item_demon_search',3]], rewards:['wpn_dragon_2h','bk_dragon_armor'] },
-    dragon30:   { cls:'dragon',   lv:30, npc:'普洛凱爾',     reqs:[['item_demon_spy',1]], rewards:['armguard_dragonscale','bk_dragon_bloodlust'] },
-    dragon45:   { cls:'dragon',   lv:45, npc:'普洛凱爾',     reqs:[['item_yeti_heart',10]], rewards:['clk_dragon'] },
     royal15:    { cls:'royal',    lv:15, npc:'甘特',         reqs:[['new_item_197',1]], rewards:['clk_royal_red','bk_royal_precise'] },
     royal30:    { cls:'royal',    lv:30, npc:'甘特',         reqs:[['new_item_211',1]], rewards:['clk_royal_majesty','bk_royal_callally'] },
     royal45:    { cls:'royal',    lv:45, npc:'馬沙',         reqs:[['item_lost_soul',1]], rewards:['acc_royal_guard'] },
@@ -733,10 +720,6 @@ const TRIAL_ITEM_Q = {};   // 試煉道具 id → 所屬試煉 key 陣列（古�
 Object.keys(TRIAL_Q).forEach(k => TRIAL_Q[k].reqs.forEach(p => { (TRIAL_ITEM_Q[p[0]] = TRIAL_ITEM_Q[p[0]] || []).push(k); }));
 // 50級試煉道具狀態閘（stage=指定收集階段道具／ex=最終兌換材料·need 預設 1）；時空裂痕碎片為通用素材不管制
 const TRIAL50_ITEM = {
-    new_item_219:      { cls:'warrior',  stage:1, need:5 },
-    new_item_234:      { cls:'warrior',  ex:1 },
-    item_soulfire_ash: { cls:'dragon',   ex:1 },
-    item_wyvern_blood: { cls:'illusion', ex:1, need:5 },
     mat_flame_sword:   { cls:'knight',   ex:1 },
     mat_flame_claw:    { cls:'elf',      ex:1 },
     mat_flame_eye:     { cls:'mage',     ex:1 },
@@ -849,14 +832,12 @@ const YURIA_REWARDS = [
     { id: 'armguard_guardian', nm: '守護者臂甲' },
     { id: 'armguard_mage',     nm: '法師臂甲' }
 ];
-// 👹 尤麗婭第二兌換：以 黑暗哈汀的日記本 六選一兌換 隱藏的魔族武器（每件消耗 1 本）
+// 👹 尤麗婭第二兌換：以 黑暗哈汀的日記本 四選一兌換 隱藏的魔族武器（每件消耗 1 本）
 const YURIA_HATIN_REWARDS = [
     { id: 'wpn_demon_sword_hidden', nm: '隱藏的魔族之劍' },
     { id: 'wpn_demon_bow_hidden',   nm: '隱藏的魔族弓箭' },
     { id: 'wpn_demon_wand_hidden',  nm: '隱藏的魔族魔杖' },
     { id: 'wpn_demon_claw_hidden',  nm: '隱藏的魔族鋼爪' },
-    { id: 'wpn_demon_chain_hidden', nm: '隱藏的魔族鎖鏈劍' },
-    { id: 'wpn_demon_qigu_hidden',  nm: '隱藏的魔族奇古獸' }
 ];
 function renderYuriaQuest(div) {
     let have = questCountId('item_olin_diary');
@@ -869,9 +850,9 @@ function renderYuriaQuest(div) {
     } else {
         html += `<div class="px-4 pb-4 text-red-400 text-sm">你沒有歐林的日記本。</div>`;
     }
-    // 👹 第二兌換：黑暗哈汀的日記本 → 隱藏的魔族武器（六選一）
+    // 👹 第二兌換：黑暗哈汀的日記本 → 隱藏的魔族武器（四選一）
     let have2 = questCountId('item_hatin_diary');
-    html += `<div class="p-4 pt-2 text-slate-300 leading-relaxed border-t border-slate-700/60">尤麗婭：你身上那本<b class="text-purple-300">黑暗哈汀的日記本</b>……裡頭的禁咒，我能據以打造一件<b class="text-purple-300">隱藏的魔族武器</b>。<br>持有黑暗哈汀的日記本：<b class="${have2 >= 1 ? 'text-green-400' : 'text-red-400'}">${have2}</b><br><span class="text-slate-400 text-sm">每件消耗 1 本，六選一。</span></div>`;   // 🗑️ v3.5.87 移除「席琳兌換」宣傳字串（同上·功能已不存在）
+    html += `<div class="p-4 pt-2 text-slate-300 leading-relaxed border-t border-slate-700/60">尤麗婭：你身上那本<b class="text-purple-300">黑暗哈汀的日記本</b>……裡頭的禁咒，我能據以打造一件<b class="text-purple-300">隱藏的魔族武器</b>。<br>持有黑暗哈汀的日記本：<b class="${have2 >= 1 ? 'text-green-400' : 'text-red-400'}">${have2}</b><br><span class="text-slate-400 text-sm">每件消耗 1 本，四選一。</span></div>`;   // 🗑️ v3.5.87 移除「席琳兌換」宣傳字串（同上·功能已不存在）
     if (have2 >= 1) {
         html += `<div class="grid grid-cols-1 gap-3 p-4 pt-0">`;
         YURIA_HATIN_REWARDS.forEach(r => { html += sherineExBtns(r.nm, `doYuriaHatinExchange('${r.id}')`); });   // 🗑️ v3.5.94 席琳兌換鈕與參數已退役（同上）
@@ -1005,16 +986,6 @@ const TRIAL_50_CFG = {
     dark: { npc: '布魯迪卡',
         stages: [ {id:'item_chaos_key', nm:'混沌鑰匙', cnt:1, hint:'擊殺黑暗棲林者'} ],
         exMat:'item_fallen_key', exMatNm:'墮落鑰匙', rewards:[{id:'wpn_death_finger',nm:'死亡之指'}] },
-    // 🔥 v3.0.78 統一：幻術士/戰士/龍騎士 50 級試煉併入本表（原自訂流程移除；trialStage 2=最終兌換階段·loadGame 已遷移舊 demonTempleOpen 存檔）
-    illusion: { npc: '希蓮恩',
-        stages: [ {id:'mat_rift_shard', nm:'時空裂痕碎片', cnt:100, hint:'底比斯地區怪物掉落'} ],
-        exMat:'item_wyvern_blood', exMatNm:'翼龍之血', exMatCnt:5, rewards:[{id:'wpn_qigu_sapphire',nm:'藍寶石奇古獸'}] },
-    warrior: { npc: '多文',
-        stages: [ {id:'new_item_219', nm:'神秘魔杖', cnt:5, hint:'接取後擊殺指定怪物必定掉落'} ],
-        exMat:'new_item_234', exMatNm:'神秘慎重藥水', rewards:[{id:'wpn_master_axe',nm:'大匠的斧頭'}] },
-    dragon: { npc: '普洛凱爾',
-        stages: [ {id:'mat_rift_shard', nm:'時空裂痕碎片', cnt:100, hint:'底比斯地區怪物掉落'} ],
-        exMat:'item_soulfire_ash', exMatNm:'靈魂之火灰燼', rewards:[{id:'wpn_chain_annihilator',nm:'消滅者鎖鏈劍'}] }
 };
 function build50TrialHTML(npcName) {
     let cfg = TRIAL_50_CFG[player.cls];
@@ -1097,31 +1068,6 @@ function trial50Complete() {   // 🔥 v3.0.78 最終兌換一次性·全拿；�
     saveGame();
     logSys(`<span class="c-legend font-bold">${cfg.npc}：你完成了 50 級試煉的全部考驗！</span><span class="text-amber-200">獲得 ${cfg.rewards.map(r => r.nm).join('、')}。（此試煉已完成，無法再次兌換）</span>`);
     closeNpcInteraction(); renderTabs();
-}
-// 🔮 希蓮恩（希培利亞村莊）：幻術士的試煉道具兌換 + 50 級試煉（時空裂痕碎片→魔族神殿、翼龍之血→藍寶石奇古獸）
-// 🔮 希蓮恩（希培利亞村莊）：幻術士 15/30/45 級試煉（接取制）＋ 50 級試煉（統一走 TRIAL_50_CFG）
-function renderShenien(div) {
-    if (player.cls !== 'illusion') { div.innerHTML = `<div class="p-6 text-red-400">希蓮恩：這場試煉只屬於幻術士。</div>`; return; }
-    let h = `<div class="p-4 text-slate-300 leading-relaxed"><div class="text-amber-300 font-bold mb-3">🔮 希蓮恩的試煉</div>`;
-    h += trialQHTML('illusion15', 'renderShenien') + trialQHTML('illusion30', 'renderShenien') + trialQHTML('illusion45', 'renderShenien');
-    h += `<div class="mt-3">` + build50TrialHTML('希蓮恩') + `</div></div>`;
-    div.innerHTML = h;
-}
-// ⚔️ 多文（海音）：戰士 15/30/45 級試煉（接取制）＋ 50 級試煉（統一走 TRIAL_50_CFG）
-function renderDuwen(div) {
-    if (player.cls !== 'warrior') { div.innerHTML = `<div class="p-6 text-red-400">多文：這場試煉只屬於戰士。</div>`; return; }
-    let h = `<div class="p-4 text-slate-300 leading-relaxed"><div class="text-amber-300 font-bold mb-3">⚔️ 多文的試煉</div>`;
-    h += trialQHTML('warrior15', 'renderDuwen') + trialQHTML('warrior30', 'renderDuwen') + trialQHTML('warrior45', 'renderDuwen');
-    h += `<div class="mt-3">` + build50TrialHTML('多文') + `</div></div>`;
-    div.innerHTML = h;
-}
-// 🐉 普洛凱爾（貝希摩斯）：龍騎士 15/30/45 級試煉（接取制）＋ 50 級試煉（統一走 TRIAL_50_CFG）
-function renderProcel(div) {
-    if (player.cls !== 'dragon') { div.innerHTML = `<div class="p-6 text-red-400">普洛凱爾：這場試煉只屬於龍騎士。</div>`; return; }
-    let h = `<div class="p-4 text-slate-300 leading-relaxed"><div class="text-amber-300 font-bold mb-3">🐉 普洛凱爾的試煉</div>`;
-    h += trialQHTML('dragon15', 'renderProcel') + trialQHTML('dragon30', 'renderProcel') + trialQHTML('dragon45', 'renderProcel');
-    h += `<div class="mt-3">` + build50TrialHTML('普洛凱爾') + `</div></div>`;
-    div.innerHTML = h;
 }
 // 🏹 歐斯：妖精 15 級試煉（接取制）
 function renderOsQuest(div) {

@@ -1248,9 +1248,6 @@
             }
             if (typeof DARK_WEAPON_DROPS !== 'undefined') _offlineRollTable(mob, kills, DARK_WEAPON_DROPS, dropMult, loot, false);
             if (typeof DARK_CRYSTAL_DROPS !== 'undefined') _offlineRollTable(mob, kills, DARK_CRYSTAL_DROPS, dropMult, loot, false);
-            if (typeof DRAGON_DROPS !== 'undefined') _offlineRollTable(mob, kills, DRAGON_DROPS, dropBase * party, loot, false);
-            if (typeof WARRIOR_DROPS !== 'undefined') _offlineRollTable(mob, kills, WARRIOR_DROPS, dropMult, loot, false);
-            if (typeof MEM_DROPS !== 'undefined') _offlineRollTable(mob, kills, MEM_DROPS, dropMult, loot, false);
             _offlineRollCards(mob, kills, loot, party);
             if (typeof AREA_BONUS_MAPS !== 'undefined' && AREA_BONUS_MAPS.includes(map) &&
                 typeof AREA_BONUS_ITEMS !== 'undefined') {

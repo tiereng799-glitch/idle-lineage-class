@@ -35,7 +35,7 @@ function miscCatKey(id, d) {
     if (d.eff === 'card' || id.indexOf('card_') === 0) return null;       // 怪物卡片 → 怪物收集冊
     if (t === 'pot' || id.indexOf('potion_') === 0) return 'pot';
     if (t === 'scroll' || id.indexOf('scroll_') === 0 || (d.n && d.n.indexOf('卷軸') >= 0)) return 'scroll';   // 卷軸（含 賦予祝福/解除詛咒 等 type:misc/new_item_ 命名為「卷軸」者）
-    if (t === 'skillbk' || id.indexOf('bk_') === 0 || id.indexOf('mem_') === 0) return 'skillbk';
+    if (t === 'skillbk' || id.indexOf('bk_') === 0) return 'skillbk';
     if (t === 'etc' || id.indexOf('mat_') === 0 || id.indexOf('new_item_') === 0) return 'mat';
     return 'special';                                                     // 蠟燭/萬能藥/靈魂之球/娃娃袋/任務道具…
 }
@@ -46,7 +46,7 @@ const OBTAINABLE_MISC = (function buildObtainableMisc() {
     function add(id) { if (id && id !== 'gold' && DB.items[id]) S[id] = true; }
     // (a) 潘朵拉抽獎池
     for (var id in DB.items) { var d = DB.items[id]; if (d && (d.gachaWeight || 0) > 0) S[id] = true; }
-    // (b) 怪物掉落表（含黑暗/龍/戰士/記憶等附加表·typeof 守衛跳過不存在者）
+    // (b) 怪物掉落表（含黑暗等附加表·typeof 守衛跳過不存在者）
     function addTable(tbl) {
         if (!tbl || typeof tbl !== 'object') return;
         for (var mob in tbl) { var arr = tbl[mob]; if (!Array.isArray(arr)) continue; arr.forEach(function (e) { add(Array.isArray(e) ? e[0] : e); }); }
@@ -54,9 +54,6 @@ const OBTAINABLE_MISC = (function buildObtainableMisc() {
     if (typeof MOB_DROPS !== 'undefined') addTable(MOB_DROPS);
     if (typeof DARK_WEAPON_DROPS !== 'undefined') addTable(DARK_WEAPON_DROPS);
     if (typeof DARK_CRYSTAL_DROPS !== 'undefined') addTable(DARK_CRYSTAL_DROPS);
-    if (typeof DRAGON_DROPS !== 'undefined') addTable(DRAGON_DROPS);
-    if (typeof WARRIOR_DROPS !== 'undefined') addTable(WARRIOR_DROPS);
-    if (typeof MEM_DROPS !== 'undefined') addTable(MEM_DROPS);
     // (c) 商店清單
     try { if (typeof SHOP_LISTS === 'object' && SHOP_LISTS) for (var npc in SHOP_LISTS) { var lst = SHOP_LISTS[npc]; if (Array.isArray(lst)) lst.forEach(add); } } catch (e) {}
     // (d) 製作：成品＋所有材料（材料消耗即代表玩家曾持有→可收集；中間物也算·與遞迴製作一致）

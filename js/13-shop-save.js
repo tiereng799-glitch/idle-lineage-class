@@ -87,7 +87,7 @@ const TOWN_AREA_BG = { village: 'village.png', castle: 'castle.png', tower: 'Tow
 // 🖼️ v3.2.80 高解析場景圖：assets/area/1920x1080/<名>.jpg＝新一批 1920×1080(16:9)全景圖。
 //   AREA_1920＝目前資料夾內既有檔名(單一真相·同步判定·無探測閃爍)。狩獵區同名圖＋fallback 圖，凡名稱在此集合者一律優先取 1920x1080 版；安全區走下方 TOWN_BG_1920 逐城對應。
 //   ⚠️日後新增 assets/area/1920x1080/ 的圖，檔名(不含 .jpg)務必加進本集合才會被採用（否則退回舊 assets/area/ 或分類 fallback）。
-const AREA_1920 = new Set(['亞丁城鎮','伊娃王國','傲慢之塔','傲慢之塔11~20樓','傲慢之塔1樓','傲慢之塔21~30樓','傲慢之塔2~10樓','傲慢之塔31~40樓','傲慢之塔41~50樓','傲慢之塔51~60樓','傲慢之塔61~70樓','傲慢之塔71~80樓','傲慢之塔81~90樓','傲慢之塔91~100樓','冥法軍王之室','冥法軍訓練場','古代巨人之墓','古魯丁','古魯丁地監1樓','古魯丁地監2樓','古魯丁地監3樓','古魯丁地監4樓','古魯丁地監5樓','古魯丁地監6樓','古魯丁地監7樓','國境要塞','地下通道1樓','地下通道2樓','地下通道3樓','地監','地監深層','城鎮周邊','夢幻之島','大洞穴隱遁者村莊地區','奇岩','奇岩地監1樓','奇岩地監2樓','奇岩地監3樓','奇岩地監4樓','奇岩城鎮','妖精森林周邊','妖精森林村莊','妖魔森林','威頓村莊','安塔瑞斯','安塔瑞斯棲息地','巴拉卡斯','巴拉卡斯巢穴','希培利亞','席琳神殿','底比斯','底比斯 歐西里斯祭壇','底比斯 沙漠','底比斯 金字塔內部','底比斯沙漠','拉斯塔巴德','拉斯塔巴德地下洞穴1樓','拉斯塔巴德地下洞穴2樓','拉斯塔巴德地下洞穴3樓','拉斯塔巴德正門','提卡爾 庫庫爾坎祭壇','提卡爾神廟地區','提卡爾神廟地區深處','新兵修練場','時空裂痕入口','暗影神殿','暗殺軍王之室','村莊周邊','格蘭肯神殿．長老之室','森林','歐瑞','歐瑞村莊','歐瑞雪原','歐瑞雪壁','水晶洞穴','水晶洞穴1樓','水晶洞穴2樓','水晶洞穴3樓','沉默洞穴','沉默洞穴周邊','沙漠','沙漠地監1樓','沙漠地監2樓','沙漠地監3樓','沙漠地監4樓','法令軍王之室','法利昂','法利昂洞穴','洞窟','海賊島','海賊島地監','海賊島村莊','海音','海音城鎮','火龍窟','炎魔謁見所','燃柳村莊','眠龍洞穴1樓','眠龍洞穴2樓','眠龍洞穴3樓','精靈墓穴','肯特','艾爾摩','艾爾摩激戰地','荒野','螞蟻洞穴1樓','螞蟻洞穴2樓','螞蟻洞窟1樓','螞蟻洞窟2樓','說話之島周邊','說話之島地監1樓','說話之島地監2樓','說話之島村莊','說話之島港口','象牙塔','象牙塔4樓','象牙塔5樓','象牙塔6樓','象牙塔7樓','象牙塔8樓','象牙塔深層','象牙塔（1~3樓）','貝希摩斯','軍王之室','遺忘之島','銀騎士地區','銀騎士村莊','鏡子森林','風木','魔族神殿','魔獸訓練場','魔獸軍王之室','黃昏山脈','黑魔法研究室','龍之谷','龍之谷地監1樓','龍之谷地監2樓','龍之谷地監3樓','龍之谷地監4樓','龍之谷地監5樓','龍之谷地監6樓','龍之谷地監深層']);
+const AREA_1920 = new Set(['亞丁城鎮','伊娃王國','傲慢之塔','傲慢之塔11~20樓','傲慢之塔1樓','傲慢之塔21~30樓','傲慢之塔2~10樓','傲慢之塔31~40樓','傲慢之塔41~50樓','傲慢之塔51~60樓','傲慢之塔61~70樓','傲慢之塔71~80樓','傲慢之塔81~90樓','傲慢之塔91~100樓','冥法軍王之室','冥法軍訓練場','古代巨人之墓','古魯丁','古魯丁地監1樓','古魯丁地監2樓','古魯丁地監3樓','古魯丁地監4樓','古魯丁地監5樓','古魯丁地監6樓','古魯丁地監7樓','國境要塞','地下通道1樓','地下通道2樓','地下通道3樓','地監','地監深層','城鎮周邊','夢幻之島','大洞穴隱遁者村莊地區','奇岩','奇岩地監1樓','奇岩地監2樓','奇岩地監3樓','奇岩地監4樓','奇岩城鎮','妖精森林周邊','妖精森林村莊','妖魔森林','威頓村莊','安塔瑞斯','安塔瑞斯棲息地','巴拉卡斯','巴拉卡斯巢穴','席琳神殿','底比斯','底比斯 歐西里斯祭壇','底比斯 沙漠','底比斯 金字塔內部','底比斯沙漠','拉斯塔巴德','拉斯塔巴德地下洞穴1樓','拉斯塔巴德地下洞穴2樓','拉斯塔巴德地下洞穴3樓','拉斯塔巴德正門','提卡爾 庫庫爾坎祭壇','提卡爾神廟地區','提卡爾神廟地區深處','新兵修練場','時空裂痕入口','暗影神殿','暗殺軍王之室','村莊周邊','格蘭肯神殿．長老之室','森林','歐瑞','歐瑞村莊','歐瑞雪原','歐瑞雪壁','水晶洞穴','水晶洞穴1樓','水晶洞穴2樓','水晶洞穴3樓','沉默洞穴','沉默洞穴周邊','沙漠','沙漠地監1樓','沙漠地監2樓','沙漠地監3樓','沙漠地監4樓','法令軍王之室','法利昂','法利昂洞穴','洞窟','海賊島','海賊島地監','海賊島村莊','海音','海音城鎮','火龍窟','炎魔謁見所','燃柳村莊','眠龍洞穴1樓','眠龍洞穴2樓','眠龍洞穴3樓','精靈墓穴','肯特','艾爾摩','艾爾摩激戰地','荒野','螞蟻洞穴1樓','螞蟻洞穴2樓','螞蟻洞窟1樓','螞蟻洞窟2樓','說話之島周邊','說話之島地監1樓','說話之島地監2樓','說話之島村莊','說話之島港口','象牙塔','象牙塔4樓','象牙塔5樓','象牙塔6樓','象牙塔7樓','象牙塔8樓','象牙塔深層','象牙塔（1~3樓）','軍王之室','遺忘之島','銀騎士地區','銀騎士村莊','鏡子森林','風木','魔族神殿','魔獸訓練場','魔獸軍王之室','黃昏山脈','黑魔法研究室','龍之谷','龍之谷地監1樓','龍之谷地監2樓','龍之谷地監3樓','龍之谷地監4樓','龍之谷地監5樓','龍之谷地監6樓','龍之谷地監深層']);
 AREA_1920.add('古魯丁村莊');
 AREA_1920.add('決鬥競技場');
 ['肯特外門區','肯特內城','風木外門區','風木內城','海音外門區','海音內城','時空裂痕戰場','日出之國城墎','日出之國東之地','日出之國西之地','日出之國北之地'].forEach(name => AREA_1920.add(name));
@@ -99,8 +99,8 @@ const TOWN_BG_1920 = {
     town_aden: '亞丁城鎮', town_giran: '奇岩城鎮', town_heine: '海音城鎮', town_oren: '歐瑞村莊',
     town_kent_castle: '肯特城', town_windwood_castle: '風木城', town_heine_castle: '海音城',
     town_elf: '妖精森林村莊', town_talking: '說話之島村莊', town_gludio: '燃柳村莊', town_gludin: '古魯丁村莊', town_witon: '威頓村莊',
-    town_hyperia: '希培利亞', town_silver_knight: '銀騎士村莊', town_ivory_tower: '象牙塔（1~3樓）',
-    town_sherine: '席琳神殿', town_silent: '沉默洞穴', town_behemoth: '貝希摩斯', town_flame_audience: '炎魔謁見所',
+    town_silver_knight: '銀騎士村莊', town_ivory_tower: '象牙塔（1~3樓）',
+    town_sherine: '席琳神殿', town_silent: '沉默洞穴', town_flame_audience: '炎魔謁見所',
     town_pride: '傲慢之塔1樓', town_rift: '時空裂痕入口', town_pirate_village: '海賊島村莊',
     town_elder_council: '長老會議廳'   // 🌑 v3.3.33 黑暗妖精聖地樞紐安全區
 };
@@ -212,8 +212,6 @@ const SHOP_LISTS = {
     npc_wino: ['wpn_shortsword','wpn_9','wpn_scimitar','wpn_37','wpn_invader','wpn_longsword','wpn_damascus','wpn_silversword','wpn_2hsword','wpn_katana','wpn_10','wpn_13','wpn_1','wpn_battleaxe','wpn_19','wpn_38','wpn_20','wpn_silveraxe','wpn_witchwand','wpn_18','wpn_giantaxe','wpn_28','wpn_14','wpn_6','wpn_3','wpn_17','wpn_15','wpn_7','wpn_21','wpn_16','wpn_halberd','wpn_12'],
     npc_skvati: ['potion_heal','potion_strong','potion_ult','potion_blue','potion_haste','scroll_poly','scroll_magicbarrier','scroll_teleport','scroll_revive','wpn_5','wpn_22','candle','wpn_claw_bronze','wpn_claw_steel','wpn_claw_shadow','wpn_claw_damascus','wpn_dual_bronze','wpn_dual_steel','wpn_dual_shadow','wpn_dual_damascus'],
     npc_saedia: ['bk_dark_str','bk_dark_mrup','bk_dark_stealth','bk_dark_poison','bk_dark_refine','bk_dark_dex','bk_dark_poisonres','bk_dark_burn','bk_dark_walkhaste'],
-    npc_sphere: ['mem_confuse','mem_mirror','mem_crush','mem_ogre','mem_focus','mem_skullbreak','mem_lich','mem_endure'],   // 🔮 史菲爾只販賣這 8 種記憶水晶；其餘水晶改由掉落/製作/兌換取得（日光術改由吉蘭購得）
-    npc_sempal: ['bk_dragon_guardbreak','bk_dragon_slaughter','bk_dragon_flameslash','bk_dragon_terror'],   // 🐉 森帕爾：4 種龍騎士書板（消滅者鎖鏈劍改為潘朵拉/普洛凱爾試煉取得）
     default: ['potion_heal','potion_strong','potion_ult','potion_blue','potion_haste','potion_brave','new_item_140','new_item_139','scroll_poly','scroll_magicbarrier','scroll_teleport','scroll_revive','wpn_5','wpn_22','candle']   // 🚫 v3.2.17 哨子/肉已隨舊項圈系統移除
 };
 // 🔧 商店販售清單（單一來源）：getShopItemsForNpc 與潘朵拉權重覆寫共用此表
@@ -335,15 +333,21 @@ function _slotBadgeHtml(party){
     return `<span class="load-slot-status"><span class="load-slot-badge load-badge-party"><strong>擔任傭兵</strong></span></span>`;
 }
 
+// 已移除的職業：舊存檔仍可能是這些職業 → 選角畫面顯示「此職業已停用」、loadGame 拒絕載入（存檔原樣保留）。
+//   名稱只留給「停用」卡片顯示用；遊戲其他地方不再有這三職業的任何資料。
+const REMOVED_CLASS_NAMES = { illusion:'幻術士', dragon:'龍騎士', warrior:'戰士' };
+function isRemovedClass(cls){ return !!REMOVED_CLASS_NAMES[cls]; }
+
 function _summaryFromRaw(s){
     if(!s) return null;
     s = _saveUnwrap(s).payload;   // 🛡️ 先解存檔簽章（摘要顯示不驗章、僅取 payload；舊明文檔原樣回傳）
     try { let d = JSON.parse(s); let p = d.p;
-        let clsName = { knight:'騎士', mage:'法師', elf:'妖精', dark:'黑暗妖精', illusion:'幻術士', dragon:'龍騎士', warrior:'戰士', royal:'王族' }[p.cls] || p.cls;
+        let clsName = { knight:'騎士', mage:'法師', elf:'妖精', dark:'黑暗妖精', royal:'王族' }[p.cls] || REMOVED_CLASS_NAMES[p.cls] || p.cls;
         return {
             name: p.name || '',
             cls: clsName,
             rawCls: p.cls || '',
+            removed: isRemovedClass(p.cls),
             lv: p.lv || 1,
             gold: p.gold || 0,
             classic: !!p.classicMode,
@@ -780,10 +784,7 @@ const CREATION_CLASS_ANIM_FRAMES = {
     m_knight: [378, 448], f_knight: [315, 374],
     m_mage: [531, 625], f_mage: [452, 527],
     m_elf: [245, 311], f_elf: [166, 241],
-    m_dark: [90, 162], f_dark: [25, 86],
-    m_illusionist: [968, 1036], f_illusionist: [1039, 1125],
-    m_Dknight: [841, 905], f_Dknight: [908, 965],
-    m_warrior: [1992, 2076], f_warrior: [1908, 1991]
+    m_dark: [90, 162], f_dark: [25, 86]
 };
 const LOAD_NONE_ANIM_FRAMES = [1, 24];
 const LOAD_AVATAR_TO_START_KEY = {
@@ -791,14 +792,11 @@ const LOAD_AVATAR_TO_START_KEY = {
     '男騎士': 'm_knight', '女騎士': 'f_knight',
     '男法師': 'm_mage', '女法師': 'f_mage',
     '男妖精': 'm_elf', '女妖精': 'f_elf',
-    '男黑暗妖精': 'm_dark', '女黑暗妖精': 'f_dark',
-    '男幻術士': 'm_illusionist', '女幻術士': 'f_illusionist',
-    '男龍騎士': 'm_Dknight', '女龍騎士': 'f_Dknight',
-    '男戰士': 'm_warrior', '女戰士': 'f_warrior'
+    '男黑暗妖精': 'm_dark', '女黑暗妖精': 'f_dark'
 };
 const LOAD_CLASS_TO_START_KEY = {
     royal: 'prince', knight: 'm_knight', mage: 'm_mage', elf: 'm_elf',
-    dark: 'm_dark', illusion: 'm_illusionist', dragon: 'm_Dknight', warrior: 'm_warrior'
+    dark: 'm_dark'
 };
 // 一個帳號只能 3 隻角色：選角畫面只列存檔 1~3。第 4 格以後的舊存檔不刪、但選角畫面看不到也進不去。
 const LOAD_SLOT_COUNT = 3;
@@ -812,7 +810,7 @@ function loadEsc(v){
     return String(v === undefined || v === null ? '' : v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 function loadStartKeyFromSummary(sum){
-    if(!sum) return 'none';
+    if(!sum || sum.removed) return 'none';
     if(sum.avatar && LOAD_AVATAR_TO_START_KEY[sum.avatar]) return LOAD_AVATAR_TO_START_KEY[sum.avatar];
     return LOAD_CLASS_TO_START_KEY[sum.rawCls] || LOAD_CLASS_TO_START_KEY[sum.cls] || 'prince';
 }
@@ -895,11 +893,15 @@ function renderLoadSelect(){
         const empty = !sum;
         const frame = loadFirstFrame(key);
         _loadSlotMeta[n] = _slotBadgeMeta(n, sum);
+        const locked = !empty && sum.removed;
         const title = sum ? `${sum.name || '未命名'} ${sum.cls} Lv.${sum.lv}` : '建立角色';
-        html += `<button type="button" onclick="loadPickSlot(${n})" data-slot="${n}" data-key="${key}" class="load-slot-card ${selected ? 'selected' : ''} ${empty ? 'empty' : 'filled'}" title="${loadEsc(title)}">`
-            // 空格：底圖拱門已畫好 New Character，只補提示字；有角色：立繪＋名牌(名牌蓋在 New Character 那行字上)
+        html += `<button type="button" onclick="loadPickSlot(${n})" data-slot="${n}" data-key="${key}" class="load-slot-card ${selected ? 'selected' : ''} ${empty ? 'empty' : 'filled'} ${locked ? 'locked' : ''}" title="${loadEsc(title)}"${locked ? ' aria-disabled="true"' : ''}>`
+            // 空格：底圖拱門已畫好 New Character，只補提示字；有角色：立繪＋名牌(名牌蓋在 New Character 那行字上)；
+            // 已移除職業的舊角色：只有名牌、標示停用，點了沒反應
             + (empty
                 ? `<span class="load-slot-hint">(點擊建立角色)</span>`
+                : locked
+                ? `<span class="load-slot-label"><strong>${loadEsc(sum.name || '未命名')}</strong>此職業已停用</span>`
                 : `<img src="${loadFrameSrc(key, frame)}" alt="${loadEsc(title)}" draggable="false">`
                 + `<span class="load-slot-label"><strong>${loadEsc(sum.name || '未命名')}</strong>Lv.${loadEsc(sum.lv)} ${loadEsc(sum.cls)}</span>`)
             + _slotBadgeHtml(_slotPartyStatusNow(_loadSlotMeta[n]))
@@ -915,8 +917,10 @@ function renderLoadSelect(){
 // 點卡片：有角色＝直接進遊戲；空格＝直接進創角
 function loadPickSlot(n){
     if(!(n >= 1 && n <= LOAD_SLOT_COUNT)) return;
+    const sum = slotSummary(n);
+    if(sum && sum.removed) return;   // 已移除職業的舊角色：鎖住
     _loadSelectedSlot = n;
-    if(slotSummary(n)) loadEnterSelected();
+    if(sum) loadEnterSelected();
     else loadCreateSelected();
 }
 function updateLoadInfo(){
@@ -973,7 +977,7 @@ function loadCreateSelected(){
 }
 function loadEnterSelected(){
     const sum = slotSummary(_loadSelectedSlot);
-    if(!sum) return;
+    if(!sum || sum.removed) return;
     _loadLastClickSlot = 0; _loadLastClickAt = 0;
     currentSlot = _loadSelectedSlot;
     loadGame();
@@ -1241,10 +1245,7 @@ function startGame() {
         'm_knight': '男騎士', 'f_knight': '女騎士',
         'm_mage': '男法師', 'f_mage': '女法師',
         'm_elf': '男妖精', 'f_elf': '女妖精',
-        'm_dark': '男黑暗妖精', 'f_dark': '女黑暗妖精',
-        'm_illusionist': '男幻術士', 'f_illusionist': '女幻術士',
-        'm_Dknight': '男龍騎士', 'f_Dknight': '女龍騎士',
-        'm_warrior': '男戰士', 'f_warrior': '女戰士'
+        'm_dark': '男黑暗妖精', 'f_dark': '女黑暗妖精'
     };
     player.avatar = avatarMap[curCreate.rawCls] || '男騎士';
     player.cls = curCreate.cls;
@@ -1280,18 +1281,6 @@ function startGame() {
         gainItem('wpn_11', 1, true, true);        // 🔧 匕首（黑暗妖精起始武器，非歐西斯匕首）
         gainItem('amr_jacket', 1, true, true);    // 皮夾克
         gainItem('potion_heal', 100, true, true); // 紅色藥水 x 100
-    } else if (player.cls === 'illusion') {
-        gainItem('wpn_10', 1, true, true);        // 🔧 木棒（幻術士起始武器）
-        gainItem('amr_jacket', 1, true, true);    // 皮夾克
-        gainItem('potion_heal', 100, true, true); // 紅色藥水 x 100
-    } else if (player.cls === 'dragon') {
-        gainItem('wpn_10', 1, true, true);        // 🐉 木棒（龍騎士起始武器）
-        gainItem('amr_jacket', 1, true, true);    // 皮夾克
-        gainItem('potion_heal', 100, true, true); // 治癒藥水 x 100
-    } else if (player.cls === 'warrior') {
-        gainItem('wpn_1', 1, true, true);         // ⚔️ 斧（戰士起始武器）
-        gainItem('amr_jacket', 1, true, true);    // 皮夾克
-        gainItem('potion_heal', 100, true, true); // 治癒藥水 x 100
     } else if (player.cls === 'royal') {
         gainItem('wpn_11', 1, true, true);        // 👑 匕首（王族起始武器）
         gainItem('amr_jacket', 1, true, true);    // 皮夾克
@@ -1320,15 +1309,6 @@ function startGame() {
     } else if (player.cls === 'dark') {
         equipItem(player.inv.find(i=>i.id==='wpn_11'));        // 🔧 匕首
         equipItem(player.inv.find(i=>i.id==='amr_jacket'));
-    } else if (player.cls === 'illusion') {
-        equipItem(player.inv.find(i=>i.id==='wpn_10'));        // 🔧 木棒
-        equipItem(player.inv.find(i=>i.id==='amr_jacket'));
-    } else if (player.cls === 'dragon') {
-        equipItem(player.inv.find(i=>i.id==='wpn_10'));        // 🐉 木棒
-        equipItem(player.inv.find(i=>i.id==='amr_jacket'));
-    } else if (player.cls === 'warrior') {
-        equipItem(player.inv.find(i=>i.id==='wpn_1'));         // ⚔️ 斧
-        equipItem(player.inv.find(i=>i.id==='amr_jacket'));
     } else if (player.cls === 'royal') {
         equipItem(player.inv.find(i=>i.id==='wpn_11'));        // 👑 匕首
         equipItem(player.inv.find(i=>i.id==='amr_jacket'));
@@ -1345,9 +1325,6 @@ function startGame() {
     if (player.cls === 'mage') startMap = 'town_talking';
     else if (player.cls === 'elf') startMap = 'town_elf';
     else if (player.cls === 'dark') startMap = 'town_silent';
-    else if (player.cls === 'illusion') startMap = 'town_hyperia';
-    else if (player.cls === 'dragon') startMap = 'town_behemoth';
-    else if (player.cls === 'warrior') startMap = 'town_heine';   // ⚔️ 戰士：海音
     else if (player.cls === 'royal') startMap = 'town_talking';   // 👑 王族：說話之島
 
     setMapSelectors(startMap);
@@ -1392,12 +1369,12 @@ function resetConfigDomToDefaults() {
     try { document.querySelectorAll('#auto-buff-skills input[type="checkbox"]').forEach(c => { c.checked = false; }); } catch (e) {}
 }
 function updateClassPotionRows() {
-    // 勇敢藥水：騎士／龍騎士限定；慎重藥水：法師／幻術士限定；精靈餅乾：妖精限定
+    // 勇敢藥水：騎士／王族限定；慎重藥水：法師限定；精靈餅乾：妖精限定
     let braveRow = document.getElementById('ui-brave-row');
     let cautiousRow = document.getElementById('ui-cautious-row');
     let elfRow = document.getElementById('ui-elfcookie-row');
-    if(braveRow) braveRow.classList.toggle('hidden', player.cls !== 'knight' && player.cls !== 'dragon' && player.cls !== 'warrior' && player.cls !== 'royal');
-    if(cautiousRow) cautiousRow.classList.toggle('hidden', player.cls !== 'mage' && player.cls !== 'illusion');
+    if(braveRow) braveRow.classList.toggle('hidden', player.cls !== 'knight' && player.cls !== 'royal');
+    if(cautiousRow) cautiousRow.classList.toggle('hidden', player.cls !== 'mage');
     if(elfRow) elfRow.classList.toggle('hidden', player.cls !== 'elf');
 }
 
@@ -1580,6 +1557,14 @@ function purgeOrphanItems(warehouse) {
             player.inv = player.inv.filter(i => i && !isOrphan(i.id));
             removed += before - player.inv.length;
         }
+        // 身上穿著的也要清（移除戰士/幻術士/龍騎士時，其他職業也可能穿著共用欄位的專屬遺物等）——
+        //   留著的話裝備欄讀 DB.items[id] 會是 undefined
+        if (player.eq && typeof player.eq === 'object') {
+            for (let slot in player.eq) {
+                let it = player.eq[slot];
+                if (it && isOrphan(it.id)) { player.eq[slot] = null; removed++; }
+            }
+        }
         try {
             if (typeof loadWarehouse === 'function' && typeof saveWarehouse === 'function') {
                 let wh = warehouse && typeof warehouse === 'object' ? warehouse : loadWarehouse();
@@ -1617,6 +1602,9 @@ function loadGame() {
         //    → 該欄位在載入畫面顯示為空、empty=true → 「匯入進度」可見而「刪除角色」被 hidden。
         //    舊文案多寫的「仍可用『刪除角色』清空」正好點名此情境唯一看不見的那顆按鈕，故移除。
         let d; try { d = JSON.parse(s); } catch(e){ alert('此存檔位的資料已毀損，無法載入。\n此欄位在載入畫面會顯示為空，請直接按「匯入進度」還原先前匯出的 .json 備份檔。'); return; }
+        // 🔒 已移除職業(戰士/幻術士/龍騎士)的舊角色：一律不載入，存檔原樣保留。
+        //    選角畫面已鎖住；這裡是最後一道——任何入口(例如手機的「切換角色」)走到這都擋下，且在改動全域 player 之前擋。
+        if (d && d.p && isRemovedClass(d.p.cls)) { alert('此角色的職業已停用，無法進入遊戲。'); return; }
         player = d.p; mapState = d.ms;
         delete player.offlineHunt;   // 🗑️ v3.7.94 離線掛機已移除：舊存檔的逐地圖速率快照沒有讀取者，載入即丟掉（否則每次存檔都白帶一份）
         normalizeFacingRefsForSave();   // 舊存檔若含 v3.2.12 面向物件副本，載入時立即轉為 UID／隊員鍵並移除物件參照
@@ -1694,9 +1682,8 @@ function loadGame() {
         if(player.name === undefined) player.name = null;   // 相容舊存檔：未取名則狀態欄顯示「點擊取名」
         delete player.blessings;      // 舊版血盟祝福已移除；新版血盟 Buff 不使用角色 blessings。
         delete player.blessingAuto;
-        // 🔥 v3.0.78 試煉接取制：初始化任務狀態；幻術士/戰士/龍騎士 50 級試煉原以 demonTempleOpen 為唯一狀態 → 統一遷移為 trialStage=2（最終兌換階段·一次性）
+        // 🔥 v3.0.78 試煉接取制：初始化任務狀態
         if(!player.trialQ || typeof player.trialQ !== 'object') player.trialQ = {};
-        if(['illusion','warrior','dragon'].includes(player.cls) && player.demonTempleOpen && (player.trialStage || 0) < 2) player.trialStage = 2;
         // 🔥 v3.0.77 屬性詞綴改版遷移：舊12代碼→新5階代碼（fire1/3/5→fr1/fr2/fr3…名稱身分不變·冪等）；
         //    屬性詞綴只能存在於武器→防具/飾品上的舊屬性詞綴一律清除；非法值（true/未知碼）清除。
         //    倉庫刻意不改寫（資料遺失敏感）——讀取路徑 getAttrAffix 相容舊碼，提領後下次載入在此轉正。

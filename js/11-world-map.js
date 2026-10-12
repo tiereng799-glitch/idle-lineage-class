@@ -4,7 +4,7 @@ const MAP_CATEGORIES = {
         {v:'town_silver_knight',t:'銀騎士村'}, {v:'town_elf',t:'妖精森林'}, {v:'town_talking',t:'說話之島'},
         {v:'town_gludio',t:'燃柳村'}, {v:'town_gludin',t:'古魯丁村莊'}, {v:'town_giran',t:'奇岩'}, {v:'town_heine',t:'海音'},
         {v:'town_oren',t:'歐瑞村莊'}, {v:'town_aden',t:'亞丁',c:'#facc15'}, {v:'town_ivory_tower',t:'象牙塔'}, {v:'town_witon',t:'威頓村'},
-        {v:'town_sherine',t:'席琳神殿',c:'#4ade80',classicHide:true}, {v:'town_silent',t:'沉默洞穴',c:'#a78bfa'}, {v:'town_hyperia',t:'希培利亞村莊',c:'#c084fc'}, {v:'town_behemoth',t:'貝希摩斯',c:'#f59e0b'}, {v:'town_flame_audience',t:'炎魔謁見所',c:'#ff6b35',questReq:'demonTemple',affinityReq:1000}, {v:'town_elder_council',t:'長老會議廳',c:'#a5b4fc'}
+        {v:'town_sherine',t:'席琳神殿',c:'#4ade80',classicHide:true}, {v:'town_silent',t:'沉默洞穴',c:'#a78bfa'}, {v:'town_flame_audience',t:'炎魔謁見所',c:'#ff6b35',questReq:'demonTemple',affinityReq:1000}, {v:'town_elder_council',t:'長老會議廳',c:'#a5b4fc'}
     ],
     wild: [
         {v:'silver_knight',t:'銀騎士地區'}, {v:'talking_island',t:'說話之島周邊'}, {v:'zone_01',t:'妖精森林周邊'},
@@ -129,13 +129,13 @@ const MAP_REGIONS = [
         {v:'antaras_lair', t:'安塔瑞斯棲息地'}, {v:'town_silent', t:'沉默洞穴'}, {v:'silent_outer', t:'沉默洞穴周邊'}
     ]},
     { key: 'witon', label: '威頓', maps: [
-        {v:'town_witon', t:'威頓村莊'}, {v:'fire_dragon', t:'火龍窟'}, {v:'valakas_lair', t:'巴拉卡斯巢穴'}, {v:'town_behemoth', t:'貝希摩斯'}
+        {v:'town_witon', t:'威頓村莊'}, {v:'fire_dragon', t:'火龍窟'}, {v:'valakas_lair', t:'巴拉卡斯巢穴'}
     ]},
     { key: 'oren', label: '歐瑞', maps: [
         {v:'town_oren', t:'歐瑞村莊'}, {v:'zone_02', t:'歐瑞周邊'}, {v:'zone_03', t:'歐瑞雪原'}, {v:'zone_04', t:'艾爾摩激戰地'}, {v:'zone_05', t:'國境要塞'},
         {v:'town_ivory_tower', t:'象牙塔（1~3樓）'}, {v:'zone_37', t:'象牙塔4樓'}, {v:'zone_38', t:'象牙塔5樓'}, {v:'zone_39', t:'象牙塔6樓'}, {v:'zone_40', t:'象牙塔7樓'}, {v:'zone_41', t:'象牙塔8樓'},
         {v:'crystal_cave1', t:'水晶洞穴1樓'}, {v:'crystal_cave2', t:'水晶洞穴2樓'}, {v:'crystal_cave3', t:'水晶洞穴3樓'},
-        {v:'shadow_temple', t:'暗影神殿'}, {v:'town_hyperia', t:'希培利亞'}
+        {v:'shadow_temple', t:'暗影神殿'}
     ]},
     { key: 'aden', label: '亞丁', maps: [
         {v:'town_aden', t:'亞丁城鎮'}, {v:'twilight_mt', t:'黃昏山脈'}, {v:'dream_island', t:'夢幻之島'}
@@ -493,9 +493,6 @@ function getHomeTown() {
     if (player.bloodPledge === 'esti') return 'town_heine';
     if (player.bloodPledge === 'tros') return 'town_oren';
     if (player.cls === 'dark') return 'town_silent';   // 🔧 黑暗妖精：未加入血盟時回沉默洞穴（已加入則上面已回盟主村莊）
-    if (player.cls === 'illusion') return 'town_hyperia';   // 🔧 幻術士：回希培利亞村莊
-    if (player.cls === 'dragon') return 'town_behemoth';   // 🐉 龍騎士：回貝希摩斯
-    if (player.cls === 'warrior') return 'town_heine';   // ⚔️ 戰士：回海音
     if (player.cls === 'mage') return 'town_talking';
     if (player.cls === 'elf') return 'town_elf';
     return 'town_silver_knight';
@@ -977,7 +974,7 @@ function ismaelCursedExchange(kind) {
     let el = document.getElementById('interaction-content'); if (el) renderIsmaelExchange(el);
 }
 // ===== 🔥 碧恩：屬性強化卷軸「賦予屬性」（v3.0.77 屬性強化系統改版·取代舊「祝福裝備」功能；克里斯特已移除） =====
-//   規則：只能用在「裝備中武器／副手武器(戰士限定)」；每次使用皆為獨立事件，成功率 7%；
+//   規則：只能用在「裝備中武器」；每次使用皆為獨立事件，成功率 7%；
 //   無屬性成功→1階、同屬性成功→+1階（最高5階）、不同屬性成功→變成該屬性1階；
 //   第5階同屬性卷軸：原生無攻擊觸發技能的非遺物武器可用 1% 機率附加／重抽屬性魔法；同技能升星、不同技能回1星，最高3星；
 //   衝第4階需武器+10以上、第5階需+11以上（不符不消耗卷軸；🗡️ v3.7.29 noEnhance 非遺物武器＝古老的劍/巨劍 豁免門檻）；失敗僅消耗卷軸，武器不會消失。
@@ -1064,9 +1061,8 @@ function doBianUncurse(slotKey) {
     let _e = document.getElementById('interaction-content'); if (_e) renderBianAttr(_e);
 }
 function renderBianAttr(el) {
-    // 只列出 裝備中武器 與 副手武器（戰士雙持時才有 offwpn）
+    // 只列出 裝備中武器
     let slots = [{ k: 'wpn', n: '武器' }];
-    if (player.eq && player.eq.offwpn) slots.push({ k: 'offwpn', n: '副手武器' });
     let cnt = id => { let it = player.inv.find(i => i.id === id); return it ? it.cnt : 0; };
     let rows = slots.map(sl => {
         let it = player.eq[sl.k];
@@ -1372,14 +1368,6 @@ function chooseMastery(id) {
         player._summonV2On = on;   // 保留自動重施開關→下個 tick 立即召回精靈王
         logSys('精靈之力開始昇華——強力精靈將以「精靈王」之姿重新現身。');
     }
-    // 🐉 覺醒精通解除：離開覺醒精通後同時只能維持一種覺醒——清除多餘的覺醒增益（保留第一個生效者），
-    //    否則先前同時開啟的三種覺醒會殘留到自然倒數結束（自動施放互斥只擋新施放、不會收回既有的）。
-    if (id !== 'k_awaken' && player.buffs) {
-        let _kept = false;
-        ['sk_dragon_awaken_antares', 'sk_dragon_awaken_falion', 'sk_dragon_awaken_baraka'].forEach(_ak => {
-            if ((player.buffs[_ak] || 0) > 0) { if (_kept) player.buffs[_ak] = 0; else _kept = true; }
-        });
-    }
     if (prev === 'e_sword' && player.eq.wpn) {
         let wd = DB.items[player.eq.wpn.id];
         let ok = reqAllowsClass(wd, player.cls) || loadUpAllows(player.eq.wpn.id);
@@ -1402,7 +1390,7 @@ function renderHanNPC(div) {
     if (!q) {   // 未接取
         div.innerHTML = `
         <div class="flex flex-col gap-4 p-2 items-center text-center">
-            <div class="text-slate-300 leading-relaxed">${player.cls === 'dark' ? '漢：每個走到極致的黑暗妖精，都要回答同一個問題——<br><span class="text-amber-200 font-bold">你的「信念」是什麼</span>' : `漢：每個走到極限的${({knight:'騎士',mage:'法師',elf:'妖精',illusion:'幻術士',dragon:'龍騎士',warrior:'戰士',royal:'王族'})[player.cls]}，都要回答同一個問題——<br><span class="text-amber-200 font-bold">你的「道」是什麼？</span>`}</div>
+            <div class="text-slate-300 leading-relaxed">${player.cls === 'dark' ? '漢：每個走到極致的黑暗妖精，都要回答同一個問題——<br><span class="text-amber-200 font-bold">你的「信念」是什麼</span>' : `漢：每個走到極限的${({knight:'騎士',mage:'法師',elf:'妖精',royal:'王族'})[player.cls]}，都要回答同一個問題——<br><span class="text-amber-200 font-bold">你的「道」是什麼？</span>`}</div>
             <div class="bg-slate-800/70 border border-amber-700/60 rounded p-3 text-sm text-slate-300">擊敗 <span class="text-red-300 font-bold">${md.boss}</span>，取回 <span class="text-blue-300 font-bold">精通之證</span>，我便為你開啟精通之路。</div>
             <button class="btn px-10 py-3 text-lg font-bold bg-amber-800 hover:bg-amber-700 border-amber-500" onclick="hanAcceptQuest()">🏅 接取精通任務</button>
         </div>`;
@@ -1720,12 +1708,6 @@ function interactNPC(npcId, townId) {
         renderGunterQuest(contentDiv);
     } else if (npc.id === 'npc_yuria') {
         renderYuriaQuest(contentDiv);
-    } else if (npc.id === 'npc_shenien') {
-        renderShenien(contentDiv);
-    } else if (npc.id === 'npc_duwen') {
-        renderDuwen(contentDiv);
-    } else if (npc.id === 'npc_procel') {
-        renderProcel(contentDiv);
     } else if (npc.id === 'npc_mother') {
         renderMotherQuest(contentDiv);
     } else if (npc.id === 'npc_ricky') {
@@ -1815,8 +1797,8 @@ const NPC_SPR = {
     '3227': { g: '3227', f: 12 }, '3225': { g: '3225', f: 12 },   // 👑 v3.2.91 依詩蒂＝公主(3227)／特羅斯＝王子(3225)·職業動畫 dir5 站立(12f)
     // 🆕 v3.3.7 指定名稱 NPC 專屬外型（body＋真實影子 sprite）＋女性外型池新增 6804
     '1839': { g: '1839', f: 9 }, '2813': { g: '2813', f: 9 }, '2794': { g: '2794', f: 9 }, '2829': { g: '2829', f: 11 },
-    '2801': { g: '2801', f: 8 }, '2820': { g: '2820', f: 15 }, '6899': { g: '6899', f: 12 }, '6757': { g: '6757', f: 12 },
-    '6690': { g: '6690', f: 12 }, '6804': { g: '6804', f: 12 },
+    '2801': { g: '2801', f: 8 }, '2820': { g: '2820', f: 15 }, '6757': { g: '6757', f: 12 },
+    '6804': { g: '6804', f: 12 },
     '5454': { g: '5454', f: 1 },   // 🌑 v3.3.33 真‧冥皇丹特斯＝骸骨王座坐像（NPC/真‧冥皇丹特斯 5454-0＋影子 5455-0·單幀 138×228）
     '2141': { g: '2141', f: 6 },   // 🕊️ v3.4.73 聖使阿卡塔（body 2141＋影 2142·6幀·29×59）
     '10669': { g: '10669', f: 3 },   // 🏦 v3.4.74 朵琳＝倉庫NPC通用新外型（body 10669＋影 10670·3幀·67×44 帶雙寶箱·取代舊 54）
@@ -1835,7 +1817,7 @@ const NPC_SPR_FIXED = {
     npc_esti: '3227', npc_tros: '3225',   // 👑 v3.2.91 血盟 依詩蒂＝公主動畫(f_royal)／特羅斯＝王子動畫(m_royal)·全城鎮通用
     // 🆕 v3.3.7 指定名稱 NPC 專屬外型（用戶提供 Downloads/NPC/<名>·避免與通用池撞臉）：
     npc_kupu: '1839', npc_rabiani: '1307', npc_runde: '2813', npc_kang: '2794', npc_brudica: '2829',
-    npc_skvati: '2801', npc_saedia: '2820', npc_shenien: '6899', npc_bartel: '6757', npc_sphere: '6690',
+    npc_skvati: '2801', npc_saedia: '2820', npc_bartel: '6757',
     npc_dantes_lord: '5454', npc_atelier: '1768',   // 🌑 v3.3.33 長老會議廳：真‧冥皇丹特斯＝骸骨王座／亞提利歐＝矮人鐵匠（用戶指定·同炎魔鐵匠外型 1768）
     npc_arkata: '2141',   // 🕊️ v3.4.73 聖使阿卡塔（亞丁·經典限定·死亡經驗買回）
     npc_arena: '1305',    // ⚔️ v3.7.5 鬥技場管理者 巴魯特（古魯丁村莊·甲冑武人外型·決鬥競技場入口）
@@ -1873,7 +1855,7 @@ const NPC_SPR_FEMALE = new Set(['98', '949', '1307', '3858', '854q', '3227', '86
 const NPC_SPR_FEMALE_POOL = ['949', '1307', '3858', '98', '6804'];
 //   依名字判定為女性的城鎮 NPC（未列者＝男性/中性·走原邏輯並避開女性外型）。⚠️新增女性名 NPC 補這裡。
 const NPC_FEMALE_IDS = new Set([
-    'npc_shenien', 'npc_yuria', 'npc_lachesis', 'npc_moliya', 'npc_moli', 'npc_saedia',
+    'npc_yuria', 'npc_lachesis', 'npc_moliya', 'npc_moli', 'npc_saedia',
     'npc_brudica', 'npc_sherine', 'npc_io', 'npc_masha', 'npc_doll_merchant',
     'npc_lumiel',   // 🚺 v3.3.6 海音 琉米埃爾＝女性外型
     'npc_lucy',     // 🚺 v3.7.7 古魯丁 露西（雜貨商人）＝女性外型
@@ -1931,8 +1913,8 @@ const TOWN_NPC_SPOTS = {
     town_elf: [[30, 48], [42, 33], [57, 30], [72, 34], [22, 60], [69, 49], [48, 62], [44, 74], [84, 43], [55, 70], [30, 72], [84, 74], [15, 88], [63, 63]],   // 🎯 艾利溫右移出安特點擊範圍；羅賓孫(第13位)維持圓形木平台
     // 奇岩城鎮：邁爾/范吉爾/愛弗特=右下市集攤棚各一攤｜溫諾=攤棚上方廣場路面(v3.3.32勿站攤頂)｜莫麗雅/海克特=噴泉兩側｜哈巴特=公會階梯前｜倫提斯=左教堂門廊｜賽巴斯=右上綠籬步道｜蘇瑞耳=圓頂庫房右側街面(v3.3.32勿貼圓頂)
     town_giran: [[69, 81], [81, 56], [88, 79], [57, 88], [38, 66], [54, 66], [66, 42], [19, 39], [58, 33], [24, 84]],   // 🎯 v3.4.79 倫提斯(製作·第8位)[14,36]→[19,39] 移出教堂門廊到路面＋蘇瑞耳(倉庫·第10位)[22,81]→[24,84] 移出圓頂庫房牆邊（用戶箭頭指示）
-    // 海音城鎮(運河水都)：比特=左下通往碼頭的街面｜哈金=上排庫房前街面｜傭兵公會=右上建築左側路面｜琉米埃爾=花壇右下路面(勿站上花壇)｜多文=中央廣場｜依詩蒂=橋頭左側廣場(勿站上橋)｜依斯巴=木棧碼頭板上(港口)
-    town_heine: [[29, 67], [41, 26], [56, 29], [22, 41], [50, 50], [62, 45], [28, 88]],
+    // 海音城鎮(運河水都)：比特=左下通往碼頭的街面｜哈金=上排庫房前街面｜傭兵公會=右上建築左側路面｜琉米埃爾=花壇右下路面(勿站上花壇)｜依詩蒂=橋頭左側廣場(勿站上橋)｜依斯巴=木棧碼頭板上(港口)
+    town_heine: [[29, 67], [41, 26], [56, 29], [22, 41], [62, 45], [28, 88]],
     // 亞丁城鎮(白石王都)：拉溫=左宅邸前｜恬金=右上宮殿階梯｜烏普尼=噴泉台階旁｜諾斯=中央羅盤地磚｜包武=右下拱廊前｜聖使阿卡塔=左上迴廊前(經典限定)
     town_aden: [[19, 62], [76, 30], [64, 48], [42, 68], [69, 77], [31, 40]],
     // 歐瑞村莊(雪山村·v3.3.32 依用戶截圖箭頭校正四點全下到路面)：畢伍德=右屋前雪路｜希林=上方倉庫門前地面｜傭兵公會=村中央｜伊貝爾賓=左屋前空地(勿站台階)｜大衛=右屋角前雪路｜特羅斯=左下柴堆路口
@@ -1942,10 +1924,8 @@ const TOWN_NPC_SPOTS = {
     // 古魯丁村莊(港口村)：巴魯特=廣場中左空地｜凱倫=左側藍屋大宅前石板路｜露西=左下攤棚前路面｜傭兵公會=廣場中右｜奧斯丁=水井左下石地
     //   ⚠️[50,58] 是叫賣玩家固定點（TOWN_WANDERING_BUYER_SPOTS.town_gludin 同座標），NPC 一律避開。
     town_gludin: [[38, 58], [23, 46], [33, 81], [70, 55], [48, 36]],
-    // 威頓村莊(火山村)：馬沙=大宅階梯前｜漢=村中央｜客盧亞=左上屋簷攤棚｜宙斯之熔岩高崙=左下鍛造爐(自家熔爐)｜魔法娃娃商人=右下屋前｜艾斯倫=右側貨箱堆旁｜多魯嘉貝爾=下方村口(副本入口)｜米米=左中攤位｜萊利的輔佐官=右上宅邸前（🐉 v3.7.57·573×323 扁平圖·橫向間距≥10%≈57px）
-    town_witon: [[70, 37], [48, 52], [27, 40], [13, 72], [66, 79], [77, 48], [38, 84], [24, 57], [88, 30]],
-    // 希培利亞(天空神殿)：倉管=左上殿門階梯｜史菲爾=上方大殿門前｜巴特爾=右側步道橋頭｜希蓮恩=中央圓形圖紋
-    town_hyperia: [[15, 32], [48, 24], [68, 56], [48, 55]],
+    // 威頓村莊(火山村)：馬沙=大宅階梯前｜漢=村中央｜客盧亞=左上屋簷攤棚｜宙斯之熔岩高崙=左下鍛造爐(自家熔爐)｜巴特爾=廣場上方空地｜皮爾=廣場左下空地｜魔法娃娃商人=右下屋前｜艾斯倫=右側貨箱堆旁｜多魯嘉貝爾=下方村口(副本入口)｜米米=左中攤位｜萊利的輔佐官=右上宅邸前（🐉 v3.7.57·573×323 扁平圖·橫向間距≥10%≈57px）
+    town_witon: [[70, 37], [48, 52], [27, 40], [13, 72], [58, 38], [36, 66], [66, 79], [77, 48], [38, 84], [24, 57], [88, 30]],
     // 象牙塔：帕羅=左階梯平台｜塔拉斯=上廳地磚(v3.3.32勿站上層平台)｜塔斯=星紋左側｜巴耶斯=右書牆前｜碧恩=右上水晶祭壇階下(賦屬)｜迪嘉勒廷=大階梯底｜迪泰特=中央星紋｜神秘的魔法師=閱讀角書桌右側地磚(v3.3.32勿站桌區)
     town_ivory_tower: [[20, 60], [35, 31], [38, 55], [78, 50], [76, 28], [62, 32], [52, 58], [89, 76]],
     // 🌑 長老會議廳(環形議場·v3.3.33)：真‧冥皇丹特斯=上方大門前階台(骸骨王座坐像)｜亞提利歐=中央星紋右側石板
@@ -1954,8 +1934,6 @@ const TOWN_NPC_SPOTS = {
     town_sherine: [[67, 48], [42, 64], [16, 33]],
     // 沉默洞穴(黑妖地城)：史克瓦提=左圓頂殿門廊｜雷亞斯=右上樓閣門前｜賽帝亞=大階梯底｜庫普=廣場左｜可羅蘭斯=左下禮拜堂前｜倫得=中央星紋｜康=右下高台走道｜布魯迪卡=廣場右；避開水晶簇/吊橋
     town_silent: [[19, 44], [72, 37], [36, 35], [40, 58], [35, 80], [52, 50], [78, 68], [63, 60]],
-    // 貝希摩斯(熔岩要塞)：倉管=左閘門房｜森帕爾=大階梯底｜皮爾=右走道方尖碑旁｜普洛凱爾=中央紋章
-    town_behemoth: [[28, 44], [55, 32], [66, 62], [44, 56]],
     // 炎魔謁見所：炎魔之影=中央紋章｜小惡魔=左下台階｜炎魔鐵匠=左壁爐火(鍛造)｜輔佐官=紅毯王座階下；避開岩漿
     town_flame_audience: [[48, 60], [24, 80], [18, 42], [70, 32]],
     // 海賊島村莊：波尼=沙灘小屋遮陽棚攤位前｜庫得=左高腳倉庫棧橋樓梯下(木桶堆)｜希米哲=右側水井邊
@@ -1982,7 +1960,7 @@ const TOWN_WANDERING_BUYER_SPOTS = {
     town_silver_knight: [55, 60], town_talking: [53, 60], town_elf: [54, 48], town_gludio: [50, 60], town_gludin: [50, 58],
     town_giran: [48, 48], town_heine: [43, 64], town_oren: [54, 70], town_aden: [60, 62],
     town_elder_council: [38, 60], town_pride: [62, 70], town_rift: [30, 50], town_ivory_tower: [69, 63],
-    town_witon: [52, 68], town_silent: [54, 72], town_hyperia: [57, 68], town_behemoth: [52, 72],
+    town_witon: [52, 68], town_silent: [54, 72],
     town_pirate_village: [56, 58]
 };
 // 同城出現兩位收購者時，第二位從已驗證的原收購點周圍挑選空位；實際選點還會避開當前城鎮的所有 NPC。
@@ -2006,7 +1984,7 @@ const ALLY_GUILD_TOWN_SPOTS = {
     town_silver_knight: [70, 72], town_windwood_castle: [31, 70], town_talking: [43, 52], town_elf: [75, 78],
     town_gludio: [72, 60], town_giran: [75, 68], town_aden: [48, 84], town_elder_council: [74, 70],
     town_pride: [31, 75], town_rift: [66, 46], town_ivory_tower: [68, 84], town_witon: [64, 58],
-    town_sherine: [28, 72], town_silent: [64, 74], town_hyperia: [73, 65], town_behemoth: [75, 52],
+    town_sherine: [28, 72], town_silent: [64, 74],
     town_flame_audience: [65, 74], town_pirate_village: [28, 70]
 };
 function ensureTownAllyGuilds() {

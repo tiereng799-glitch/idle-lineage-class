@@ -38,7 +38,7 @@ function _wcSpawnNpc() {
     //      沒有 player.cls（登入畫面）時它原樣返回，clanName 留空＝不顯示，安全。
     let entry = {
         n: _wcMakeName(),
-        avatar: (typeof PVP_AVATARS !== 'undefined' && PVP_AVATARS.length) ? PVP_AVATARS[Math.floor(Math.random() * PVP_AVATARS.length)] : '男戰士',
+        avatar: (typeof PVP_AVATARS !== 'undefined' && PVP_AVATARS.length) ? PVP_AVATARS[Math.floor(Math.random() * PVP_AVATARS.length)] : '男騎士',
         alignmentValue: alignmentValue,
         levelOffset: (typeof pvpRandomLevelOffset === 'function') ? pvpRandomLevelOffset() : 0,
         pvpRandom: true
@@ -199,7 +199,7 @@ function _wcLevelFromText(q, fallback) {
     return (Number.isFinite(v) && v >= 1 && v <= 120) ? v : fallback;
 }
 // 問句是否指名某職業（沒指名就用玩家自己的職業）
-// ⚠️ 必須「長名優先」：「黑暗妖精」含有「妖精」、「龍騎士」含有「騎士」，照物件順序掃會被短名搶走。
+// ⚠️ 必須「長名優先」：「黑暗妖精」含有「妖精」，照物件順序掃會被短名搶走。
 function _wcClassFromText(q) {
     try {
         let keys = Object.keys(CLAN_CLASS_NAMES).sort((a, b) => (CLAN_CLASS_NAMES[b] || '').length - (CLAN_CLASS_NAMES[a] || '').length);
@@ -273,9 +273,6 @@ function _wcBuildKnowledge() {
     }
     try { if (typeof MOB_DROPS !== 'undefined') addDropTable(MOB_DROPS); } catch (e) {}
     try { if (typeof DARK_WEAPON_DROPS !== 'undefined') addDropTable(DARK_WEAPON_DROPS); } catch (e) {}
-    try { if (typeof DRAGON_DROPS !== 'undefined') addDropTable(DRAGON_DROPS); } catch (e) {}
-    try { if (typeof WARRIOR_DROPS !== 'undefined') addDropTable(WARRIOR_DROPS); } catch (e) {}
-    try { if (typeof MEM_DROPS !== 'undefined') addDropTable(MEM_DROPS); } catch (e) {}
     try { if (typeof DARK_CRYSTAL_DROPS !== 'undefined') addDropTable(DARK_CRYSTAL_DROPS); } catch (e) {}
     try {
         if (typeof SHOP_LISTS !== 'undefined') Object.keys(SHOP_LISTS).forEach(k => (SHOP_LISTS[k] || []).forEach(id => shopItems.add(id)));
@@ -617,7 +614,7 @@ const WC_GOTO_SPECIAL = [
         '海音找依斯巴，跟他說要出海就對了；中途會先打一段遺忘之島途中，撐過去就到了。'
     ] },
     { words: ['時空裂痕'], lines: [
-        '時空裂痕從地圖選單進，但要先有 1 顆龜裂之核；核去希培利亞找巴特爾用時空裂痕碎片做。',
+        '時空裂痕從地圖選單進，但要先有 1 顆龜裂之核；核去威頓村找巴特爾用時空裂痕碎片做。',
         '先收集時空裂痕碎片找巴特爾做龜裂之核，有核才進得了裂痕；進去後就不能傳送了，自己斟酌。'
     ] },
     { words: ['傲慢之塔', '傲塔'], lines: [
@@ -723,10 +720,7 @@ const WC_TOPICS = [
                 mage: '站遠放技能，MP 跟施法速度是命脈，記得把魔法書買齊。',
                 elf: '屬性水晶決定你能學什麼，弓手跟劍術兩條路差很多。',
                 dark: '出血跟劇毒疊起來很兇，但很脆，靠迴避活著。',
-                royal: '傭兵基礎上限 3，每 15 點魅力多帶 1 名，最多 7 名；魅力只增加人數，不增加傭兵能力。',
-                dragon: '鎖鏈劍弱點曝光是核心，龍魔法吃 HP 不是 MP，別放到自己死。',
-                warrior: '副手武器是專利，雙武器 proc 全開，負重要顧好。',
-                illusion: '奇古獸普攻直接算魔法傷害，幻覺光環全隊吃得到。'
+                royal: '傭兵基礎上限 3，每 15 點魅力多帶 1 名，最多 7 名；魅力只增加人數，不增加傭兵能力。'
             })[cls] || '';
             return [
                 `${name}？${flavor}${msTxt}`,
@@ -880,7 +874,7 @@ const WC_TOPICS = [
         key: 'rift', kw: ['時空裂痕', '裂痕', '龜裂之核', '裂痕碎片'],
         gen: function () {
             return [
-                '進時空裂痕要 1 顆龜裂之核；去希培利亞找巴特爾，用時空裂痕碎片×100 製作。',
+                '進時空裂痕要 1 顆龜裂之核；去威頓村找巴特爾，用時空裂痕碎片×100 製作。',
                 '裂痕進去後不能傳送，首隻強制頭目在 5 分鐘後出現；離開依停留時間結算排名與待領獎勵。',
                 '裂痕獎勵要離場後回入口領，領完才能再進。想看到四大龍要撐過 30 分鐘後才會進怪物池。'
             ];
@@ -916,8 +910,7 @@ const WC_TOPICS = [
             let hint = ({
                 knight: '力量體質為主，敏捷夠用就好。', mage: '智力優先，精神顧 MP 恢復。',
                 elf: '看你走弓還是劍，弓堆敏捷，劍堆力量。', dark: '敏捷堆迴避，力量顧傷害。',
-                royal: '魅力直接決定寵物跟傭兵，別忽略。', dragon: '力量體質，龍魔法吃 HP 所以體質更重要。',
-                warrior: '力量為主，負重不夠就補體質。', illusion: '智力為主，奇古獸傷害算魔法。'
+                royal: '魅力直接決定寵物跟傭兵，別忽略。'
             })[cls] || '看你的主要輸出來源堆對應屬性。';
             return [
                 `${_wcClsName(cls)}：${hint}上限是 100，內部抗性類的加成到 60 就頂了。`,
@@ -1215,9 +1208,6 @@ const WC_CHAT_LINES = [
     '騎士就是穩，穩穩地打、穩穩地沒掉東西。',
     '妖精今天又在吵風妖火妖誰比較強。',
     '黑妖一刀很帥，躺下去也很快。',
-    '戰士副手終於有存在感了。',
-    '幻術士玩家都去哪了？我很久沒看到同類。',
-    '龍騎士不要再拿 HP 當 MP 用到自己倒地了。',
     '有人在新兵訓練場嗎？我回去懷舊一下。',
     '說話之島還是最有家的感覺。',
     '歐瑞太冷了，我角色站著都像在發抖。',
@@ -1711,9 +1701,6 @@ const WC_TRASH_TALK_PAIRS = [
     ['妖精選錯屬性就毀了，可憐。', '屬性是選擇，不是運氣。'],
     ['黑妖只會躲，正面打贏過誰。', '躲得掉才是本事。'],
     ['王族靠傭兵，自己什麼都不會。', '會用資源也是能力。'],
-    ['龍騎士血量放給狗啃，天天躺。', '傷害你看過沒。'],
-    ['戰士雙武器很帥，可惜打不到人。', '打不到的是你的預判。'],
-    ['幻術士的傷害是幻覺吧。', '等你被打到就知道是不是幻覺。'],
     ['你這職業就是版本棄兒，別掙扎了。', '版本會變，我不會。'],
     ['技術差就不要怪職業。', '職業平衡問題你懂什麼。'],
     ['你連精通都選錯，難怪打不動。', '選錯也是我的選擇。'],
@@ -1971,7 +1958,7 @@ function _wcIsMassTaunt(q) {
 }
 function _wcMassTauntRosterEntry(raw) {
     if (!raw || !raw.n) return null;
-    let avatar = (typeof TROLL_CLASS_BY_AVATAR !== 'undefined' && TROLL_CLASS_BY_AVATAR[raw.avatar]) ? raw.avatar : '男戰士';
+    let avatar = (typeof TROLL_CLASS_BY_AVATAR !== 'undefined' && TROLL_CLASS_BY_AVATAR[raw.avatar]) ? raw.avatar : '男騎士';
     let alignmentValue = (typeof pvpClampAlignment === 'function')
         ? pvpClampAlignment(raw.alignmentValue)
         : Math.max(-32767, Math.min(32767, Math.round(Number(raw.alignmentValue) || 0)));
@@ -2253,7 +2240,7 @@ function _wcContactFromNpc(npc) {
         n:String(npc.name).trim().slice(0, 24),
         persona:WC_PERSONAS.includes(npc.persona) ? npc.persona : 'helpful',
         cls:(typeof CLAN_CLASS_NAMES === 'object' && CLAN_CLASS_NAMES[npc.cls]) ? npc.cls : 'knight',
-        avatar:npc.avatar || '男戰士',
+        avatar:npc.avatar || '男騎士',
         alignmentValue:_wcAlignmentValue(npc.alignmentValue),
         levelOffset:Number.isFinite(Number(npc.levelOffset)) ? Number(npc.levelOffset) : 0,
         clanId:npc.clanId || null,
@@ -2299,7 +2286,7 @@ function _wcKnownNpcCandidates() {
         let prior = seen[name];
         let row = Object.assign({}, raw, {
             n:name,
-            avatar:raw.avatar || '男戰士',
+            avatar:raw.avatar || '男騎士',
             alignmentValue:_wcAlignmentValue(raw.alignmentValue),
             levelOffset:Number.isFinite(Number(raw.levelOffset)) ? Number(raw.levelOffset) : 0,
             clanId:raw.clanId || null,
@@ -2367,7 +2354,7 @@ function _wcHydrateKnownNpc(raw) {
         name:name,
         persona:WC_PERSONAS.includes(raw.persona) ? raw.persona : _wcPick(WC_PERSONAS),
         cls:(typeof CLAN_CLASS_NAMES === 'object' && CLAN_CLASS_NAMES[cls]) ? cls : 'knight',
-        avatar:raw.avatar || '男戰士',
+        avatar:raw.avatar || '男騎士',
         levelOffset:Number.isFinite(Number(raw.levelOffset)) ? Number(raw.levelOffset) : 0,
         alignmentValue:typeof pvpLockAlignment === 'function'
             ? pvpLockAlignment(name, raw.alignmentValue, clanId)
@@ -2902,11 +2889,10 @@ function _wcAddGrudge(npc, opts) {
         }
         let male = Math.random() < 0.5;
         let avatarByCls = { royal: male ? '王子' : '公主', knight: male ? '男騎士' : '女騎士', mage: male ? '男法師' : '女法師',
-            elf: male ? '男妖精' : '女妖精', dark: male ? '男黑暗妖精' : '女黑暗妖精', dragon: male ? '男龍騎士' : '女龍騎士',
-            warrior: male ? '男戰士' : '女戰士', illusion: male ? '男幻術士' : '女幻術士' };
+            elf: male ? '男妖精' : '女妖精', dark: male ? '男黑暗妖精' : '女黑暗妖精' };
         let avatar = (typeof TROLL_CLASS_BY_AVATAR !== 'undefined' && TROLL_CLASS_BY_AVATAR[npc.avatar])
             ? npc.avatar
-            : (avatarByCls[npc.cls] || (male ? '男戰士' : '女戰士'));
+            : (avatarByCls[npc.cls] || (male ? '男騎士' : '女騎士'));
         player.trollPlayers.push({
             n: npc.name,
             avatar: avatar,
