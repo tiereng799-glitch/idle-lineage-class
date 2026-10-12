@@ -1165,9 +1165,10 @@ function startFrame(key, n){
 function startFrameReady(key, n){ const im = startFrame(key, n); return im.complete && im.naturalWidth > 0; }
 function startFrameBroken(key, n){ const im = startFrame(key, n); return im.complete && im.naturalWidth === 0; }
 
-// ⏳ 開遊戲時的載入進度條(#boot-loader)：把登入／選角／創角要用的圖先全部載好再露出登入畫面。
-//   立繪幀走同一個 startFrame 快取 → 進創角／選角時動畫直接就順。載入失敗的檔案也算「完成」(不卡住)，
-//   最多 60 秒一定收掉；遊戲的離線快取(SW)讓第二次開幾乎瞬間跑完。
+// ⏳ 開遊戲時的載入進度條(#boot-loader)：只等「畫面一定會用到」的圖——登入／選角背景、創角部件、
+//   每組立繪的第 1 幀(約 25 個檔、1MB)。其餘約 750 張立繪幀改在進度條收掉後於背景慢慢載
+//   (動畫遇到還沒到的幀會停在目前這張，不會空白)。全部等完要好幾十秒，玩家回報等太久。
+//   載入失敗也算完成(不卡住)，最多 15 秒一定收掉；離線快取(SW)讓第二次開幾乎瞬間跑完。
 function bootPreload(){
     const el = document.getElementById('boot-loader');
     if(!el) return;
@@ -1175,10 +1176,7 @@ function bootPreload(){
     const pics = ['public/assets/login/login.webp', 'public/assets/login/select.webp',
         ...['title','ico-royal','ico-knight','ico-mage','ico-male','ico-elf','ico-female','btn-minus','btn-plus','btn-back','btn-create'].map(n => `public/assets/create/${n}.png`),
         'assets/logo/黑暗妖精logo.png'].map(src => { const im = new Image(); im.src = src; return im; });
-    for(const key in CREATION_CLASS_ANIM_FRAMES){
-        const r = CREATION_CLASS_ANIM_FRAMES[key];
-        for(let n = r[0]; n <= r[1]; n++) pics.push(startFrame(key, n));
-    }
+    for(const key in CREATION_CLASS_ANIM_FRAMES) pics.push(startFrame(key, CREATION_CLASS_ANIM_FRAMES[key][0]));
     const total = pics.length;
     let finished = false;
     const finish = () => {
@@ -1186,6 +1184,7 @@ function bootPreload(){
         clearInterval(iv); clearTimeout(cap);
         el.classList.add('done');
         setTimeout(() => el.remove(), 450);
+        _bootPreloadFramesInBackground();
     };
     const iv = setInterval(() => {
         const done = pics.reduce((s, im) => s + (im.complete ? 1 : 0), 0);
@@ -1194,7 +1193,25 @@ function bootPreload(){
         if(pctEl) pctEl.textContent = p + '%';
         if(done >= total) finish();
     }, 100);
-    const cap = setTimeout(finish, 60000);
+    const cap = setTimeout(finish, 15000);
+}
+// 其餘立繪幀：一次只開 4 張，載完一張再補一張(不跟登入背景音樂搶頻寬)；進遊戲後就停。
+function _bootPreloadFramesInBackground(){
+    const queue = [];
+    for(const key in CREATION_CLASS_ANIM_FRAMES){
+        const r = CREATION_CLASS_ANIM_FRAMES[key];
+        for(let n = r[0] + 1; n <= r[1]; n++) queue.push([key, n]);
+    }
+    const inGame = () => { const gs = document.getElementById('game-screen'); return gs && !gs.classList.contains('hidden'); };
+    const next = () => {
+        if(!queue.length || inGame()) return;
+        const [key, n] = queue.shift();
+        const im = startFrame(key, n);
+        if(im.complete) { next(); return; }
+        im.addEventListener('load', next, { once: true });
+        im.addEventListener('error', next, { once: true });
+    };
+    for(let i = 0; i < 4; i++) next();
 }
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootPreload); else bootPreload();
 (function animateCreationClassPreview(){
