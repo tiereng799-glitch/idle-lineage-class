@@ -240,19 +240,39 @@
       '#lmui-exp span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 8px/1 Consolas,"Courier New",monospace;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000;}',
       '#lmui-exp i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#a16207,#facc15);}',
 
-      /* ── 背包（道具/防具/武器分頁）：4 欄深色方格、只放圖示，下方一排分頁圖示 ──
-         壓過 afk-invlist 的條列式（body.afk-invlist … !important）→ 選擇器前面多掛 html + #tab-content-panel 拉高特異度。
-         那支關掉時上游是 1.8 皮膚格狀，同一組規則一樣蓋得過。 */
-      /* 上方 12 顆分頁鈕只在方格分頁收起；「裝備」是核心的嵌入式裝備視窗（定位跟著分頁區算），不動它的版面 */
+      /* ── 右欄面板（能力/魔法/背包/設定）拉高：從頭像列下方一路到工具列，蓋住戰鬥畫面下半與血條 ──
+         #game-screen（捲動區）上緣改到頭像列下方；#col-center（戰鬥）照跑，只用 clip-path 裁成頭像列那一條當底圖（不動版面，切回狩獵場不會重排）。
+         #col-right 抬到 #col-center（z:1）之上；血條（#lmui-hud 裡、z 比整個 #game-screen 高）直接收起。 */
+      ':root{--lmui-ptop:calc(var(--orig-bar-h,0px) + 90px);--lmui-ptabs-h:32px;}',
+      'html body.lmui-battle.lmui-tall #game-screen{top:var(--lmui-ptop) !important;padding:6px 6px calc(var(--m-nav-h,0px) + 6px) !important;}',
+      'html body.lmui-battle.lmui-tall.lmui-ptabs #game-screen{padding-top:calc(var(--lmui-ptabs-h) + 6px) !important;}',
+      'html body.lmui-battle.lmui-tall #col-center{clip-path:inset(0 0 calc(100% - var(--lmui-ptop) + var(--orig-bar-h,0px)) 0);}',
+      'html body.lmui-battle.lmui-tall #col-right{position:relative;z-index:2;}',
+      'body.lmui-battle.lmui-tall #lmui-vit{display:none !important;}',
+      /* 面板上方的分頁列（背包：全部/裝備/道具/自動賣出；能力：能力/裝備/…）：樣式＝狩獵場的分頁（.lm-tabs），釘在頭像列正下方 */
+      '#lmui-bagtabs{display:none;position:fixed;left:6px;right:6px;top:var(--lmui-ptop);height:var(--lmui-ptabs-h);box-sizing:border-box;z-index:9550;padding:3px 2px;background:linear-gradient(#1a1612,#0b0907);border:1px solid #4a3f30;border-radius:3px 3px 0 0;}',
+      'body.lmui-ptabs #lmui-bagtabs{display:flex;}',
+      'body.lmui-ptabs:not(.lmui-battle) #lmui-bagtabs{top:var(--orig-bar-h,0px);}',
+      'html body.lmui.lmui-ptabs:not(.lmui-battle) #col-right{padding-top:var(--lmui-ptabs-h);}',
+      /* ── 背包：武器/防具/道具三個核心分頁攤平成同一片方格（分類由上方分頁列決定），每格是獨立的框（同魔法分頁的技能格） ──
+         作法：#tab-content-panel 當 grid，三個分頁與其中的 shell/viewport 都 display:contents，物品格直接成為 grid 的格子；
+         核心每次重繪只換掉分頁裡面的東西，這層攤平不受影響。補空格放自己的 #lmui-bagfill（排在最後）。
+         壓過 afk-invlist 的條列式（body.afk-invlist … !important）→ 選擇器前面多掛 html + #tab-content-panel 拉高特異度。 */
       'body.lmui #col-right .tab-bar{display:none !important;}',
-      /* 背包上方的搜尋列（afk-itemsearch）與快速廢品/快速強化工具列：玩家要求拿掉 */
-      'html body.lmui-bag-grid #afk-isearch,html body.lmui-bag-grid #tab-content-panel .classic-list-toolbar{display:none !important;}',
-      'html body.lmui-bag #tab-content-panel .classic-inventory-shell{aspect-ratio:auto !important;background:none !important;height:auto !important;max-width:100% !important;}',
-      'html body.lmui-bag #tab-content-panel .classic-inventory-viewport{position:static !important;inset:auto !important;width:100% !important;height:auto !important;display:grid !important;grid-template-columns:repeat(5,1fr) !important;grid-auto-rows:auto !important;gap:1px !important;padding:1px !important;background:#3a3a3a !important;border:1px solid #555 !important;overflow:visible !important;flex-direction:initial !important;}',
-      'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item,html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.lmui-empty{position:relative;aspect-ratio:1 !important;width:auto !important;height:auto !important;min-height:0 !important;margin:0 !important;padding:0 !important;border:0 !important;border-radius:0 !important;background:#0b0b0b !important;box-shadow:inset 0 0 8px rgba(0,0,0,.9) !important;display:flex !important;align-items:center !important;justify-content:center !important;overflow:hidden !important;contain-intrinsic-size:auto 80px;}',
-      'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item:hover{background:#1b1b1b !important;}',
-      'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item.bg-red-950\\/40{background:#2b0b10 !important;}',
-      'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item:has(.classic-item-flags .text-red-500){background:#2b0b10 !important;}',
+      /* 背包上方的搜尋列（afk-itemsearch）與快速廢品/快速強化工具列、整理鈕、上下捲動鈕：玩家要求拿掉（整理＝再點一次「全部」） */
+      'html body.lmui-bag #afk-isearch{display:none !important;}',
+      'html body.lmui-bag-grid #tab-content-panel{display:grid !important;grid-template-columns:repeat(5,minmax(0,1fr)) !important;grid-auto-rows:auto !important;gap:6px !important;align-content:start !important;padding:6px !important;height:auto !important;overflow:visible !important;}',
+      'html body.lmui-bag-grid #tab-content-panel>:not(#tab-items):not(#tab-weapons):not(#tab-armors):not(#lmui-bagfill){display:none !important;}',
+      'html body.lmui-bag-grid #tab-content-panel :is(#tab-items,#tab-weapons,#tab-armors,#lmui-bagfill),html body.lmui-bag-grid #tab-content-panel .classic-inventory-shell,html body.lmui-bag-grid #tab-content-panel .classic-inventory-viewport{display:contents !important;}',
+      'html body.lmui-cat-equip #tab-content-panel #tab-items,html body.lmui-cat-item #tab-content-panel #tab-weapons,html body.lmui-cat-item #tab-content-panel #tab-armors{display:none !important;}',
+      'html body.lmui-bag-grid #tab-content-panel :is(.classic-list-toolbar,.classic-inventory-scroll,.classic-sort-wrap,.classic-grid-empty){display:none !important;}',
+      '#lmui-bagfill{display:none;}',
+      'html body.lmui-bag #tab-weapons .list-item{order:1;}html body.lmui-bag #tab-armors .list-item{order:2;}html body.lmui-bag #tab-items .list-item{order:3;}html body.lmui-bag #lmui-bagfill>.lmui-empty{order:4;}',
+      'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item,html body.lmui-bag #tab-content-panel #lmui-bagfill>.lmui-empty{position:relative;aspect-ratio:1 !important;width:auto !important;height:auto !important;min-height:0 !important;margin:0 !important;padding:0 !important;border:1px solid #6b5636 !important;border-radius:4px !important;background:linear-gradient(#2a241c,#14110d) !important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.8),0 1px 2px #000 !important;display:flex !important;align-items:center !important;justify-content:center !important;overflow:hidden !important;contain-intrinsic-size:auto 70px;}',
+      'html body.lmui-bag #tab-content-panel #lmui-bagfill>.lmui-empty{border-color:#2e271e !important;background:#0d0b09 !important;box-shadow:inset 0 0 6px #000 !important;}',
+      'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item:hover{background:linear-gradient(#3a3226,#1c1712) !important;}',
+      'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item.bg-red-950\\/40{background:linear-gradient(#3a1016,#1c070a) !important;border-color:#6b2a2a !important;}',
+      'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item:has(.classic-item-flags .text-red-500){background:linear-gradient(#3a1016,#1c070a) !important;border-color:#6b2a2a !important;}',
       'html body.lmui-bag #tab-content-panel .classic-item-main{width:100% !important;height:100% !important;display:flex !important;align-items:center !important;justify-content:center !important;gap:0 !important;flex:1 1 auto;}',
       'html body.lmui-bag #tab-content-panel .classic-name-box{display:none !important;}',
       'html body.lmui-bag #tab-content-panel .classic-icon-box{position:static !important;width:66% !important;height:66% !important;flex:0 0 auto !important;}',
@@ -261,14 +281,16 @@
       'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item .classic-icon-corner-value{display:block !important;position:absolute !important;right:3px !important;bottom:2px !important;left:auto !important;top:auto !important;font-size:12px !important;background:none !important;}',
       /* 勾選框等其他子元素（快速強化/廢品模式）縮到右上角 */
       'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item>:not(.classic-item-main){position:absolute !important;top:2px;right:2px;transform:scale(.85);transform-origin:top right;}',
-      /* 分頁圖示列：釘在工具列正上方；#game-screen 底部多讓出這一條 */
-      '#lmui-bagtabs{display:none;position:fixed;left:0;right:0;bottom:var(--m-nav-h,0px);z-index:9550;gap:3px;padding:4px 6px;background:linear-gradient(#1c1c1c,#0b0b0b);border-top:1px solid #444;}',
-      'body.lmui-bag #lmui-bagtabs{display:flex;}',
-      'html body.lmui-bag #game-screen{padding-bottom:calc(var(--m-nav-h,0px) + 52px) !important;}',
-      '.lmui-bagtab{flex:1;height:38px;display:flex;align-items:center;justify-content:center;border:1px solid #4a4a4a;border-radius:3px 3px 0 0;background:linear-gradient(#3a3a3a,#1a1a1a);color:#9a9a9a;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}',
-      '.lmui-bagtab svg{width:24px;height:24px;}',
-      '.lmui-bagtab.txt{font-size:13px;font-weight:700;font-family:inherit;}',
-      '.lmui-bagtab.on{color:#f2f2f2;background:linear-gradient(#5e5e5e,#2a2a2a);border-color:#8a8a8a;}',
+      /* ── 背包「自動賣出」分類：核心的自動販賣規則視窗（#autosell-rule-modal）搬進面板裡就地顯示 ──
+         視窗本體、草稿制（開窗拍快照、儲存才生效、離開＝還原）全部照核心；這裡只把它從滿版遮罩改成面板內容。
+         標題列（標題＋Close）藏起來：離開這個分類就等於 Close。 */
+      '#lmui-ashost{display:none;}',
+      'html body.lmui-cat-as #tab-content-panel>:not(#lmui-ashost){display:none !important;}',
+      'html body.lmui-cat-as #tab-content-panel #lmui-ashost{display:block;}',
+      'html body.lmui #lmui-ashost #autosell-rule-modal{position:static !important;inset:auto !important;width:auto !important;height:auto !important;max-height:none !important;margin:0 !important;padding:0 !important;display:block !important;z-index:auto !important;background:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;transform:none !important;}',
+      'html body.lmui #lmui-ashost #autosell-rule-modal .as-box{width:auto !important;max-width:none !important;height:auto !important;max-height:none !important;overflow:visible !important;margin:0 !important;padding:8px !important;border:0 !important;border-radius:0 !important;box-shadow:none !important;}',
+      'html body.lmui #lmui-ashost #autosell-rule-modal .as-head{display:none !important;}',
+      'html body.lmui #lmui-ashost #autosell-rule-modal .as-head+.as-sec{margin-top:0 !important;}',
 
       /* ── 怪物資訊小視窗：戰鬥畫面下緣、置中小卡片（同道具卡片的寬度/配色） ── */
       '#lmui-mobinfo{display:none;position:absolute;left:var(--lmui-pop-side);right:var(--lmui-pop-side);top:calc(var(--lmui-pop-top) - var(--lmui-bar));bottom:auto;max-height:calc(100dvh - var(--lmui-pop-top) - var(--lmui-pop-bot));z-index:8;flex-direction:column;padding:12px 12px 8px;background:linear-gradient(#211a12,#0f0b08);border:1px solid #8a6a3a;border-radius:10px;box-shadow:0 0 0 100vmax rgba(0,0,0,.55),0 10px 40px rgba(0,0,0,.9);color:#eee;text-shadow:none;}',
@@ -374,8 +396,8 @@
       'html body.lmui-equip #lmui-doll{display:block;padding:6px 8px 8px;background:radial-gradient(ellipse at 50% 40%,#2a2a2a,#121212 75%);border:1px solid #4a4a4a;border-radius:4px;box-shadow:inset 0 0 18px #000;}',
       'html body.lmui-equip #tab-equip,html body.lmui-equip #equipment-window{display:none !important;}',
       '.ld-weight{font-size:12px;color:#cfcfcf;}',
-      /* 格子邊長跟著下半部可用高度走（5 排＋底排＝6 列，扣掉負重字/分頁鈕/間距約 150px），上限 64px，盡量一屏放完不用捲 */
-      '#lmui-doll{--ld-c:clamp(36px,calc((100dvh - var(--lmui-mtop) - var(--m-nav-h,0px) - 52px - 100px) / 6),64px);}',
+      /* 格子邊長跟著面板可用高度走（5 排＋底排＝6 列，扣掉上方分頁列/負重字/間距約 150px），上限 64px，盡量一屏放完不用捲 */
+      '#lmui-doll{--ld-c:clamp(36px,calc((100dvh - var(--lmui-ptop) - var(--m-nav-h,0px) - var(--lmui-ptabs-h) - 120px) / 6),64px);}',
       '.ld-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}',
       '.ld-head .ld-weight{margin:0 !important;}',
       '.ld-grid{display:grid;grid-template-columns:repeat(3,var(--ld-c));justify-content:center;gap:6px calc(var(--ld-c) * .45);}',
@@ -788,6 +810,7 @@
     var list = document.querySelectorAll('#warehouse-window-frame,.lmui-below,.lmui-below-c,' + MODAL_HOSTS);
     for (var i = 0; i < list.length; i++) {
       var w = list[i];
+      if (w.closest('#lmui-ashost')) continue;   // 背包「自動賣出」分類裡就地顯示的規則視窗：不是彈窗，離開分類時由 syncInlineAS 收
       if (!w.getClientRects().length || getComputedStyle(w).display === 'none') continue;
       var x = findCloseBtn(w);
       if (x) { try { x.click(); } catch (e) {} }
@@ -1081,7 +1104,7 @@
     var list = document.querySelectorAll(WIN_SEL);
     for (var i = 0; i < list.length; i++) {
       var e = list[i];
-      if (e.id === 'game-screen' || e.closest('#lmui-hud')) continue;
+      if (e.id === 'game-screen' || e.closest('#lmui-hud') || e.closest('#lmui-ashost')) continue;
       if (e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden') return true;
     }
     return false;
@@ -1097,7 +1120,7 @@
       var list = document.querySelectorAll(WIN_SEL + ',#town-interaction-container:not(.hidden),#lmui-mobinfo,#lmui-death');
       for (var i = 0; i < list.length && !on; i++) {
         var e = list[i];
-        if (e.id === 'game-screen' || !e.getClientRects().length) continue;
+        if (e.id === 'game-screen' || !e.getClientRects().length || e.closest('#lmui-ashost')) continue;
         var cs = getComputedStyle(e);
         if (cs.display === 'none' || cs.visibility === 'hidden') continue;
         var r = e.getBoundingClientRect(), bot = r.bottom;
@@ -1128,7 +1151,7 @@
     { id: 'chat', name: '聊天', run: openChat },
     { id: 'stats', name: '角色素質', label: '能力', run: function () { openTab('stats'); } },
     { id: 'skill', name: '魔法', run: function () { openTab('skill'); if (typeof refreshClassicSkillBookOnly === 'function') { try { refreshClassicSkillBookOnly(); } catch (e) {} } } },
-    { id: 'items', name: '背包', run: function () { openTab('items'); } },
+    { id: 'items', name: '背包', run: function () { bagCat = 'all'; openTab('items'); } },   // 每次打開都從「全部」開始（停在「自動賣出」＝規則視窗開著、背景自動賣出暫停）
     { id: 'automation', name: '設定', run: function () { openTab('automation'); } },
     { id: 'exit', name: '離開', run: function () { buildDeathWin(); renderDeathStats(); document.body.classList.add('lmui-exitwin'); } }   // 天堂M：離開也是那個「重新開始/離開/取消＋狩獵紀錄」視窗
   ];
@@ -1168,8 +1191,8 @@
     bar.appendChild(ex);
     n.appendChild(bar);
   }
-  // 目前在哪一格：日誌開著＝聊天；戰鬥/隊伍看 mview-*；背包欄看哪個分頁亮著（武器/防具/裝備都算背包）
-  var RIGHT_TAB_TOOL = { stats: 'stats', audit: 'stats', pvp: 'stats', clan: 'stats', skill: 'skill', items: 'items', weapons: 'items', armors: 'items', equip: 'items', automation: 'automation' };
+  // 目前在哪一格：日誌開著＝聊天；戰鬥/隊伍看 mview-*；右欄看哪個分頁亮著（武器/防具算背包，裝備欄位算能力）
+  var RIGHT_TAB_TOOL = { stats: 'stats', audit: 'stats', pvp: 'stats', clan: 'stats', equip: 'stats', skill: 'skill', items: 'items', weapons: 'items', armors: 'items', automation: 'automation' };
   function currentTool() {
     var c = document.body.classList;
     if (c.contains('mlog-open')) return 'chat';
@@ -1189,25 +1212,23 @@
     setTxt($('lmui-navexp'), txt('txt-exp'));
   }
 
-  // ── 右欄子分頁列（取代上游那排 12 顆分頁鈕）：依目前所在的工具分組，在工具列正上方放一排 ──
-  //   t＝核心分頁（點上游原鈕切過去，switchTab 的副作用如「統計/存檔」順便存檔照舊）；btn＝開彈窗的上游原鈕（收藏/自動賣出）
+  // ── 右欄面板上方的分頁列（取代上游那排 12 顆分頁鈕）：依目前所在的工具分組，釘在頭像列正下方 ──
+  //   t＝核心分頁（點上游原鈕切過去，switchTab 的副作用如「統計/存檔」順便存檔照舊）；btn＝開彈窗的上游原鈕（收藏）
+  //   cat＝背包分類（不是核心分頁：核心分頁停在「道具」，三個物品分頁由 CSS 依 lmui-cat-* 攤平/篩選）
+  //   魔法、設定沒有分頁列（設定原本的「自動賣出」移到背包的分類）。
   var SUB_GROUPS = {
-    items: [
-      { t: 'items', name: '道具', svg: '<path d="M10 3h4M11 3v4l-4.5 7.5A4 4 0 0 0 10 20h4a4 4 0 0 0 3.5-5.5L13 7V3"/><path d="M8 14h8"/>' },
-      { t: 'armors', name: '防具', svg: '<path d="M5 12a7 7 0 0 1 14 0v3h-4v-3h-6v3H5z"/><path d="M5 15v4h4M19 15v4h-4M12 5v7"/>' },
-      { t: 'weapons', name: '武器', svg: '<path d="M19 4l-9.5 9.5M19 4h-3.5M19 4v3.5M7 13l4 4M5.5 18.5l2.5-2.5M4 20l1.5-1.5"/>' },
-      { t: 'equip', name: '裝備', svg: '<circle cx="12" cy="5.5" r="2.5"/><path d="M7 21v-8l-2 1V9.5L9 8h6l4 1.5V14l-2-1v8M10 21v-5h4v5"/>' }
-    ],
+    items: [{ cat: 'all', name: '全部' }, { cat: 'equip', name: '裝備' }, { cat: 'item', name: '道具' }, { cat: 'as', name: '自動賣出' }],
     stats: [
-      { t: 'stats', name: '能力' }, { t: 'audit', name: '統計' }, { btn: 'btn-collection', name: '收藏' },
+      { t: 'stats', name: '能力' }, { t: 'equip', name: '裝備' }, { t: 'audit', name: '統計' }, { btn: 'btn-collection', name: '收藏' },
       { t: 'pvp', name: '社交' }, { t: 'clan', name: '血盟' }
-    ],
-    automation: [{ t: 'automation', name: '設定' }, { btn: 'btn-autosell', name: '自動賣出' }]
+    ]
   };
-  var TAB_GROUP = { items: 'items', armors: 'items', weapons: 'items', equip: 'items', stats: 'stats', audit: 'stats', pvp: 'stats', clan: 'stats', automation: 'automation' };
-  var BAG_GRID_TABS = { items: 1, armors: 1, weapons: 1 };
+  var TAB_GROUP = { items: 'items', armors: 'items', weapons: 'items', equip: 'stats', stats: 'stats', audit: 'stats', pvp: 'stats', clan: 'stats', automation: 'automation' };
+  var BAG_CATS = ['all', 'equip', 'item', 'as'];
+  var CAT_TABS = { all: ['tab-weapons', 'tab-armors', 'tab-items'], equip: ['tab-weapons', 'tab-armors'], item: ['tab-items'] };
   var BAG_COLS = 5;     // 背包一排幾格（CSS 的 grid-template-columns 同步）
-  var EMPTY_MIN = 25;   // 至少畫幾格（不足補空格），像遊戲裡固定格數的背包
+  var EMPTY_MIN = 35;   // 至少畫幾格（不足補空格），像遊戲裡固定格數的背包
+  var bagCat = 'all';
   function activeRightTab() {
     for (var k in TAB_GROUP) { var p = $('tab-' + k); if (p && !p.classList.contains('hidden')) return k; }
     var sk = $('tab-skill'); if (sk && !sk.classList.contains('hidden')) return 'skill';
@@ -1216,16 +1237,16 @@
   var subGroup = '';
   function buildSubTabs(group) {
     var bar = $('lmui-bagtabs');
-    if (!bar) { bar = document.createElement('div'); bar.id = 'lmui-bagtabs'; document.body.appendChild(bar); }
+    if (!bar) { bar = document.createElement('div'); bar.id = 'lmui-bagtabs'; bar.className = 'lm-tabs'; document.body.appendChild(bar); }
     if (subGroup === group) return;
     subGroup = group;
     bar.innerHTML = '';
     (SUB_GROUPS[group] || []).forEach(function (x) {
       var b = document.createElement('button');
-      b.type = 'button'; b.className = 'lmui-bagtab' + (x.svg ? '' : ' txt'); b.setAttribute('data-t', x.t || x.btn);
-      b.setAttribute('aria-label', x.name); b.title = x.name;
-      b.innerHTML = x.svg ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + x.svg + '</svg>' : x.name;
+      b.type = 'button'; b.setAttribute('data-t', x.cat || x.t || x.btn);
+      b.textContent = x.name;
       b.addEventListener('click', function () {
+        if (x.cat) { pickBagCat(x.cat); return; }
         closeAllWindows();
         var tb = x.t ? rightTabBtn(x.t) : $(x.btn);
         if (tb) tb.click();
@@ -1234,29 +1255,76 @@
       bar.appendChild(b);
     });
   }
-  // 方格不足一整排/最少格數時補空格。核心每次重繪會整個換掉清單 → 只在「沒有空格或數量不對」時補，補的動作本身不會再觸發一輪
-  function fillEmpty(tab) {
-    var vp = document.querySelector('#tab-' + tab + ' .classic-inventory-viewport'); if (!vp) return;
-    var items = vp.querySelectorAll(':scope>.list-item').length;
-    var want = Math.max(EMPTY_MIN, Math.ceil(items / BAG_COLS) * BAG_COLS) - items;
-    var have = vp.querySelectorAll(':scope>.lmui-empty');
-    if (have.length === want && (!have.length || vp.lastElementChild === have[have.length - 1])) return;
-    for (var i = 0; i < have.length; i++) have[i].remove();
-    for (var j = 0; j < want; j++) { var e = document.createElement('div'); e.className = 'lmui-empty'; vp.appendChild(e); }
+  // 背包分類：點目前這個「全部」＝整理背包（原本 ↕ 整理鈕的功能；照目前的整理方式排一次，不存檔，同核心「立即排列」）
+  function pickBagCat(cat) {
+    if (cat === bagCat) {
+      if (cat === 'all' && typeof sortInventoryNow === 'function') { try { sortInventoryNow(); } catch (e) { console.warn('[AFK-lmui] 整理背包失敗', e); } }
+      syncBag();
+      return;
+    }
+    closeAllWindows();
+    bagCat = cat;
+    syncBag();
+    var gs = $('game-screen'); if (gs) gs.scrollTop = 0;
+  }
+  // 方格不足一整排/最少格數時補空格（放在自己的 #lmui-bagfill，核心重繪分頁不會動到它）
+  function fillEmpty() {
+    var panel = $('tab-content-panel'); if (!panel) return;
+    var box = $('lmui-bagfill');
+    if (!box) { box = document.createElement('div'); box.id = 'lmui-bagfill'; box.setAttribute('aria-hidden', 'true'); panel.appendChild(box); }
+    var n = 0;
+    (CAT_TABS[bagCat] || []).forEach(function (id) { n += document.querySelectorAll('#' + id + ' .classic-inventory-viewport>.list-item').length; });
+    var want = Math.max(EMPTY_MIN, Math.ceil(n / BAG_COLS) * BAG_COLS) - n;
+    var have = box.children.length;
+    for (; have > want; have--) box.lastElementChild.remove();
+    for (; have < want; have++) { var e = document.createElement('div'); e.className = 'lmui-empty'; box.appendChild(e); }
+  }
+  // 「自動賣出」分類：核心的規則視窗（openAutoSellRules）搬進面板裡的 #lmui-ashost 就地顯示。
+  //   在這個分類＝視窗開著（核心草稿制：開窗拍快照、背景自動賣出暫停）；離開分類/換工具/離開手機版面＝走核心 closeAutoSellRules（沒按儲存就還原）。
+  //   按「儲存規則／立即賣出」核心會自己關窗 → 還在這個分類就馬上再開一份（見 init 包的 closeAutoSellRules）。
+  var asFail = 0;
+  function ensureASHost() {
+    var h = $('lmui-ashost'); if (h) return h;
+    var panel = $('tab-content-panel'); if (!panel) return null;
+    h = document.createElement('div'); h.id = 'lmui-ashost';
+    panel.appendChild(h);
+    return h;
+  }
+  function syncInlineAS(want) {
+    var m = $('autosell-rule-modal'), host = $('lmui-ashost');
+    if (!want) {
+      if (m && host && host.contains(m)) {
+        try { closeAutoSellRules(); } catch (e) { console.warn('[AFK-lmui] 關閉自動賣出規則失敗', e); m.remove(); }
+      }
+      return;
+    }
+    host = ensureASHost(); if (!host || !hasP()) return;
+    if (!m) {
+      if (typeof openAutoSellRules !== 'function' || asFail > 3) return;
+      try { openAutoSellRules(); } catch (e) { asFail++; console.warn('[AFK-lmui] 開啟自動賣出規則失敗', e); return; }
+      m = $('autosell-rule-modal');
+    }
+    if (m && m.parentNode !== host) host.appendChild(m);
   }
   function syncBag() {
     var game = document.body.classList.contains('lmui');
     var tab = game && document.body.classList.contains('mview-right') && !document.body.classList.contains('mlog-open') ? activeRightTab() : '';
     var group = TAB_GROUP[tab] || '';
-    toggleCls('lmui-bag', !!group);
-    toggleCls('lmui-bag-grid', !!BAG_GRID_TABS[tab]);
+    var bag = group === 'items';
+    toggleCls('lmui-tall', !!group || tab === 'skill');
+    toggleCls('lmui-ptabs', !!SUB_GROUPS[group]);
+    toggleCls('lmui-bag', bag);
+    toggleCls('lmui-bag-grid', bag && bagCat !== 'as');
+    BAG_CATS.forEach(function (c) { toggleCls('lmui-cat-' + c, bag && bagCat === c); });
     toggleCls('lmui-equip', tab === 'equip');
     if (tab === 'equip') { try { renderDoll(); } catch (e) { console.warn('[AFK-lmui] 裝備紙娃娃失敗', e); } }
-    if (!group) return;
+    syncInlineAS(bag && bagCat === 'as');
+    if (!SUB_GROUPS[group]) return;
     buildSubTabs(group);
-    var btns = document.querySelectorAll('#lmui-bagtabs .lmui-bagtab');
-    for (var i = 0; i < btns.length; i++) { var on = btns[i].getAttribute('data-t') === tab; if (btns[i].classList.contains('on') !== on) btns[i].classList.toggle('on', on); }
-    if (BAG_GRID_TABS[tab]) fillEmpty(tab);
+    var cur = bag ? bagCat : tab;
+    var btns = document.querySelectorAll('#lmui-bagtabs button');
+    for (var i = 0; i < btns.length; i++) { var on = btns[i].getAttribute('data-t') === cur; if (btns[i].classList.contains('on') !== on) btns[i].classList.toggle('on', on); }
+    if (bag && bagCat !== 'as') fillEmpty();
   }
 
   // ── HUD 更新 ────────────────────────────────────────────
@@ -1694,6 +1762,24 @@
         var r = _origOpenModal.apply(this, arguments);
         try { addCompareBtn(); } catch (e) {}
         try { updatePopover(); } catch (e) {}
+        return r;
+      };
+    }
+    // 背包「自動賣出」分類：核心規則視窗每次重畫（加/刪個別例外）都是砍掉重建在 body 上 → 建好當下就搬回面板，不閃滿版遮罩；
+    //   核心關窗（儲存規則/立即賣出）後下一輪 syncBag 會在還停在這個分類時重開。只在 body.lmui-cat-as（本外掛設的）時動作，其餘照原版。
+    if (typeof window.openAutoSellRules === 'function') {
+      var _origOpenAS = window.openAutoSellRules;
+      window.openAutoSellRules = function () {
+        var r = _origOpenAS.apply(this, arguments);
+        if (document.body.classList.contains('lmui-cat-as')) { try { syncInlineAS(true); } catch (e) {} }
+        return r;
+      };
+    }
+    if (typeof window.closeAutoSellRules === 'function') {
+      var _origCloseAS = window.closeAutoSellRules;
+      window.closeAutoSellRules = function () {
+        var r = _origCloseAS.apply(this, arguments);
+        if (document.body.classList.contains('lmui-cat-as')) setTimeout(function () { try { syncBag(); } catch (e) {} }, 0);
         return r;
       };
     }
