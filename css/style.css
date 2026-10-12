@@ -1213,7 +1213,7 @@ button.classic-skill-cell { cursor:pointer; }
     border:0;
     background:transparent;
     color:#e8dcc0;
-    font-size:2.7cqw;
+    font-size:3.6cqw;
     letter-spacing:.12em;
     cursor:pointer;
     pointer-events:auto;
@@ -1225,7 +1225,7 @@ button.classic-skill-cell { cursor:pointer; }
 }
 .creation-tile.tile-left { left:5.4%; }
 .creation-tile.tile-right { right:5.4%; }
-.creation-tile img { height:5.4cqw; width:auto; max-width:80%; object-fit:contain; mix-blend-mode:lighten; pointer-events:none; }
+.creation-tile img { height:5.6cqw; width:auto; max-width:80%; object-fit:contain; mix-blend-mode:lighten; pointer-events:none; }
 #btn-class-base-royal img { filter:contrast(1.7) brightness(.8); }   /* 範本的王族是選中狀態，裁下來的皇冠帶著選中的金色底光 → 壓掉淡光只留皇冠 */
 .creation-tile img.ico-recolor { filter:invert(1) sepia(1) saturate(1.6) hue-rotate(-8deg) brightness(.92); }   /* 範本沒有黑暗妖精圖示：現有白底銀色圖示反相後調成金色 */
 .creation-tile span { text-shadow:0 1px 2px #000; }
@@ -1242,22 +1242,27 @@ button.classic-skill-cell { cursor:pointer; }
 
 /* 名字 */
 #creation-name-row { position:absolute; left:10.3%; right:19.2%; top:50%; height:4.1%; display:flex; align-items:center; gap:5.5cqw; }
-#creation-name-row label { color:#e8dcc0; font-size:2.7cqw; letter-spacing:.12em; white-space:nowrap; }
+#creation-name-row label { color:#e8dcc0; font-size:3.7cqw; letter-spacing:.12em; white-space:nowrap; }
 #creation-name {
     flex:1 1 auto; min-width:0; height:100%; box-sizing:border-box;
     padding:0 2cqw; border:1px solid rgba(160,140,105,.55); border-radius:.6cqw;
     background:rgba(8,8,9,.85); box-shadow:inset 0 0 1.2cqw rgba(0,0,0,.8), 0 0 0 1px rgba(0,0,0,.6);
-    color:#f2ead6; font:inherit; font-size:2.4cqw; text-align:center; outline:none;
+    color:#f2ead6; font:inherit; font-size:3.4cqw; text-align:center; outline:none;
 }
 #creation-name::placeholder { color:#7d7668; }
 #creation-name:focus { border-color:rgba(226,190,110,.85); }
 #creation-name.invalid { border-color:rgba(214,92,80,.85); }
+/* 「建立角色」按不下去的原因：名字欄正下方的空隙 */
+#creation-hint { position:absolute; left:22.4%; right:19.2%; top:54.25%; height:1.95%; display:flex; align-items:center; justify-content:center; color:#c9b98f; font-size:2.9cqw; white-space:nowrap; pointer-events:none; }
+#creation-hint.warn { color:#ef8f84; }
+/* 數值旁的「+N」：這一項自己加了幾點 */
+.creation-stat-plus { margin-left:.35em; color:#8fd18b; font-size:.68em; font-weight:700; vertical-align:.15em; }
 
 /* 能力配點：6 列(範本 y 882 起、每列 68px) */
 #stat-allocation { position:absolute; left:18.7%; right:18.5%; top:56.2%; height:27.6%; display:flex; flex-direction:column; border-top:1px solid rgba(150,130,95,.25); }
 .creation-stat-row { position:relative; flex:1 1 0; display:grid; grid-template-columns:22% 10.6% 1fr 14.6%; align-items:center; border-bottom:1px solid rgba(150,130,95,.18); }
-.creation-stat-label { padding-left:2.5%; color:#e8dcc0; font-size:2.7cqw; letter-spacing:.12em; }
-.creation-stat-value { color:#f4efe3; font-size:3cqw; font-weight:600; text-align:center; font-variant-numeric:tabular-nums; }
+.creation-stat-label { padding-left:2.5%; color:#e8dcc0; font-size:3.8cqw; letter-spacing:.12em; }
+.creation-stat-value { color:#f4efe3; font-size:4.3cqw; font-weight:600; text-align:center; font-variant-numeric:tabular-nums; }
 .creation-stat-btn { height:78%; aspect-ratio:68 / 58; justify-self:start; padding:0; border:0; background:center / contain no-repeat; cursor:pointer; touch-action:manipulation; }
 .creation-stat-btn.minus { background-image:url("../public/assets/create/btn-minus.png"); }
 .creation-stat-btn.plus { aspect-ratio:92 / 60; justify-self:end; background-image:url("../public/assets/create/btn-plus.png"); }
@@ -1268,7 +1273,7 @@ button.classic-skill-cell { cursor:pointer; }
 #creation-pts-row {
     position:absolute; left:18%; right:18%; top:84.8%; height:2.4%;
     display:flex; align-items:center; justify-content:center; gap:1.2cqw;
-    color:#e2c27a; font-size:2.7cqw; letter-spacing:.1em; white-space:nowrap;
+    color:#e2c27a; font-size:3.6cqw; letter-spacing:.1em; white-space:nowrap;
 }
 #creation-pts-row::before, #creation-pts-row::after { content:""; flex:1 1 auto; height:1px; background:linear-gradient(90deg, transparent, rgba(200,170,110,.55)); }
 #creation-pts-row::after { background:linear-gradient(270deg, transparent, rgba(200,170,110,.55)); }
@@ -1386,8 +1391,8 @@ button.classic-skill-cell { cursor:pointer; }
     mix-blend-mode:lighten;   /* 立繪幀是黑底：只留比拱門亮的部分(角色本身)，黑底透出拱門 */
 }
 /* 已停用職業的舊角色：點了沒反應，不給 hover 光 */
-.load-slot-card.locked { cursor:not-allowed; }
-.load-slot-card.locked:hover { background:transparent; box-shadow:none; }
+/* 選取中的角色：拱門內一圈金光 */
+.load-slot-card.filled.selected { box-shadow:inset 0 0 18px rgba(232,190,95,.38); background:rgba(255,222,150,.035); }
 .load-slot-card.locked .load-slot-label { color:#9a9286; }
 .load-slot-card.locked .load-slot-label strong { color:#b8ad98; }
 /* 空卡提示字：在底圖「New Character」正下方 */
@@ -1428,6 +1433,36 @@ button.classic-skill-cell { cursor:pointer; }
     pointer-events:none;
 }
 .load-slot-label strong { display:block; color:#f2d77f; font-size:1.08em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* 選取中角色的素質面板＋按鈕：放在拱門下方的地板區(底圖 y 776~1010) */
+#load-info-panel {
+    position:absolute; left:5%; right:5%; top:75.8%; bottom:1.4%;
+    display:flex; flex-direction:column; justify-content:space-between; gap:1cqw;
+    padding:2cqw 3cqw; box-sizing:border-box;
+    border:1px solid rgba(190,150,80,.55); border-radius:1.2cqw;
+    background:rgba(10,8,6,.82); box-shadow:0 0 18px rgba(0,0,0,.7);
+    color:#e8dcc0; font-family:"Microsoft JhengHei", sans-serif; font-size:3.5cqw; line-height:1.25;
+}
+#load-info-panel.hidden { display:none; }
+#load-info-head { display:flex; align-items:baseline; justify-content:center; gap:2.5cqw; }
+#load-info-name { color:#f2d77f; font-size:1.25em; max-width:60%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#load-info-sub { color:#d8c8a2; }
+#load-info-vitals { display:flex; justify-content:space-around; }
+#load-info-stats { display:grid; grid-template-columns:repeat(3, 1fr); row-gap:.6cqw; text-align:center; }
+#load-info-vitals.hidden, #load-info-stats.hidden { display:none; }
+#load-info-panel b { color:#f4efe3; font-weight:600; font-variant-numeric:tabular-nums; }
+#load-info-actions { display:flex; gap:3cqw; }
+#load-info-actions button {
+    flex:1 1 0; height:9cqw; padding:0; border-radius:.8cqw; cursor:pointer; touch-action:manipulation;
+    font-family:inherit; font-size:1.1em; font-weight:700; letter-spacing:.15em;
+    border:1px solid rgba(200,160,80,.75);
+    background:linear-gradient(180deg, rgba(60,48,28,.95), rgba(22,17,10,.98)); color:#f3dfa2;
+    text-shadow:0 1px 2px #000;
+}
+#load-info-actions button.hidden { display:none; }
+#load-info-actions button:hover { filter:brightness(1.15); }
+#load-btn-enter { background:linear-gradient(180deg, #b8913f, #6e521f) !important; color:#1c1306 !important; text-shadow:none !important; }
+#load-btn-delete { border-color:rgba(160,70,60,.75) !important; color:#e7a09a !important; }
 .load-slot-status {
     position:absolute;
     z-index:2;

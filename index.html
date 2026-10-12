@@ -46,6 +46,21 @@
               <img id="load-select-bg" src="public/assets/login/select.webp" alt="" draggable="false">
               <h2 id="load-select-title">選擇角色</h2>
               <div id="load-slot-grid" aria-label="角色"></div>
+              <!-- 選取中的角色：素質＋進入遊戲／刪除角色（拱門下方地板區） -->
+              <section id="load-info-panel" class="hidden" aria-live="polite">
+                <div id="load-info-head"><strong id="load-info-name"></strong><span id="load-info-sub"></span></div>
+                <div id="load-info-vitals">
+                  <span>HP <b id="load-info-hp"></b></span><span>MP <b id="load-info-mp"></b></span><span>AC <b id="load-info-ac"></b></span>
+                </div>
+                <div id="load-info-stats">
+                  <span>力量 <b id="load-info-str"></b></span><span>敏捷 <b id="load-info-dex"></b></span><span>體質 <b id="load-info-con"></b></span>
+                  <span>智力 <b id="load-info-int"></b></span><span>精神 <b id="load-info-wis"></b></span><span>魅力 <b id="load-info-cha"></b></span>
+                </div>
+                <div id="load-info-actions">
+                  <button onclick="loadEnterSelected()" id="load-btn-enter" type="button">進入遊戲</button>
+                  <button onclick="loadDeleteSelected()" id="load-btn-delete" type="button">刪除角色</button>
+                </div>
+              </section>
             </div>
           </div>
         </div>
@@ -74,6 +89,8 @@
                 <label for="creation-name">名字</label>
                 <input id="creation-name" type="text" maxlength="12" placeholder="2~12 字，中英數" autocomplete="off" spellcheck="false" oninput="updateCreateUI()">
             </div>
+            <!-- 「建立角色」按不下去的原因(名字不合格／點數沒配完)；都滿足時清空 -->
+            <div id="creation-hint" aria-live="polite"></div>
 
             <div id="stat-allocation" aria-label="能力配點">
                 <div class="creation-stat-row"><span class="creation-stat-label">力量</span><button class="creation-stat-btn minus" onclick="adjStat('str', -1)" type="button" aria-label="力量減一"></button><span id="c-str" class="creation-stat-value"></span><button class="creation-stat-btn plus" onclick="adjStat('str', 1)" type="button" aria-label="力量加一"></button></div>

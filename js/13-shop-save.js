@@ -360,7 +360,12 @@ function _summaryFromRaw(s){
             mp: p.mp || 0,
             mmp: p.mmp || p.maxMp || 0,
             ac: p.d && typeof p.d.ac === 'number' ? p.d.ac : '',
-            base: p.base || {}
+            base: p.base || {},
+            // 選角畫面顯示的六項能力＝遊戲中看到的最終值(p.d：基礎＋升級配點＋萬能藥＋裝備)；舊檔沒有 p.d 就退回基礎＋配點
+            stats: ['str','dex','con','int','wis','cha'].reduce((o, k) => {
+                let fin = p.d && typeof p.d[k] === 'number' ? p.d[k] : ((p.base || {})[k] || 0) + ((p.alloc || {})[k] || 0) + ((p.panacea || {})[k] || 0);
+                o[k] = Math.floor(fin); return o;
+            }, {})
         };   // 🎮 經典模式旗標：供存檔位顯示與傭兵同模式招募限制（🏛️v3.0.83 傳統已取消·未載入過的舊傳統存檔以 classicMode 歸類）；avatar＝職業性別頭像名（assets/character/<avatar>.png）；name 未命名時留空字串（顯示端自行省略）
     } catch(e){ return null; }
 }
@@ -836,6 +841,7 @@ function openLoadSelect(){
     renderLoadSelect();
 }
 function _loadFirstFilledSlot(){
+    for(let n = 1; n <= LOAD_SLOT_COUNT; n++){ const s = slotSummary(n); if(s && !s.removed) return n; }
     for(let n = 1; n <= LOAD_SLOT_COUNT; n++) if(slotSummary(n)) return n;
     return 1;
 }
@@ -895,9 +901,9 @@ function renderLoadSelect(){
         _loadSlotMeta[n] = _slotBadgeMeta(n, sum);
         const locked = !empty && sum.removed;
         const title = sum ? `${sum.name || '未命名'} ${sum.cls} Lv.${sum.lv}` : '建立角色';
-        html += `<button type="button" onclick="loadPickSlot(${n})" data-slot="${n}" data-key="${key}" class="load-slot-card ${selected ? 'selected' : ''} ${empty ? 'empty' : 'filled'} ${locked ? 'locked' : ''}" title="${loadEsc(title)}"${locked ? ' aria-disabled="true"' : ''}>`
+        html += `<button type="button" onclick="loadPickSlot(${n})" data-slot="${n}" data-key="${key}" class="load-slot-card ${selected ? 'selected' : ''} ${empty ? 'empty' : 'filled'} ${locked ? 'locked' : ''}" title="${loadEsc(title)}">`
             // 空格：底圖拱門已畫好 New Character，只補提示字；有角色：立繪＋名牌(名牌蓋在 New Character 那行字上)；
-            // 已移除職業的舊角色：只有名牌、標示停用，點了沒反應
+            // 已移除職業的舊角色：只有名牌、標示停用(可選取，只能刪除)
             + (empty
                 ? `<span class="load-slot-hint">(點擊建立角色)</span>`
                 : locked
@@ -913,59 +919,40 @@ function renderLoadSelect(){
     _loadAnimState.key = selectedKey;
     _loadAnimState.frame = loadFirstFrame(selectedKey);
     _loadAnimState.lastAt = 0;
+    updateLoadInfo();
 }
-// 點卡片：有角色＝直接進遊戲；空格＝直接進創角
+// 點卡片：空格＝直接進創角；有角色＝選取它，下方顯示素質＋「進入遊戲／刪除角色」
+//   (已停用職業的舊角色也能選取，只是不給進入、只能刪除——不然 3 格全被佔住就再也建不了新角色)
 function loadPickSlot(n){
     if(!(n >= 1 && n <= LOAD_SLOT_COUNT)) return;
     const sum = slotSummary(n);
-    if(sum && sum.removed) return;   // 已移除職業的舊角色：鎖住
     _loadSelectedSlot = n;
-    if(sum) loadEnterSelected();
-    else loadCreateSelected();
-}
-function updateLoadInfo(){
-    const sum = slotSummary(_loadSelectedSlot);
-    const set = (id, text) => { const el = document.getElementById(id); if(el) el.innerText = text; };
-    const base = (sum && sum.base) || {};
-    const empty = !sum;
-    set('load-info-name', empty ? '' : (sum.name || '未命名'));
-    set('load-info-pledge', empty ? '' : ({ tros:'特羅斯', esti:'依詩蒂' }[sum.pledge] || sum.pledge || '-'));
-    set('load-info-class', empty ? '' : sum.cls);
-    set('load-info-alignment', empty ? '' : (sum.classic ? '經典' : '一般'));
-    set('load-info-hp', empty ? '' : `${Math.floor(sum.hp || 0)} / ${Math.floor(sum.mhp || 0)}`);
-    set('load-info-mp', empty ? '' : `${Math.floor(sum.mp || 0)} / ${Math.floor(sum.mmp || 0)}`);
-    set('load-info-ac', empty ? '' : (sum.ac === '' ? '-' : sum.ac));
-    set('load-info-lv', empty ? '' : sum.lv);
-    set('load-info-str', empty ? '' : (base.str || ''));
-    set('load-info-dex', empty ? '' : (base.dex || ''));
-    set('load-info-con', empty ? '' : (base.con || ''));
-    set('load-info-wis', empty ? '' : (base.wis || ''));
-    set('load-info-cha', empty ? '' : (base.cha || ''));
-    set('load-info-int', empty ? '' : (base.int || ''));
-    const create = document.getElementById('load-btn-create');
-    const importBtn = document.getElementById('load-btn-import');
-    const enter = document.getElementById('load-btn-enter');
-    const exportBtn = document.getElementById('load-btn-export');
-    const del = document.getElementById('load-btn-delete');
-    if(create) create.classList.toggle('hidden', !empty);
-    if(importBtn) importBtn.classList.toggle('hidden', !empty);
-    if(enter) enter.classList.toggle('hidden', empty);
-    if(exportBtn) exportBtn.classList.toggle('hidden', empty);
-    if(del) del.classList.toggle('hidden', empty);
-}
-function loadSelectSlot(n){
-    const sum = slotSummary(n);
-    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-    const doubleClick = !!sum && _loadLastClickSlot === n && now - _loadLastClickAt <= 500;
-    _loadLastClickSlot = doubleClick ? 0 : n;
-    _loadLastClickAt = doubleClick ? 0 : now;
-    _loadSelectedSlot = n;
-    if(doubleClick){ loadEnterSelected(); return; }
-    if(document.querySelector(`.load-slot-card.selected[data-slot="${n}"]`)){
-        updateLoadInfo();
-        return;
-    }
+    if(!sum){ loadCreateSelected(); return; }
     renderLoadSelect();
+}
+// 選取中角色的素質面板(拱門下方)＋進入遊戲／刪除角色；沒選到角色就整塊藏起來
+function updateLoadInfo(){
+    const panel = document.getElementById('load-info-panel');
+    if(!panel) return;
+    const sum = slotSummary(_loadSelectedSlot);
+    panel.classList.toggle('hidden', !sum);
+    if(!sum) return;
+    const set = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
+    set('load-info-name', sum.name || '未命名');
+    set('load-info-sub', sum.removed ? '此職業已停用' : `Lv.${sum.lv}　${sum.cls}`);
+    const vit = document.getElementById('load-info-vitals');
+    const stats = document.getElementById('load-info-stats');
+    if(vit) vit.classList.toggle('hidden', !!sum.removed);
+    if(stats) stats.classList.toggle('hidden', !!sum.removed);
+    if(!sum.removed){
+        set('load-info-hp', `${Math.floor(sum.hp || 0)} / ${Math.floor(sum.mhp || 0)}`);
+        set('load-info-mp', `${Math.floor(sum.mp || 0)} / ${Math.floor(sum.mmp || 0)}`);
+        set('load-info-ac', sum.ac === '' ? '-' : sum.ac);
+        const st = sum.stats || {};
+        ['str','dex','con','int','wis','cha'].forEach(k => set('load-info-' + k, st[k] != null ? st[k] : '-'));
+    }
+    const enter = document.getElementById('load-btn-enter');
+    if(enter) enter.classList.toggle('hidden', !!sum.removed);   // 停用職業：只能刪除
 }
 function loadCreateSelected(){
     const sum = slotSummary(_loadSelectedSlot);
@@ -994,9 +981,9 @@ function loadDeleteSelected(){
         return;
     }
     const expected = sum.name || '未命名';
-    const typed = prompt(`即將刪除存檔 ${slot}：${sum.cls} Lv.${sum.lv} ${expected}\n\n刪除後才能在此欄位創建新角色或匯入進度。\n請輸入角色名稱「${expected}」確認刪除：`, '');
+    const typed = prompt(`即將刪除「${expected}」（${sum.cls} Lv.${sum.lv}），刪除後無法復原。\n請輸入角色名字「${expected}」確認刪除：`, '');
     if(typed === null) return;
-    if(typed.trim() !== expected){ alert('角色名稱不正確，已取消刪除。'); return; }
+    if(typed.trim() !== expected){ alert('角色名字不正確，已取消刪除。'); return; }
     if(_roleOtherActiveSessions().length){ alert('刪除期間偵測到其他遊戲分頁，已取消刪除。請先關閉其他角色後再試。'); return; }
     const oldPlayer = _roleReadSavePlayer(slot), fp = _roleFingerprint(oldPlayer);
     // 👑 v3.6.01 血盟盟主刪角警告（用戶拍板）：盟主刪除＝clanOnRoleDeleted 會解散該模式血盟並清空同模式所有角色的貢獻，刪前必須講明
@@ -1014,8 +1001,9 @@ function loadDeleteSelected(){
     _lsRemove('lineage_idle_save_' + slot + '_bak');
     if(_lsGet('lineage_idle_save_' + slot)){ alert('角色存檔刪除失敗，請重新整理後再試。'); return; }
     try { if(typeof clanOnRoleDeleted === 'function') clanOnRoleDeleted(oldPlayer); } catch(e){ console.warn('clan delete cleanup', e); }
+    _loadSelectedSlot = _loadFirstFilledSlot();
     renderLoadSelect();
-    alert(`角色「${expected}」已刪除。現在可以在此欄位創建新角色或匯入進度。`);
+    alert(`角色「${expected}」已刪除。`);
 }
 (function animateLoadSelectPreview(){
     function tick(now){
@@ -1201,13 +1189,27 @@ function updateCreateUI() {
         return;
     }
     let b = createBase[curCreate.cls];
-    ['str','dex','con','int','wis','cha'].forEach(s => document.getElementById(`c-${s}`).innerText = b[s] + curCreate[s]);
+    // 數值旁標「+N」＝這一項自己加了幾點(職業基礎值以外)
+    ['str','dex','con','int','wis','cha'].forEach(s => {
+        const add = curCreate[s];
+        document.getElementById(`c-${s}`).innerHTML = (b[s] + add) + (add > 0 ? `<small class="creation-stat-plus">+${add}</small>` : '');
+    });
     let left = b.pts - (curCreate.str + curCreate.dex + curCreate.con + curCreate.int + curCreate.wis + curCreate.cha);
     document.getElementById('creation-pts').innerText = left;
     // 名字有打但不合格才標紅框（空白時不標，免得一進畫面就是紅的）
     const name = creationNameValue(), nameOk = CREATION_NAME_RE.test(name);
     const nameEl = document.getElementById('creation-name');
     if(nameEl) nameEl.classList.toggle('invalid', !!name && !nameOk);
+    // 按不下去的原因寫在名字下方：先講名字，名字沒問題再講點數
+    const hint = document.getElementById('creation-hint');
+    if(hint){
+        let msg = '', warn = false;
+        if(!name) msg = '請輸入名字';
+        else if(!nameOk){ msg = '名字需 2~12 字，只能用中文、英文、數字'; warn = true; }
+        else if(left > 0) msg = `還有 ${left} 點能力值沒分配`;
+        hint.textContent = msg;
+        hint.classList.toggle('warn', warn);
+    }
     document.getElementById('btn-start').disabled = !(left <= 0 && nameOk);
 }
 
