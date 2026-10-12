@@ -372,6 +372,30 @@ function _summaryFromRaw(s){
 const SAVE_SLOT_MAX = 16;   // 🔌 加掛版補丁：存檔位 8 → 16（匯入重複掃描/傭兵招募/選角面板共用）
 function slotSummary(n){ return _summaryFromRaw(_lzGet('lineage_idle_save_' + n)); }
 
+// ===== 角色名字規則（創角＋遊戲內改名共用）=====
+//   2~12 字、只能中英數、不可重複（英文不分大小寫）。
+//   ⚠ 目前存檔只在這台裝置，「不可重複」只能查本機所有存檔位（含選角看不到的 4~16 格、停用職業的舊角色）；
+//     日後改成線上版，把 characterNamesInUse 換成問伺服器即可，其他地方不用動。
+const CHARACTER_NAME_RE = /^[㐀-䶿一-鿿A-Za-z0-9]{2,12}$/;
+function characterNameKey(name){ return String(name || '').trim().toLowerCase(); }
+// 本機已被使用的名字（exceptSlot＝改名時排除自己那格）。會解壓每一格存檔，別在每次按鍵時呼叫——呼叫端自己快取。
+function characterNamesInUse(exceptSlot){
+    const set = new Set();
+    for(let n = 1; n <= SAVE_SLOT_MAX; n++){
+        if(n === exceptSlot) continue;
+        try { const s = slotSummary(n); if(s && s.name) set.add(characterNameKey(s.name)); } catch(e){}
+    }
+    return set;
+}
+// 回傳不合格的原因；合格回空字串
+function characterNameProblem(name, inUse){
+    name = String(name || '').trim();
+    if(!name) return '請輸入名字';
+    if(!CHARACTER_NAME_RE.test(name)) return '名字需 2~12 字，只能用中文、英文、數字';
+    if(inUse && inUse.has(characterNameKey(name))) return '這個名字已經有角色在用了';
+    return '';
+}
+
 // ===== 角色多開／刪除保護 =====
 // 每個正在遊戲中的分頁每 2 秒留下心跳。刪角時只要還有其他活躍分頁就拒絕，
 // 並以角色世代指紋阻止已刪除的舊分頁在稍後自動存檔時把角色寫回來。
@@ -1077,8 +1101,8 @@ function creationClassBaseFromRaw(raw){
     if(raw.includes('elf')) return 'elf';
     return null;
 }
-// 名字：2~12 字，中文／英文／數字
-const CREATION_NAME_RE = /^[㐀-䶿一-鿿A-Za-z0-9]{2,12}$/;
+// 名字規則見 characterNameProblem；本機已用的名字在進創角時掃一次存起來(每次按鍵都重掃會解壓所有存檔)
+let _creationNamesInUse = new Set();
 function creationNameValue(){
     const el = document.getElementById('creation-name');
     return el ? el.value.trim() : '';
@@ -1203,6 +1227,7 @@ function showCreation() {
     if(creation) creation.classList.remove('hidden');
     const nameEl = document.getElementById('creation-name');
     if(nameEl){ nameEl.value = ''; nameEl.classList.remove('invalid'); }   // 同頁重創時不得沿用上一輪輸入的名字
+    _creationNamesInUse = characterNamesInUse();
 
     creationSelectedClassBase = 'royal';
     creationSelectedGender = 'm';
@@ -1273,16 +1298,14 @@ function updateCreateUI() {
     let left = b.pts - (curCreate.str + curCreate.dex + curCreate.con + curCreate.int + curCreate.wis + curCreate.cha);
     document.getElementById('creation-pts').innerText = left;
     // 名字有打但不合格才標紅框（空白時不標，免得一進畫面就是紅的）
-    const name = creationNameValue(), nameOk = CREATION_NAME_RE.test(name);
+    const name = creationNameValue(), nameProblem = characterNameProblem(name, _creationNamesInUse), nameOk = !nameProblem;
     const nameEl = document.getElementById('creation-name');
     if(nameEl) nameEl.classList.toggle('invalid', !!name && !nameOk);
     // 按不下去的原因寫在名字下方：先講名字，名字沒問題再講點數
     const hint = document.getElementById('creation-hint');
     if(hint){
-        let msg = '', warn = false;
-        if(!name) msg = '請輸入名字';
-        else if(!nameOk){ msg = '名字需 2~12 字，只能用中文、英文、數字'; warn = true; }
-        else if(left > 0) msg = `還有 ${left} 點能力值沒分配`;
+        let msg = nameProblem, warn = !!name && !nameOk;
+        if(!msg && left > 0) msg = `還有 ${left} 點能力值沒分配`;
         hint.textContent = msg;
         hint.classList.toggle('warn', warn);
     }
@@ -1292,7 +1315,10 @@ function updateCreateUI() {
 function startGame() {
     if(!curCreate.cls || !curCreate.rawCls) return;
     const createName = creationNameValue();
-    if(!CREATION_NAME_RE.test(createName)) return;
+    // 按下的當下再查一次重複(其他分頁可能剛用掉這個名字)
+    _creationNamesInUse = characterNamesInUse();
+    const _nameProblem = characterNameProblem(createName, _creationNamesInUse);
+    if(_nameProblem){ updateCreateUI(); alert(_nameProblem); return; }
     if(slotSummary(currentSlot)){
         alert(`存檔 ${currentSlot} 已有角色，無法直接覆蓋。請返回角色選擇畫面並先刪除原角色。`);
         backToMenu();

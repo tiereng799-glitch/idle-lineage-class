@@ -1688,8 +1688,17 @@ function startEditName() {
 function confirmEditName() {
     let input = document.getElementById('name-edit-input');
     let v = input ? input.value.trim() : '';
-    v = v.replace(/[<>&"']/g, '');   // 🔧 過濾 HTML 特殊字元：名稱會以 innerHTML 呈現，避免自我注入標籤
-    player.name = v ? v.slice(0, 12) : null;   // 留空則回到未取名狀態（顯示「點擊取名」）
+    if (v === (player.name || '')) { cancelEditName(); return; }   // 沒改
+    // 與創角同一套規則(js/13 characterNameProblem)：2~12 字中英數、不可與其他角色重複(排除自己這格)。
+    //   不合格就提示原因、留在輸入狀態；規則本身只允許中英數，HTML 特殊字元自然進不來。
+    if (typeof characterNameProblem === 'function') {
+        let problem = characterNameProblem(v, characterNamesInUse(currentSlot));
+        if (problem) { alert(problem); if (input) input.focus(); return; }
+    } else {
+        v = v.replace(/[<>&"']/g, '').slice(0, 12);
+        if (!v) { cancelEditName(); return; }
+    }
+    player.name = v;
     window._editingName = false;
     updateUI();
     saveGame();
