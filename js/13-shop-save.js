@@ -800,8 +800,10 @@ const LOAD_CLASS_TO_START_KEY = {
     royal: 'prince', knight: 'm_knight', mage: 'm_mage', elf: 'm_elf',
     dark: 'm_dark', illusion: 'm_illusionist', dragon: 'm_Dknight', warrior: 'm_warrior'
 };
+// 一個帳號只能 3 隻角色：選角畫面只列存檔 1~3。第 4 格以後的舊存檔不刪、但選角畫面看不到也進不去。
+const LOAD_SLOT_COUNT = 3;
 let _loadSelectedSlot = 1;
-let _loadPage = 0;
+let _loadPage = 0;   // 已不分頁、恆為 0
 let _loadSlotMeta = {};   // 🔋 存檔位徽章快取（renderLoadSelect 建立）：活刷計時器只重讀輕量 checkpoint／session 名單，不重解壓整份存檔
 let _loadAnimState = { key: null, frame: 0, noneFrame: LOAD_NONE_ANIM_FRAMES[0], lastAt: 0, stepMs: 92 };
 let _loadLastClickSlot = 0;
@@ -832,15 +834,17 @@ function openLoadSelect(){
     if(load) load.classList.remove('hidden');
     _loadLastClickSlot = 0; _loadLastClickAt = 0;
     _loadPage = 0;
-    _loadSelectedSlot = [1,2,3,4].find(n => !!slotSummary(n)) || 1;
+    _loadSelectedSlot = _loadFirstFilledSlot();
     renderLoadSelect();
 }
-function loadSetPage(page){
+function _loadFirstFilledSlot(){
+    for(let n = 1; n <= LOAD_SLOT_COUNT; n++) if(slotSummary(n)) return n;
+    return 1;
+}
+function loadSetPage(page){   // 已不分頁：保留函式名給外掛呼叫，一律回到唯一的一頁
     _loadLastClickSlot = 0; _loadLastClickAt = 0;
-    _loadPage = page === 2 ? 1 : 0;
-    const start = _loadPage * 4 + 1;
-    const slots = [start, start + 1, start + 2, start + 3];
-    _loadSelectedSlot = slots.find(n => !!slotSummary(n)) || start;
+    _loadPage = 0;
+    _loadSelectedSlot = _loadFirstFilledSlot();
     renderLoadSelect();
 }
 function loadBackToMenu(){
@@ -874,8 +878,8 @@ function returnToCharacterSelect(){
 
     _loadLastClickSlot = 0;
     _loadLastClickAt = 0;
-    _loadPage = currentSlot > 4 ? 1 : 0;
-    _loadSelectedSlot = currentSlot;
+    _loadPage = 0;
+    _loadSelectedSlot = currentSlot <= LOAD_SLOT_COUNT ? currentSlot : _loadFirstFilledSlot();
     renderLoadSelect();
     try { if(typeof _bgmTick === 'function') { _bgmScene = null; _bgmTick(); } } catch(e) {}
     return true;
@@ -884,17 +888,19 @@ function renderLoadSelect(){
     const grid = document.getElementById('load-slot-grid');
     if(!grid) return;
     let html = '';
-    const start = _loadPage * 4 + 1;
-    for(let n = start; n <= start + 3; n++){
+    for(let n = 1; n <= LOAD_SLOT_COUNT; n++){
         const sum = slotSummary(n);
         const key = loadStartKeyFromSummary(sum);
         const selected = n === _loadSelectedSlot;
         const empty = !sum;
         const frame = loadFirstFrame(key);
         _loadSlotMeta[n] = _slotBadgeMeta(n, sum);
-        const title = sum ? `角色 ${n} ${sum.cls} Lv.${sum.lv}` : `角色 ${n} 空`;
-        html += `<button type="button" onclick="loadSelectSlot(${n})" data-slot="${n}" data-key="${key}" class="load-slot-card ${selected ? 'selected' : ''} ${empty ? 'empty' : 'filled'}" title="${loadEsc(title)}">`
+        const title = sum ? `${sum.name || '未命名'} ${sum.cls} Lv.${sum.lv}` : '建立角色';
+        html += `<button type="button" onclick="loadPickSlot(${n})" data-slot="${n}" data-key="${key}" class="load-slot-card ${selected ? 'selected' : ''} ${empty ? 'empty' : 'filled'}" title="${loadEsc(title)}">`
             + `<img src="${loadFrameSrc(key, frame)}" alt="${loadEsc(title)}" draggable="false">`
+            + (empty
+                ? `<span class="load-slot-hint">(點擊建立角色)</span>`
+                : `<span class="load-slot-label"><strong>${loadEsc(sum.name || '未命名')}</strong>Lv.${loadEsc(sum.lv)} ${loadEsc(sum.cls)}</span>`)
             + _slotBadgeHtml(_slotPartyStatusNow(_loadSlotMeta[n]))
             + `</button>`;
     }
@@ -904,11 +910,13 @@ function renderLoadSelect(){
     _loadAnimState.key = selectedKey;
     _loadAnimState.frame = loadFirstFrame(selectedKey);
     _loadAnimState.lastAt = 0;
-    const page1 = document.getElementById('load-page-1');
-    const page2 = document.getElementById('load-page-2');
-    if(page1) page1.classList.toggle('active', _loadPage === 0);
-    if(page2) page2.classList.toggle('active', _loadPage === 1);
-    updateLoadInfo();
+}
+// 點卡片：有角色＝直接進遊戲；空格＝直接進創角
+function loadPickSlot(n){
+    if(!(n >= 1 && n <= LOAD_SLOT_COUNT)) return;
+    _loadSelectedSlot = n;
+    if(slotSummary(n)) loadEnterSelected();
+    else loadCreateSelected();
 }
 function updateLoadInfo(){
     const sum = slotSummary(_loadSelectedSlot);

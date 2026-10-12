@@ -43,8 +43,6 @@
 | `afk-nozoom.js` | 取消雙擊放大(觸控裝置;`body,body *` touch-action:manipulation,捏合縮放保留) |
 | `afk-petui.js` | 手機寵物保管面板改兩排(純 CSS,只在上游那條窄 MQ 生效;桌機開/關外掛量到的幾何一模一樣)。上游每列是單排 flex 且左右四塊都 shrink-0(鎖鈕 24＋縮圖 44＋按鈕群 inline `max-width:210px`),390px 手機實測**中間資訊只剩 20px** → 名字逐字直排、數值逐字換行 → **一列 554px 高**,而清單可見高只有 219px＝**一隻都看不完整**。改法:①按鈕群 `flex:0 0 100%`＋`max-width:none`(蓋 inline)獨佔第二排 → 資訊拿回 208px ②說明段 250px(38% 螢幕)限高 6em 可捲 → 84px ③統計列內距/間距收窄 82→56px。結果列高 554→112px、清單 380px 全部進畫面(一屏 0.4 隻 → 3.4 隻)。清單自己的 `max-height:380px` 刻意不動(改 vh 要處理手機網址列伸縮,不划算);按鈕 26px 與縮圖 44×40 不縮(點擊目標與辨識用)。放生確認列結構不同但同吃 `> span:last-child`,套用後變成「文字整排、兩顆鈕第二排」正是想要的 |
 | `afk-statusicon.js` | 手機狀態圖示縮小一半(純 CSS·28→14px、gap 4→2px、隊友藍點 6→4px)。狀態列是絕對定位浮在戰鬥畫面上的,桌機戰鬥區寬、28px 只佔一角;手機整個戰鬥區才 346px,22 個狀態就排成 346×92px 把怪物與角色蓋掉大半(實測)。只用上游那條窄 MQ、不做平板路徑——這是「窄畫面排版優化」而非「手機殼套上了就該有」(判準見 docs/mobile.md),同 afk-mapbar |
-| `afk-slotinfo.js` | 選角卡片疊「掛哪張圖/掛多久」(讀 afk-offline 的 afk_map_/afk_ts_,唯讀) |
-| `afk-loadslots.js` | 卡片式選角擴到 16 格(搭配補丁3) |
 | `afk-dex.js` | 掉落查詢(五張掉落表+特殊掉落 SPECIAL_BLOCKS;`?view=dex` 獨立頁) |
 | `afk-wiki.js` | 小百科(多分頁+統一搜尋;`?view=wiki` 獨立頁;改內容跑 `/update-wiki`。裝備頁走檔內的**列表篩選引擎** `makeListFilter`:索引→純函式篩選→只畫前 40 列、詳情點開才建;要把它給第二個頁面用再抽成獨立外掛,且那支**不可有開關**) |
 | `afk-storage.js` | 首頁「⚙ 設定」選單(MENU_ITEMS 可擴充)+檢查存檔大小 |

@@ -87,8 +87,6 @@
         { id: 'backnav', name: '手機返回鍵', desc: '按返回鍵回上一層，不會直接關掉 App', group: '遊戲介面' },
         { id: 'dex', name: '怪物/掉落查詢', desc: '查怪物、地圖與掉落物（首頁入口）', group: '查詢與資訊', def: false },
         { id: 'wiki', name: '小百科', desc: '查職業、裝備、機制、地圖等資料（首頁入口）', group: '查詢與資訊', def: false },
-        { id: 'slotinfo', name: '選角掛機資訊', desc: '選角畫面顯示每個角色掛在哪張圖、掛了多久', group: '查詢與資訊', parent: 'offline' },
-        { id: 'loadslots', name: '選角 16 格分頁', desc: '選角畫面從 8 格擴充到 16 格', group: '查詢與資訊' },
         { id: 'history', name: '離線掛機紀錄', desc: '在設定選單查最近幾次的離線結算紀錄', group: '查詢與資訊', parent: 'offline' },
         { id: 'diag', name: '快取診斷', desc: '回報問題時用的取證工具（設定選單）', group: '查詢與資訊', parent: 'storage' },
         { id: 'autobuy', name: '自動購買魔法屏障', desc: '魔法屏障卷軸用完自動買', group: '自動化' },

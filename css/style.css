@@ -1547,135 +1547,146 @@ button.classic-skill-cell { cursor:pointer; }
     left:67.95%;
 }
 
-/* ===== 開始遊戲角色選擇畫面 ===== */
+/* ===== 開始遊戲角色選擇畫面：標題「選擇角色」＋3 個拱門各放 1 張角色卡（一個帳號只能 3 隻角色）=====
+   點有角色的卡＝直接進遊戲；點空卡＝直接進創角。沒有分頁、資訊欄與按鈕列。
+   select3.png(381×219)畫了 3 個拱門；#load-select-frame 照圖片比例縮放，卡片用百分比對準拱門開口。
+   桌機/手機同一套。 */
 #load-select-panel:not(.hidden) {
     position:fixed;
     z-index:24;
     inset:0;
-    transform:none;
+    top:var(--orig-bar-h, 0px);
     display:flex;
     align-items:center;
     justify-content:center;
-    width:100vw;
-    height:100vh;
-    max-width:none;
-    aspect-ratio:auto;
     overflow:hidden;
     background:#030303;
-    box-shadow:0 0 48px rgba(0,0,0,.95);
 }
 #load-art-stage {
     position:relative;
-    flex:0 0 auto;
-    width:min(100vw, calc(100vh * 4 / 3));
-    aspect-ratio:4 / 3;
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:clamp(14px, 3.2vh, 34px);
+    padding:16px 0;
+    box-sizing:border-box;
     overflow:hidden;
     background:#030303;
-    box-shadow:0 0 45px #000;
+}
+#load-select-title {
+    position:relative;
+    z-index:2;
+    margin:0;
+    color:#f2d77f;
+    font-family:Georgia, "Times New Roman", "Microsoft JhengHei", serif;
+    font-size:clamp(22px, 4.2vw, 40px);
+    font-weight:700;
+    letter-spacing:.18em;
+    text-shadow:0 2px 4px #000, 0 0 12px rgba(231,194,91,.45);
+}
+#load-select-frame {
+    position:relative;
+    flex:0 0 auto;
+    width:min(100%, 820px, calc((100dvh - var(--orig-bar-h, 0px) - 120px) * 381 / 219));
+    aspect-ratio:381 / 219;
 }
 #load-select-bg {
     position:absolute;
     inset:0;
-    z-index:1;
+    z-index:0;
     width:100%;
     height:100%;
+    max-width:none;
     object-fit:fill;
     pointer-events:none;
     user-select:none;
 }
-#load-select-overlay {
-    position:absolute;
-    inset:0;
-    z-index:3;
-    width:100%;
-    height:100%;
-    object-fit:fill;
-    pointer-events:none;
-    user-select:none;
-}
+/* 三個拱門開口(原圖 x)：16~122、140~248、265~371；上緣約 13% 起到底 */
 #load-slot-grid {
     position:absolute;
-    z-index:3;
-    left:1.7%;
-    top:5.2%;
-    width:96.6%;
-    height:48.2%;
+    left:4.2%;
+    width:93.2%;
+    top:13%;
+    bottom:1%;
+    /* 不設 z-index：卡片立繪用 mix-blend-mode 把黑底融進拱門，這層一旦成為 stacking context 就混不到底圖 */
     display:grid;
-    grid-template-columns:repeat(4, 1fr);
-    gap:1.15%;
-}
-#load-page-tabs {
-    position:absolute;
-    z-index:7;
-    left:46.6%;
-    top:56.9%;
-    width:7.2%;
-    height:6.1%;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    pointer-events:auto;
-}
-#load-page-tabs button {
-    position:absolute;
-    top:50%;
-    transform:translateY(-50%);
-    width:42%;
-    aspect-ratio:1;
-    border:0;
-    border-radius:50%;
-    background:transparent;
-    color:transparent;
-    cursor:pointer;
-}
-#load-page-1 { left:0%; }
-#load-page-2 { right:-8%; }
-#load-page-tabs button.active {
-    background:radial-gradient(circle, rgba(255,241,178,.24) 0%, rgba(232,185,75,.14) 42%, rgba(255,220,105,.045) 68%, transparent 82%);
-    box-shadow:
-        inset 0 0 10px rgba(255,245,190,.32),
-        0 0 9px rgba(255,237,162,.46),
-        0 0 20px rgba(230,177,70,.34),
-        0 0 36px rgba(190,124,32,.18);
-    filter:brightness(1.12) saturate(1.06);
-}
-#load-page-tabs button:hover {
-    box-shadow:
-        inset 0 0 12px rgba(255,236,177,.32),
-        0 0 16px rgba(235,196,93,.55);
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+    column-gap:5.2%;
 }
 .load-slot-card {
     position:relative;
+    min-width:0;
+    min-height:0;
     display:flex;
     align-items:flex-end;
     justify-content:center;
-    border:0;
     padding:0;
+    border:0;
+    border-radius:48% 48% 0 0 / 22% 22% 0 0;   /* 頂端圓弧貼著拱門，hover 光暈才不會露出方角 */
     background:transparent;
     overflow:hidden;
     cursor:pointer;
+    touch-action:manipulation;
+    transition:box-shadow .15s, background-color .15s;
+}
+.load-slot-card:hover,
+.load-slot-card:focus-visible {
+    background:rgba(255,222,150,.06);
+    box-shadow:inset 0 0 18px rgba(216,179,80,.35);
+    outline:none;
 }
 .load-slot-card img {
     width:100%;
     height:100%;
     object-fit:contain;
     object-position:center bottom;
-    transform:scale(1.04);
+    transform:scale(1.02);
     transform-origin:center bottom;
-    filter:drop-shadow(0 14px 12px rgba(0,0,0,.84)) contrast(1.08) saturate(1.05);
+    filter:contrast(1.08) saturate(1.05);
+    mix-blend-mode:lighten;   /* 立繪幀是黑底：只留比拱門亮的部分(角色本身)，黑底透出拱門 */
 }
 .load-slot-card[data-key="m_warrior"] img,
 .load-slot-card[data-key="f_warrior"] img {
-    transform:scale(1.20);   /* 戰士幀為200x270，其餘職業為160x270；補回 contain 因較寬畫布造成的高度縮小 */
-}
-.load-slot-card.filled:not(.selected) img {
-    filter:grayscale(1) brightness(.48) contrast(1.08) drop-shadow(0 12px 10px rgba(0,0,0,.9));
-    opacity:.78;
+    transform:scale(1.16);   /* 戰士幀為200x270，其餘職業為160x270；補回 contain 因較寬畫布造成的高度縮小 */
 }
 .load-slot-card.empty img {
-    opacity:.72;
-    filter:drop-shadow(0 0 14px rgba(235,207,130,.28)) brightness(.86);
+    opacity:.8;
+    filter:drop-shadow(0 0 14px rgba(235,207,130,.28)) brightness(.9);
 }
+/* 空卡提示字：疊在圖上「New Character」下方 */
+.load-slot-hint {
+    position:absolute;
+    z-index:2;
+    left:0;
+    right:0;
+    top:60%;
+    color:#d8c8a2;
+    font-family:"Microsoft JhengHei", sans-serif;
+    font-size:clamp(11px, 2.4vw, 16px);
+    text-align:center;
+    text-shadow:0 1px 3px #000;
+    pointer-events:none;
+}
+/* 有角色的卡：底部名字＋等級職業(資訊欄拿掉後，玩家靠這行分辨要進哪一隻) */
+.load-slot-label {
+    position:absolute;
+    z-index:2;
+    left:0;
+    right:0;
+    bottom:0;
+    padding:0 4px 6px;
+    color:#f4edda;
+    font-family:"Microsoft JhengHei", sans-serif;
+    font-size:clamp(11px, 2.2vw, 15px);
+    line-height:1.3;
+    text-align:center;
+    text-shadow:0 1px 2px #000, 0 0 6px #000, 0 0 10px #000;
+    pointer-events:none;
+}
+.load-slot-label strong { display:block; color:#f2d77f; font-size:1.08em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .load-slot-status {
     position:absolute;
     z-index:2;
@@ -1724,172 +1735,6 @@ button.classic-skill-cell { cursor:pointer; }
     color:#e9d5ff;
     box-shadow:0 2px 5px rgba(0,0,0,.82), inset 0 1px 0 rgba(255,255,255,.08);
     text-shadow:0 1px 2px #000, 0 0 6px rgba(168,85,247,.6);
-}
-.load-slot-card.selected::after {
-    display:none;
-}
-#load-info-panel {
-    position:absolute;
-    z-index:4;
-    left:4.2%;
-    top:58.4%;
-    width:60.2%;
-    height:35.7%;
-    color:#f2e6c1;
-    font-family:Georgia, "Times New Roman", "Microsoft JhengHei", serif;
-    font-weight:700;
-    text-shadow:0 0 4px #000, 0 0 9px rgba(232,198,112,.55);
-}
-.load-info-row {
-    position:absolute;
-    height:5.7%;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:3%;
-    font-size:clamp(8px,1.2vw,16px);
-    line-height:1;
-    white-space:nowrap;
-}
-.load-info-row strong {
-    display:block;
-    min-width:39%;
-    height:100%;
-    padding:0 .42em;
-    color:#f8f3e4;
-    font-family:Arial, "Microsoft JhengHei", sans-serif;
-    font-size:clamp(8px,1.0vw,14px);
-    font-weight:700;
-    text-align:left;
-    text-shadow:0 0 3px #000;
-    overflow:hidden;
-    text-overflow:ellipsis;
-}
-.load-info-row.name { left:4.2%; top:4.2%; width:39.2%; }
-.load-info-row.pledge { left:4.2%; top:15.9%; width:39.2%; }
-.load-info-row.class { left:4.2%; top:27.8%; width:39.2%; }
-.load-info-row.alignment { left:4.2%; top:42.6%; width:39.2%; }
-.load-info-row.hp { left:4.2%; top:61.1%; width:39.2%; }
-.load-info-row.mp { left:4.2%; top:73.1%; width:39.2%; }
-.load-info-row.ac { left:4.2%; top:85.1%; width:39.2%; }
-.load-info-row.lv { left:54.1%; top:4.2%; width:38.6%; }
-.load-info-row.str { left:54.1%; top:20.0%; width:38.6%; }
-.load-info-row.dex { left:54.1%; top:31.9%; width:38.6%; }
-.load-info-row.con { left:54.1%; top:43.8%; width:38.6%; }
-.load-info-row.wis { left:54.1%; top:55.7%; width:38.6%; }
-.load-info-row.cha { left:54.1%; top:67.6%; width:38.6%; }
-.load-info-row.int { left:54.1%; top:79.5%; width:38.6%; }
-#load-action-panel {
-    position:absolute;
-    z-index:5;
-    left:70.0%;
-    top:59.4%;
-    width:23.2%;
-    display:flex;
-    flex-direction:column;
-    gap:clamp(5px,1.0vw,11px);
-}
-#load-action-panel button {
-    height:clamp(24px,4.1vw,46px);
-    border:1px solid rgba(198,156,74,.68);
-    background:linear-gradient(180deg, rgba(28,23,15,.9), rgba(7,5,3,.95));
-    color:#d8bf79;
-    font-family:Georgia, "Times New Roman", "Microsoft JhengHei", serif;
-    font-size:clamp(10px,1.35vw,18px);
-    font-weight:700;
-    text-shadow:0 1px 2px #000, 0 0 8px rgba(228,187,87,.38);
-    box-shadow:inset 0 1px 0 rgba(255,232,167,.16), 0 0 12px rgba(0,0,0,.55);
-    cursor:pointer;
-}
-#load-action-panel button:hover:not(:disabled) {
-    color:#fff1ba;
-    border-color:rgba(244,205,107,.9);
-    box-shadow:inset 0 1px 0 rgba(255,232,167,.25), 0 0 16px rgba(216,179,80,.35);
-}
-#load-action-panel button:disabled {
-    opacity:.42;
-    cursor:not-allowed;
-}
-/* 🗑️ v3.5.83 移除 #load-btn-restore：載入畫面沒有這顆按鈕（只有 create/import/enter/export/delete/back 六顆），
-   復原備份機制本身也已於本版一併移除。 */
-
-/* ===== 載入畫面資訊與右側按鈕校準 ===== */
-#load-info-panel {
-    left:0;
-    top:0;
-    width:100%;
-    height:100%;
-    pointer-events:none;
-}
-.load-info-row {
-    height:3.8%;
-    justify-content:center;
-    gap:0;
-}
-.load-info-row span {
-    display:none;
-}
-.load-info-row strong {
-    min-width:0;
-    width:100%;
-    padding:0 .36em 0 .72em;
-    box-sizing:border-box;
-    display:flex;
-    align-items:center;
-    color:#f4edda;
-    font-size:clamp(8px,1.0vw,14px);
-    line-height:1.05;
-    text-align:left;
-}
-.load-info-row.name { left:28.75%; top:65.00%; width:14.55%; }
-.load-info-row.pledge { left:28.75%; top:69.38%; width:14.55%; }
-.load-info-row.class { left:28.75%; top:73.75%; width:14.55%; }
-.load-info-row.alignment { left:28.75%; top:78.14%; width:14.55%; }
-.load-info-row.hp { left:28.75%; top:83.54%; width:14.55%; }
-.load-info-row.mp { left:28.75%; top:87.92%; width:14.55%; }
-.load-info-row.ac { left:28.75%; top:92.29%; width:14.55%; }
-.load-info-row.lv { left:64.06%; top:65.00%; width:14.55%; }
-.load-info-row.str { left:64.06%; top:69.38%; width:14.55%; }
-.load-info-row.dex { left:64.06%; top:73.75%; width:14.55%; }
-.load-info-row.con { left:64.06%; top:78.13%; width:14.55%; }
-.load-info-row.wis { left:64.06%; top:82.50%; width:14.55%; }
-.load-info-row.cha { left:64.06%; top:86.88%; width:14.55%; }
-.load-info-row.int { left:64.06%; top:91.25%; width:14.55%; }
-#load-action-panel {
-    left:81.0%;
-    top:59.8%;
-    width:15.4%;
-    gap:clamp(7px,1.14vw,14px);
-}
-#load-action-panel button {
-    height:clamp(14px,2.25vw,26px);
-    font-size:clamp(8px,.84vw,11px);
-}
-
-/* ===== 載入畫面欄位與右側按鈕位置微調 ===== */
-.load-info-row.name { top:64.15%; }
-.load-info-row.pledge { top:68.18%; }
-.load-info-row.class { top:73.42%; }
-.load-info-row.alignment { top:77.72%; }
-.load-info-row.hp { top:83.02%; }
-.load-info-row.mp { top:87.07%; }
-.load-info-row.ac { top:91.10%; }
-.load-info-row.lv { top:65.00%; }
-.load-info-row.str { top:70.18%; }
-.load-info-row.dex { top:74.48%; }
-.load-info-row.con { top:78.74%; }
-.load-info-row.wis { top:82.92%; }
-.load-info-row.cha { top:87.25%; }
-.load-info-row.int { top:91.25%; }
-#load-action-panel {
-    left:80.95%;
-    top:64.25%;
-    width:7.45%;
-    gap:clamp(8px,1.05vw,14px);
-}
-#load-action-panel button {
-    height:clamp(18px,2.55vw,32px);
-    font-size:clamp(8px,.9vw,12px);
 }
 
 /* 🏘️ v3.2.83 城鎮 NPC 地圖：與狩獵框同尺寸(800×450 16:9)·NPC 動態站位(散佈景深)·hover 顯示名字·點擊開功能 */
@@ -2025,7 +1870,6 @@ button.classic-skill-cell { cursor:pointer; }
         box-shadow: none;
     }
     #main-menu > button,
-    #load-action-panel button,
     #creation-back-button,
     #btn-start.creation-start-button,
     .creation-gender-btn,
@@ -2036,115 +1880,6 @@ button.classic-skill-cell { cursor:pointer; }
 @media (max-width: 600px) and (orientation: portrait) {
     #creation-screen { align-items: flex-start; justify-content: flex-start; }
 
-    /* Character select: two portrait rows, readable details, then compact actions. */
-    #load-select-panel:not(.hidden) {
-        position: absolute;
-        inset: 0;
-        height: auto;
-        min-height: 100dvh;
-        display: block;
-        overflow: auto;
-    }
-    #load-art-stage {
-        width: 100%;
-        height: 1040px;
-        max-height: none;
-        aspect-ratio: auto;
-        overflow: hidden;
-        background: #090807;
-    }
-    #load-select-bg { object-fit: cover; object-position: center top; opacity: .66; }
-    #load-select-overlay { display: none; }
-    #load-slot-grid {
-        left: 12px;
-        top: 14px;
-        width: calc(100% - 24px);
-        height: 500px;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        grid-template-rows: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-    }
-    .load-slot-card {
-        min-width: 0;
-        border: 1px solid rgba(124, 94, 57, .72);
-        background: rgba(0, 0, 0, .46);
-        box-shadow: inset 0 0 20px rgba(0,0,0,.72);
-    }
-    .load-slot-card img { transform: scale(1.02); }
-    .load-slot-badge { top:6px; min-width:64px; padding:3px 6px 2px; font-size:12px; }
-    .load-slot-badge small { font-size:10px; }
-    .load-slot-card[data-key="m_warrior"] img,
-    .load-slot-card[data-key="f_warrior"] img { transform: scale(1.16); }
-    #load-page-tabs {
-        left: 50%;
-        top: 524px;
-        width: 126px;
-        height: 48px;
-        transform: translateX(-50%);
-    }
-    #load-page-tabs button {
-        position: relative;
-        top: auto;
-        left: auto !important;
-        right: auto !important;
-        width: 44px;
-        height: 44px;
-        transform: none;
-        border: 1px solid rgba(180, 139, 65, .62);
-        color: #e6d4a4;
-        background: rgba(12, 10, 8, .8);
-        font: 700 18px Georgia, serif;
-        text-shadow: 0 1px 2px #000;
-    }
-    #load-page-1::after { content: "1"; }
-    #load-page-2::after { content: "2"; }
-    #load-info-panel {
-        left: 12px;
-        top: 584px;
-        width: calc(100% - 24px);
-        height: 250px;
-        padding: 12px;
-        border: 1px solid rgba(139, 104, 70, .72);
-        background: rgba(29, 27, 30, .88);
-        box-sizing: border-box;
-    }
-    .load-info-row {
-        width: 47% !important;
-        height: 30px;
-        justify-content: space-between;
-        gap: 6px;
-        border-bottom: 1px solid rgba(103, 83, 65, .35);
-        font-size: 11px;
-    }
-    .load-info-row span { display: block; color: #c8b996; font-size: 10px; }
-    .load-info-row strong { width: 48%; padding: 0 3px; justify-content: flex-start; font-size: 11px; }
-    .load-info-row.name { left: 3%; top: 4%; }
-    .load-info-row.pledge { left: 3%; top: 18%; }
-    .load-info-row.class { left: 3%; top: 32%; }
-    .load-info-row.alignment { left: 3%; top: 46%; }
-    .load-info-row.hp { left: 3%; top: 60%; }
-    .load-info-row.mp { left: 3%; top: 74%; }
-    .load-info-row.ac { left: 3%; top: 88%; }
-    .load-info-row.lv { left: 51%; top: 4%; }
-    .load-info-row.str { left: 51%; top: 18%; }
-    .load-info-row.dex { left: 51%; top: 32%; }
-    .load-info-row.con { left: 51%; top: 46%; }
-    .load-info-row.wis { left: 51%; top: 60%; }
-    .load-info-row.cha { left: 51%; top: 74%; }
-    .load-info-row.int { left: 51%; top: 88%; }
-    #load-action-panel {
-        left: 12px;
-        top: 854px;
-        width: calc(100% - 24px);
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-    }
-    #load-action-panel button { width: 100%; height: 48px; font-size: 14px; }
-    #load-btn-enter,
-    #load-btn-export,
-    #load-btn-delete { grid-column: 1 / -1; }
-    #load-btn-back { grid-column: 1 / -1; }
 
     /* Character creation: a scrollable portrait composition with no overlapping controls. */
     #creation-panel:not(.hidden) {

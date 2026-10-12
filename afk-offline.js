@@ -3,7 +3,7 @@
  *
  * 2026-07-10 由外掛 afk-offline.js 移入核心(git mv,歷史保留)。對外相容不變:
  *   - localStorage 鍵沿用 afk_ts_/afk_map_/afk_pride_/afk_obl_/afk_hist_<slot>(玩家零遷移)。
- *   - window.__afk 介面沿用(afk-mobile 用 stamp、afk-slotinfo 用 mapName/capHours、afk-history 用 histKey)。
+ *   - window.__afk 介面沿用(afk-mobile 用 stamp、afk-history 用 histKey)。
  *   - 開機訊息沿用「[AFK] hooks OK」(smoke 檢查認這個前綴)。
  *
  * 設計原則:
@@ -375,7 +375,7 @@
     } catch (e) { console.warn('[AFK] recordHistory error:', e); }
   }
   // 地圖 id → 顯示名稱(查原作者的 MAP_CATEGORIES);查不到就回 id 本身
-  // 地圖 id → 中文名：統一委派 afk-extradata 共用解析(離線收益摘要 + 選角掛機地點 afk-slotinfo 委派此函式都走這份)。
+  // 地圖 id → 中文名：統一委派 afk-extradata 共用解析(離線收益摘要走這份)。
   //   本檔(核心)比外掛 afk-extradata 早載入,但本函式在「執行期」才被呼叫,屆時 AFK_EXTRA 已就緒;缺了則退回 id。
   function mapName(id) { try { return (window.AFK_EXTRA && AFK_EXTRA.mapName) ? AFK_EXTRA.mapName(id) : (id || '?'); } catch (e) { return id || '?'; } }
   // 略過離線結算時,在系統日誌講一句白話原因(先前只寫 console,玩家只看到「載入很快、什麼都沒有」,無從判斷;2026-07-10 加)

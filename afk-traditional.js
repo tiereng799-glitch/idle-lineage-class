@@ -75,51 +75,8 @@
     // ── 對外 API ──────────────────────────────────────────────
     window.AFK_TRAD = { isOn: isOn, setOn: setOn, roll: rollEnhance };
 
-    // ── UI：選角卡片右上角「傳統」checkbox ──────────────────────
-    //   卡片每次 renderLoadSelect 都 innerHTML 重建 → wrap 後每次重繪重注入（同 afk-slotinfo 手法）。
-    //   只掛「有角色」的卡；點擊 stopPropagation，免得觸發選卡/雙擊進入。
-    function decorateCards() {
-        var grid = document.getElementById('load-slot-grid');
-        if (!grid) return;
-        var cards = grid.querySelectorAll('.load-slot-card.filled');
-        for (var i = 0; i < cards.length; i++) {
-            (function (card) {
-                var old = card.querySelector('.afk-trad-cb'); if (old) old.remove();
-                var slot = parseInt(card.getAttribute('data-slot'), 10);
-                if (!slot) return;
-                try { if (getComputedStyle(card).position === 'static') card.style.position = 'relative'; } catch (e) {}
-                var lab = document.createElement('span');
-                lab.className = 'afk-trad-cb';
-                lab.title = '傳統模式(偽)：開啟的角色，打到／製作／潘朵拉來的裝備自帶隨機強化值（商店買的維持 +0）。隨時可改，只影響之後拿到的裝備。';
-                // 位置用百分比:神龕邊框圖(#load-select-overlay,z-index 同層但 DOM 較後)會蓋住卡片外緣,要落在拱門開口內
-                lab.style.cssText = 'position:absolute;top:9%;right:10%;z-index:4;display:flex;align-items:center;gap:3px;padding:2px 5px;border-radius:7px;background:rgba(2,6,23,.78);font-size:.62rem;font-weight:700;color:#e2e8f0;cursor:pointer;text-shadow:0 1px 2px #000;';
-                var cb = document.createElement('input');
-                cb.type = 'checkbox';
-                cb.checked = isOn(slot);
-                cb.style.cssText = 'width:13px;height:13px;flex:none;accent-color:#a78bfa;cursor:pointer;margin:0;';
-                var txt = document.createElement('span');
-                txt.textContent = '傳統';
-                lab.appendChild(cb); lab.appendChild(txt);
-                // 阻斷冒泡：不讓點擊變成「選卡/雙擊進入」；點文字也切換
-                lab.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    if (e.target !== cb) { cb.checked = !cb.checked; }
-                    setOn(slot, cb.checked);
-                });
-                lab.addEventListener('dblclick', function (e) { e.stopPropagation(); });
-                card.appendChild(lab);
-            })(cards[i]);
-        }
-    }
-    function wrapRenderLoad() {
-        if (typeof window.renderLoadSelect !== 'function' || window.renderLoadSelect.__afkTrad) return false;
-        var orig = window.renderLoadSelect;
-        var wrapped = function () { orig.apply(this, arguments); try { decorateCards(); } catch (e) {} };
-        wrapped.__afkTrad = true;
-        window.renderLoadSelect = wrapped;
-        return true;
-    }
-    var okUi = wrapRenderLoad();
+    // ⚠ 選角卡片上的「傳統」checkbox 已移除(使用者要求選角畫面只留角色)——目前玩家沒有入口可以切換；
+    //   已開啟的存檔位(afk_trad_<slot>=1)照舊生效。要恢復切換入口得另找位置(例如遊戲內設定)，用 AFK_TRAD.setOn。
 
-    try { console.log('[AFK-traditional] hooks OK — 傳統模式(偽)/自動衝裝已就緒（核心鉤子 __afkTradRollEn；選角卡 checkbox ' + (okUi ? '✓' : '✗') + '）。'); } catch (e) {}
+    try { console.log('[AFK-traditional] hooks OK — 傳統模式(偽)/自動衝裝已就緒（核心鉤子 __afkTradRollEn）。'); } catch (e) {}
 })();

@@ -116,29 +116,6 @@
         (document.head || document.documentElement).appendChild(st);
     }
 
-    // 選角畫面（手機直式）：#load-art-stage 是 overflow:hidden 的固定高（1040px）舞台，動作鈕區
-    //   #load-action-panel 絕對定位在 top:854px；選到「有角色」的槽時鈕會變成 4 顆全寬（進入/匯出/刪除/返回）
-    //   ＝222px 高 → 底端 1076px 超出舞台，最後一顆「返回」被裁掉一截。鈕數隨選中槽狀態變動，
-    //   所以用量測撐高（min-height 壓得過 CSS 的 height）而不是寫死一個新高度，上游日後增減鈕也不會再壞。
-    var LOAD_STAGE_PAD = 16;                                        // 撐高後留給底部的呼吸空間
-    var LOAD_MOBILE_MQ = '(max-width: 600px) and (orientation: portrait)';   // 與 css/style.css 那條手機選角規則同條件
-    var _loadMQ = null, _loadRO = null;
-    function fitLoadStage() {
-        var stage = document.getElementById('load-art-stage');
-        var panel = document.getElementById('load-action-panel');
-        if (!stage || !panel) return;
-        if (!_loadMQ) { try { _loadMQ = matchMedia(LOAD_MOBILE_MQ); } catch (e) { return; } }
-        if (!_loadMQ.matches) { stage.style.minHeight = ''; return; }   // 桌機是 aspect-ratio 版面，不可干預
-        stage.style.minHeight = (panel.offsetTop + panel.offsetHeight + LOAD_STAGE_PAD) + 'px';
-    }
-    function watchLoadStage() {
-        var panel = document.getElementById('load-action-panel');
-        if (!panel) return;
-        fitLoadStage();
-        if (_loadRO || typeof ResizeObserver !== 'function') return;
-        try { _loadRO = new ResizeObserver(fitLoadStage); _loadRO.observe(panel); } catch (e) {}
-    }
-
     // body.m-mobile：只是「現在是手機」的標記（afk-toast/mobname/diag/skin/training/dograce 靠它做各自的
     //   手機 QoL，如 toast 只手機顯示、怪名換行）。本外掛只設這個 class，不再掛任何版面覆寫 CSS。
     function syncMobileClass() {
@@ -149,12 +126,11 @@
     function run() {
         syncMobileClass();
         ensureOffsetStyle();
-        watchLoadStage();
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
     else run();
-    window.addEventListener('resize', function () { syncMobileClass(); fitLoadStage(); });
+    window.addEventListener('resize', function () { syncMobileClass(); });
 
     // ── 底部導覽列 + 浮動日誌（手機外殼）─────────────────────────
     // 上游手機把三欄（#col-left 狀態/隊伍/技能、#col-center 戰鬥/地圖/日誌、#col-right 背包分頁）直向堆疊。
