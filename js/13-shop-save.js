@@ -981,15 +981,40 @@ function loadDeleteSelected(){
         return;
     }
     const expected = sum.name || '未命名';
-    const typed = prompt(`即將刪除「${expected}」（${sum.cls} Lv.${sum.lv}），刪除後無法復原。\n請輸入角色名字「${expected}」確認刪除：`, '');
-    if(typed === null) return;
-    if(typed.trim() !== expected){ alert('角色名字不正確，已取消刪除。'); return; }
+    // 👑 v3.6.01 血盟盟主刪角警告（用戶拍板）：盟主刪除＝clanOnRoleDeleted 會解散該模式血盟並清空同模式所有角色的貢獻，刪前必須講明
+    let clanWarn = '';
+    try { if(typeof clanIsLeaderRole === 'function' && clanIsLeaderRole(_roleReadSavePlayer(slot))) clanWarn = '此角色是血盟盟主：刪除後血盟會解散。'; } catch(e){}
+    // 確認窗用遊戲內的視窗，不用原生 prompt/confirm——LINE/FB 內建瀏覽器、部分 App 內網頁會把原生對話框擋掉，
+    //   按「刪除角色」就毫無反應(玩家回報「刪除角色不能點」)
+    _openDeleteDialog(slot, expected, `${sum.cls} Lv.${sum.lv}`, clanWarn);
+}
+// 刪除確認窗：打對角色名字才能按「確認刪除」
+function _openDeleteDialog(slot, expected, desc, clanWarn){
+    let ov = document.getElementById('load-delete-dialog');
+    if(ov) ov.remove();
+    ov = document.createElement('div');
+    ov.id = 'load-delete-dialog';
+    ov.innerHTML = `<div class="ldd-box" role="dialog" aria-modal="true">
+        <p class="ldd-msg">即將刪除「${loadEsc(expected)}」（${loadEsc(desc)}），刪除後無法復原。</p>
+        ${clanWarn ? `<p class="ldd-warn">${loadEsc(clanWarn)}</p>` : ''}
+        <p class="ldd-msg">請輸入角色名字確認：</p>
+        <input class="ldd-input" type="text" autocomplete="off" spellcheck="false" placeholder="${loadEsc(expected)}">
+        <div class="ldd-actions"><button type="button" class="ldd-cancel">取消</button><button type="button" class="ldd-ok" disabled>確認刪除</button></div>
+    </div>`;
+    (document.getElementById('load-select-panel') || document.body).appendChild(ov);
+    const input = ov.querySelector('.ldd-input'), okBtn = ov.querySelector('.ldd-ok');
+    const close = () => ov.remove();
+    input.addEventListener('input', () => { okBtn.disabled = input.value.trim() !== expected; });
+    input.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !okBtn.disabled) okBtn.click(); if(e.key === 'Escape') close(); });
+    ov.querySelector('.ldd-cancel').addEventListener('click', close);
+    ov.addEventListener('click', (e) => { if(e.target === ov) close(); });
+    okBtn.addEventListener('click', () => { if(input.value.trim() !== expected) return; close(); _loadDoDelete(slot, expected); });
+    setTimeout(() => { try { input.focus(); } catch(e){} }, 30);
+}
+function _loadDoDelete(slot, expected){
+    if(!slotSummary(slot)){ renderLoadSelect(); return; }
     if(_roleOtherActiveSessions().length){ alert('刪除期間偵測到其他遊戲分頁，已取消刪除。請先關閉其他角色後再試。'); return; }
     const oldPlayer = _roleReadSavePlayer(slot), fp = _roleFingerprint(oldPlayer);
-    // 👑 v3.6.01 血盟盟主刪角警告（用戶拍板）：盟主刪除＝clanOnRoleDeleted 會解散該模式血盟並清空同模式所有角色的貢獻，刪前必須講明
-    let _clanWarn = '';
-    try { if(typeof clanIsLeaderRole === 'function' && clanIsLeaderRole(oldPlayer)) _clanWarn = '\n\n⚠ 此角色是血盟盟主：刪除後將解散該模式的血盟，並清空同模式所有角色的血盟貢獻（血盟等級經驗保留）！'; } catch(e){}
-    if(!confirm(`確定永久刪除「${expected}」嗎？\n角色存檔與角色專屬傭兵資料將刪除；共享倉庫、圖鑑與寵物名冊會保留。${_clanWarn}`)) return;
     // 🛡️ 簽章不符／內容毀損的存檔位讀不出 player（fp 為空）→ 無法建立刪除保護。
     //    但這種存檔任何分頁都載入不了，也就不可能被舊分頁寫回，故直接放行刪除；
     //    否則玩家會落入「載不了也刪不掉、該欄位永久報廢」的死局。
@@ -1115,6 +1140,39 @@ function startFrame(key, n){
 }
 function startFrameReady(key, n){ const im = startFrame(key, n); return im.complete && im.naturalWidth > 0; }
 function startFrameBroken(key, n){ const im = startFrame(key, n); return im.complete && im.naturalWidth === 0; }
+
+// ⏳ 開遊戲時的載入進度條(#boot-loader)：把登入／選角／創角要用的圖先全部載好再露出登入畫面。
+//   立繪幀走同一個 startFrame 快取 → 進創角／選角時動畫直接就順。載入失敗的檔案也算「完成」(不卡住)，
+//   最多 60 秒一定收掉；遊戲的離線快取(SW)讓第二次開幾乎瞬間跑完。
+function bootPreload(){
+    const el = document.getElementById('boot-loader');
+    if(!el) return;
+    const fill = el.querySelector('.boot-bar-fill'), pctEl = el.querySelector('.boot-pct');
+    const pics = ['public/assets/login/login.webp', 'public/assets/login/select.webp',
+        ...['title','ico-royal','ico-knight','ico-mage','ico-male','ico-elf','ico-female','btn-minus','btn-plus','btn-back','btn-create'].map(n => `public/assets/create/${n}.png`),
+        'assets/logo/黑暗妖精logo.png'].map(src => { const im = new Image(); im.src = src; return im; });
+    for(const key in CREATION_CLASS_ANIM_FRAMES){
+        const r = CREATION_CLASS_ANIM_FRAMES[key];
+        for(let n = r[0]; n <= r[1]; n++) pics.push(startFrame(key, n));
+    }
+    const total = pics.length;
+    let finished = false;
+    const finish = () => {
+        if(finished) return; finished = true;
+        clearInterval(iv); clearTimeout(cap);
+        el.classList.add('done');
+        setTimeout(() => el.remove(), 450);
+    };
+    const iv = setInterval(() => {
+        const done = pics.reduce((s, im) => s + (im.complete ? 1 : 0), 0);
+        const p = Math.floor(done * 100 / total);
+        if(fill) fill.style.width = p + '%';
+        if(pctEl) pctEl.textContent = p + '%';
+        if(done >= total) finish();
+    }, 100);
+    const cap = setTimeout(finish, 60000);
+}
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootPreload); else bootPreload();
 (function animateCreationClassPreview(){
     function tick(now){
         const panel = document.getElementById('creation-panel');

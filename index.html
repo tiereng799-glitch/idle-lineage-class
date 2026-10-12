@@ -26,6 +26,10 @@
     <!-- 登入首頁：login.webp 直式底圖（帳密框/登錄鈕都畫在圖上）。首頁只留「開始遊戲」＝圖上的登錄鈕；
          帳密框只是圖案，上面蓋一行提示字。外掛往 #main-menu 塞的入口一律由 css/style.css 藏起來。 -->
     <div id="creation-screen">
+      <!-- ⏳ 開遊戲的載入進度條：js/13 bootPreload 載完圖片後收掉(CSS 另有 65 秒自動消失的保底) -->
+      <div id="boot-loader" aria-live="polite">
+        <div class="boot-box"><div class="boot-label">載入中 <span class="boot-pct">0%</span></div><div class="boot-bar"><div class="boot-bar-fill"></div></div></div>
+      </div>
       <div id="login-art-stage">
         <img id="login-bg-image" src="public/assets/login/login.webp" alt="" draggable="false">
         <div class="login-field-hint login-field-account" aria-hidden="true">目前不須輸入帳號</div>
