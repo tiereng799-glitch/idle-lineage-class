@@ -1178,6 +1178,7 @@ function bootPreload(){
         'assets/logo/黑暗妖精logo.png'].map(src => { const im = new Image(); im.src = src; return im; });
     for(const key in CREATION_CLASS_ANIM_FRAMES) pics.push(startFrame(key, CREATION_CLASS_ANIM_FRAMES[key][0]));
     const total = pics.length;
+    window._bootImgPhase = true;   // 前 80%(程式檔)由 index.html 的 inline script 推，這裡接著跑 80→100
     let finished = false;
     const finish = () => {
         if(finished) return; finished = true;
@@ -1188,7 +1189,7 @@ function bootPreload(){
     };
     const iv = setInterval(() => {
         const done = pics.reduce((s, im) => s + (im.complete ? 1 : 0), 0);
-        const p = Math.floor(done * 100 / total);
+        const p = 80 + Math.floor(done * 20 / total);
         if(fill) fill.style.width = p + '%';
         if(pctEl) pctEl.textContent = p + '%';
         if(done >= total) finish();

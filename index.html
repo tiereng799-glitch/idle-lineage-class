@@ -26,10 +26,41 @@
     <!-- 登入首頁：login.webp 直式底圖（帳密框/登錄鈕都畫在圖上）。首頁只留「開始遊戲」＝圖上的登錄鈕；
          帳密框只是圖案，上面蓋一行提示字。外掛往 #main-menu 塞的入口一律由 css/style.css 藏起來。 -->
     <div id="creation-screen">
-      <!-- ⏳ 開遊戲的載入進度條：js/13 bootPreload 載完圖片後收掉(CSS 另有 65 秒自動消失的保底) -->
-      <div id="boot-loader" aria-live="polite">
+      <!-- ⏳ 開遊戲的載入進度條：前 80% = 下面這段 inline script 數「程式檔載完幾個」，後 20% = js/13 bootPreload 等圖片，載完收掉
+           (CSS 另有 60 秒自動消失的保底)。data-scripts / data-script-kb 是本頁 <script src> 的數量與總大小，由 scripts/stamp-code-versions.mjs 自動對齊。
+           無痕模式／第一次開沒有快取，光下載程式就要十幾秒；以前這段進度條停在 0% 不動，看起來像卡死。
+           主要照「已下載的位元組」算(檔案大小差很多，00-data 一支就 640KB，只數檔數會一卡好幾秒)；瀏覽器不給大小時退回數檔數。 -->
+      <div id="boot-loader" aria-live="polite" data-scripts="113" data-script-kb="6711">
         <div class="boot-box"><div class="boot-label">載入中 <span class="boot-pct">0%</span></div><div class="boot-bar"><div class="boot-bar-fill"></div></div></div>
       </div>
+      <script>
+        (function(){
+          var el = document.getElementById('boot-loader'); if(!el) return;
+          var total = +el.getAttribute('data-scripts') || 1, totalB = (+el.getAttribute('data-script-kb') || 0) * 1024;
+          var n = 0, got = 0, seen = {}, shown = 0;
+          var fill = el.querySelector('.boot-bar-fill'), pct = el.querySelector('.boot-pct');
+          function show(){
+            if(window._bootImgPhase) return;   // 進入圖片階段後交給 js/13 bootPreload
+            var f = Math.max(n / total, totalB ? got / totalB : 0);
+            var p = Math.floor(Math.min(1, f) * 80);
+            if(p <= shown) return; shown = p;
+            if(fill) fill.style.width = p + '%';
+            if(pct) pct.textContent = p + '%';
+          }
+          function bump(e){ var t = e.target; if(t && t.tagName === 'SCRIPT'){ n++; show(); } }
+          document.addEventListener('load', bump, true);
+          document.addEventListener('error', bump, true);
+          try {
+            new PerformanceObserver(function(list){
+              list.getEntries().forEach(function(e){
+                if(e.initiatorType !== 'script' || seen[e.name]) return;
+                seen[e.name] = 1; got += e.decodedBodySize || 0;
+              });
+              show();
+            }).observe({ type: 'resource', buffered: true });
+          } catch(e){}
+        })();
+      </script>
       <div id="login-art-stage">
         <img id="login-bg-image" src="public/assets/login/login.webp" alt="" draggable="false">
         <div class="login-field-hint login-field-account" aria-hidden="true">目前不須輸入帳號</div>

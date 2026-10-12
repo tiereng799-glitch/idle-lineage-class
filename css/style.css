@@ -1071,8 +1071,9 @@
 #creation-screen { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:0; background:#050505; }
 #creation-screen.hidden { display:none !important; }
 /* ⏳ 開遊戲的載入進度條：蓋住登入畫面，js/13 bootPreload 載完加 .done 淡出後移除。
-   保底：腳本沒跑起來(載入失敗等)時 20 秒後純 CSS 自動消失，玩家不會永遠卡在這裡 */
-#boot-loader { position:absolute; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; background:#050505; transition:opacity .4s; animation:bootLoaderFallback 0s linear 20s forwards; }
+   保底：腳本沒跑起來(載入失敗等)時 60 秒後純 CSS 自動消失，玩家不會永遠卡在這裡。
+   不能太短：慢網路光下載程式就要 20 秒以上，提早消失＝露出還沒能點的登入畫面 */
+#boot-loader { position:absolute; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; background:#050505; transition:opacity .4s; animation:bootLoaderFallback 0s linear 60s forwards; }
 #boot-loader.done { opacity:0; pointer-events:none; }
 @keyframes bootLoaderFallback { to { opacity:0; visibility:hidden; pointer-events:none; } }
 #boot-loader .boot-box { width:min(70vw, 320px); text-align:center; font-family:"Microsoft JhengHei", sans-serif; }
