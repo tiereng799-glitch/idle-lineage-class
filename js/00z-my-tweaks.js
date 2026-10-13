@@ -92,7 +92,7 @@
   }
   // ── 禮物信箱(試算表「禮物」分頁)：寄給這個角色(或「全部」)、還沒領的禮物放在信箱，玩家點「領取」才進背包 ──
   //   領過的編號記在 player.giftsClaimed(跟著存檔走：物品和「已領」同一份存檔，不會領兩次也不會漏)。
-  //   信箱按鈕插在天堂M介面右上(#lmui-tr)；那支外掛關掉時改成畫面右上角的浮動按鈕。
+  //   信箱按鈕插在天堂M介面血條列(#lmui-vit)、MP 條右上方(左邊是夥伴圖示)；那支外掛關掉時改成畫面右上角的浮動按鈕。
   // 禮物一律是「白板」(不擲祝福/詛咒等隨機詞綴)；有強化值的照 gainItem 的堆疊規則(同簽章併同一格)自己放進背包
   function giveItem(id, cnt, en) {
     if (!en) { gainItem(id, cnt, true, true); return; }
@@ -169,11 +169,11 @@
       btn.innerHTML = '📬<i></i>';
       btn.addEventListener('click', function (e) { e.stopPropagation(); openMailbox(); });
     }
-    var tr = document.getElementById('lmui-tr');
-    var host = (tr && tr.offsetParent) ? tr : document.body;
+    var vit = document.getElementById('lmui-vit');
+    var host = vit || document.body;
     if (btn.parentNode !== host) host.appendChild(btn);
     btn.classList.toggle('my-mail-float', host === document.body);
-    btn.style.display = '';
+    btn.style.display = '';   // 在 #lmui-vit 裡就跟著血條列一起顯示/隱藏(切到能力/背包等畫面時不會跑去擋別的東西)
     var n = pendingGifts().length, badge = btn.querySelector('i');
     var t = n ? String(n) : '';
     if (badge.textContent !== t) badge.textContent = t;
@@ -185,7 +185,7 @@
     try { if (loaded() && !player.name && typeof logSys === 'function') logSys('<span class="text-yellow-300">這個角色還沒有名字：點畫面上的「（點此取名）」取一個。</span>'); } catch (e) {}
     try {
       var n = pendingGifts().length;
-      if (n && _notifiedFor !== player && typeof logSys === 'function') logSys('<span class="text-yellow-300 font-bold">📬 你有 ' + n + ' 份禮物，點右上角的信箱領取。</span>');
+      if (n && _notifiedFor !== player && typeof logSys === 'function') logSys('<span class="text-yellow-300 font-bold">📬 你有 ' + n + ' 份禮物，點血條右上方的信箱 📬 領取。</span>');
       _notifiedFor = player;
     } catch (e) {}
     updateMailButton();
@@ -212,6 +212,7 @@
     '#my-mail-btn{position:relative;width:34px;height:34px;padding:0;font-size:20px;line-height:32px;text-align:center;border:1px solid #a16207;border-radius:6px;background:rgba(0,0,0,.6);box-shadow:0 1px 3px #000;cursor:pointer;opacity:.65;pointer-events:auto}' +
     '#my-mail-btn.has{opacity:1;border-color:#fde68a;box-shadow:0 0 8px #fde68a}' +
     '#my-mail-btn.my-mail-float{position:fixed;top:8px;right:8px;z-index:90}' +
+    '#lmui-vit>#my-mail-btn{position:absolute;right:4px;bottom:100%;margin-bottom:3px;width:28px;height:28px;font-size:16px;line-height:26px;z-index:5}' +
     '#my-mail-btn i{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:#dc2626;color:#fff;font:bold 11px/16px sans-serif;font-style:normal}' +
     '#my-mail-btn i:empty{display:none}' +
     '#my-mailbox{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}' +
