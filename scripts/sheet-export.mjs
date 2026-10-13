@@ -9,7 +9,7 @@ import path from 'node:path';
 import ExcelJS from 'exceljs';
 import { execFileSync } from 'node:child_process';
 import {
-  ROOT, CUSTOM_IMG_DIR, DATA_OUT, ID_HEAD, DATA_VERSION_LABEL, loadGame, getPath, setPath, RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS,
+  ROOT, CUSTOM_IMG_DIR, DATA_OUT, ID_HEAD, DATA_VERSION_LABEL, DELETED_SHEET, loadGame, getPath, setPath, RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS,
   reqToZh, dropHidden, mobNamer,
 } from './sheet-lib.mjs';
 
@@ -59,7 +59,7 @@ help.columns = [{ width: 100 }];
   '   ID 用 my_ 開頭(例:my_sword1,只能英文數字底線)、填「範本ID(新增用)」= 照哪一件現有的做、取一個新名稱,再改你要的數值。',
   '   外觀圖、類型、特殊效果都照範本;沒填的數值也照範本。要讓人拿得到,記得到「掉落」分頁加一列。',
   '自訂圖檔:把圖(建議 64x64 的 PNG)上傳到 GitHub 的 assets/custom 資料夾,再到「圖檔(自訂)」欄填檔名。新的、舊的東西都可以換圖。',
-  '   新東西上線後就不能從表裡刪掉(玩家可能已經有了);不想再出現,刪掉它的掉落即可。',
+  '   不想讓人再拿到:刪掉它的掉落即可。確定要整個刪掉:把那一列拿掉,並把 ID 寫進「刪除的新物品」分頁(玩家身上的也會一起消失)。',
   '新增怪物魔法:在「怪物魔法」分頁加一列,ID 寫「怪物ID:mag」(已經有 mag 就用 mag2、mag3…),每一欄都要填。',
   '查東西:「查詢」分頁輸入怪物ID或物品ID,會列出牠的掉落、魔法、出現地圖,或哪些怪會掉這件東西。',
   '',
@@ -152,6 +152,13 @@ for (const def of RECORD_SHEETS) {
       row.getCell(4).fill = LOCK;
     }
   }
+}
+
+// ── 刪除的新物品(確定要刪的 my_ 物品;沿用目前遊戲裡的清單) ─────────────
+{
+  const ws = wb.addWorksheet(DELETED_SHEET);
+  header(ws, [{ zh: 'ID', width: 22, note: '要刪掉的新物品 ID(my_ 開頭)。刪掉後玩家身上的也會消失,不能復原' }], 1);
+  for (const id of (T.deletedNew || [])) ws.addRow([id]);
 }
 
 // ── 查詢(只給人看,套用時不讀;公式由 Google 試算表計算) ─────────────

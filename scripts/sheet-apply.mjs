@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ExcelJS from 'exceljs';
 import {
-  ROOT, CUSTOM_IMG_DIR, DATA_OUT, CONFIG, ID_HEAD, TPL_HEAD, NEW_PREFIX, MAGIC_SLOTS, loadGame, getPath, setPath, newItemFrom,
+  ROOT, CUSTOM_IMG_DIR, DATA_OUT, CONFIG, ID_HEAD, DELETED_SHEET, TPL_HEAD, NEW_PREFIX, MAGIC_SLOTS, loadGame, getPath, setPath, newItemFrom,
   RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS, zhToReq, dropHidden, mobNamer,
 } from './sheet-lib.mjs';
 
@@ -196,10 +196,24 @@ for (const def of RECORD_SHEETS) {
   });
 }
 // 已經上線過的新物品不能消失(四個物品分頁都在才檢查,少一頁時無從判斷)
+// 「刪除的新物品」分頁:確定要刪的 my_ 物品(刪了就是刪了:玩家身上的會在讀檔時被當成不存在的物品清掉)
+const deletedNew = [];
+{
+  const ws = wb.getWorksheet(DELETED_SHEET);
+  if (ws) ws.eachRow((row, i) => {
+    if (i === 1) return;
+    const id = val(row.getCell(1)); if (id == null) return;
+    const s = String(id);
+    if (!s.startsWith(NEW_PREFIX)) { err(`${DELETED_SHEET} 第 ${i} 列:只能刪自己新增的(${NEW_PREFIX} 開頭),「${s}」是遊戲原本就有的。`); return; }
+    if (newItems[s]) { err(`${DELETED_SHEET} 第 ${i} 列:「${s}」還在物品分頁裡。要刪就把那一列也拿掉;不刪就把這一列拿掉。`); return; }
+    if (!deletedNew.includes(s)) deletedNew.push(s);
+  });
+}
 if (seenItemSheets.size === RECORD_SHEETS.filter(d => d.store === 'items').length) {
-  for (const id of prevNew) if (!newItems[id]) err(`新增的物品「${id}」從試算表裡不見了。玩家可能已經拿到,不能刪;不想讓人再拿到,把它的掉落刪掉就好。`);
+  for (const id of prevNew) if (!newItems[id] && !deletedNew.includes(id)) err(`新增的物品「${id}」從試算表裡不見了。確定要刪的話,把「${id}」寫進「${DELETED_SHEET}」分頁;只是不想讓人再拿到,把它的掉落刪掉就好。`);
 }
 out.newItems = newItems;
+out.deletedNew = deletedNew;
 out.newMagic = newMagic;
 
 // ── 地圖 ────────────────────────────────────────────────

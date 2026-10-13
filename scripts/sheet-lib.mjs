@@ -22,7 +22,8 @@ export const ID_HEAD = 'ID(不要改)';
 export const DATA_VERSION_LABEL = '(系統用,請勿修改)資料版本:';   // 寫在「使用說明」分頁最後一列
 export const TPL_HEAD = '範本ID(新增用)';
 export const CUSTOM_IMG_DIR = 'assets/custom/';   // 自訂圖檔放這裡;試算表只填檔名
-export const NEW_PREFIX = 'my_';   // 試算表新增的東西一律用這個開頭,打錯既有 ID 才不會被當成新增
+export const NEW_PREFIX = 'my_';
+export const DELETED_SHEET = '刪除的新物品';   // 列在這頁的 my_ 物品＝確定要刪(玩家身上的會在讀檔時被清掉)   // 試算表新增的東西一律用這個開頭,打錯既有 ID 才不會被當成新增
 
 // 在 Node 裡跑 js/00-data.js + js/01-drops-config.js 拿到原始 DB 與 MOB_DROPS(瀏覽器全域用最小替身頂著)
 export function loadGame() {
