@@ -90,7 +90,38 @@
       for (var id in ni) if (ni[id]._tpl && WEAPON_TAGS[ni[id]._tpl] && !WEAPON_TAGS[id]) WEAPON_TAGS[id] = WEAPON_TAGS[ni[id]._tpl].slice();
     } catch (e) { console.warn('[my-tweaks] 武器種類標籤複製失敗', e); }
   }
-  function onReady() { copyWeaponTags(); applyHome(); }
+  // ── 禮物(試算表「禮物」分頁)：角色載入/建立後，把還沒領過、寄給他(或「全部」)的發給他 ──
+  //   領過的編號記在 player.giftsClaimed(跟著存檔走：物品和「已領」同一份存檔，不會領兩次也不會漏)。
+  //   只在角色真的載入好(player.cls)時動作；發完存一次檔。
+  function grantGifts() {
+    try {
+      var G = T.gifts || [];
+      if (!G.length || typeof player === 'undefined' || !player || !player.cls) return;
+      var claimed = Array.isArray(player.giftsClaimed) ? player.giftsClaimed : (player.giftsClaimed = []);
+      var got = [];
+      for (var i = 0; i < G.length; i++) {
+        var g = G[i];
+        if (claimed.indexOf(g.id) >= 0) continue;
+        if (g.to !== '全部' && g.to !== player.name) continue;
+        if (g.kind === 'gold') { player.gold = (player.gold || 0) + g.cnt; got.push('金幣 ' + g.cnt.toLocaleString() + (g.note ? '（' + g.note + '）' : '')); }
+        else if (g.kind === 'item' && DB.items[g.item] && typeof gainItem === 'function') { gainItem(g.item, g.cnt, true); got.push(DB.items[g.item].n + ' ×' + g.cnt + (g.note ? '（' + g.note + '）' : '')); }
+        else continue;
+        claimed.push(g.id);
+      }
+      if (!got.length) return;
+      if (typeof logSys === 'function') got.forEach(function (t) { logSys('<span class="text-yellow-300 font-bold">🎁 收到禮物：' + t + '</span>'); });
+      if (typeof updateUI === 'function') updateUI();
+      if (typeof saveGame === 'function') saveGame();
+    } catch (e) { console.warn('[my-tweaks] 發禮物失敗', e); }
+  }
+  function hookGifts() {
+    ['loadGame', 'startGame'].forEach(function (fn) {
+      var orig = window[fn];
+      if (typeof orig !== 'function') return;
+      window[fn] = function () { var r = orig.apply(this, arguments); setTimeout(grantGifts, 1500); return r; };   // 等離線結算/建角流程跑完再發
+    });
+  }
+  function onReady() { copyWeaponTags(); applyHome(); hookGifts(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
   else onReady();
 

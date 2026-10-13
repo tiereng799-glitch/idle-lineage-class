@@ -104,6 +104,14 @@ for (const def of RECORD_SHEETS) if (def.allowNew === 'item') {
     kill.reverse().forEach(i => ws.spliceRows(i, 1));
   }
 }
+{ // 禮物:物品已經不在遊戲裡的那幾列拿掉
+  const ws = wb.getWorksheet('禮物');
+  if (ws) {
+    const c = colOf(ws), kill = [];
+    ws.eachRow((row, i) => { if (i === 1 || !c['物品ID']) return; const item = text(row.getCell(c['物品ID'])); if (item && !G.DB.items[item] && !newIds.has(item)) { kill.push(i); drop('禮物', item); } });
+    kill.reverse().forEach(i => ws.spliceRows(i, 1));
+  }
+}
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sheet-rebuild-'));
 const cleaned = path.join(tmpDir, 'cleaned.xlsx');
 const tweaks = path.join(tmpDir, 'tweaks.js');

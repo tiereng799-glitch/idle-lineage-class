@@ -9,7 +9,7 @@ import path from 'node:path';
 import ExcelJS from 'exceljs';
 import { execFileSync } from 'node:child_process';
 import {
-  ROOT, CUSTOM_IMG_DIR, DATA_OUT, ID_HEAD, DATA_VERSION_LABEL, DELETED_SHEET, RATE_SHEET, RATE_ROWS, loadGame, getPath, setPath, RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS,
+  ROOT, CUSTOM_IMG_DIR, DATA_OUT, ID_HEAD, DATA_VERSION_LABEL, DELETED_SHEET, RATE_SHEET, RATE_ROWS, GIFT_SHEET, GIFT_COLS, loadGame, getPath, setPath, RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS,
   reqToZh, dropHidden, mobNamer,
 } from './sheet-lib.mjs';
 
@@ -61,7 +61,8 @@ help.columns = [{ width: 100 }];
   '自訂圖檔:把圖(建議 64x64 的 PNG)上傳到 GitHub 的 assets/custom 資料夾,再到「圖檔(自訂)」欄填檔名。新的、舊的東西都可以換圖。',
   '   不想讓人再拿到:刪掉它的掉落即可。確定要整個刪掉:把那一列拿掉,並把 ID 寫進「刪除的新物品」分頁(玩家身上的也會一起消失)。',
   '新增怪物魔法:在「怪物魔法」分頁加一列,ID 寫「怪物ID:mag」(已經有 mag 就用 mag2、mag3…),每一欄都要填。',
-  '查東西:「查詢」分頁輸入怪物ID或物品ID,會列出牠的掉落、魔法、出現地圖,或哪些怪會掉這件東西。',
+  '查詢:「查詢」分頁輸入怪物ID或物品ID,會列出牠的掉落、魔法、出現地圖,或哪些怪會掉這件東西。',
+  '禮物:「禮物」分頁一列一份,按「更新遊戲」後,收件角色下次登入自動收到(每份每個角色只領一次)。發過的編號不要改。',
   '',
   '4. 改完到 GitHub → Actions → 「更新遊戲」→ Run workflow,約 5 分鐘後上線。',
   '5. 填錯(例如數字欄填了文字)不會上線,GitHub 上會顯示是哪一格要改。',
@@ -105,6 +106,15 @@ for (const r of HOME_ROWS) {
     const row = ws.addRow([r.zh, (T.rates && T.rates[r.key]) || 1, r.note]);
     row.getCell(1).fill = LOCK; row.getCell(3).font = { color: { argb: 'FF6B7280' } };
   }
+}
+
+// ── 禮物 ────────────────────────────────────────────────
+{
+  const ws = wb.addWorksheet(GIFT_SHEET);
+  const notes = { '編號': '每份禮物一個不重複的編號。發出去後不要改、不要重用(玩家靠它判斷領過沒)',
+    '收件角色': '角色名稱；填「全部」＝每個角色都有', '類型': '物品 或 金幣', '物品ID': '類型是物品才填', '數量': '1 以上', '備註': '會顯示在玩家收到的訊息裡' };
+  header(ws, GIFT_COLS.map(h => ({ zh: h, width: h === '備註' ? 30 : (h === '物品ID' ? 22 : 12), note: notes[h] })), 1);
+  for (const g of (T.gifts || [])) ws.addRow([g.id, g.to, g.kind === 'gold' ? '金幣' : '物品', g.item || '', g.cnt, g.note || '']);
 }
 
 // ── 一般分頁 ─────────────────────────────────────────────

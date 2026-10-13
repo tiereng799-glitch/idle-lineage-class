@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ExcelJS from 'exceljs';
 import {
-  ROOT, CUSTOM_IMG_DIR, DATA_OUT, CONFIG, ID_HEAD, DELETED_SHEET, RATE_SHEET, RATE_ROWS, TPL_HEAD, NEW_PREFIX, MAGIC_SLOTS, loadGame, getPath, setPath, newItemFrom,
+  ROOT, CUSTOM_IMG_DIR, DATA_OUT, CONFIG, ID_HEAD, DELETED_SHEET, RATE_SHEET, RATE_ROWS, GIFT_SHEET, GIFT_COLS, GIFT_TO_ALL, GIFT_KINDS, TPL_HEAD, NEW_PREFIX, MAGIC_SLOTS, loadGame, getPath, setPath, newItemFrom,
   RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS, zhToReq, dropHidden, mobNamer,
 } from './sheet-lib.mjs';
 
@@ -233,6 +233,39 @@ for (const id of prevDeleted) if (!deletedNew.includes(id)) deletedNew.push(id);
 if (seenItemSheets.size === RECORD_SHEETS.filter(d => d.store === 'items').length) {
   for (const id of prevNew) if (!newItems[id] && !deletedNew.includes(id)) err(`新增的物品「${id}」從試算表裡不見了。確定要刪的話,把「${id}」寫進「${DELETED_SHEET}」分頁;只是不想讓人再拿到,把它的掉落刪掉就好。`);
 }
+// ── 禮物 ────────────────────────────────────────────────
+const gifts = [];
+{
+  const ws = wb.getWorksheet(GIFT_SHEET);
+  if (ws) {
+    const colOf = columnsOf(ws, GIFT_SHEET, GIFT_COLS);
+    const seen = new Map();
+    if (GIFT_COLS.every(h => colOf[h])) ws.eachRow((row, i) => {
+      if (i === 1) return;
+      const g = h => val(row.getCell(colOf[h]));
+      const id = g('編號'), to = g('收件角色'), kindZh = g('類型'), item = g('物品ID'), raw = g('數量'), note = g('備註');
+      if (id == null && to == null && kindZh == null && item == null && raw == null) return;
+      const where = `${GIFT_SHEET} 第 ${i} 列`;
+      if (id == null) { err(`${where}:「編號」要填(每份禮物一個不重複的編號，例如 1、2、3)。`); return; }
+      const key = String(id);
+      if (seen.has(key)) { err(`${where}:編號「${key}」跟第 ${seen.get(key)} 列重複了。已經發過的禮物編號不要改、不要重用。`); return; }
+      seen.set(key, i);
+      if (to == null) { err(`${where}:「收件角色」要填角色名稱，或填「${GIFT_TO_ALL}」。`); return; }
+      const kind = GIFT_KINDS[String(kindZh || '')];
+      if (!kind) { err(`${where}:「類型」只能填:${Object.keys(GIFT_KINDS).join('、')}。`); return; }
+      const cnt = toNumber(raw);
+      if (!Number.isInteger(cnt) || cnt < 1) { err(`${where}:「數量」要填 1 以上的整數。`); return; }
+      const gift = { id: key, to: String(to), kind, cnt };
+      if (kind === 'item') {
+        if (item == null || !(G.DB.items[item] || newItems[item])) { err(`${where}:找不到物品ID「${item ?? ''}」，可以到武器/防具/飾品/道具分頁查。`); return; }
+        gift.item = String(item);
+      }
+      if (note != null) gift.note = String(note);
+      gifts.push(gift);
+    });
+  }
+}
+out.gifts = gifts;
 out.newItems = newItems;
 out.rates = rates;
 out.deletedNew = deletedNew;
