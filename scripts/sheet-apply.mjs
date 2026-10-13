@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ExcelJS from 'exceljs';
 import {
-  ROOT, CUSTOM_IMG_DIR, DATA_OUT, CONFIG, ID_HEAD, DELETED_SHEET, RATE_SHEET, RATE_ROWS, GIFT_SHEET, GIFT_COLS, GIFT_TO_ALL, GIFT_KINDS, TPL_HEAD, NEW_PREFIX, MAGIC_SLOTS, loadGame, getPath, setPath, newItemFrom,
+  ROOT, CUSTOM_IMG_DIR, DATA_OUT, CONFIG, ID_HEAD, DELETED_SHEET, RATE_SHEET, RATE_ROWS, GIFT_SHEET, GIFT_COLS, GIFT_OPT_COLS, GIFT_TO_ALL, GIFT_KINDS, TPL_HEAD, NEW_PREFIX, MAGIC_SLOTS, loadGame, getPath, setPath, newItemFrom,
   RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS, zhToReq, dropHidden, mobNamer,
 } from './sheet-lib.mjs';
 
@@ -238,11 +238,12 @@ const gifts = [];
 {
   const ws = wb.getWorksheet(GIFT_SHEET);
   if (ws) {
-    const colOf = columnsOf(ws, GIFT_SHEET, GIFT_COLS);
+    const need = GIFT_COLS.filter(h => !GIFT_OPT_COLS.includes(h));
+    const colOf = columnsOf(ws, GIFT_SHEET, need);
     const seen = new Map();
-    if (GIFT_COLS.every(h => colOf[h])) ws.eachRow((row, i) => {
+    if (need.every(h => colOf[h])) ws.eachRow((row, i) => {
       if (i === 1) return;
-      const g = h => val(row.getCell(colOf[h]));
+      const g = h => colOf[h] ? val(row.getCell(colOf[h])) : null;
       const id = g('編號'), to = g('收件角色'), kindZh = g('類型'), item = g('物品ID'), raw = g('數量'), note = g('備註');
       if (id == null && to == null && kindZh == null && item == null && raw == null) return;
       const where = `${GIFT_SHEET} 第 ${i} 列`;
@@ -259,7 +260,16 @@ const gifts = [];
       if (kind === 'item') {
         if (item == null || !(G.DB.items[item] || newItems[item])) { err(`${where}:找不到物品ID「${item ?? ''}」，可以到武器/防具/飾品/道具分頁查。`); return; }
         gift.item = String(item);
-      }
+        const enRaw = g('強化');
+        if (enRaw != null && enRaw !== '') {
+          const en = toNumber(enRaw), d = G.DB.items[item] || newItems[item];
+          const isGear = d && !d.relic && !d.isArrow && ['wpn', 'arm', 'acc'].includes(d.type);
+          const cap = d && (d.maxEn || { wpn: 15, arm: 15, acc: 5 }[d.type] || 10);   // 同 js/01 enhanceCap
+          if (!isGear) { if (en) { err(`${where}:「強化」只有武器、防具、飾品能填，「${item}」請留空。`); return; } }
+          else if (!Number.isInteger(en) || en < 0 || en > cap) { err(`${where}:「強化」要填 0～${cap} 的整數。`); return; }
+          else if (en) gift.en = en;
+        }
+      } else if (g('強化')) { err(`${where}:金幣不能填「強化」，請留空。`); return; }
       if (note != null) gift.note = String(note);
       gifts.push(gift);
     });

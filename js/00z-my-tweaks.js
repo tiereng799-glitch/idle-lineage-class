@@ -93,6 +93,14 @@
   // ── 禮物(試算表「禮物」分頁)：角色載入/建立後，把還沒領過、寄給他(或「全部」)的發給他 ──
   //   領過的編號記在 player.giftsClaimed(跟著存檔走：物品和「已領」同一份存檔，不會領兩次也不會漏)。
   //   只在角色真的載入好(player.cls)時動作；發完存一次檔。
+  // 禮物一律是「白板」(不擲祝福/詛咒等隨機詞綴)；有強化值的照 gainItem 的堆疊規則(同簽章併同一格)自己放進背包
+  function giveItem(id, cnt, en) {
+    if (!en) { gainItem(id, cnt, true, true); return; }
+    var probe = { id: id, en: en, bless: false, anc: false, attr: false, seteff: false };
+    var ex = typeof sameItemSig === 'function' && player.inv.find(function (i) { return !i.gw && sameItemSig(i, probe); });
+    if (ex) ex.cnt += cnt;
+    else player.inv.push({ id: id, uid: uid(), cnt: cnt, en: en, bless: false, anc: false, attr: false, seteff: false, lock: false, junk: false });
+  }
   function grantGifts() {
     // 改版前建的角色沒有名字：提醒去取名(禮物照名字寄，沒名字只收得到「全部」)
     try { if (typeof player !== 'undefined' && player && player.cls && !player.name && typeof logSys === 'function') logSys('<span class="text-yellow-300">這個角色還沒有名字：點畫面上的「（點此取名）」取一個。</span>'); } catch (e) {}
@@ -106,7 +114,7 @@
         if (claimed.indexOf(g.id) >= 0) continue;
         if (g.to !== '全部' && g.to !== player.name) continue;
         if (g.kind === 'gold') { player.gold = (player.gold || 0) + g.cnt; got.push('金幣 ' + g.cnt.toLocaleString() + (g.note ? '（' + g.note + '）' : '')); }
-        else if (g.kind === 'item' && DB.items[g.item] && typeof gainItem === 'function') { gainItem(g.item, g.cnt, true); got.push(DB.items[g.item].n + ' ×' + g.cnt + (g.note ? '（' + g.note + '）' : '')); }
+        else if (g.kind === 'item' && DB.items[g.item] && typeof gainItem === 'function') { giveItem(g.item, g.cnt, g.en | 0); got.push((g.en ? '+' + g.en + ' ' : '') + DB.items[g.item].n + ' ×' + g.cnt + (g.note ? '（' + g.note + '）' : '')); }
         else continue;
         claimed.push(g.id);
       }

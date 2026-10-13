@@ -122,9 +122,9 @@ for (const r of HOME_ROWS) {
 {
   const ws = wb.addWorksheet(GIFT_SHEET);
   const notes = { '編號': '每份禮物一個不重複的編號。發出去後不要改、不要重用(玩家靠它判斷領過沒)',
-    '收件角色': '角色名稱；填「全部」＝每個角色都有', '類型': '物品 或 金幣', '物品ID': '類型是物品才填', '數量': '1 以上', '備註': '會顯示在玩家收到的訊息裡' };
+    '收件角色': '角色名稱；填「全部」＝每個角色都有', '類型': '物品 或 金幣', '物品ID': '類型是物品才填', '數量': '1 以上', '強化': '武器/防具/飾品才填，例如 6＝+6；留空＝+0', '備註': '會顯示在玩家收到的訊息裡' };
   header(ws, GIFT_COLS.map(h => ({ zh: h, width: h === '備註' ? 30 : (h === '物品ID' ? 22 : 12), note: notes[h] })), 1);
-  for (const g of (T.gifts || [])) ws.addRow([g.id, g.to, g.kind === 'gold' ? '金幣' : '物品', g.item || '', g.cnt, g.note || '']);
+  for (const g of (T.gifts || [])) ws.addRow([g.id, g.to, g.kind === 'gold' ? '金幣' : '物品', g.item || '', g.cnt, g.en || '', g.note || '']);
 }
 
 // ── 一般分頁 ─────────────────────────────────────────────

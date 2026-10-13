@@ -182,7 +182,8 @@ export const HOME_DEFAULTS = { title: '放置天堂 - 日出之國', subtitle: '
 // ── 倍率:一列一個(A 項目、B 倍率);1＝原版。js/05 killMob 讀 window.myRate(key)，離線結算走同一條 ─────
 // ── 禮物:一列一份;角色登入時自動領(每份每個角色只領一次，靠「編號」認) ─────
 export const GIFT_SHEET = '禮物';
-export const GIFT_COLS = ['編號', '收件角色', '類型', '物品ID', '數量', '備註'];
+export const GIFT_COLS = ['編號', '收件角色', '類型', '物品ID', '數量', '強化', '備註'];
+export const GIFT_OPT_COLS = ['強化'];   // 後來才加的欄：舊表沒有也照常讀(當 0)
 export const GIFT_TO_ALL = '全部';
 export const GIFT_KINDS = { '物品': 'item', '金幣': 'gold' };
 
