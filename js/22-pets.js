@@ -1540,3 +1540,71 @@ function petMigrateLegacy() {
         }
     } catch (e) { console.warn('petMigrateLegacy 失敗', e); }
 }
+
+// ===== 🐾 寵物分頁（能力 → 寵物）：出戰寵物／召喚物／迷魅的怪，一隻一張卡（圖、名稱、等級、HP/MP、剩餘時間）=====
+//   血條沿用寵物原本的樣式（紅/藍漸層＋數字）；寵物卡可直接換寵物武器/防具（petGearOpen）。
+//   召喚物與迷魅的怪沒有 MP，只畫 HP。分頁開著才每 0.5 秒比對一次，有變才重畫。
+let _petsTabSig = '';
+function _ptBar(cur, max, kind) {
+    let pct = Math.max(0, Math.min(100, Math.floor((cur || 0) / Math.max(1, max || 1) * 100)));
+    let grad = kind === 'mp' ? '#2563eb,#60a5fa' : '#dc2626,#f87171';
+    return `<div class="bar-bg" style="height:14px;" title="${kind === 'mp' ? 'MP' : 'HP'} ${Math.max(0, Math.floor(cur || 0))}/${max}"><div class="bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${grad});"></div><div class="bar-text text-white" style="font-size:11px;line-height:14px;">${kind === 'mp' ? 'MP' : 'HP'} ${Math.max(0, Math.floor(cur || 0))}/${max}</div></div>`;
+}
+function _ptCard(o) {
+    return `<div class="bg-slate-800/80 border rounded" style="padding:6px 8px;border-color:${o.border};${o.down ? 'opacity:.6;' : ''}">
+        <div class="flex items-center gap-2">
+            <span class="shrink-0" style="width:60px;height:56px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(0,0,0,.35);border-radius:4px;"><img src="${o.img}" alt="" style="width:110px;max-width:none;flex:none;image-rendering:pixelated;${o.down ? 'filter:grayscale(1);' : ''}" onerror="${o.fallback ? `this.onerror=null;this.style.width='40px';this.src='${o.fallback}'` : `this.style.visibility='hidden'`}"></span>
+            <div class="flex-1 min-w-0 flex flex-col" style="gap:3px;">
+                <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><span class="font-bold" style="color:${o.color};">${o.tag} ${o.name}</span> <span class="text-amber-300">Lv.${o.lv || 1}</span>${o.down ? ' <span class="text-red-400 font-bold">倒地</span>' : ''}${o.time ? ` <span class="text-slate-400" style="font-size:11px;">剩 ${o.time}</span>` : ''}</div>
+                ${_ptBar(o.hp, o.mhp, 'hp')}
+                ${o.mmp ? _ptBar(o.mp, o.mmp, 'mp') : ''}
+            </div>
+        </div>
+        ${o.extra || ''}
+    </div>`;
+}
+function _ptTime(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+function _ptGearBtn(p, key) {
+    let g = p.eq && p.eq[key], d = g && DB.items[g.id];
+    let label = (key === 'wpn' ? '武器：' : '防具：') + (d ? d.n + ((g.en || 0) > 0 ? ' +' + g.en : '') : '無');
+    return `<button type="button" onclick="petGearOpen('${p.uid}','${key}')" class="btn text-xs font-bold flex-1" style="padding:4px 6px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-color:${d ? '#f59e0b' : '#475569'};color:${d ? '#fcd34d' : '#94a3b8'};">${label}</button>`;
+}
+function _petsTabData() {
+    let out = [];
+    if (typeof player === 'undefined' || !player || !player.cls) return out;
+    const enc = encodeURIComponent;
+    petsOutList().forEach(p => {
+        let mmp = p.mmp + (((typeof petDerive === 'function' && petDerive(p)) || {}).mmpBonus || 0);
+        out.push({ key: 'p' + p.uid, tag: '🐾', color: '#6ee7b7', border: '#475569', name: petDisplayName(p), lv: p.lv, hp: p.hp, mhp: petMhpEff(p), mp: p.mp, mmp: mmp, down: !!p._downed,
+            img: 'assets/anim/' + enc(p.formGfx || p.form) + '/d6/idle_0.png',
+            extra: `<div class="flex gap-1" style="margin-top:5px;">${_ptGearBtn(p, 'wpn')}${_ptGearBtn(p, 'arm')}</div>`,
+            sig: [p.eq && p.eq.wpn && p.eq.wpn.id, p.eq && p.eq.wpn && p.eq.wpn.en, p.eq && p.eq.arm && p.eq.arm.id, p.eq && p.eq.arm && p.eq.arm.en].join(',') });
+    });
+    let skId = (typeof summonV2ActiveSk === 'function') ? summonV2ActiveSk() : '';
+    let remain = (player.buffs && skId) ? (player.buffs[skId] || 0) : 0;
+    let sums = (typeof summonV2List === 'function') ? summonV2List() : [];
+    if (typeof necroSkeletonList === 'function') sums = sums.concat(necroSkeletonList().filter(s => !s._necroOwnerKey || (typeof _necroOwnerByKey === 'function' && _necroOwnerByKey(s._necroOwnerKey) === player)));
+    sums.filter(s => s && !s._downed && (s.hp || 0) > 0).forEach((s, i) => {
+        out.push({ key: 's' + (s.uid || i), tag: '🔮', color: '#d8b4fe', border: '#6b21a8', name: s.form, lv: s.lv, hp: s.hp, mhp: s.mhp, time: remain > 0 ? _ptTime(remain) : '',
+            img: 'assets/anim/' + enc(s.formGfx || s.form) + '/d6/idle_0.png', fallback: encodeURI('assets/icons/skills/召喚術.png') });
+    });
+    let c = player.charmed;
+    if (c && c._charm && !c._downed && (c.hp || 0) > 0) {
+        out.push({ key: 'c', tag: '💫', color: '#f9a8d4', border: '#9d174d', name: c.form, lv: c.lv, hp: c.hp, mhp: c.mhp, time: _ptTime(((c.endTick || 0) - ((typeof state !== 'undefined' && state && state.ticks) || 0)) / 10),
+            img: 'assets/anim/' + enc(c.form) + '/idle_0.png', fallback: encodeURI('assets/icons/skills/迷魅術.png') });
+    }
+    return out;
+}
+function renderPetsTab(force) {
+    try {
+        let el = document.getElementById('tab-pets');
+        if (!el || (!force && (el.classList.contains('hidden') || !el.offsetParent))) return;
+        let list = _petsTabData();
+        let sig = list.map(o => [o.key, o.name, o.lv, Math.floor(o.hp || 0), o.mhp, Math.floor(o.mp || 0), o.mmp, o.down ? 1 : 0, o.time, o.sig].join(':')).join('|');
+        if (!force && sig === _petsTabSig) return;
+        _petsTabSig = sig;
+        el.innerHTML = list.length ? list.map(_ptCard).join('')
+            : '<div class="text-slate-400 text-sm text-center" style="padding:24px 0;">身邊沒有寵物、召喚物或迷魅的怪。</div>';
+    } catch (e) { console.warn('[pets-tab] 繪製失敗', e); }
+}
+setInterval(() => { renderPetsTab(false); }, 500);

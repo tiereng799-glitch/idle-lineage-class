@@ -2515,12 +2515,13 @@ function switchTab(t, btn) {
     Array.from(btn.parentElement.children).forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     // 👇 更新陣列名單
-    ['stats', 'equip', 'weapons', 'skill', 'armors', 'items', 'audit', 'pvp', 'clan', 'automation'].forEach(id => { let _e = document.getElementById(`tab-${id}`); if(_e) _e.classList.add('hidden'); });   // 🔧 v2.6.74 自動化設定改分頁內嵌（tab-automation）
+    ['stats', 'equip', 'weapons', 'skill', 'armors', 'items', 'audit', 'pvp', 'clan', 'automation', 'pets'].forEach(id => { let _e = document.getElementById(`tab-${id}`); if(_e) _e.classList.add('hidden'); });   // 🔧 v2.6.74 自動化設定改分頁內嵌（tab-automation）
     document.getElementById(`tab-${t}`).classList.remove('hidden');
     if(typeof setEquipmentPanelEmbedded === 'function') setEquipmentPanelEmbedded(t === 'equip');
     if(t === 'audit' && typeof renderAuditTab === 'function') renderAuditTab();
     if(t === 'pvp' && typeof renderPvpTab === 'function') renderPvpTab();
     if(t === 'clan' && typeof renderClanTab === 'function') renderClanTab();
+    if(t === 'pets' && typeof renderPetsTab === 'function') renderPetsTab(true);
     if(t === 'automation' && typeof syncNpcLanguageSetting === 'function') syncNpcLanguageSetting();
 }
 

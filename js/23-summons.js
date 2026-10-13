@@ -733,10 +733,7 @@ function renderSummonTeamHTML() {
             let label = s._necroSkeleton && owner && owner !== player ? `${owner._allyName}·${s.form}` : s.form;
             return `<div class="bg-slate-800/80 border border-purple-800 rounded px-2 py-1 text-xs flex items-center gap-2">
                 <span class="text-purple-300 font-bold shrink-0 overflow-hidden text-ellipsis whitespace-nowrap" style="width:7rem;" title="${label} Lv.${s.lv || 1}">${label}</span>
-                <div class="bar-bg flex-1 !h-3">
-                    <div class="bar-fill bg-red-600" style="width:${hpPct}%;"></div>
-                    <div class="bar-text text-white" style="font-size:10px;line-height:12px;">${s.hp || 0}/${s.mhp || 0}</div>
-                </div>
+                <div class="bar-bg compact-team-bar flex-1"><div class="bar-fill" style="width:${hpPct}%;background:linear-gradient(90deg,#dc2626,#f87171);"></div><div class="bar-text text-white">${s.hp || 0}/${s.mhp || 0}</div></div>
             </div>`;
         }).join('');
         let title = regular.length ? (SUMMON_V2_TITLES[skId] || '召喚物') : '骷髏隨從';

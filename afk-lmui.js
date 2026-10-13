@@ -206,7 +206,7 @@
       '#lmui-comp{position:absolute;left:4px;bottom:100%;margin-bottom:3px;display:flex;gap:4px;z-index:5;}',
       '.lmui-cp{position:relative;width:28px;height:28px;padding:0;border:1px solid var(--lmui-line);border-radius:4px;background:rgba(0,0,0,.6);box-shadow:0 1px 3px #000;cursor:pointer;}',
       '.lmui-cp img{width:100%;height:100%;object-fit:contain;display:block;}',
-      '.lmui-cp i{position:absolute;left:1px;right:1px;bottom:1px;height:5px;background:#3b0a0a;}',
+      '.lmui-cp i{position:absolute;left:1px;right:1px;bottom:1px;height:3px;background:#3b0a0a;}',
       '.lmui-cp i b{display:block;height:100%;background:#ef4444;}',
       '.lmui-cp.down{filter:grayscale(1);opacity:.55;}',
       '.lmui-cp.on{border-color:#fde68a;box-shadow:0 0 6px #fde68a;}',
@@ -1239,11 +1239,11 @@
   var SUB_GROUPS = {
     items: [{ cat: 'all', name: '全部' }, { cat: 'equip', name: '裝備' }, { cat: 'item', name: '道具' }, { cat: 'as', name: '自動賣出' }],
     stats: [
-      { t: 'stats', name: '能力' }, { t: 'equip', name: '裝備' }, { t: 'audit', name: '統計' }].concat((typeof DISABLE_COLLECTION !== 'undefined' && DISABLE_COLLECTION) ? [] : [{ btn: 'btn-collection', name: '收藏' }]).concat([
+      { t: 'stats', name: '能力' }, { t: 'equip', name: '裝備' }, { t: 'pets', name: '寵物' }, { t: 'audit', name: '統計' }].concat((typeof DISABLE_COLLECTION !== 'undefined' && DISABLE_COLLECTION) ? [] : [{ btn: 'btn-collection', name: '收藏' }]).concat([
       { t: 'pvp', name: '社交' }, { t: 'clan', name: '血盟' }
     ])
   };
-  var TAB_GROUP = { items: 'items', armors: 'items', weapons: 'items', equip: 'stats', stats: 'stats', audit: 'stats', pvp: 'stats', clan: 'stats', automation: 'automation' };
+  var TAB_GROUP = { items: 'items', armors: 'items', weapons: 'items', equip: 'stats', stats: 'stats', pets: 'stats', audit: 'stats', pvp: 'stats', clan: 'stats', automation: 'automation' };
   var BAG_CATS = ['all', 'equip', 'item', 'as'];
   var CAT_TABS = { all: ['tab-weapons', 'tab-armors', 'tab-items'], equip: ['tab-weapons', 'tab-armors'], item: ['tab-items'] };
   var BAG_COLS = 5;     // 背包一排幾格（CSS 的 grid-template-columns 同步）
