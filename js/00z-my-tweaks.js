@@ -90,9 +90,9 @@
       for (var id in ni) if (ni[id]._tpl && WEAPON_TAGS[ni[id]._tpl] && !WEAPON_TAGS[id]) WEAPON_TAGS[id] = WEAPON_TAGS[ni[id]._tpl].slice();
     } catch (e) { console.warn('[my-tweaks] 武器種類標籤複製失敗', e); }
   }
-  // ── 禮物(試算表「禮物」分頁)：角色載入/建立後，把還沒領過、寄給他(或「全部」)的發給他 ──
+  // ── 禮物信箱(試算表「禮物」分頁)：寄給這個角色(或「全部」)、還沒領的禮物放在信箱，玩家點「領取」才進背包 ──
   //   領過的編號記在 player.giftsClaimed(跟著存檔走：物品和「已領」同一份存檔，不會領兩次也不會漏)。
-  //   只在角色真的載入好(player.cls)時動作；發完存一次檔。
+  //   信箱按鈕插在天堂M介面右上(#lmui-tr)；那支外掛關掉時改成畫面右上角的浮動按鈕。
   // 禮物一律是「白板」(不擲祝福/詛咒等隨機詞綴)；有強化值的照 gainItem 的堆疊規則(同簽章併同一格)自己放進背包
   function giveItem(id, cnt, en) {
     if (!en) { gainItem(id, cnt, true, true); return; }
@@ -101,35 +101,102 @@
     if (ex) ex.cnt += cnt;
     else player.inv.push({ id: id, uid: uid(), cnt: cnt, en: en, bless: false, anc: false, attr: false, seteff: false, lock: false, junk: false });
   }
-  function grantGifts() {
-    // 改版前建的角色沒有名字：提醒去取名(禮物照名字寄，沒名字只收得到「全部」)
-    try { if (typeof player !== 'undefined' && player && player.cls && !player.name && typeof logSys === 'function') logSys('<span class="text-yellow-300">這個角色還沒有名字：點畫面上的「（點此取名）」取一個。</span>'); } catch (e) {}
+  function loaded() { return typeof player !== 'undefined' && player && player.cls; }
+  function giftLabel(g) {
+    if (g.kind === 'gold') return '金幣 ' + g.cnt.toLocaleString();
+    return (g.en ? '+' + g.en + ' ' : '') + (DB.items[g.item] ? DB.items[g.item].n : g.item) + ' ×' + g.cnt;
+  }
+  function pendingGifts() {
+    if (!loaded()) return [];
+    var claimed = Array.isArray(player.giftsClaimed) ? player.giftsClaimed : [];
+    return (T.gifts || []).filter(function (g) {
+      return claimed.indexOf(g.id) < 0 && (g.to === '全部' || g.to === player.name) && (g.kind === 'gold' || (g.kind === 'item' && DB.items[g.item]));
+    });
+  }
+  function claimGifts(ids) {
     try {
-      var G = T.gifts || [];
-      if (!G.length || typeof player === 'undefined' || !player || !player.cls) return;
+      if (!loaded()) return;
       var claimed = Array.isArray(player.giftsClaimed) ? player.giftsClaimed : (player.giftsClaimed = []);
       var got = [];
-      for (var i = 0; i < G.length; i++) {
-        var g = G[i];
-        if (claimed.indexOf(g.id) >= 0) continue;
-        if (g.to !== '全部' && g.to !== player.name) continue;
-        if (g.kind === 'gold') { player.gold = (player.gold || 0) + g.cnt; got.push('金幣 ' + g.cnt.toLocaleString() + (g.note ? '（' + g.note + '）' : '')); }
-        else if (g.kind === 'item' && DB.items[g.item] && typeof gainItem === 'function') { giveItem(g.item, g.cnt, g.en | 0); got.push((g.en ? '+' + g.en + ' ' : '') + DB.items[g.item].n + ' ×' + g.cnt + (g.note ? '（' + g.note + '）' : '')); }
-        else continue;
+      pendingGifts().forEach(function (g) {
+        if (ids && ids.indexOf(g.id) < 0) return;
+        if (g.kind === 'gold') player.gold = (player.gold || 0) + g.cnt;
+        else if (typeof gainItem === 'function') giveItem(g.item, g.cnt, g.en | 0);
+        else return;
         claimed.push(g.id);
-      }
+        got.push(giftLabel(g));
+      });
       if (!got.length) return;
-      if (typeof logSys === 'function') got.forEach(function (t) { logSys('<span class="text-yellow-300 font-bold">🎁 收到禮物：' + t + '</span>'); });
+      if (typeof logSys === 'function') got.forEach(function (t) { logSys('<span class="text-yellow-300 font-bold">🎁 領取禮物：' + esc(t) + '</span>'); });
       if (typeof updateUI === 'function') updateUI();
-      if (typeof saveGame === 'function') saveGame();
-    } catch (e) { console.warn('[my-tweaks] 發禮物失敗', e); }
+      if (typeof saveGame === 'function' && loaded()) saveGame();
+    } catch (e) { console.warn('[my-tweaks] 領禮物失敗', e); }
+    renderMailbox();
+  }
+  function closeMailbox() { var ov = document.getElementById('my-mailbox'); if (ov) ov.remove(); }
+  function renderMailbox() {
+    var ov = document.getElementById('my-mailbox'); if (!ov) return;
+    var list = pendingGifts();
+    var rows = list.map(function (g) {
+      return '<div class="my-mb-row"><div class="my-mb-txt"><b>🎁 ' + esc(giftLabel(g)) + '</b>' + (g.note ? '<small>' + esc(g.note) + '</small>' : '') + '</div>' +
+        '<button type="button" class="my-mb-btn" data-id="' + esc(g.id) + '">領取</button></div>';
+    }).join('');
+    ov.querySelector('.my-mb-list').innerHTML = rows || '<div class="my-mb-empty">信箱是空的</div>';
+    ov.querySelector('.my-mb-all').style.display = list.length > 1 ? '' : 'none';
+    updateMailButton();
+  }
+  function openMailbox() {
+    if (!loaded()) return;
+    closeMailbox();
+    var ov = document.createElement('div');
+    ov.id = 'my-mailbox';
+    ov.innerHTML = '<div class="my-mb-box"><div class="my-mb-head">📬 信箱<button type="button" class="my-mb-x" aria-label="關閉">✕</button></div>' +
+      '<div class="my-mb-list"></div><button type="button" class="my-mb-btn my-mb-all">全部領取</button></div>';
+    ov.addEventListener('click', function (e) {
+      if (e.target === ov || e.target.closest('.my-mb-x')) { closeMailbox(); return; }
+      var b = e.target.closest('.my-mb-btn'); if (!b) return;
+      claimGifts(b.classList.contains('my-mb-all') ? null : [b.getAttribute('data-id')]);
+    });
+    document.body.appendChild(ov);
+    renderMailbox();
+  }
+  function updateMailButton() {
+    var btn = document.getElementById('my-mail-btn');
+    if (!loaded()) { if (btn) btn.style.display = 'none'; return; }
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.type = 'button'; btn.id = 'my-mail-btn'; btn.className = 'lmui-hit'; btn.setAttribute('aria-label', '信箱');
+      btn.innerHTML = '📬<i></i>';
+      btn.addEventListener('click', function (e) { e.stopPropagation(); openMailbox(); });
+    }
+    var tr = document.getElementById('lmui-tr');
+    var host = (tr && tr.offsetParent) ? tr : document.body;
+    if (btn.parentNode !== host) host.appendChild(btn);
+    btn.classList.toggle('my-mail-float', host === document.body);
+    btn.style.display = '';
+    var n = pendingGifts().length, badge = btn.querySelector('i');
+    var t = n ? String(n) : '';
+    if (badge.textContent !== t) badge.textContent = t;
+    btn.classList.toggle('has', n > 0);
+  }
+  var _notifiedFor = null;   // 每次進角色只提醒一次
+  function onCharLoaded() {
+    // 改版前建的角色沒有名字：提醒去取名(禮物照名字寄，沒名字只收得到「全部」)
+    try { if (loaded() && !player.name && typeof logSys === 'function') logSys('<span class="text-yellow-300">這個角色還沒有名字：點畫面上的「（點此取名）」取一個。</span>'); } catch (e) {}
+    try {
+      var n = pendingGifts().length;
+      if (n && _notifiedFor !== player && typeof logSys === 'function') logSys('<span class="text-yellow-300 font-bold">📬 你有 ' + n + ' 份禮物，點右上角的信箱領取。</span>');
+      _notifiedFor = player;
+    } catch (e) {}
+    updateMailButton();
   }
   function hookGifts() {
     ['loadGame', 'startGame'].forEach(function (fn) {
       var orig = window[fn];
       if (typeof orig !== 'function') return;
-      window[fn] = function () { var r = orig.apply(this, arguments); setTimeout(grantGifts, 1500); return r; };   // 等離線結算/建角流程跑完再發
+      window[fn] = function () { var r = orig.apply(this, arguments); setTimeout(onCharLoaded, 1500); return r; };   // 等離線結算/建角流程跑完
     });
+    setInterval(updateMailButton, 1000);   // 改名、回主選單、天堂M介面重建時跟著更新
   }
   function onReady() { copyWeaponTags(); applyHome(); hookGifts(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
@@ -141,6 +208,20 @@
     '.my-home-notice{width:18rem;max-width:90vw;padding:.6rem .8rem;border:1px solid rgba(250,204,21,.45);border-radius:.5rem;' +
     'background:rgba(0,0,0,.55);color:#fde68a;font-size:.875rem;line-height:1.6;text-align:center;white-space:normal}' +
     '.my-home-links{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem 1rem;margin-bottom:.5rem}' +
-    '.my-home-links a{color:#93c5fd;text-decoration:underline;font-size:.875rem}';
+    '.my-home-links a{color:#93c5fd;text-decoration:underline;font-size:.875rem}' +
+    '#my-mail-btn{position:relative;width:34px;height:34px;padding:0;font-size:20px;line-height:32px;text-align:center;border:1px solid #a16207;border-radius:6px;background:rgba(0,0,0,.6);box-shadow:0 1px 3px #000;cursor:pointer;opacity:.65;pointer-events:auto}' +
+    '#my-mail-btn.has{opacity:1;border-color:#fde68a;box-shadow:0 0 8px #fde68a}' +
+    '#my-mail-btn.my-mail-float{position:fixed;top:8px;right:8px;z-index:90}' +
+    '#my-mail-btn i{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:#dc2626;color:#fff;font:bold 11px/16px sans-serif;font-style:normal}' +
+    '#my-mail-btn i:empty{display:none}' +
+    '#my-mailbox{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}' +
+    '.my-mb-box{width:100%;max-width:360px;max-height:80vh;display:flex;flex-direction:column;gap:8px;padding:12px;background:#1a1612;border:1px solid #b7791f;border-radius:10px;color:#eee}' +
+    '.my-mb-head{display:flex;justify-content:space-between;align-items:center;color:#fbbf24;font-weight:bold;font-size:17px}' +
+    '.my-mb-x{background:none;border:0;color:#aaa;font-size:18px;cursor:pointer}' +
+    '.my-mb-list{overflow:auto;display:flex;flex-direction:column;gap:6px}' +
+    '.my-mb-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#0e0b08;border:1px solid #4a3f30;border-radius:6px}' +
+    '.my-mb-txt{flex:1;min-width:0;display:flex;flex-direction:column}.my-mb-txt small{color:#94a3b8}' +
+    '.my-mb-btn{padding:6px 12px;border:1px solid #f59e0b;border-radius:6px;background:linear-gradient(#b45309,#78350f);color:#fff7ed;font-weight:bold;cursor:pointer;white-space:nowrap}' +
+    '.my-mb-empty{padding:16px;text-align:center;color:#94a3b8}';
   (document.head || document.documentElement).appendChild(css);
 })();
