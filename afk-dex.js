@@ -24,7 +24,7 @@
 
   function ready(fn) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
-    else fn();
+    else setTimeout(fn, 0);   // 由 afk-dexload 點開才載入時 DOM 早就好了:等本檔跑完再 init(下面的 var SPECIAL_BLOCKS 等才有值)
   }
   ready(init);
 
@@ -119,7 +119,7 @@
     try { var q0 = new URLSearchParams(location.search).get('q'); if (q0) { var inp = document.getElementById('m-dex-input'); if (inp) { inp.value = q0; doSearch(); } } } catch (e) {}
   }
 
-  // 獨立頁頁首:首頁 / 小百科 / 掉落查詢 互切(與 afk-wiki 共用同一條,只在 active 標亮)。
+  // 獨立頁頁首:回首頁 / 掉落查詢。
   function buildStandaloneNav(active) {
     if (document.getElementById('m-standalone-nav')) return;
     var base = location.href.split('?')[0].split('#')[0];
@@ -127,7 +127,6 @@
     nav.id = 'm-standalone-nav';
     nav.innerHTML =
       '<a href="' + base + '">🏠 首頁</a>' +
-      '<a href="' + base + '?view=wiki"' + (active === 'wiki' ? ' class="on"' : '') + '>📚 小百科</a>' +
       '<a href="' + base + '?view=dex"' + (active === 'dex' ? ' class="on"' : '') + '>📖 掉落查詢</a>';
     document.body.appendChild(nav);
   }
@@ -293,18 +292,6 @@
     });
     return { mobs: mobs, items: items };
   }
-  // 📚 小百科的命中摘要卡(點任一項→AFK_WIKI_API.goto({q}) 開小百科統一搜尋;gotoWiki 會自動關本模態/獨立頁走網址)
-  function wikiHitsHTML(qRaw) {
-    try {
-      if (!window.AFK_WIKI_API || !AFK_WIKI_API.searchHits) return '';
-      var ws = AFK_WIKI_API.searchHits(qRaw, 8);
-      if (!ws || !ws.length) return '';
-      var rows = ws.map(function (w) {
-        return '<div class="m-dex-wikihit" data-q="' + esc(qRaw) + '">【' + esc(w.label) + '】' + hl(w.title, qRaw.toLowerCase()) + '</div>';
-      }).join('');
-      return '<div class="m-dex-card"><div class="m-dex-imatch-h">📚 小百科相關內容（點任一項前往搜尋）</div>' + rows + '</div>';
-    } catch (e) { return ''; }
-  }
 
   // ----- 搜尋 + 渲染 ------------------------------------------------------
   function doSearch() {
@@ -330,21 +317,20 @@
     });
     if (special) { var sp = document.getElementById('m-dex-special'); if (sp) sp.open = true; if (firstHit) try { firstHit.scrollIntoView({ block: 'nearest' }); } catch (e) {} }
     var itemHTML = itemMatchesHTML(q);   // 先列出名稱符合的裝備(可點看數值;含沒被怪掉的)
-    var wikiHTML = wikiHitsHTML(input.value.trim());   // 📚 小百科命中一併附在結果尾端(統一搜尋)
     var hits = [];
     for (var i = 0; i < INDEX.length && hits.length <= MAX_RESULTS; i++) if (INDEX[i].hay.indexOf(q) >= 0) hits.push(INDEX[i]);
     if (!hits.length) {
-      if (itemHTML) { results.innerHTML = itemHTML + (special ? '<div class="m-dex-hint">另見下方<b>「全域特殊掉落規則」</b>。</div>' : '<div class="m-dex-hint">（上面這些物品沒有固定掉落的怪，多為商店／製作／兌換／任務取得）</div>') + wikiHTML; return; }
+      if (itemHTML) { results.innerHTML = itemHTML + (special ? '<div class="m-dex-hint">另見下方<b>「全域特殊掉落規則」</b>。</div>' : '<div class="m-dex-hint">（上面這些物品沒有固定掉落的怪，多為商店／製作／兌換／任務取得）</div>'); return; }
       results.innerHTML = (special
         ? '<div class="m-dex-hint">「' + esc(input.value.trim()) + '」沒有固定掉落的怪物，請見下方<b>「全域特殊掉落規則」</b>。</div>'
-        : '<div class="m-dex-hint">找不到符合的怪物或裝備</div>') + wikiHTML;
+        : '<div class="m-dex-hint">找不到符合的怪物或裝備</div>');
       return;
     }
     var truncated = hits.length > MAX_RESULTS;
     if (truncated) hits = hits.slice(0, MAX_RESULTS);
     var html = itemHTML + hits.map(function (h) { return cardHTML(h, mult, q); }).join('');
     if (truncated) html += '<div class="m-dex-hint">符合的太多,只顯示前 ' + MAX_RESULTS + ' 筆,請輸入更精確的關鍵字。</div>';
-    results.innerHTML = html + wikiHTML;
+    results.innerHTML = html;
   }
 
   var ELE = { fire: '🔥 火', water: '💧 水', earth: '🪨 地', wind: '🌪 風', none: '無' };
@@ -829,7 +815,7 @@
       '<b>怪物不會掉遺骸</b>，裝備上也不會再自己長出席琳套裝詞綴。取得只有一條路：',
       '<b>席琳神殿・伊奧</b>：<b>席琳結晶 ×1</b> 換 1 件指定部位的遺骸（8 部位任選），附帶的席琳套裝詞綴<b>隨機一種</b>（共 12 組）',
       '遺骸裝在「裝備」分頁最下面的專屬 8 格（之爪／之眼／之血／之肉／之心／之骨／之牙／之鱗），本身沒有任何數值、不佔負重、不能強化',
-      '<b>同一組名</b>的遺骸湊滿 <b>2／3／5</b> 格 → 發動該席琳套裝的 2／3／5 件效果（效果內容見小百科「席琳」分頁）',
+      '<b>同一組名</b>的遺骸湊滿 <b>2／3／5</b> 格 → 發動該席琳套裝的 2／3／5 件效果',
       '<b>一般裝備上的舊詞綴已不再計入套裝件數</b>（只是留著顯示）——穿在身上去席琳神殿找「菈克希絲」，可以把詞綴拆成同套裝、對應部位的遺骸（裝備的強化和其他詞綴都保留）'
     ] },
     { id: 'blessscroll', title: '✦ 賦予祝福卷軸（等級 40 以上頭目）', keys: ['賦予祝福', '祝福卷軸'], lines: [
@@ -962,12 +948,6 @@
       if (!b) return;
       gotoDex({ q: b.getAttribute('data-dexq') || b.getAttribute('data-item') || '' });
     });
-    // 📚 統一搜尋:點「小百科相關內容」列 → 前往小百科開同字搜尋(gotoWiki 會關本模態/獨立頁走網址)
-    document.addEventListener('click', function (e) {
-      var w = e.target.closest ? e.target.closest('.m-dex-wikihit') : null;
-      if (!w || !window.AFK_WIKI_API || !AFK_WIKI_API.goto) return;
-      AFK_WIKI_API.goto({ q: w.getAttribute('data-q') || '' });
-    });
   }
   // adopt===true:接手來源模態(小百科)交出的歷史層、不另壓(跨頁切換用,避免返回鍵殘留)。
   //   嚴格比對 true:按鈕 onclick 會把 MouseEvent 當參數傳進來,不可當 adopt
@@ -1033,8 +1013,6 @@
       '.m-dex-iname{color:#7dd3fc;text-decoration:underline;cursor:pointer;}',
       '.m-dex-iname:active{color:#38bdf8;}',
       '.m-dex-imatch-h{color:#fcd34d;font-weight:bold;font-size:13.5px;margin-bottom:6px;}',
-      '.m-dex-wikihit{color:#cbd5e1;font-size:13.5px;padding:5px 6px;border-radius:6px;cursor:pointer;}',
-      '.m-dex-wikihit:hover{background:#1e293b;color:#fcd34d;}',
       '.m-dex-imatch{font-size:13.5px;line-height:1.9;color:#64748b;}',
       '#m-dex-itempop{display:none;position:absolute;inset:0;z-index:1002;background:rgba(2,6,23,.66);align-items:center;justify-content:center;padding:24px 14px;}',
       '#m-dex-itempop.open{display:flex;}',

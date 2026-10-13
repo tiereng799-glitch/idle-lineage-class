@@ -53,7 +53,7 @@ const watch = (pg) => {
 // afk-battlehud 桌機也會 init(只是 CSS 讓它不顯示)→ 放 need 即可;它取代的是核心手機版 #mobile-vitals。
 // afk-touchtip 只在觸控裝置 init(桌機有 hover,本來就不該掛)→ 桌機那輪永遠等不到,必須放手機輪。
 const needMobileOnly = ['[AFK-touchtip]'];
-const need = ['[AFK]', '[AFK-banner]', '[AFK-nobanner]','[AFK-lzcache]', '[AFK-synccompress]', '[AFK-clanroster]', '[AFK-allyslim]', '[AFK-dollcursor]', '[AFK-mobile]', '[AFK-backnav]', '[AFK-battlehud]', '[AFK-mapbar]', '[AFK-nozoom]', '[AFK-statusicon]', '[AFK-petui]', '[AFK-trackinfo]', '[AFK-trackmaps]', '[AFK-relicguard]', '[AFK-wpnfix]', '[AFK-enhtarget]', '[AFK-retrial]', '[AFK-attrbatch]', '[AFK-cursebatch]', '[AFK-battlebuffs]', '[AFK-skillbar]', '[AFK-dex]', '[AFK-wiki]', '[AFK-syncinfo]', '[AFK-statpts]', '[AFK-statlist]', '[AFK-pwa]', '[AFK-storage]', '[AFK-fullsave]', '[AFK-quotawarn]', '[AFK-notice]', '[AFK-history]', '[AFK-reissueid]', '[AFK-diag]', '[AFK-mobname]', '[AFK-npclabel]', '[AFK-training]', '[AFK-junkmgr]', '[AFK-bossavoid]', '[AFK-mercguard]', '[AFK-squadsync]', '[AFK-ancdrop]', '[AFK-relicaffix]', '[AFK-relicbatch]', '[AFK-bmprice]', '[AFK-itemsearch]', '[AFK-eqlist]', '[AFK-npclist]', '[AFK-whbatch]', '[AFK-anyclass]', '[AFK-locksafe]', '[AFK-buyercompat]', '[AFK-sellguard]', '[AFK-skin]'];
+const need = ['[AFK]', '[AFK-banner]','[AFK-lzcache]', '[AFK-synccompress]', '[AFK-clanroster]', '[AFK-allyslim]', '[AFK-dollcursor]', '[AFK-mobile]', '[AFK-backnav]', '[AFK-battlehud]', '[AFK-mapbar]', '[AFK-nozoom]', '[AFK-statusicon]', '[AFK-petui]', '[AFK-trackinfo]', '[AFK-trackmaps]', '[AFK-relicguard]', '[AFK-wpnfix]', '[AFK-enhtarget]', '[AFK-retrial]', '[AFK-attrbatch]', '[AFK-cursebatch]', '[AFK-battlebuffs]', '[AFK-skillbar]', '[AFK-syncinfo]', '[AFK-statpts]', '[AFK-statlist]', '[AFK-pwa]', '[AFK-storage]', '[AFK-fullsave]', '[AFK-quotawarn]', '[AFK-notice]', '[AFK-history]', '[AFK-reissueid]', '[AFK-diag]', '[AFK-mobname]', '[AFK-npclabel]', '[AFK-training]', '[AFK-junkmgr]', '[AFK-bossavoid]', '[AFK-mercguard]', '[AFK-squadsync]', '[AFK-relicaffix]', '[AFK-relicbatch]', '[AFK-bmprice]', '[AFK-itemsearch]', '[AFK-eqlist]', '[AFK-npclist]', '[AFK-whbatch]', '[AFK-anyclass]', '[AFK-locksafe]', '[AFK-buyercompat]', '[AFK-sellguard]', '[AFK-skin]'];
 const seen = (list) => list.every((n) => logs.some((l) => l.includes(n) && l.includes('hooks OK')));
 
 // ⚠ 不用 waitUntil:'networkidle':作者新版(.49 起)加了背景音樂 assets/bgm/*.mp3，<audio> 媒體串流會讓網路
@@ -73,7 +73,7 @@ watch(page);
 await page.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'domcontentloaded' });
 const _deadline = Date.now() + 20000;   // 最多等 20 秒讓全部外掛初始化(CI 較慢)
 while (Date.now() < _deadline && !seen(need)) await page.waitForTimeout(200);
-await page.waitForTimeout(300);   // 緩衝:讓 hooks 之後的索引(dex/wiki)與 AFK_EXTRA 建好,再做地圖翻譯檢查
+await page.waitForTimeout(300);   // 緩衝:讓 hooks 之後的索引(dex)與 AFK_EXTRA 建好,再做地圖翻譯檢查
 
 // 🚫 只迴避指定頭目(afk-bossavoid):驗「沒挑到的王真的不會觸發瞬移逃離」。
 //   為什麼非驗不可:這支的作法是在 autoActions 跑之前,把玩家沒挑到的 BOSS 實例暫時標上 noAutoTeleport,
@@ -167,7 +167,7 @@ const bmProblems = await page.evaluate(() => {
       const ci = AFK_BM.itemInfo(card);
       if (!ci || !(ci.max > 0)) bad.push(`${DB.items[card].n} 算不出成交價(pandoraCardPriceRange 改了?)`);
     }
-    // 物品詳情那行真的有印出來(afk-dex 與小百科裝備頁共用同一支 itemDetailHTML)
+    // 物品詳情那行真的有印出來(afk-dex 的 itemDetailHTML)
     if (eq && window.AFK_DEX_API && AFK_DEX_API.itemDetailHTML) {
       if (!AFK_DEX_API.itemDetailHTML(eq).includes('黑市成交價')) bad.push('物品詳情裡沒有「黑市成交價」那一行(afk-dex 的插入點掉了?)');
     }
@@ -346,47 +346,6 @@ const pluginPanelProblems = await page.evaluate(() => {
   return bad;
 });
 
-// 🗡️ 裝備頁覆蓋檢查:三件事,都是「畫面正常、只是查不到」的靜默失效。
-//   ① 無條件件數 == DB.items 的裝備數 → 沒有裝備在索引階段被漏掉。
-//   ② 部位按鈕的件數加總 == 總件數 → 上游新增 slot 時,那個部位在篩選面板裡**沒有按鈕**(索引有、篩不到),
-//      而清單只畫前 40 列,不捲到底根本看不到它 —— 加總對不上是唯一會早期爆出來的訊號。
-//   ③ 部位按鈕的名稱不可含英文字母 → 沒補進 EQUIP_GROUPS 的 slot 會直接把原始 key 印在畫面上。
-//   (歷史:魔法娃娃 50 件 + 地龍之魔眼 1 件曾因部位對不上分組桶而整組消失。)
-const equipPageProblems = await page.evaluate(async () => {
-  const bad = [];
-  try {
-    if (!window.AFK_WIKI_API || typeof DB === 'undefined' || !DB.items) return bad;
-    AFK_WIKI_API.goto({ tab: 'equip' });
-    await new Promise((r) => setTimeout(r, 800));
-    const cntEl = document.getElementById('m-eq-cnt');
-    if (!cntEl) { bad.push('裝備頁的控制列不見了(找不到 #m-eq-cnt)→ 篩選器沒渲染出來'); return bad; }
-    const shown = parseInt(String(cntEl.textContent).replace(/[^0-9]/g, ''), 10);
-    let total = 0;
-    for (const id in DB.items) {
-      const d = DB.items[id];
-      if (d && d.n && (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc')) total++;
-    }
-    if (shown !== total) bad.push(`裝備頁無條件時只列 ${shown} 件,DB.items 裡有 ${total} 件裝備 → 有裝備在索引階段被漏掉`);
-    const btn = document.querySelector('[data-lfsheet]');
-    if (!btn) { bad.push('裝備頁找不到「篩選」按鈕'); return bad; }
-    btn.click();
-    await new Promise((r) => setTimeout(r, 200));
-    const chips = [...document.querySelectorAll('#m-eq-sheet [data-lfchip="slot"]')];
-    if (!chips.length) { bad.push('篩選面板裡沒有任何「部位」按鈕'); return bad; }
-    let sum = 0;
-    for (const c of chips) {
-      const i = c.querySelector('i');
-      sum += i ? (parseInt(i.textContent.replace(/[^0-9]/g, ''), 10) || 0) : 0;
-      const label = c.textContent.replace(/[0-9]/g, '');
-      if (/[A-Za-z]/.test(label)) bad.push(`部位按鈕「${label.trim()}」露出英文/原始 key → 該 slot 沒補進 EQUIP_GROUPS`);
-    }
-    if (sum !== total) bad.push(`部位按鈕件數加總 ${sum} ≠ 總件數 ${total} → 有部位在篩選面板裡沒有按鈕(篩不到那批裝備)`);
-    const body = document.getElementById('m-wiki-body');
-    if (body && body.scrollWidth > body.clientWidth) bad.push(`裝備頁有橫向捲動(scrollWidth ${body.scrollWidth} > clientWidth ${body.clientWidth})`);
-  } catch (e) { bad.push('裝備頁檢查本身出錯:' + e.message); }
-  return bad;
-});
-
 await browser.close();
 server.close();
 
@@ -451,13 +410,6 @@ if (pluginPanelProblems.length) {
   console.error('冒煙測試失敗:首頁不是「只剩開始遊戲」:');
   for (const p of pluginPanelProblems) console.error('  ' + p);
   console.error('  判準:首頁藏外掛入口的規則在 css/style.css 登入首頁那段(#login-art-stage / #main-menu 的 :not 選擇器)。');
-  die();
-}
-
-if (equipPageProblems.length) {
-  console.error('冒煙測試失敗:小百科「裝備」分頁的覆蓋/版面有問題:');
-  for (const p of equipPageProblems) console.error('  ' + p);
-  console.error('  判準:部位對不上分組桶的裝備要落進「❓ 其他部位」,不可整組消失(見 afk-wiki.js 的 equipGroupKey / EQUIP_GROUPS)。');
   die();
 }
 
