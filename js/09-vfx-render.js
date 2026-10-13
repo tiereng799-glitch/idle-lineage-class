@@ -2179,7 +2179,7 @@ function _atkFrameMs(intervalSec, seqLen) {
 function _skillFrameMs(seqLen, lockTicks) { return _atkFrameMs((lockTicks != null ? lockTicks : ((player && player.d && player.d.castLock) || 12)) / 10, seqLen); }
 // 🧍 v3.7.81 用戶指定改回原本的固定站位（不移動）＝回到 v3.6.89 行為：玩家恆站前排中央、朝向永遠對攻擊目標、待機幀不播行走。
 //   走位實作（_playerMoveStep）原樣保留，只由此開關關閉；要改回走位把此值改 true 即可（行走幀仍照常預載）。
-const PLAYER_BATTLE_WALK = false;
+const PLAYER_BATTLE_WALK = true;   // 2026-10-13 使用者要求開回來試玩
 // 🚶 v3.7.64 主角戰鬥走位（用戶：仿寵物/召喚行動概念——有怪走向目標、保持距離攻擊，無怪隨機閒晃；純視覺，攻擊/命中排程完全不變）
 //   步進比照 js/22 _petWanderStep（8fps）：x=正規化 0..1（battle-view 寬）·bottom=2~28px（隊伍層 zIndex=30-bottom 必須為正·後排帶≈26）。
 //   目標＝player._faceTgtUid（js/04 攻擊時寫入）·無則取最早槽位存活者；停在目標約一格寬外（「不用真的碰到」）。
