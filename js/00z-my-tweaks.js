@@ -94,6 +94,8 @@
   //   領過的編號記在 player.giftsClaimed(跟著存檔走：物品和「已領」同一份存檔，不會領兩次也不會漏)。
   //   只在角色真的載入好(player.cls)時動作；發完存一次檔。
   function grantGifts() {
+    // 改版前建的角色沒有名字：提醒去取名(禮物照名字寄，沒名字只收得到「全部」)
+    try { if (typeof player !== 'undefined' && player && player.cls && !player.name && typeof logSys === 'function') logSys('<span class="text-yellow-300">這個角色還沒有名字：到「能力」頁點右上角的「（點此取名）」取一個。</span>'); } catch (e) {}
     try {
       var G = T.gifts || [];
       if (!G.length || typeof player === 'undefined' || !player || !player.cls) return;
