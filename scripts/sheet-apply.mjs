@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ExcelJS from 'exceljs';
 import {
-  ROOT, CUSTOM_IMG_DIR, DATA_OUT, CONFIG, ID_HEAD, DELETED_SHEET, TPL_HEAD, NEW_PREFIX, MAGIC_SLOTS, loadGame, getPath, setPath, newItemFrom,
+  ROOT, CUSTOM_IMG_DIR, DATA_OUT, CONFIG, ID_HEAD, DELETED_SHEET, RATE_SHEET, RATE_ROWS, TPL_HEAD, NEW_PREFIX, MAGIC_SLOTS, loadGame, getPath, setPath, newItemFrom,
   RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS, zhToReq, dropHidden, mobNamer,
 } from './sheet-lib.mjs';
 
@@ -80,6 +80,22 @@ if (home) {
   }
 }
 
+// ── 倍率 ────────────────────────────────────────────────
+const rates = {};
+{
+  const ws = wb.getWorksheet(RATE_SHEET);
+  if (ws) {
+    const byZh = {};
+    ws.eachRow((row, i) => { if (i > 1) byZh[val(row.getCell(1))] = { v: val(row.getCell(2)), i }; });
+    for (const r of RATE_ROWS) {
+      const c = byZh[r.zh]; if (!c || c.v == null) continue;
+      const v = toNumber(c.v);
+      if (!Number.isFinite(v) || v < 0 || v > 1000) { err(`${RATE_SHEET} 第 ${c.i} 列「${r.zh}」:要填 0 到 1000 的數字(1＝原版)，現在是「${c.v}」。`); continue; }
+      if (v !== 1) rates[r.key] = v;
+    }
+  }
+}
+
 // ── 一般分頁 ─────────────────────────────────────────────
 // 每一格:空白＝維持原值;既有的東西記「差異」,新增的東西(my_ 開頭)記「整筆」。
 function parseCell(c, raw, where) {
@@ -105,6 +121,9 @@ function parseCell(c, raw, where) {
 }
 const newItems = {};      // my_ 開頭的新物品(整筆)
 const newMagic = {};      // 新增的怪物魔法 { 怪物ID: { mag2: {...} } }
+const prevDeleted = (() => {  // 遊戲裡已經刪掉的新物品:同一個 ID 不准再用(舊試算表殘留的那列會把它復活)
+  try { const c = {}; new Function('window', fs.readFileSync(DATA_OUT, 'utf8'))(c); return c.MY_TWEAKS?.deletedNew || []; } catch { return []; }
+})();
 const prevNew = (() => {  // 目前遊戲裡已經有的新物品:不准從試算表刪掉(玩家背包裡可能已經有)
   try { const c = {}; new Function('window', fs.readFileSync(DATA_OUT, 'utf8'))(c); return Object.keys(c.MY_TWEAKS?.newItems || {}); } catch { return []; }
 })();
@@ -134,6 +153,7 @@ for (const def of RECORD_SHEETS) {
       if (def.allowNew === 'item') {
         if (!key.startsWith(NEW_PREFIX)) { err(`${def.sheet} 第 ${i} 列:ID「${key}」對不到遊戲裡的東西。要新增的話 ID 請用 ${NEW_PREFIX} 開頭;既有的東西 ID 不能改。`); return; }
         if (G.DB.items[key] || newItems[key]) { err(`${def.sheet} 第 ${i} 列:ID「${key}」已經被用過了,換一個。`); return; }
+        if (prevDeleted.includes(key)) { err(`${def.sheet} 第 ${i} 列:「${key}」已經刪除過了，同一個 ID 不能再用。這列刪掉;要重新做請換一個新 ID。`); return; }
         if (!/^my_[A-Za-z0-9_]+$/.test(key)) { err(`${def.sheet} 第 ${i} 列:新 ID「${key}」只能用英文、數字、底線。`); return; }
         const tplId = colOf[TPL_HEAD] ? val(row.getCell(colOf[TPL_HEAD])) : null;
         const tpl = tplId != null && G.DB.items[tplId];
@@ -209,10 +229,12 @@ const deletedNew = [];
     if (!deletedNew.includes(s)) deletedNew.push(s);
   });
 }
+for (const id of prevDeleted) if (!deletedNew.includes(id)) deletedNew.push(id);   // 刪除紀錄只增不減(分頁被清空也不會讓舊 ID 復活)
 if (seenItemSheets.size === RECORD_SHEETS.filter(d => d.store === 'items').length) {
   for (const id of prevNew) if (!newItems[id] && !deletedNew.includes(id)) err(`新增的物品「${id}」從試算表裡不見了。確定要刪的話,把「${id}」寫進「${DELETED_SHEET}」分頁;只是不想讓人再拿到,把它的掉落刪掉就好。`);
 }
 out.newItems = newItems;
+out.rates = rates;
 out.deletedNew = deletedNew;
 out.newMagic = newMagic;
 

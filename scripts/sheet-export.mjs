@@ -9,7 +9,7 @@ import path from 'node:path';
 import ExcelJS from 'exceljs';
 import { execFileSync } from 'node:child_process';
 import {
-  ROOT, CUSTOM_IMG_DIR, DATA_OUT, ID_HEAD, DATA_VERSION_LABEL, DELETED_SHEET, loadGame, getPath, setPath, RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS,
+  ROOT, CUSTOM_IMG_DIR, DATA_OUT, ID_HEAD, DATA_VERSION_LABEL, DELETED_SHEET, RATE_SHEET, RATE_ROWS, loadGame, getPath, setPath, RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS,
   reqToZh, dropHidden, mobNamer,
 } from './sheet-lib.mjs';
 
@@ -94,6 +94,17 @@ for (const r of HOME_ROWS) {
   row.getCell(1).fill = LOCK;
   row.getCell(2).alignment = { wrapText: true, vertical: 'top' };
   row.getCell(3).font = { color: { argb: 'FF6B7280' } };
+}
+
+// ── 倍率 ────────────────────────────────────────────────
+{
+  const ws = wb.addWorksheet(RATE_SHEET);
+  ws.columns = [{ header: '項目', width: 16 }, { header: '倍率', width: 10 }, { header: '說明', width: 60 }];
+  ws.getRow(1).eachCell(c => { c.fill = HEAD; c.font = white; });
+  for (const r of RATE_ROWS) {
+    const row = ws.addRow([r.zh, (T.rates && T.rates[r.key]) || 1, r.note]);
+    row.getCell(1).fill = LOCK; row.getCell(3).font = { color: { argb: 'FF6B7280' } };
+  }
 }
 
 // ── 一般分頁 ─────────────────────────────────────────────

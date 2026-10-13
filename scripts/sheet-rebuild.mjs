@@ -16,7 +16,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import ExcelJS from 'exceljs';
-import { ROOT, ID_HEAD, DATA_VERSION_LABEL, NEW_PREFIX, MAGIC_SLOTS, loadGame, RECORD_SHEETS, mobNamer } from './sheet-lib.mjs';
+import { ROOT, ID_HEAD, DATA_VERSION_LABEL, DELETED_SHEET, NEW_PREFIX, MAGIC_SLOTS, loadGame, RECORD_SHEETS, mobNamer } from './sheet-lib.mjs';
 
 const args = process.argv.slice(2);
 const bi = args.indexOf('--base');
@@ -54,6 +54,19 @@ for (const def of RECORD_SHEETS) {
     kill.push(i); drop(def.sheet, id);
   });
   kill.reverse().forEach(i => ws.spliceRows(i, 1));
+}
+// 遊戲已經刪掉的新物品(js/00y 的 deletedNew)：表裡還有那列就拿掉，並記進「刪除的新物品」分頁
+const gameDeleted = (() => { try { const c = {}; new Function('window', fs.readFileSync(path.join(ROOT, 'js', '00y-my-tweaks-data.js'), 'utf8'))(c); return c.MY_TWEAKS?.deletedNew || []; } catch { return []; } })();
+if (gameDeleted.length) {
+  for (const def of RECORD_SHEETS) if (def.allowNew === 'item') {
+    const ws = wb.getWorksheet(def.sheet); const c = ws && colOf(ws)[ID_HEAD]; if (!c) continue;
+    const kill = []; ws.eachRow((row, i) => { if (i > 1 && gameDeleted.includes(text(row.getCell(c)))) { kill.push(i); drop(def.sheet, text(row.getCell(c)) + '(已刪除)'); } });
+    kill.reverse().forEach(i => ws.spliceRows(i, 1));
+  }
+  let dws = wb.getWorksheet(DELETED_SHEET);
+  if (!dws) { dws = wb.addWorksheet(DELETED_SHEET); dws.addRow(['ID']); }
+  const have = new Set(); dws.eachRow((row, i) => { if (i > 1) have.add(text(row.getCell(1))); });
+  for (const id of gameDeleted) if (!have.has(id)) dws.addRow([id]);
 }
 const newIds = new Set();
 for (const def of RECORD_SHEETS) if (def.allowNew === 'item') {

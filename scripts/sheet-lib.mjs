@@ -139,7 +139,7 @@ export const RECORD_SHEETS = [
     sheet: '怪物', store: 'mobs', rows: (G) => Object.keys(G.DB.mobs).map(id => [id, id, '']),
     cols: [
       C.show('名稱', d => d.n, 16), C.int('lv', '等級'), C.int('hp', 'HP'), C.int('ac', 'AC', '數字越小越硬'), C.int('mr', '魔防'),
-      C.int('exp', '經驗值'), C.int('goldMin', '金幣(最少)'), C.int('goldMax', '金幣(最多)'),
+      C.int('exp', '經驗值'), C.int('goldMin', '金幣(最少)', '一般怪沒改過的話，金幣依等級自動計算；改了這兩格才照表'), C.int('goldMax', '金幣(最多)', '同左'),
       C.num('atkSpd', '攻擊間隔(秒)'), C.int('dmg.0', '攻擊骰(顆)'), C.int('dmg.1', '攻擊骰(面)'), C.int('db', '額外傷害'), C.int('hit', '命中'),
       C.show('屬性', d => zh(ELE_ZH)(d.e)), C.show('頭目', d => (d.boss ? '是' : '')), C.show('種族', d => d.race),
     ],
@@ -178,6 +178,15 @@ export const HOME_ROWS = [
   { key: 'link3', zh: '連結3', note: '同上,空白就不顯示' },
 ];
 export const HOME_DEFAULTS = { title: '放置天堂 - 日出之國', subtitle: '創造您的角色並開始冒險' };
+
+// ── 倍率:一列一個(A 項目、B 倍率);1＝原版。js/05 killMob 讀 window.myRate(key)，離線結算走同一條 ─────
+export const RATE_SHEET = '倍率';
+export const RATE_ROWS = [
+  { key: 'exp',    zh: '角色經驗倍率', note: '打怪得到的經驗 ×這個數字(傭兵也一樣)。2＝兩倍' },
+  { key: 'petExp', zh: '寵物經驗倍率', note: '寵物得到的經驗 ×這個數字' },
+  { key: 'drop',   zh: '掉寶倍率',     note: '「掉落」分頁每一列的機率 ×這個數字(最高 100%)' },
+  { key: 'gold',   zh: '金幣倍率',     note: '打怪掉的金幣 ×這個數字' },
+];
 
 // 掉落表不列遺物(遺物系統已隱藏,afk-norelic 會在遊戲裡再切掉);套用時原樣保留
 export const dropHidden = (G, itemId) => !!G.DB.items[itemId]?.relic;

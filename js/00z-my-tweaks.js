@@ -32,6 +32,13 @@
     } catch (e) { console.warn('[my-tweaks] 套用失敗', pair[0], e); }
   });
 
+  // 試算表改過金幣的怪：標記 _goldCustom → js/05 monsterGoldRange 改用 goldMin/goldMax(否則一般怪金幣是依等級算的，那兩欄沒作用)
+  try { var _tm = T.mobs || {}; for (var _mid in _tm) if (DB.mobs[_mid] && (('goldMin' in _tm[_mid]) || ('goldMax' in _tm[_mid]))) DB.mobs[_mid]._goldCustom = true; } catch (e) {}
+
+  // ── 倍率(試算表「倍率」分頁)：exp 角色/傭兵經驗、petExp 寵物經驗、drop 掉寶、gold 金幣；沒設＝1 ──
+  var _rates = T.rates || {};
+  window.myRate = function (k) { var v = Number(_rates[k]); return (isFinite(v) && v >= 0) ? v : 1; };
+
   // ── 地圖出怪:整張替換 ─────────────────────────────────
   try {
     var maps = T.maps || {};

@@ -13,6 +13,7 @@ on:
       - 'js/00-data.js'
       - 'js/01-drops-config.js'
       - 'js/11-world-map.js'
+      - 'scripts/sheet-*.mjs'   # 試算表工具改了(新分頁/新欄位)也重做一次，大家不用手動換檔
   workflow_dispatch: {}
 
 permissions:
