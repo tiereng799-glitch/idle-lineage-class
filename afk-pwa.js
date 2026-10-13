@@ -150,7 +150,11 @@
   }
   // 每次載入把最新 assets-manifest 送給 SW reconcile:只清掉 sha 對不上的舊圖(作者換一張只清那一張,
   //   下次用到才 on-demand 抓新版),不下載整包。
+  //   這次開頁不是由 SW 接手的(第一次開／無痕每次都是／強制重整)→ 跳過:圖桶裡只有這次剛抓的最新圖，沒東西要對，
+  //   清單卻有 600KB,會跟登入圖、地圖搶頻寬。跳過是安全的:沒記過 sha 的圖下次對帳時會用實際內容補驗(見 sw.js)。
+  var controlledAtLoad = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
   function reconcileImages() {
+    if (!controlledAtLoad) return;
     whenController(function (ctrl) {
       withJson('assets-manifest.json', function (manifest) {
         ctrl.postMessage({ type: 'reconcile-images', manifest: manifest });

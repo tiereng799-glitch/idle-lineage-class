@@ -40,11 +40,18 @@ function _sfxLoadCfg() {
 }
 function _sfxSaveCfg() { try { if (typeof _lsSet === 'function') _lsSet('fb5_sfx', JSON.stringify(_sfxCfg)); } catch (e) {} }
 
+// 音檔索引(js/sfx-index.js)查副檔名：有索引→只回那一個(缺檔回空陣列＝不發請求)；索引沒載到→退回依序試。
+function _audioExts(index, file, fallback) {
+    if (index && typeof index === 'object') return index[file] ? [index[file]] : [];
+    return fallback;
+}
+
 // 載入單一音效：素材庫以 ogg 為主，依序試 ogg→mp3→wav；第一個能播者→建立 N 個元素的播放池；全部失敗→該事件保持靜音
-function _sfxTryLoad(key, def) {
-    var exts = ['ogg', 'mp3', 'wav'], i = 0;
+//   onDone(可省)：這個音效有結果了(可播／確定沒有)才呼叫，供 _sfxInit 一個一個排隊預載。
+function _sfxTryLoad(key, def, onDone) {
+    var exts = _audioExts(typeof SFX_INDEX !== 'undefined' ? SFX_INDEX : null, def.file, ['ogg', 'mp3', 'wav']), i = 0;
     function tryNext() {
-        if (i >= exts.length) { _sfxPool[key] = null; return; }
+        if (i >= exts.length) { _sfxPool[key] = null; if (onDone) onDone(); return; }
         var url = 'assets/sfx/' + def.file + '.' + exts[i++];
         var probe = new Audio();
         probe.preload = 'auto';
@@ -53,6 +60,7 @@ function _sfxTryLoad(key, def) {
             var arr = [probe];
             for (var j = 1; j < SFX_POOL_N; j++) { var a = new Audio(url); a.preload = 'auto'; arr.push(a); }
             _sfxPool[key] = arr; _sfxIdx[key] = 0;
+            if (onDone) onDone();
         }, { once: true });
         probe.addEventListener('error', function () { tryNext(); }, { once: true });   // 缺檔／格式不支援 → 換下一個副檔名
         probe.src = url;
@@ -61,10 +69,19 @@ function _sfxTryLoad(key, def) {
     tryNext();
 }
 
+// 預載一次只抓一個：全部同時開會跟登入圖、地圖、主角圖搶頻寬(手機無痕／第一次開最明顯)。
+//   iOS 不理 preload、canplaythrough 可能永遠不來 → 每個最多等 3 秒就換下一個，不會卡住整條。
 function _sfxInit() {
     if (_sfxInited) return; _sfxInited = true;
     _sfxLoadCfg();
-    Object.keys(SFX_DEFS).forEach(function (k) { var def = SFX_DEFS[k]; if (def.preload !== false) _sfxTryLoad(k, def); });
+    var queue = Object.keys(SFX_DEFS).filter(function (k) { return SFX_DEFS[k].preload !== false; });
+    (function next() {
+        if (!queue.length) return;
+        var k = queue.shift(), moved = false;
+        var go = function () { if (moved) return; moved = true; clearTimeout(t); next(); };
+        var t = setTimeout(go, 3000);
+        _sfxTryLoad(k, SFX_DEFS[k], go);
+    })();
     _sfxSyncUI();
 }
 // 將 UI 控制項（設定面板的開關 + 音量滑桿）初值同步為目前偏好
@@ -588,7 +605,7 @@ var HUNT_BGM = { 'tikal_area': 'music122', 'tikal_deep': 'music123', 'tikal_alta
     'sunrise_castle': 'music161', 'sunrise_east': 'music167', 'sunrise_west': 'music167', 'sunrise_north': 'music167',   // 🌅 v3.4.98 日出之國：城墎=music161·東/西/北之地=music167
     'antharas_nest_1': 'music128', 'antharas_nest_2': 'music130', 'antharas_nest_3': 'music130', 'antharas_lair': 'music133' };   // 🐉 v3.7.57 侵蝕的安塔瑞斯巢穴：入口128·通道/深處130·棲息地133（規格書指定）
 Object.keys(HUNT_BGM).forEach(function (id) { BGM_TRACKS[HUNT_BGM[id]] = HUNT_BGM[id]; });   // 註冊曲目 scene=檔名，_bgmInit 會預解析 URL
-var _bgmUrl = {}, _bgmEls = [null, null], _bgmActive = -1, _bgmScene = null, _bgmFadeTimer = null, _bgmInited = false;
+var _bgmUrl = {}, _bgmEls = [null, null], _bgmActive = -1, _bgmScene = null, _bgmFadeTimer = null, _bgmInited = false, _bgmUnlocked = false;
 
 function _bgmLoadCfg() {
     try {
@@ -600,7 +617,13 @@ function _bgmSaveCfg() { try { if (typeof _lsSet === 'function') _lsSet('fb5_bgm
 function _bgmTargetVol() { return Math.max(0, Math.min(1, _bgmCfg.vol / 100)); }
 
 // 預解析各場景的實際 URL（依序試 mp3→ogg→wav）；缺檔→_bgmUrl[scene]=null
+//   有音檔索引就直接查表、不發請求(原本每首各開一個 <audio> 探測，一進遊戲就是幾十個請求在搶頻寬)。
 function _bgmResolve(scene, file) {
+    if (typeof BGM_INDEX !== 'undefined') {
+        var ext = _audioExts(BGM_INDEX, file, null)[0];
+        _bgmUrl[scene] = ext ? 'assets/bgm/' + file + '.' + ext : null;
+        return;
+    }
     var exts = ['mp3', 'ogg', 'wav'], i = 0;
     (function tryNext() {
         if (i >= exts.length) { _bgmUrl[scene] = null; return; }
@@ -648,8 +671,14 @@ function _bgmCrossfade(oldEl, newEl) {
     }, 50);   // 20 步 × 50ms = 1 秒交叉淡化
 }
 
+// 玩家還沒點過畫面前瀏覽器不准播 → 那時先別設 src(否則登入畫面一開就下載 1.6MB 標題曲，跟登入圖搶頻寬)。
+function _bgmCanPlay() {
+    if (_bgmUnlocked) return true;
+    try { return !!(navigator.userActivation && navigator.userActivation.hasBeenActive); } catch (e) { return false; }
+}
 function _bgmSwitch(scene) {
     if (!_bgmCfg.on) return;
+    if (!_bgmCanPlay()) return;   // 還不能播：不更新場景，點過之後的下一輪輪詢再切
     if (scene === _bgmScene) return;
     var url = _bgmUrl[scene];
     if (!url) return;   // 該場景無音檔（或尚未解析完）→不更新場景、保持目前曲目，下次輪詢再試
@@ -682,7 +711,7 @@ function _bgmInit() {
     Object.keys(BGM_TRACKS).forEach(function (s) { _bgmResolve(s, BGM_TRACKS[s]); });
     _bgmSyncUI();
     setInterval(_bgmTick, 1000);   // 自我輪詢場景（每秒；只在場景改變時切換）
-    var kick = function () { _bgmScene = null; _bgmTick(); };   // 首次互動立即啟動（autoplay 解鎖）
+    var kick = function () { _bgmUnlocked = true; _bgmScene = null; _bgmTick(); };   // 首次互動立即啟動（autoplay 解鎖）
     document.addEventListener('pointerdown', kick, { once: true });
     document.addEventListener('keydown', kick, { once: true });
 }

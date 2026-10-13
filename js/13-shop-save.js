@@ -1162,6 +1162,14 @@ function startFrame(key, n){
     if(!c[n]){ const im = new Image(); im.src = `assets/start/${key}/${n}.png`; c[n] = im; }
     return c[n];
 }
+// 進遊戲後，創角／選角立繪還沒下載完的幀就不用了：取消下載(src 清空)並移出快取(回選角時 startFrame 會重新排)，
+//   把頻寬讓給地圖與主角圖。一個職業整組 60~90 張，網路慢時進遊戲那一刻常常還排著幾十張。
+function _startFramesAbortPending(){
+    for(const key in _startFrameCache){
+        const c = _startFrameCache[key];
+        for(const n in c){ const im = c[n]; if(!im.complete){ im.src = ''; delete c[n]; } }
+    }
+}
 function startFrameReady(key, n){ const im = startFrame(key, n); return im.complete && im.naturalWidth > 0; }
 function startFrameBroken(key, n){ const im = startFrame(key, n); return im.complete && im.naturalWidth === 0; }
 
@@ -1216,10 +1224,13 @@ function _bootPreloadFramesInBackground(){
 }
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootPreload); else bootPreload();
 (function animateCreationClassPreview(){
+    let abortedForGame = false;
     function tick(now){
         const panel = document.getElementById('creation-panel');
         const img = document.getElementById('class-preview-img');
         const gs = document.getElementById('game-screen');   // 🔊 v3.4.17 已進遊戲→停創角動畫（防 creation-panel classList 殘留→動畫續跑並每 loop 重觸發創角音效）
+        const inGame = !!(gs && !gs.classList.contains('hidden'));
+        if(inGame !== abortedForGame){ abortedForGame = inGame; if(inGame) _startFramesAbortPending(); }   // 每次進遊戲取消一次
         if(panel && img && !panel.classList.contains('hidden') && (!gs || gs.classList.contains('hidden')) && !creationClassAnim.static && now - creationClassAnim.lastAt >= creationClassAnim.stepMs){
             const A = creationClassAnim;
             const next = A.frame >= A.last ? A.first : A.frame + 1;
