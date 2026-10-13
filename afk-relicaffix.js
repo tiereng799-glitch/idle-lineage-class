@@ -59,7 +59,7 @@
         try {
             var out = { bless: false, anc: false, attr: false };
             if (lootRng('relicb') < AFFIX_CHANCE) out.bless = true;
-            if (lootRng('relica') < AFFIX_CHANCE) out.anc = pick(ANC_TIERS, lootRng('relicat'));
+            if (lootRng('relica') < AFFIX_CHANCE && !(typeof DISABLE_ANC !== 'undefined' && DISABLE_ANC)) out.anc = pick(ANC_TIERS, lootRng('relicat'));   // ⛔ 遠古系關閉：只擲不給(先擲＝不位移之後的掉落序列)
             // 屬性只能存在於武器：給防具/飾品會被 loadGame 清掉（見檔頭）
             if (d.type === 'wpn' && lootRng('relicx') < AFFIX_CHANCE) {
                 out.attr = pick(ATTR_ELES, lootRng('relicxe')) + (1 + Math.min(ATTR_TIERS - 1, Math.floor(lootRng('relicxt') * ATTR_TIERS)));

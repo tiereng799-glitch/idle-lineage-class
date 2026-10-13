@@ -138,7 +138,7 @@ function recomputeStats() {
     }
     // 🪆 魔法娃娃全收集：裝備收集冊 doll 部位全收集(50 隻) → 六維各 +1（提前套用→吃進 AC/HP/MP/近遠魔傷害/命中/爆擊等衍生值；受下方 100 上限夾擠）。
     //    收集判定走 player.equipDex(共用桶)；傭兵經 buildAlly/_allyLevelRecompute 換身（player 暫指向傭兵）時借用隊長共用桶，同樣吃到此加成。label 由 js/16 EQUIP_CAT_BONUS.doll 顯示。
-    if (typeof equipCatComplete === 'function' && equipCatComplete('doll')) { d.str += 1; d.dex += 1; d.con += 1; d.int += 1; d.wis += 1; d.cha += 1; }
+    if (!DISABLE_COLLECTION && typeof equipCatComplete === 'function' && equipCatComplete('doll')) { d.str += 1; d.dex += 1; d.con += 1; d.int += 1; d.wis += 1; d.cha += 1; }
 
     // 🏺 v3.6.44 巨靈的三個願望（六維類願望）：掃裝備實體 gw 的 str1/dex1/int1/wis1/con1/cha1（非六維願望於防具迴圈套用·置於上限夾擠前）
     if (p.eq) { for (let _gk in p.eq) { let _ge = p.eq[_gk]; if (_ge && _ge.gw && Array.isArray(_ge.gw)) _ge.gw.forEach(w => { if (w === 'str1') d.str += 1; else if (w === 'dex1') d.dex += 1; else if (w === 'int1') d.int += 1; else if (w === 'wis1') d.wis += 1; else if (w === 'con1') d.con += 1; else if (w === 'cha1') d.cha += 1; }); } }
@@ -1057,6 +1057,10 @@ function playerTeleport() {
 function getPolyState(isDKSet=false, isKurtSet=false) {
     if (isDKSet)   { let r = findPolyForm("死亡騎士"); return makePolyState(r.form, r.color); }
     if (isKurtSet) { let r = findPolyForm("克特");     return makePolyState(r.form, r.color); }
+    // 設定頁「變身卷軸」指定了型態且現在用得了 → 用指定的；否則照舊隨機。
+    //   polyPick 存在玩家自己身上：傭兵換身(player 暫指向傭兵)時讀到的是傭兵物件、沒有這欄 → 自然照舊隨機。
+    let _pick = polyPickUsable(player);
+    if (_pick) return makePolyState(_pick.form, _pick.color);
     let pool = polyRandomCandidates();
     let form = pool[Math.floor(Math.random() * pool.length)];
     let found = findPolyForm(form.n);
@@ -1120,6 +1124,40 @@ function polyFormDesc(f) {
 }
 
 // 變形控制戒指：手動使用時開啟「指定變身」選單
+// ── 設定頁「變身卷軸」指定型態 ─────────────────────────────
+// 規則同變形控制戒指選單：等級到了才能選；夏納/真夏納要有戒指；武器類型不符(拿弓選近戰型)時這次改隨機。
+function polyPickUsable(p) {
+    let name = p && p.polyPick; if (!name) return null;
+    let found = findPolyForm(name);
+    if (!found || p.lv < found.form.lv || (found.form.controlOnly && !hasPolyRing()) || !polyFormMatchesEquippedWeapon(found.form)) return null;
+    return found;
+}
+// 下拉清單：列出目前等級變得了的全部型態(高等在前)；遠距離型態標(遠)，換武器時清單不跳動。
+function refreshPolyFormSelect() {
+    let sel = document.getElementById('set-poly-form');
+    if (!sel || typeof player === 'undefined' || !player || !player.cls) return;
+    let opts = [];
+    for (const t of POLY_TIERS) for (const f of t.forms) if (player.lv >= f.lv) opts.push(f);
+    if (hasPolyRing()) for (const f of CONTROL_ONLY_POLY_FORMS) if (player.lv >= f.lv) opts.push(f);
+    opts.sort((a, b) => (b.lv - a.lv) || a.n.localeCompare(b.n, 'zh-Hant'));
+    let pick = player.polyPick || '';
+    if (pick && !opts.some(f => f.n === pick)) pick = '';   // 指定的已經用不了(例:沒戒指了)→ 顯示回隨機，存檔值保留
+    let html = '<option value="">隨機</option>' + opts.map(f => '<option value="' + f.n + '">Lv' + f.lv + ' ' + f.n + (RANGED_POLY_FORMS.has(f.n) ? '(遠)' : '') + '</option>').join('');
+    if (sel.innerHTML !== html) sel.innerHTML = html;
+    sel.value = pick;
+}
+function onPolyPickChange(name) {
+    if (typeof player === 'undefined' || !player || !player.cls) return;
+    player.polyPick = name || '';
+    // 正在用卷軸變身中 → 立刻換成指定的(套裝/武器強制變身 _setPoly 優先，不動)
+    let ok = polyPickUsable(player);
+    if (ok && player.buffs && player.buffs.poly > 0 && !player._setPoly) {
+        player.poly = makePolyState(ok.form, ok.color);
+        if (typeof calcStats === 'function') calcStats();
+        if (typeof updateUI === 'function') updateUI();
+    }
+}
+
 function openPolySelect(uid) {
     let modal = document.getElementById('poly-modal');
     if (!modal) {

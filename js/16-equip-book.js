@@ -156,7 +156,7 @@ function equipCatComplete(ck) { let cc = equipCatCount(ck); return cc.total > 0 
 function equipCollectionBonus(p, d) {
     if (d) d._equipWeightBonus = 0;
     if (p) p._equipPetHit = 0;
-    if (!p || !p.equipDex) return;
+    if (!p || !p.equipDex || DISABLE_COLLECTION) return;   // ⛔ 收藏系統關閉：不給加成
     for (let i = 0; i < EQUIP_CATEGORIES.length; i++) {
         let ck = EQUIP_CATEGORIES[i].key;
         let b = EQUIP_CAT_BONUS[ck]; if (!b) continue;

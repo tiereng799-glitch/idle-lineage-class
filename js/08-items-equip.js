@@ -386,7 +386,7 @@ function getGlowClass(item, d) {
     if (d && d.legend) return 'legend-glow';   // 🏅 傳說武器：琥珀金圖示光芒
     let bless = (item && item.bless) || (d && d.isB);
     let cursed = !!(item && item.bless === 'cursed') || !!(d && d.isC);   // 詛咒裝備或詛咒卷軸：紅光
-    let anc = (item && item.anc) || (d && d.isAnc);
+    let anc = !DISABLE_ANC && ((item && item.anc) || (d && d.isAnc));
     let attr = !!(item && getAttrAffix(item.attr));
     if (cursed) return 'curse-glow';   // 含詛咒：一律單詛咒紅光（即使二/三詞綴）
     if (attr && anc && bless) return 'tri-glow';           // 三詞綴：高亮變色循環（顯眼度最高）
@@ -419,7 +419,7 @@ function applyBlessStats(d, bless, slot) {   // slot: 'wpn' | 'arm' | 'acc'；�
     else { d.ac -= sg*1; d.mr += sg*1; }                                                  // 飾品：AC、MR
 }
 function applyAncStats(d, anc, slot) {   // slot: 'wpn' | 'arm' | 'acc'
-    if (!anc) return;
+    if (!anc || DISABLE_ANC) return;   // ⛔ 遠古系關閉：舊裝備身上的 anc 不再加能力
     let v = (anc === true) ? 'ancient' : anc;
     if (slot === 'wpn') {
         if (v === 'ancient') { d.extraDmg += 2; d.magicDmg += 1; }
@@ -448,7 +448,7 @@ function getItemFullName(item) {
         let acls = 'c-attr-' + attrCanon(item.attr) + (aff.tier === 5 ? ' c-attr-glow' : '');
         segs += `<span class="${acls}">${aff.n} </span>`;   // 🔥 屬性詞綴：4 屬性 × 5 階漸變同色系（第5階加光暈）
     }
-    if (item.anc)   segs += `<span class="${ancColorClass(item.anc)}">${ancName(item.anc)} </span>`;   // 遠古系：遠古紫/永恆紅/不朽綠/太初藍
+    if (item.anc && !DISABLE_ANC)   segs += `<span class="${ancColorClass(item.anc)}">${ancName(item.anc)} </span>`;   // 遠古系：遠古紫/永恆紅/不朽綠/太初藍
     if (item.bless) segs += `<span class="${blessColorClass(item.bless)}">${blessName(item.bless)} </span>`;   // 祝福的金/詛咒的紅
     let en = (item.en > 0) ? (`+${capEn(item.en, d)} `) : ((Number(item.en) || 0) < 0 ? `${item.en} ` : "");   // 🔧 一律顯示 +N（夾擠至上限：武器/防具+15、飾品+5）；🏰 詛咒降階的負值(如 -1)原樣顯示
     let cnt = item.cnt > 1 ? ` (${item.cnt})` : "";
@@ -532,7 +532,7 @@ function useItem(u, silent = false, keepModal = false) {   // 🔌 加掛版補�
     }
     // 🎴 卡片：登錄圖鑑（已收錄則改賣出）
     //   🗑️ v3.5.87 移除 cardbook/equipbook 分派：兩本收集冊實體已無取得管道且 DB 定義移除（ensureCardBook/ensureEquipBook 讀檔即濾除·purgeOrphanItems 兜底），分派永不可達；收集冊由「收藏」面板開啟
-    if (d.eff === 'card') { if (silent) return; if (typeof useCardItem === 'function') useCardItem(item); return; }
+    if (d.eff === 'card') { if (silent) return; if (DISABLE_COLLECTION) { logSys('<span class="text-slate-300">卡片已經不能登錄了，可以直接賣掉。</span>'); return; } if (typeof useCardItem === 'function') useCardItem(item); return; }
     if (d.eff === 'doll_bag') { if (silent) return; if (typeof openDollBag === 'function') openDollBag(item, false); return; }   // 🪆 開啟魔法娃娃的袋子
     if (d.eff === 'doll_box_high') { if (silent) return; if (typeof openDollBox === 'function') openDollBox(item, false); return; }   // 🎁 開啟高級魔法娃娃的盒子
 

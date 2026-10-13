@@ -62,8 +62,6 @@
     <script src="afk-mercguard.js"></script>
     <!-- 傭兵技能清單即時更新：隊伍面板 skill 分頁的重建簽章沒把技能清單算進去，傭兵換了授予技能的裝備/學了新魔法，下拉停在舊清單 -->
     <script src="afk-squadsync.js"></script>
-    <!-- 遠古系裝備的來源與傳承：上游是「絕版」(rollAffixesNew 恆回 anc:false)，這裡把產生管道接回來（金卡怪掉落／該分類收滿後的非打怪取得），並讓製作/精煉把本體的詞綴帶到成品（上游只替祝福做了這件事） -->
-    <script src="afk-ancdrop.js"></script>
     <!-- 重複的遺物會帶詞綴：遺物收集冊已收錄的那件，之後再打到的每一件各自 50% 擲祝福／遠古系／屬性（屬性只上武器遺物）。需核心補丁 11 的 __afkRelicAffix 鉤子 -->
     <script src="afk-relicaffix.js"></script>
     <!-- 遺物整理：重複的遺物一次清掉（賣金幣走核心 getSellPrice／回收換龍鑽 3 顆一件）；每個遺物 id 自動保留最好的 1 件（布告欄搜尋的抽獎池看的是「你現在手上有沒有」，全清掉會搜回剛丟的那件）。排在 afk-relicaffix 之後＝在最外層包 renderRelicBook，入口不會被它的說明行擠掉 -->

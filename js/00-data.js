@@ -296,6 +296,12 @@ function _expReqOldV1(lv) {
 }
 function getExpGainMult(lv) { return lv >= 100 ? 0 : 1; }   // ⚠️v2.6.40 取消高等經驗遞減（恆全額）；滿等(100)仍不獲得。遞減效果改由 getExpReq 提高需求承擔。
 
+// ⛔ 本伺服器關掉的系統(站長決定·非破壞性：存檔欄位與物品上的 anc 都保留，改回 false 就恢復)
+//   DISABLE_ANC：遠古系詞綴(遠古/永恆/不朽/太初)不產生、不加能力、不顯示
+//   DISABLE_COLLECTION：收藏系統(怪物卡片/裝備/道具收集冊)不掉卡、不給加成、入口隱藏
+const DISABLE_ANC = true;
+const DISABLE_COLLECTION = true;
+
 const DB = {
         items: {
         "wpn_alien": { n: "亞連", type: "wpn", dmgS: 4, dmgL: 4, hit: 2, spd: 1.1, req: "all", safe: 6, p: 14, gachaWeight: 100 },
@@ -3415,3 +3421,6 @@ try {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _origEnforce);
   else _origEnforce();
 } catch (_) {}
+
+// ⛔ 收藏系統關閉時：魔法娃娃商人(只做卡片合成/卡片換娃娃袋)從所有村莊下架
+if (DISABLE_COLLECTION) { try { for (const t of Object.values(DB.towns)) if (t && Array.isArray(t.npcs)) t.npcs = t.npcs.filter(n => n.id !== 'npc_doll_merchant'); } catch (_) {} }

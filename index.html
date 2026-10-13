@@ -427,7 +427,8 @@
                         <label class="cursor-pointer flex items-center gap-2"><input type="checkbox" id="set-blue" class="w-4 h-4"> <span class="text-blue-300">藍色藥水</span></label>
                         <label id="ui-cautious-row" class="cursor-pointer flex items-center gap-2"><input type="checkbox" id="set-cautious" class="w-4 h-4"> <span class="text-purple-300">慎重藥水</span></label>
                         <label id="ui-elfcookie-row" class="cursor-pointer flex items-center gap-2"><input type="checkbox" id="set-elfcookie" class="w-4 h-4"> <span class="text-yellow-200">精靈餅乾</span></label>
-                        <label class="cursor-pointer flex items-center gap-2"><input type="checkbox" id="set-poly" class="w-4 h-4"> <span class="text-gray-300">變形卷軸</span></label>
+                        <!-- 變身卷軸：勾選＝自動使用變形卷軸；下拉＝指定變成哪一種(清單只列目前等級變得了的·js/02 refreshPolyFormSelect)；「隨機」＝原本的行為 -->
+                        <div class="col-span-2 flex items-center gap-2"><label class="cursor-pointer flex items-center gap-2 shrink-0"><input type="checkbox" id="set-poly" class="w-4 h-4"> <span class="text-gray-300">變身卷軸</span></label><select id="set-poly-form" class="flex-1 min-w-0 bg-slate-900 border text-gray-300 px-2 py-1 rounded text-sm" onfocus="refreshPolyFormSelect()" onmousedown="refreshPolyFormSelect()" ontouchstart="refreshPolyFormSelect()" onchange="onPolyPickChange(this.value)"><option value="">隨機</option></select></div>
                         <label class="cursor-pointer flex items-center gap-2"><input type="checkbox" id="set-magicbarrier" class="w-4 h-4"> <span class="text-cyan-300">魔法屏障卷軸</span></label>
                         <label class="cursor-pointer flex items-center gap-2"><input type="checkbox" id="set-teleport" class="w-4 h-4"> <span class="text-sky-300">迴避頭目(瞬移卷軸)</span></label>
                         <label class="col-span-2 cursor-pointer flex items-center gap-2 border-t border-slate-700 pt-2 mt-1"><input type="checkbox" id="set-auto-buy-arrow" class="w-4 h-4" checked> <span class="text-orange-300">弓箭耗盡時自動購買 1000 銀箭</span></label>
@@ -635,8 +636,6 @@
     <script src="afk-mercguard.js?v=b05f7ef97d"></script>
     <!-- 傭兵技能清單即時更新：隊伍面板 skill 分頁的重建簽章沒把技能清單算進去，傭兵換了授予技能的裝備/學了新魔法，下拉停在舊清單 -->
     <script src="afk-squadsync.js?v=5af6f9f1cc"></script>
-    <!-- 金卡怪掉遠古裝備：遠古系在上游是「絕版」(rollAffixesNew 恆回 anc:false)，這裡把產生管道接回來，條件綁卡片收集冊金階 -->
-    <script src="afk-ancdrop.js?v=61ec59fea1"></script>
     <!-- 重複的遺物會帶詞綴：遺物收集冊已收錄的那件，之後再打到的每一件各自 50% 擲祝福／遠古系／屬性（屬性只上武器遺物）。需核心補丁 11 的 __afkRelicAffix 鉤子 -->
     <script src="afk-relicaffix.js?v=a3466a1fa0"></script>
     <!-- 遺物整理：重複的遺物一次清掉（賣金幣／回收換龍鑽）；每個遺物 id 自動保留最好的 1 件。排在 afk-relicaffix 之後＝在最外層包 renderRelicBook -->

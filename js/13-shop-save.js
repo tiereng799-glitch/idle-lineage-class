@@ -1386,6 +1386,7 @@ function startGame() {
     player.skills = [];
     player.summon = null; player.charmed = null; player.manualCd = {}; player.hots = {}; player.elfEle = null; player.buffs = { haste: 0, brave: 0, blue: 0, cautious: 0, elfcookie: 0, poly: 0, shield: 0 };   // 🔧 v3.5.94 移除零讀取的舊制孤兒欄位 hot(單數)；團隊 HoT 休眠機制狀態一律存 hots(複數 dict)
     
+    if (typeof refreshPolyFormSelect === 'function') setTimeout(refreshPolyFormSelect, 0);   // 變身卷軸下拉：新角色顯示回「隨機」(等 player 建好)
     resetConfigDomToDefaults();   // 🧼 v3.7.73 設定面板還原為預設：原本只清下面 7 個勾選框，藥水/施法門檻(HP%、MP%)、技能下拉與其餘勾選會被新角色繼承
     ['set-haste', 'set-brave', 'set-blue', 'set-cautious', 'set-poly', 'set-auto-buy-pot', 'set-auto-buy-arrow'].forEach(id => {
         let el = document.getElementById(id);
@@ -1980,6 +1981,7 @@ function loadGame() {
             if (c.setCautious !== undefined) document.getElementById('set-cautious').checked = c.setCautious;
             if (c.setElfcookie !== undefined) document.getElementById('set-elfcookie').checked = c.setElfcookie;
             if (c.setPoly !== undefined) document.getElementById('set-poly').checked = c.setPoly;
+            if (typeof refreshPolyFormSelect === 'function') refreshPolyFormSelect();   // 變身卷軸下拉：指定型態存在 player.polyPick
             if (c.setMagicbarrier !== undefined) document.getElementById('set-magicbarrier').checked = c.setMagicbarrier;
             if (c.setTeleport !== undefined) document.getElementById('set-teleport').checked = c.setTeleport;
             if (c.setAutoBuyArrow !== undefined) document.getElementById('set-auto-buy-arrow').checked = c.setAutoBuyArrow;   // 🧪 v3.3.15 各藥水/卷軸「自動購買」勾選已移除（併入自動使用）→不再還原

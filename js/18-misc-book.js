@@ -107,7 +107,7 @@ const MISC_CAT_BONUS = {
 function miscCollectionBonus(p, d) {
     if (d) d._miscWeightBonus = 0;
     if (p) p._miscPotionBonus = 0;
-    if (!p || !p.miscDex) return;
+    if (!p || !p.miscDex || DISABLE_COLLECTION) return;   // ⛔ 收藏系統關閉：不給加成
     for (var k in MISC_CAT_BONUS) {
         if (!miscCatComplete(k)) continue;
         var b = MISC_CAT_BONUS[k];
@@ -218,9 +218,15 @@ function renderMiscBook() {
 }
 
 // ===== 📦 收藏面板（裝備 / 道具 / 怪物 三大入口）=====
-function openCollectionPanel() { var el = document.getElementById('collection-panel'); if (el) el.classList.remove('hidden'); }
+function openCollectionPanel() { if (DISABLE_COLLECTION) return; var el = document.getElementById('collection-panel'); if (el) el.classList.remove('hidden'); }
 function closeCollectionPanel() { var el = document.getElementById('collection-panel'); if (el) el.classList.add('hidden'); }
 function collectionPanelBackdrop(ev) { if (ev && ev.target && ev.target.id === 'collection-panel') closeCollectionPanel(); }
 function collectionOpenEquip() { closeCollectionPanel(); if (typeof openEquipBook === 'function') openEquipBook(); }
 function collectionOpenMisc() { closeCollectionPanel(); openMiscBook(); }
 function collectionOpenCard() { closeCollectionPanel(); if (typeof openCardBook === 'function') openCardBook(); }
+
+// ⛔ 收藏系統關閉：主介面的「收藏」按鈕藏起來(天堂M介面那邊由 afk-lmui 的分頁清單自己略過)
+if (DISABLE_COLLECTION) {
+    const _hideCollBtn = () => { const b = document.getElementById('btn-collection'); if (b) b.style.display = 'none'; };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _hideCollBtn); else _hideCollBtn();
+}

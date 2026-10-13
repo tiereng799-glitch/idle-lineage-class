@@ -1219,9 +1219,9 @@
   var SUB_GROUPS = {
     items: [{ cat: 'all', name: '全部' }, { cat: 'equip', name: '裝備' }, { cat: 'item', name: '道具' }, { cat: 'as', name: '自動賣出' }],
     stats: [
-      { t: 'stats', name: '能力' }, { t: 'equip', name: '裝備' }, { t: 'audit', name: '統計' }, { btn: 'btn-collection', name: '收藏' },
+      { t: 'stats', name: '能力' }, { t: 'equip', name: '裝備' }, { t: 'audit', name: '統計' }].concat((typeof DISABLE_COLLECTION !== 'undefined' && DISABLE_COLLECTION) ? [] : [{ btn: 'btn-collection', name: '收藏' }]).concat([
       { t: 'pvp', name: '社交' }, { t: 'clan', name: '血盟' }
-    ]
+    ])
   };
   var TAB_GROUP = { items: 'items', armors: 'items', weapons: 'items', equip: 'stats', stats: 'stats', audit: 'stats', pvp: 'stats', clan: 'stats', automation: 'automation' };
   var BAG_CATS = ['all', 'equip', 'item', 'as'];

@@ -986,7 +986,9 @@ function craftReqHtml(reqArr) {
         else if (materialObtainable(req.id, req.cnt)) { color = 'text-amber-400'; extra = '<span class="text-amber-400 text-xs ml-0.5">(可合成)</span>'; }
         else color = 'text-red-400';
         let _lk = (hasCnt < req.cnt) ? lockedCountId(req.id) : 0;   // ⚡ v3.5.89 收成區域變數：原本同一行對同一 id 呼叫兩次（各自跑一趟倉庫）
-        if (_lk > 0) extra += `<span class="text-slate-400 text-xs ml-0.5">(另有 ${_lk} 個已上鎖不計)</span>`;   // 🔒 v3.5.87 顯示口徑＝扣除口徑·但要讓玩家知道差額在鎖定件
+        if (_lk > 0) extra += `<span class="text-slate-400 text-xs ml-0.5">(另有 ${_lk} 個已上鎖不計)</span>`;
+        // 身上穿著的裝備從來不會被當材料(扣料只看背包＋倉庫)——缺料時講明，免得玩家以為穿著的那件會被吃掉/沒被吃掉是 bug
+        if (hasCnt < req.cnt && player.eq && Object.values(player.eq).some(e => e && e.id === req.id)) extra += `<span class="text-slate-400 text-xs ml-0.5">(身上穿著的不算，要先脫下)</span>`;   // 🔒 v3.5.87 顯示口徑＝扣除口徑·但要讓玩家知道差額在鎖定件
         return `<span class="text-sm font-bold leading-none"><span class="${color}">${hasCnt}</span>/${req.cnt} ${reqItem.n}${extra}</span>`;
     }).join('<span class="text-slate-500 mx-2 leading-none">+</span>');
 }
@@ -1147,7 +1149,7 @@ function getWeightedGachaResult(doubleNonRare, excludeCards) {
     // 建立抽獎池並計算總權重
     for (let id in DB.items) {
         let item = DB.items[id];
-        if ((doubleNonRare || excludeCards) && item.eff === 'card') continue;   // 怪物卡僅加入黑市與收購 NPC；黑市達卡片上限時亦暫時排除
+        if ((doubleNonRare || excludeCards || DISABLE_COLLECTION) && item.eff === 'card') continue;   // 怪物卡僅加入黑市與收購 NPC；黑市達卡片上限時亦暫時排除
         let weight = item.gachaWeight !== undefined ? item.gachaWeight : 0;   // 🎯 v3.4.2 沒有標示視同 0（initGachaWeights 已正規化·此為雙保險）
         if (weight > 0) {
             if (doubleNonRare && weight !== 1) weight *= 2;   // 🔧 血盟野外特殊掉落：潘朵拉權重 1 以外的物品以 2 倍權重計算（權重100→200）
@@ -1241,7 +1243,7 @@ function pandoraBuyOrderAllowed(id) {
     if (!d || !d.n || d.relic || d.remains || d.doll) return false;
     if (pandoraIsEarring(id, d)) return false;
     if (/^item_pride_dom_/.test(String(id || '')) || String(d.n || '').includes('支配符')) return false;
-    if (d.eff === 'card' && d.cardMob && d.cardTier >= 1 && d.cardTier <= 3) return true;
+    if (d.eff === 'card' && d.cardMob && d.cardTier >= 1 && d.cardTier <= 3) return !DISABLE_COLLECTION;   // ⛔ 收藏關閉：卡片不收購
     if (d.type === 'skillbk') return true;
     if (d.eff === 'panacea') return true;   // 💊 v3.5.67 萬能藥（六屬性）開放喊價收購：唯一獲准的消耗品例外
     return pandoraIsPlayerWearableEquip(id, d);
@@ -1319,7 +1321,7 @@ function pandoraItemUncollected(id) {
     return false;
 }
 function pandoraUncollectedBadgeHTML(id) {
-    return pandoraItemUncollected(id) ? '<span class="pandora-collection-badge">未收藏</span>' : '';
+    return !DISABLE_COLLECTION && pandoraItemUncollected(id) ? '<span class="pandora-collection-badge">未收藏</span>' : '';
 }
 
 function _pandoraSetNotice(m, type, text) {

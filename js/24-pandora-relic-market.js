@@ -694,7 +694,7 @@
     function _pickWandererItem(st, currency) {
         let items = _wandererItemPool(currency);
         if (!items.length) return null;
-        let wantCard = _rand(st, 'wander-item-kind|' + currency) < WANDERER_CARD_CHANCE;
+        let wantCard = _rand(st, 'wander-item-kind|' + currency) < WANDERER_CARD_CHANCE && !DISABLE_COLLECTION;   // ⛔ 收藏關閉：不賣卡
         let categoryPool = items.filter(id => (DB.items[id] && DB.items[id].eff === 'card') === wantCard);
         if (!categoryPool.length) categoryPool = items;
         return _pickWeightedWandererItem(st, categoryPool, 'wander-item|' + currency + '|' + (wantCard ? 'card' : 'normal'));
