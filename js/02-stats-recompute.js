@@ -94,6 +94,7 @@ function recomputeStats() {
     // ===== Phase 1：先把所有「屬性(STR/DEX/INT/CON/WIS)」來源加總完畢 =====
     // 【修正】裝備與增益提供的屬性，必須在換算戰鬥數值「之前」全部計入，
     //         否則屬性數字會變，但近/遠/魔法傷害·命中·爆擊·AC·ER·HP·MP 不會跟著變。
+    for (let _k in p.eq) { if (p.eq[_k] && !DB.items[p.eq[_k].id]) p.eq[_k] = null; }   // 孤兒裝備(已刪除的物品)當成沒穿:讀檔清不到的傭兵快照會讓下面 DB.items[id].str 丟錯→傭兵被誤判解散
     if (p.eq.wpn) { let w = DB.items[p.eq.wpn.id]; if (w.str) d.str += w.str; if (w.dex) d.dex += w.dex; if (w.int) d.int += w.int; if (w.con) d.con += w.con; if (w.wis) d.wis += w.wis; if (w.cha) d.cha += w.cha; }   // 🔧 與防具迴圈一致讀取六項屬性（含魅力 cha）
     for (let k in p.eq) {
         let e = p.eq[k];

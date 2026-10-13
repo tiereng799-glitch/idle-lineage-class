@@ -2046,7 +2046,7 @@ function _autoSellDecision(i, ruleSnapshot, craftRemain) {   // 🔧 v2.6.77 rul
         if(craftRemain&&craftRemain[i.id]>0){protectedQty=Math.min(Number(i.cnt)||1,craftRemain[i.id]);craftRemain[i.id]-=protectedQty;}
         let er = r.equip[et];
         if (!er || !er.on || (i.en || 0) > Number(er.max || 0)) return { sell:false };
-        if ((r.protectBless && i.bless) || (r.protectAnc && i.anc) || (r.protectAttr && i.attr) || (r.protectSet && i.seteff) || (r.protectLegend && d.legend)) return { sell:false };   // 🔧 v2.6.77 保護傳說裝備
+        if ((r.protectBless && i.bless) || (r.protectAnc && i.anc && !DISABLE_ANC) || (r.protectAttr && i.attr) || (r.protectSet && i.seteff) || (r.protectLegend && d.legend)) return { sell:false };   // 🔧 v2.6.77 保護傳說裝備
         return { sell:(Number(i.cnt)||1)>protectedQty, qty:Math.max(0,(Number(i.cnt)||1)-protectedQty) };
     }
     let mr = r.misc[d.type];

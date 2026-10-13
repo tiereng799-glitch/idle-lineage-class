@@ -84,7 +84,7 @@
         if (!d) return false;
         if (d.legend) return true;
         try { if (typeof isRelic === 'function' && isRelic(d)) return true; } catch (e) {}
-        return !!((it.en || 0) > 0 || it.anc || it.bless === true || it.attr || it.seteff);
+        return !!((it.en || 0) > 0 || (it.anc && !(typeof DISABLE_ANC !== 'undefined' && DISABLE_ANC)) || it.bless === true || it.attr || it.seteff);
     }
     // 核心的全名尾巴會帶整疊數量「(2)」,但這裡賣的可能只有 1 個 → 去掉,數量由前面的「N 個」講
     function plainName(it) {

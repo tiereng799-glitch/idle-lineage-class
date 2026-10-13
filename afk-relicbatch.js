@@ -91,7 +91,7 @@
   function affixPills(it) {
     var out = '';
     if (it.bless === true) out += '<i class="rb-pill rb-pill-bless">祝福</i>';
-    if (it.anc) out += '<i class="rb-pill rb-pill-anc">遠古系</i>';
+    if (it.anc && !(typeof DISABLE_ANC !== 'undefined' && DISABLE_ANC)) out += '<i class="rb-pill rb-pill-anc">遠古系</i>';
     if (it.attr) out += '<i class="rb-pill rb-pill-attr">屬性</i>';
     return out;
   }

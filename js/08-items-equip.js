@@ -907,14 +907,14 @@ function equipItem(item) {
         else if(!player.eq.ring2) slot = 'ring2';
         else if(player.lv >= 76 && !player.eq.ring3) slot = 'ring3';   // 第3戒指欄：需 Lv76
         else if(player.lv >= 81 && !player.eq.ring4) slot = 'ring4';   // 第4戒指欄：需 Lv81
-        else slot = 'ring1';
+        else slot = ['ring1', 'ring2', 'ring3', 'ring4'].filter(s => s === 'ring1' || s === 'ring2' || (s === 'ring3' && player.lv >= 76) || (s === 'ring4' && player.lv >= 81)).find(s => !isEquipCursed(s)) || 'ring1';   // 全滿：換掉沒被詛咒的那格(都詛咒才落到 ring1→下面照舊擋)
     }
 
     // 🦻 耳環欄位分配：一開始 1 個（ear1），Lv59 開放第 2 個（ear2），最多 2 個
     if (slot === 'ear') {
         if(!player.eq.ear1) slot = 'ear1';
         else if(player.lv >= 59 && !player.eq.ear2) slot = 'ear2';   // 第2耳環欄：需 Lv59
-        else slot = 'ear1';
+        else slot = (isEquipCursed('ear1') && player.lv >= 59 && !isEquipCursed('ear2')) ? 'ear2' : 'ear1';   // 全滿：ear1 被詛咒就換 ear2
     }
     // 🦻 不能同時裝備兩個名字相同的耳環
     if (slot === 'ear1' || slot === 'ear2') {

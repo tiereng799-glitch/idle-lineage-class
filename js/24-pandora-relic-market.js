@@ -1042,10 +1042,11 @@
                         if (_afkOk == null) { if (Math.floor(Number(it.en) || 0) !== Math.floor(Number(req.en) || 0)) continue; }
                         else if (!_afkOk) continue;
                     }
-                    found = { source: source.name, index: i, item: it, usedKey: usedKey };
-                    break;
+                    // 符合的有好幾件時交「最不值錢」的那件(白板/低強化優先·權重同製作扣料 consumeMaterialById)，
+                    //   不再是背包→倉庫的第一件——舊寫法會把 +12 祝福屠龍劍交出去、白板留著(玩家回報類)
+                    let _w = ((Number(it.en) || 0) * 100) + (it.anc ? 10 : 0) + (it.bless === true ? 10 : 0) + (it.attr ? 10 : 0) + (it.seteff ? 50 : 0);
+                    if (!found || _w < found._w) found = { source: source.name, index: i, item: it, usedKey: usedKey, _w: _w };
                 }
-                if (found) break;
             }
             if (!found) return { ok: false, matches: matches, missing: req };
             used.add(found.usedKey);

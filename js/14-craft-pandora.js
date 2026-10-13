@@ -1072,10 +1072,10 @@ function doCraft(npcId, recipeIdx, sherine) {   // 🔮 sherine 參數保留簽�
 
     // 前置：自動補製不足的中間物品（maxMakeRecipe 已確認整體可行）
     _craftBlessCount = 0;   // 🔧 v3.1.27 歸零：本次製作消耗到的「祝福裝備」材料件數（ensureMaterial 中間物消耗＋下方直接消耗都會累加·含倉庫）
-    for (let r of recipe.req) ensureMaterial(r.id, r.cnt * makeCount, 0);
-
     // 扣除材料 × makeCount（跨堆疊、白板/低強化優先；🔧 背包不足時自動扣共用倉庫，統一走 consumeMaterialById）
-    for (let r of recipe.req) consumeMaterialById(r.id, r.cnt * makeCount);
+    //   ⚠️ 每項「補製完立刻扣」：舊寫法先全部補製、最後才統一扣，配方若同時直接要 A、又要「用 A 做的 B」，
+    //      補製 B 會先吃掉那份 A、最後扣 A 時已不夠卻沒人檢查＝少扣材料(例:皮爾 古代神射臂甲 的米索莉線)。
+    for (let r of recipe.req) { ensureMaterial(r.id, r.cnt * makeCount, 0); consumeMaterialById(r.id, r.cnt * makeCount); }
 
     // 🔮 席琳製作：扣除結晶（每件 1 個；🔧 背包優先、不足扣倉庫）
     if (sherine) consumeMaterialById('sherine_crystal', makeCount);
@@ -1469,6 +1469,11 @@ function refreshPandoraMarket(force) {
     let m = player.pandoraMarket2;
     let changed = false, latest = null, orderHit = null;
     let bad = !m || !Array.isArray(m.slots) || m.slots.length !== PANDORA_SLOT_COUNT || m.slots.some(s => !s || !DB.items[s.id]) || pandoraMarketCardCount(m) > PANDORA_CARD_LIMIT;
+    // ⛔ 收藏系統關閉：關閉前上架的卡片(買了只會扣錢、拿不到東西)與卡片收購單一律清掉
+    if (DISABLE_COLLECTION && m) {
+        if (m.buyOrder && DB.items[m.buyOrder.id] && DB.items[m.buyOrder.id].eff === 'card') { m.buyOrder = null; changed = true; }
+        if (Array.isArray(m.slots) && m.slots.some(s => s && DB.items[s.id] && DB.items[s.id].eff === 'card')) bad = true;
+    }
     if (force || bad || (nowT - (m ? (m.lastTick || 0) : 0)) >= PANDORA_LIFETIME_TICKS) {
         // 初次進場／資料損壞／離線超過一圈：全面換貨（日誌只公告最新一件，不洗版）
         let nextMarket = {
