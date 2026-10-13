@@ -1396,7 +1396,7 @@ function _updateUIImpl() {
         document.getElementById('dt-con').innerText = player.d.con;
         document.getElementById('dt-int').innerText = player.d.int;
         document.getElementById('dt-wis').innerText = player.d.wis;
-        if(document.getElementById('dt-cha')) document.getElementById('dt-cha').innerText = player.d.cha + (player._hiddenCha ? ' (+' + player._hiddenCha + ')' : '');   // 🧙 法師隱藏魅力：顯示「14 (+6)」
+        if(document.getElementById('dt-cha')) document.getElementById('dt-cha').innerText = (player.d.cha - (player._hiddenCha || 0)) + (player._hiddenCha ? ' (隱藏+' + player._hiddenCha + ')' : '');   // 🧙 法師隱藏魅力：顯示「8 (隱藏+6)」；實際魅力(d.cha)已含隱藏值，寵物/召喚/迷魅都吃 d.cha
     }
     
     const sign = v => (v >= 0 ? '+' : '') + v;

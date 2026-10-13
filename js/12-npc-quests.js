@@ -735,7 +735,7 @@ function questCountForOwner(owner, id, pending, assignedOnly) {
     let inv = (owner.inv || []).filter(i => i && i.id === id && !i.lock).reduce((s, i) => s + (i.cnt || 0), 0);
     let wh = 0;
     try {
-        if (typeof whCountId === 'function' && typeof player !== 'undefined' && player
+        if (!NO_REMOTE_WAREHOUSE && typeof whCountId === 'function' && typeof player !== 'undefined' && player
             && !!owner.classicMode === !!player.classicMode && !!owner.traditionalMode === !!player.traditionalMode) wh = whCountId(id);
     } catch (e) {}
     return inv + wh + Math.max(0, Math.floor(Number(pending) || 0));

@@ -865,7 +865,7 @@ function whRemoveStackByUid(uid, n) {
     } catch (e) { return false; }
 }
 // 試煉兌換用：背包＋倉庫合併計數 / 扣除
-function questCountId(id) { return player.inv.filter(i => i.id === id && !i.lock).reduce((s, i) => s + i.cnt, 0) + whCountId(id); }   // 🔒 鎖定件不列入
+function questCountId(id) { return player.inv.filter(i => i.id === id && !i.lock).reduce((s, i) => s + i.cnt, 0) + (NO_REMOTE_WAREHOUSE ? 0 : whCountId(id)); }   // 🔒 鎖定件不列入
 // 🔒 v3.5.87 鎖定件另計（背包＋倉庫）：材料/任務道具「不足」時用來判斷是否因上鎖造成，
 //    讓玩家知道「明明背包看得到卻說不足」的原因，而不是靜默卡死（製作/試煉交付共用）。
 // ⚡ v3.5.89 倉庫端改「鎖定件索引＋500ms TTL 快取」：原本每次呼叫都整份 loadWarehouse()
@@ -900,17 +900,17 @@ function questConsumeId(id, n) {
     let need = n, _gone = new Set();
     for (let it of player.inv.filter(i => i.id === id && !i.lock)) { if (need <= 0) break; let d = Math.min(it.cnt, need); it.cnt -= d; need -= d; if (it.cnt <= 0) _gone.add(it.uid); }   // 🔒 鎖定件不得被任務兌換吃掉
     if (_gone.size) player.inv = player.inv.filter(i => !_gone.has(i.uid));   // ⚠️ uid 精準移除：舊寫法 filter(i=>i.cnt>0) 會把 cnt 未定義的舊存檔物品連同鎖定件一併靜默刪除
-    if (need > 0) whConsumeId(id, need);
+    if (need > 0 && !NO_REMOTE_WAREHOUSE) whConsumeId(id, need);
 }
 
 function invCountId(id) {
     if (id === 'gold') return player.gold;
-    return player.inv.filter(i => i.id === id && !i.lock).reduce((s, i) => s + i.cnt, 0) + whCountId(id);   // 🔧 含倉庫存量　🔒 鎖定件不列入
+    return player.inv.filter(i => i.id === id && !i.lock).reduce((s, i) => s + i.cnt, 0) + (NO_REMOTE_WAREHOUSE ? 0 : whCountId(id));   // 🔧 含倉庫存量(NO_REMOTE_WAREHOUSE 時只算背包)　🔒 鎖定件不列入
 }
 function buildPool() {
     let pool = { gold: player.gold };
     for (let it of player.inv) if (!it.lock) pool[it.id] = (pool[it.id] || 0) + it.cnt;   // 🔒 與實際扣除口徑一致
-    try { for (let it of _whReadCached().items) if (!it.lock) pool[it.id] = (pool[it.id] || 0) + it.cnt; } catch (e) {}   // 🔧 倉庫材料一併列入模擬池（⚡ 唯讀·pool 是每次新建的複本，不會動到快照）
+    if (!NO_REMOTE_WAREHOUSE) try { for (let it of _whReadCached().items) if (!it.lock) pool[it.id] = (pool[it.id] || 0) + it.cnt; } catch (e) {}   // 🔧 倉庫材料一併列入模擬池（⚡ 唯讀·pool 是每次新建的複本，不會動到快照）
     return pool;
 }
 function simulateMake(id, count, pool, depth) {
@@ -953,7 +953,7 @@ function consumeMaterialById(id, n) {
     stacks.sort((a, b) => (((a.en||0)*100)+(a.anc?10:0)+(a.bless?10:0)+(a.attr?10:0)+(a.seteff?50:0)) - (((b.en||0)*100)+(b.anc?10:0)+(b.bless?10:0)+(b.attr?10:0)+(b.seteff?50:0)));
     for (let st of stacks) { if (need <= 0) break; let d = Math.min(st.cnt, need); if (d > 0 && st.bless === true) _craftBlessCount += d; st.cnt -= d; need -= d; if (st.cnt <= 0) _gone.add(st.uid); }   // 🔧 v3.1.27 祝福裝備材料件數累加（供 doCraft 逐件強制祝福）
     if (_gone.size) player.inv = player.inv.filter(i => !_gone.has(i.uid));   // ⚠️ uid 精準移除（舊寫法 i.cnt>0 會誤刪 cnt 未定義的舊物品）
-    if (need > 0) whConsumeId(id, need);   // 🔧 背包不足：自倉庫扣除
+    if (need > 0 && !NO_REMOTE_WAREHOUSE) whConsumeId(id, need);   // 🔧 背包不足：自倉庫扣除(NO_REMOTE_WAREHOUSE 時不扣倉庫)
 }
 function ensureMaterial(id, count, depth) {
     if (id === 'gold' || depth > 24) return;
@@ -987,6 +987,7 @@ function craftReqHtml(reqArr) {
         else color = 'text-red-400';
         let _lk = (hasCnt < req.cnt) ? lockedCountId(req.id) : 0;   // ⚡ v3.5.89 收成區域變數：原本同一行對同一 id 呼叫兩次（各自跑一趟倉庫）
         if (_lk > 0) extra += `<span class="text-slate-400 text-xs ml-0.5">(另有 ${_lk} 個已上鎖不計)</span>`;
+        if (hasCnt < req.cnt && NO_REMOTE_WAREHOUSE) { let _wh = whCountId(req.id); if (_wh > 0) extra += `<span class="text-slate-400 text-xs ml-0.5">(倉庫有 ${_wh} 個，要先取出)</span>`; }
         // 身上穿著的裝備從來不會被當材料(扣料只看背包＋倉庫)——缺料時講明，免得玩家以為穿著的那件會被吃掉/沒被吃掉是 bug
         if (hasCnt < req.cnt && player.eq && Object.values(player.eq).some(e => e && e.id === req.id)) extra += `<span class="text-slate-400 text-xs ml-0.5">(身上穿著的不算，要先脫下)</span>`;   // 🔒 v3.5.87 顯示口徑＝扣除口徑·但要讓玩家知道差額在鎖定件
         return `<span class="text-sm font-bold leading-none"><span class="${color}">${hasCnt}</span>/${req.cnt} ${reqItem.n}${extra}</span>`;

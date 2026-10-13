@@ -58,7 +58,7 @@ function recomputeStats() {
     d.str = b.str + a.str + (pn.str||0); d.dex = b.dex + a.dex + (pn.dex||0); d.con = b.con + a.con + (pn.con||0); d.int = b.int + a.int + (pn.int||0); d.wis = b.wis + a.wis + (pn.wis||0);
     d.cha = (b.cha || 0) + (a.cha || 0) + (pn.cha||0);   // 魅力：第六屬性（配點＋萬能藥本就≤60；裝備／buff 可突破 60）
     // 🧙 職業隱藏魅力(站長規則)：目前只有法師 +6。算進總魅力→寵物可攜帶量、召喚物等所有吃魅力的地方都一起受益；
-    //   能力介面顯示成「14 (+6)」(js/08 updateUI 讀 _hiddenCha)。不動配點/創角上限(那些看 base/alloc，不看 d.cha)。
+    //   能力介面顯示成「8 (隱藏+6)」(js/08 updateUI 讀 _hiddenCha)。不動配點/創角上限(那些看 base/alloc，不看 d.cha)。
     player._hiddenCha = ({ mage: 6 })[player.cls] || 0;
     d.cha += player._hiddenCha;
 

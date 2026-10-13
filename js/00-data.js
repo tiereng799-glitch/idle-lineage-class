@@ -301,6 +301,9 @@ function getExpGainMult(lv) { return lv >= 100 ? 0 : 1; }   // ⚠️v2.6.40 取
 //   DISABLE_COLLECTION：收藏系統(怪物卡片/裝備/道具收集冊)不掉卡、不給加成、入口隱藏
 const DISABLE_ANC = true;
 const DISABLE_COLLECTION = true;
+//   NO_REMOTE_WAREHOUSE：製作/NPC 兌換/試煉交付/施法耗材只用背包，不能遠端吃倉庫(要用先自己取出來)；
+//     身上穿的、上鎖的本來就不算材料
+const NO_REMOTE_WAREHOUSE = true;
 
 const DB = {
         items: {
