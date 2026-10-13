@@ -37,7 +37,9 @@
   var MOBILE_MQ = '(max-width: 768px), (max-height: 520px) and (pointer: coarse)';
   var TICK_MS = 300;
   var TICKS_PER_SEC = 10;   // 核心 TICK_MS=100 → manualCd 是 tick 數
-  var HOT_SLOTS = 6;
+  var HOT_SLOTS = 12;   // F1~F12；一排 6 格，右邊的切換鈕循環「F1~F6 → F7~F12 → 兩排 → F1~F6」
+  var HOT_ROW = 6;
+  var HOT_MODE_KEY = 'lmui_hot_mode';   // 這台裝置的顯示方式（只是畫面偏好，不進存檔）
   var CHAT_LINES = 60;   // 聊天框可往上捲，保留最近幾行（取代 afk-mobile 的完整日誌面板）
   var CLASS_LOGO = { royal: '王族', knight: '騎士', mage: '法師', elf: '妖精', dark: '黑暗妖精' };
   // 快捷列的道具順序：治癒藥水由強到弱 → 藍水 → 加速/勇敢 → 瞬移卷軸；其餘 type:'pot' 排最後
@@ -220,7 +222,25 @@
       '#lmui-hp i{background:linear-gradient(#ff7a6a,#c81e1e 35%,#7a0b0b 75%,#4a0505);}',
       '#lmui-mp i{background:linear-gradient(#7aa8ff,#2453c8 35%,#10307a 75%,#081a4a);}',
       '.lmui-bar span{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;font:700 10px/1 Consolas,"Courier New",monospace;letter-spacing:.5px;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;}',
-      '#lmui-hot{display:grid;grid-template-columns:repeat(' + HOT_SLOTS + ',1fr);gap:3px;flex:none;}',
+      '#lmui-hot{display:grid;grid-template-columns:repeat(' + HOT_ROW + ',1fr) 24px;gap:3px;flex:none;}',
+      '#lmui-hot[data-mode="0"] .lmui-slot.r2,#lmui-hot[data-mode="1"] .lmui-slot.r1{display:none;}',
+      '#lmui-hot[data-mode="2"] .lmui-slot{max-height:40px;}',   /* 兩排時矮一點，聊天框才不會被擠光 */
+      '#lmui-hot[data-mode="2"] #lmui-hotmode{grid-row:1 / span 2;max-height:none;}',
+      '#lmui-hotmode{grid-column:' + (HOT_ROW + 1) + ';grid-row:1;padding:0;border:1px solid #5d4c33;border-radius:4px;background:linear-gradient(#2a2119,#0f0c09);color:#f0e2bf;font-size:11px;line-height:1.1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;max-height:54px;}',
+      '#lmui-hotmode b{font-size:13px;}',
+      '#lmui-hotpick{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:12px;}',
+      '#lmui-hotpick .box{width:100%;max-width:380px;max-height:80vh;display:flex;flex-direction:column;background:#0f0c09;border:1px solid #b7791f;border-radius:10px;overflow:hidden;color:#eee;}',
+      '#lmui-hotpick .hd{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #4a3f30;color:#fbbf24;font-weight:700;font-size:16px;}',
+      '#lmui-hotpick .hd button{background:none;border:0;color:#aaa;font-size:18px;cursor:pointer;}',
+      '#lmui-hotpick .bd{overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;}',
+      '#lmui-hotpick .sec{color:#d9bf86;font-size:12px;margin-top:4px;}',
+      '#lmui-hotpick .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px;}',
+      '#lmui-hotpick .opt{display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid #4a3f30;border-radius:6px;background:#1a1612;color:#eee;font-size:13px;text-align:left;cursor:pointer;min-width:0;}',
+      '#lmui-hotpick .opt.on{border-color:#fde68a;box-shadow:0 0 6px rgba(253,230,138,.6);}',
+      '#lmui-hotpick .opt img{width:26px;height:26px;object-fit:contain;flex:none;}',
+      '#lmui-hotpick .opt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+      '#lmui-hotpick .ft{display:flex;gap:6px;padding:8px;border-top:1px solid #4a3f30;}',
+      '#lmui-hotpick .ft button{flex:1;padding:8px;border:1px solid #6b5636;border-radius:6px;background:#1a1612;color:#f0e2bf;font-weight:700;cursor:pointer;}',
       '.lmui-slot{position:relative;aspect-ratio:1;max-height:54px;border:1px solid #5d4c33;background:linear-gradient(#1d1813,#0a0806);box-shadow:inset 0 0 6px #000;padding:0;display:flex;align-items:center;justify-content:center;}',
       '.lmui-slot .fk{position:absolute;left:1px;top:1px;padding:0 3px;font-size:8px;line-height:11px;color:#f0e2bf;background:rgba(0,0,0,.7);border:1px solid #6b5636;border-radius:6px;z-index:2;}',
       '.lmui-slot img{width:86%;height:86%;object-fit:contain;}',
@@ -561,7 +581,8 @@
     hud = document.createElement('div');
     hud.id = 'lmui-hud';
     var hot = '';
-    for (var i = 0; i < HOT_SLOTS; i++) hot += '<button type="button" class="lmui-slot lmui-hit" data-i="' + i + '"><span class="fk">F' + (i + 1) + '</span><span class="n"></span><span class="cd"></span></button>';
+    for (var i = 0; i < HOT_SLOTS; i++) hot += '<button type="button" class="lmui-slot lmui-hit ' + (i < HOT_ROW ? 'r1' : 'r2') + '" data-i="' + i + '"><span class="fk">F' + (i + 1) + '</span><span class="n"></span><span class="cd"></span></button>';
+    hot += '<button type="button" id="lmui-hotmode" class="lmui-hit" aria-label="切換快捷列"></button>';
     hud.innerHTML =
       '<div id="lmui-tl">' +
         '<div id="lmui-face"><div class="pic"><img alt=""></div><span id="lmui-lv"></span><button type="button" id="lmui-buffbtn" class="lmui-hit" aria-label="狀態圖示">≫</button></div>' +
@@ -583,7 +604,7 @@
         '<div id="lmui-exp"><i></i><span></span></div>' +
       '</div>' +
       '<div id="lmui-bottom">' +
-        '<div id="lmui-hot">' + hot + '</div>' +
+        '<div id="lmui-hot" data-mode="0">' + hot + '</div>' +
         '<div id="lmui-chat" class="lmui-hit">' +
           '<div id="lmui-tabs"><button type="button" class="more" data-t="big" aria-label="放大聊天框">▲</button><button type="button" data-t="sys">一般</button><button type="button" data-t="world">世界</button><button type="button" data-t="combat">戰鬥</button><button type="button" data-t="drop">掉落</button><button type="button" class="flt" data-t="filter">篩選</button></div>' +
           '<div id="lmui-flt"></div>' +
@@ -621,7 +642,7 @@
     $('lmui-say').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); sendWorld(); } });
     // 捲回最底時，把捲上去那段期間累積的新訊息補上
     el.lines.addEventListener('scroll', function () { if (chatDirty && linesAtBottom()) { chatDirty = false; renderChat(); } }, { passive: true });
-    slots.forEach(function (s) { s.el.addEventListener('click', function () { useSlot(s); }); });
+    bindHot();
   }
 
   // ── 按鈕動作（全部是遊戲既有功能）──────────────────────
@@ -661,8 +682,103 @@
     return out;
   }
   function useSlot(s) {
-    if (s.kind === 'skill') { try { manualCast(s.id); } catch (e) {} }
-    else if (s.kind === 'item' && s.uid) { try { useItem(s.uid); } catch (e) { console.warn('[AFK-lmui] 使用道具失敗', e); } }
+    if (!s.kind) { openHotPick(slots.indexOf(s)); return; }   // 空格：直接打開設定
+    if (s.kind === 'skill') {
+      var sk = DB.skills[s.id];
+      try { if (sk && sk.type === 'manual') manualCast(s.id); else if (typeof castSkill === 'function') castSkill(s.id); } catch (e) { console.warn('[AFK-lmui] 施放失敗', e); }
+    }
+    else if (s.kind === 'item') { var u = s.uid || hotItemUid(s.id); if (u) { try { useItem(u); } catch (e) { console.warn('[AFK-lmui] 使用道具失敗', e); } } }
+  }
+
+  // ── 快捷列自訂（F1~F12）──────────────────────────────
+  //   player.lmHot＝12 格 [{k:'skill'|'item', id}|null]，跟著角色存檔；沒設過＝照舊自動排（手動技能→藥水/瞬移卷軸，只排前 6 格）。
+  //   第一次指定任一格時，把當下自動排好的那 6 格抄進來再改，畫面不會突然跳掉。
+  function hotCustom() { return hasP() && Array.isArray(player.lmHot) ? player.lmHot : null; }
+  function hotItemUid(id) {
+    if (!hasP() || !player.inv) return null;
+    var best = null;
+    player.inv.forEach(function (it) { if (it && it.id === id && (+it.cnt || 0) > 0 && (!best || (best.lock && !it.lock))) best = it; });
+    return best ? best.uid : null;
+  }
+  function hotItemCount(id) {
+    var n = 0;
+    if (hasP() && player.inv) player.inv.forEach(function (it) { if (it && it.id === id) n += (+it.cnt || 0); });
+    return n;
+  }
+  function hotSkillOk(id) {
+    var sk = DB.skills[id];
+    return !!(sk && !sk.procOnly && sk.type !== 'passive' && player.skills && player.skills.indexOf(id) !== -1);
+  }
+  function hotItemOk(d, id) {
+    return !!(d && !d.noUse && id !== 'scroll_revive' && d.type !== 'skillbk' && ['wpn', 'arm', 'acc'].indexOf(d.type) === -1 && (d.type === 'pot' || d.eff));
+  }
+  function hotSave() { try { if (hasP() && typeof saveGame === 'function') saveGame(); } catch (e) { console.warn('[AFK-lmui] 快捷列存檔失敗', e); } }
+  function setHotSlot(i, entry) {
+    if (!hasP()) return;
+    if (!hotCustom()) {
+      var auto = autoHotPlan();
+      player.lmHot = [];
+      for (var j = 0; j < HOT_SLOTS; j++) player.lmHot.push(auto[j] ? { k: auto[j].kind, id: auto[j].id } : null);
+    }
+    player.lmHot[i] = entry;
+    lastHotKey = ''; updateHot(); hotSave();
+  }
+  function hotMode() { try { var m = +localStorage.getItem(HOT_MODE_KEY); return m === 1 || m === 2 ? m : 0; } catch (e) { return 0; } }
+  function applyHotMode() {
+    var box = $('lmui-hot'), btn = $('lmui-hotmode'); if (!box || !btn) return;
+    var m = hotMode();
+    box.setAttribute('data-mode', String(m));
+    btn.innerHTML = '<b>▾</b>' + (m === 0 ? '1~6' : m === 1 ? '7~12' : '全部');
+  }
+  function bindHot() {
+    var pressT = null, longAt = 0;
+    slots.forEach(function (s, i) {
+      s.el.addEventListener('click', function () { if (Date.now() - longAt < 700) return; useSlot(s); });
+      s.el.addEventListener('contextmenu', function (e) { e.preventDefault(); longAt = Date.now(); openHotPick(i); });
+      var start = function () { clearTimeout(pressT); pressT = setTimeout(function () { longAt = Date.now(); openHotPick(i); }, 500); };
+      var stop = function () { clearTimeout(pressT); };
+      s.el.addEventListener('touchstart', start, { passive: true });
+      s.el.addEventListener('mousedown', function (e) { if (e.button === 0) start(); });
+      ['touchend', 'touchmove', 'touchcancel', 'mouseup', 'mouseleave'].forEach(function (ev) { s.el.addEventListener(ev, stop, { passive: true }); });
+    });
+    var mb = $('lmui-hotmode');
+    if (mb) mb.addEventListener('click', function () {
+      try { localStorage.setItem(HOT_MODE_KEY, String((hotMode() + 1) % 3)); } catch (e) {}
+      applyHotMode();
+    });
+    applyHotMode();
+  }
+  function closeHotPick() { var ov = $('lmui-hotpick'); if (ov) ov.remove(); }
+  function openHotPick(i) {
+    if (!hasP() || i < 0) return;
+    closeHotPick();
+    var cur = (hotCustom() || [])[i] || (!hotCustom() && autoHotPlan()[i] ? { k: autoHotPlan()[i].kind, id: autoHotPlan()[i].id } : null);
+    var opt = function (k, id, d, extra) {
+      var on = cur && cur.k === k && cur.id === id;
+      var src = (typeof getIconUrl === 'function') ? getIconUrl(d, k === 'skill') : '';
+      return '<button type="button" class="opt' + (on ? ' on' : '') + '" data-k="' + k + '" data-id="' + id + '"><img src="' + src + '" alt="" onerror="this.style.visibility=&quot;hidden&quot;"><span>' + (d.n || id) + (extra || '') + '</span></button>';
+    };
+    var sk = [];
+    for (var id in DB.skills) if (hotSkillOk(id)) sk.push(id);
+    sk.sort(function (a, b) { var A = DB.skills[a], B = DB.skills[b]; return (A.type === 'manual' ? 0 : 1) - (B.type === 'manual' ? 0 : 1) || (+A.tier || 0) - (+B.tier || 0); });
+    var items = [], seen = {};
+    (player.inv || []).forEach(function (it) { var d = it && DB.items[it.id]; if (d && !seen[it.id] && hotItemOk(d, it.id)) { seen[it.id] = 1; items.push(it.id); } });
+    items.sort(function (a, b) { var ia = HOT_ITEM_ORDER.indexOf(a), ib = HOT_ITEM_ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
+    var ov = document.createElement('div');
+    ov.id = 'lmui-hotpick';
+    ov.innerHTML = '<div class="box"><div class="hd">F' + (i + 1) + ' 要放什麼？<button type="button" data-x="1" aria-label="關閉">✕</button></div><div class="bd">' +
+      '<div class="sec">技能</div><div class="grid">' + (sk.map(function (id) { return opt('skill', id, DB.skills[id]); }).join('') || '<span style="color:#94a3b8;font-size:12px;">還沒學會技能</span>') + '</div>' +
+      '<div class="sec">道具（背包裡有的）</div><div class="grid">' + (items.map(function (id) { return opt('item', id, DB.items[id], ' ×' + hotItemCount(id)); }).join('') || '<span style="color:#94a3b8;font-size:12px;">背包沒有可用的道具</span>') + '</div>' +
+      '</div><div class="ft"><button type="button" data-clear="1">清空這格</button><button type="button" data-auto="1">全部改回自動排列</button></div></div>';
+    ov.addEventListener('click', function (e) {
+      if (e.target === ov || e.target.closest('[data-x]')) { closeHotPick(); return; }
+      if (e.target.closest('[data-clear]')) { setHotSlot(i, null); closeHotPick(); return; }
+      if (e.target.closest('[data-auto]')) { if (hasP()) { delete player.lmHot; lastHotKey = ''; updateHot(); hotSave(); } closeHotPick(); return; }
+      var b = e.target.closest('.opt'); if (!b) return;
+      setHotSlot(i, { k: b.getAttribute('data-k'), id: b.getAttribute('data-id') });
+      closeHotPick();
+    });
+    document.body.appendChild(ov);
   }
   // ── 怪物資訊小視窗：點戰鬥畫面上的怪 → 資料＋掉落物與機率（點怪原本的「鎖定目標」照舊） ──
   //   掉落表＝上游 MOB_DROPS 等（[物品id, 機率%]，每樣各自擲一次，見 js/05 killMob）；本職不能拿的試煉道具照上游 trialDropBlocked 不列。
@@ -1239,11 +1355,11 @@
   var SUB_GROUPS = {
     items: [{ cat: 'all', name: '全部' }, { cat: 'equip', name: '裝備' }, { cat: 'item', name: '道具' }, { cat: 'as', name: '自動賣出' }],
     stats: [
-      { t: 'stats', name: '能力' }, { t: 'equip', name: '裝備' }, { t: 'pets', name: '寵物' }, { t: 'audit', name: '統計' }].concat((typeof DISABLE_COLLECTION !== 'undefined' && DISABLE_COLLECTION) ? [] : [{ btn: 'btn-collection', name: '收藏' }]).concat([
+      { t: 'stats', name: '能力' }, { t: 'equip', name: '裝備' }, { t: 'audit', name: '統計' }].concat((typeof DISABLE_COLLECTION !== 'undefined' && DISABLE_COLLECTION) ? [] : [{ btn: 'btn-collection', name: '收藏' }]).concat([
       { t: 'pvp', name: '社交' }, { t: 'clan', name: '血盟' }
     ])
   };
-  var TAB_GROUP = { items: 'items', armors: 'items', weapons: 'items', equip: 'stats', stats: 'stats', pets: 'stats', audit: 'stats', pvp: 'stats', clan: 'stats', automation: 'automation' };
+  var TAB_GROUP = { items: 'items', armors: 'items', weapons: 'items', equip: 'stats', stats: 'stats', audit: 'stats', pvp: 'stats', clan: 'stats', automation: 'automation' };
   var BAG_CATS = ['all', 'equip', 'item', 'as'];
   var CAT_TABS = { all: ['tab-weapons', 'tab-armors', 'tab-items'], equip: ['tab-weapons', 'tab-armors'], item: ['tab-items'] };
   var BAG_COLS = 5;     // 背包一排幾格（CSS 的 grid-template-columns 同步）
@@ -1461,6 +1577,8 @@
       var b = e.target.closest('.lmui-cp'); if (!b) return;
       e.stopPropagation();
       if (Date.now() - lastLong < 700) return;   // 長按放開後跟來的那下 click 不要又把它關掉
+      // 點一下＝夥伴視窗(換寵物裝備、設定喝水；js/22 openCompanionPanel)；核心沒有這個函式就退回顯示狀態
+      if (typeof openCompanionPanel === 'function') { compOpen = null; compSig = ''; updateCompanions(); openCompanionPanel(); return; }
       var k = b.getAttribute('data-k');
       compOpen = (compOpen === k) ? null : k;
       compSig = ''; updateCompanions();
@@ -1472,6 +1590,9 @@
     bar.addEventListener('contextmenu', function (e) { var b = e.target.closest('.lmui-cp'); if (!b) return; e.preventDefault(); openKey(b); });
     bar.addEventListener('touchstart', function (e) { var b = e.target.closest('.lmui-cp'); clearTimeout(pressT); if (b) pressT = setTimeout(function () { openKey(b); }, 450); }, { passive: true });
     ['touchend', 'touchmove', 'touchcancel'].forEach(function (ev) { bar.addEventListener(ev, function () { clearTimeout(pressT); }, { passive: true }); });
+    // 滑鼠也能長按(電腦版)
+    bar.addEventListener('mousedown', function (e) { var b = e.target.closest('.lmui-cp'); clearTimeout(pressT); if (b && e.button === 0) pressT = setTimeout(function () { openKey(b); }, 450); });
+    ['mouseup', 'mouseleave'].forEach(function (ev) { bar.addEventListener(ev, function () { clearTimeout(pressT); }); });
   }
 
   function updateStats() {
@@ -1522,19 +1643,33 @@
     });
     return list;
   }
-  function updateHot() {
+  function autoHotPlan() {
     var skills = manualIds(), items = hotItems();
-    var plan = skills.map(function (id) { return { kind: 'skill', id: id }; })
+    return skills.map(function (id) { return { kind: 'skill', id: id }; })
       .concat(items.map(function (g) { return { kind: 'item', id: g.id, uid: g.uid, n: g.n }; }))
-      .slice(0, HOT_SLOTS);
-    var key = plan.map(function (p) { return p.kind + ':' + p.id; }).join(',');
+      .slice(0, HOT_ROW);
+  }
+  function hotPlan() {
+    var c = hotCustom(), out = [];
+    if (!c) { var a = autoHotPlan(); for (var i = 0; i < HOT_SLOTS; i++) out.push(a[i] || null); return out; }
+    for (var j = 0; j < HOT_SLOTS; j++) {
+      var e = c[j];
+      if (e && e.k === 'skill' && hotSkillOk(e.id)) out.push({ kind: 'skill', id: e.id });
+      else if (e && e.k === 'item' && DB.items[e.id]) out.push({ kind: 'item', id: e.id, uid: hotItemUid(e.id), n: hotItemCount(e.id) });
+      else out.push(null);
+    }
+    return out;
+  }
+  function updateHot() {
+    var plan = hotPlan();
+    var key = plan.map(function (p) { return p ? p.kind + ':' + p.id : '-'; }).join(',');
     if (key !== lastHotKey) {
       lastHotKey = key; lastHotSig = '';
       slots.forEach(function (s, i) {
         var p = plan[i] || null;
         s.kind = p ? p.kind : null; s.id = p ? p.id : null;
         if (s.img) { s.img.remove(); s.img = null; }
-        s.el.classList.remove('tip-host', 'is-cd', 'is-off'); s.el.removeAttribute('data-tip-skill');
+        s.el.classList.remove('tip-host', 'is-cd', 'is-off'); s.el.removeAttribute('data-tip-skill');   // 長按改成「設定這一格」，不再掛 afk-touchtip 的說明
         setTxt(s.n, ''); setTxt(s.cd, '');
         if (!p) { s.el.removeAttribute('aria-label'); return; }
         var d = p.kind === 'skill' ? DB.skills[p.id] : DB.items[p.id];
@@ -1543,7 +1678,6 @@
         s.img.onerror = function () { this.style.display = 'none'; };
         s.el.insertBefore(s.img, s.n);
         s.el.setAttribute('aria-label', d.n || p.id);
-        if (p.kind === 'skill') { s.el.classList.add('tip-host'); s.el.setAttribute('data-tip-skill', p.id); }   // 長按看說明（afk-touchtip）
       });
     }
     // 數量（道具）與冷卻/MP（技能）：簽章沒變就不動 DOM
@@ -1551,8 +1685,9 @@
     try { barrier = typeof inAbsBarrier === 'function' && inAbsBarrier(); } catch (e) {}
     var sig = barrier ? 'B' : '-';
     var st = plan.map(function (p, i) {
-      slots[i].uid = p.uid || null;
-      if (p.kind === 'item') { sig += '|' + p.n; return { n: p.n, off: barrier }; }
+      slots[i].uid = p ? (p.uid || null) : null;
+      if (!p) { sig += '|-'; return { off: false }; }
+      if (p.kind === 'item') { sig += '|' + p.n; return { n: p.n, off: barrier || !(p.n > 0) }; }
       var sk = DB.skills[p.id], cost = sk.mp || 0;
       try { if (player.d && player.d.getMpCost) cost = player.d.getMpCost(sk.mp || 0, sk.tier); } catch (e) {}
       var cd = Math.ceil(Math.max(0, (player.manualCd && player.manualCd[p.id]) || 0) / TICKS_PER_SEC);

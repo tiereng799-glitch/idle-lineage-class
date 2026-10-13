@@ -1552,7 +1552,6 @@ function petMigrateLegacy() {
 // ===== 🐾 寵物分頁（能力 → 寵物）：出戰寵物／召喚物／迷魅的怪，一隻一張卡（圖、名稱、等級、HP/MP、剩餘時間）=====
 //   血條沿用寵物原本的樣式（紅/藍漸層＋數字）；寵物卡可直接換寵物武器/防具（petGearOpen）。
 //   召喚物與迷魅的怪沒有 MP，只畫 HP。分頁開著才每 0.5 秒比對一次，有變才重畫。
-let _petsTabSig = '';
 function _ptBar(cur, max, kind) {
     let pct = Math.max(0, Math.min(100, Math.floor((cur || 0) / Math.max(1, max || 1) * 100)));
     let grad = kind === 'mp' ? '#2563eb,#60a5fa' : '#dc2626,#f87171';
@@ -1610,17 +1609,43 @@ function _petsTabData() {
     }
     return out;
 }
+function _petsPanelFill(el, force) {
+    if (!force && document.activeElement && el.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;   // 正在輸入喝水 %：輸入完(離開欄位)再重畫
+    let list = _petsTabData();
+    let sig = list.map(o => [o.key, o.name, o.lv, Math.floor(o.hp || 0), o.mhp, Math.floor(o.mp || 0), o.mmp, o.down ? 1 : 0, o.time, o.sig].join(':')).join('|');
+    if (!force && sig === el._ptSig) return;
+    el._ptSig = sig;
+    el.innerHTML = list.length ? list.map(_ptCard).join('')
+        : '<div class="text-slate-400 text-sm text-center" style="padding:24px 0;">身邊沒有寵物、召喚物或迷魅的怪。</div>';
+}
 function renderPetsTab(force) {
     try {
         let el = document.getElementById('tab-pets');
         if (!el || (!force && (el.classList.contains('hidden') || !el.offsetParent))) return;
-        if (!force && document.activeElement && el.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;   // 正在輸入喝水 %：輸入完(離開欄位)再重畫
-        let list = _petsTabData();
-        let sig = list.map(o => [o.key, o.name, o.lv, Math.floor(o.hp || 0), o.mhp, Math.floor(o.mp || 0), o.mmp, o.down ? 1 : 0, o.time, o.sig].join(':')).join('|');
-        if (!force && sig === _petsTabSig) return;
-        _petsTabSig = sig;
-        el.innerHTML = list.length ? list.map(_ptCard).join('')
-            : '<div class="text-slate-400 text-sm text-center" style="padding:24px 0;">身邊沒有寵物、召喚物或迷魅的怪。</div>';
+        _petsPanelFill(el, force);
     } catch (e) { console.warn('[pets-tab] 繪製失敗', e); }
 }
-setInterval(() => { renderPetsTab(false); }, 500);
+// 🐾 夥伴視窗：天堂M介面點夥伴圖示打開（內容同寵物分頁：換寵物裝備、設定喝水）。點視窗外或 ✕ 關閉；寵物裝備清單(z 96)疊在上面。
+function openCompanionPanel() {
+    if (typeof player === 'undefined' || !player || !player.cls) return;
+    closeCompanionPanel();
+    let ov = document.createElement('div');
+    ov.id = 'companion-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:12px;';
+    ov.innerHTML = `<div style="width:100%;max-width:380px;max-height:82vh;display:flex;flex-direction:column;background:#0f0c09;border:1px solid #b7791f;border-radius:10px;overflow:hidden;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #4a3f30;color:#fbbf24;font-weight:bold;font-size:16px;">🐾 夥伴<button type="button" data-close="1" style="background:none;border:0;color:#aaa;font-size:18px;cursor:pointer;">✕</button></div>
+        <div id="companion-overlay-body" class="flex flex-col gap-2" style="overflow-y:auto;padding:8px;"></div>
+    </div>`;
+    ov.addEventListener('click', ev => { if (ev.target === ov || ev.target.closest('[data-close]')) closeCompanionPanel(); });
+    document.body.appendChild(ov);
+    renderCompanionPanel(true);
+}
+function closeCompanionPanel() { let ov = document.getElementById('companion-overlay'); if (ov) ov.remove(); }
+function renderCompanionPanel(force) {
+    try {
+        let el = document.getElementById('companion-overlay-body'); if (!el) return;
+        if (typeof player === 'undefined' || !player || !player.cls) { closeCompanionPanel(); return; }
+        _petsPanelFill(el, force);
+    } catch (e) { console.warn('[companion-panel] 繪製失敗', e); }
+}
+setInterval(() => { renderPetsTab(false); renderCompanionPanel(false); }, 500);
