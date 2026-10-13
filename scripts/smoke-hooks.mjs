@@ -9,6 +9,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { chromium, devices } from 'playwright';
+import { pathToFileURL } from 'node:url';
 
 const PORT = 8799;
 const MIME = {
@@ -74,6 +75,18 @@ await page.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'domcontentl
 const _deadline = Date.now() + 20000;   // 最多等 20 秒讓全部外掛初始化(CI 較慢)
 while (Date.now() < _deadline && !seen(need)) await page.waitForTimeout(200);
 await page.waitForTimeout(300);   // 緩衝:讓 hooks 之後的索引(dex)與 AFK_EXTRA 建好,再做地圖翻譯檢查
+// afk-forcemobile:電腦/平板用 http 開 index.html 會被導去 phone.html,遊戲跑在裡面的 iframe。
+//   外層 phone.html 沒有任何遊戲全域 → 檢查一律要在「遊戲那一層」做(以前直接 page.evaluate,全部找錯層)。
+async function gameFrame(pg) {
+  if (!/\/phone\.html/.test(pg.url())) return pg.mainFrame();
+  for (let i = 0; i < 100; i++) {
+    const f = pg.frames().find((fr) => fr !== pg.mainFrame() && /\/index\.html/.test(fr.url()));
+    if (f) return f;
+    await pg.waitForTimeout(100);
+  }
+  return pg.mainFrame();
+}
+const game = await gameFrame(page);
 
 // 🚫 只迴避指定頭目(afk-bossavoid):驗「沒挑到的王真的不會觸發瞬移逃離」。
 //   為什麼非驗不可:這支的作法是在 autoActions 跑之前,把玩家沒挑到的 BOSS 實例暫時標上 noAutoTeleport,
@@ -82,7 +95,7 @@ await page.waitForTimeout(300);   // 緩衝:讓 hooks 之後的索引(dex)與 AF
 //   零錯誤訊息、hooks OK 照印,玩家只會覺得「怎麼連我沒選的也躲」。
 //   ⚠ smoke 停在主選單(沒載入角色),但 player 是物件、currentSlot=1、autoActions 可直接呼叫(實測);
 //     把 useItem 換成計數器就能確定性地看出「有沒有觸發瞬移」,不必真的消耗卷軸。
-const bossAvoidProblems = await page.evaluate(() => {
+const bossAvoidProblems = await game.evaluate(() => {
   const bad = [];
   const origUse = window.useItem;
   try {
@@ -146,7 +159,7 @@ const bossAvoidProblems = await page.evaluate(() => {
 //   pandoraCardPriceRange 拿行情價區間。上游改名或改結構(minMult/maxMult 換欄位名)時,itemInfo 只會
 //   安靜回 null → 收購欄那行與物品詳情那行整個不出現,零錯誤、hooks OK 照印,沒人會發現。
 //   ⚠ 不可在這裡呼叫 pandoraBuyOrderPrice——它走 lootRng,會推進存檔內的 committed RNG 序號。
-const bmProblems = await page.evaluate(() => {
+const bmProblems = await game.evaluate(() => {
   const bad = [];
   try {
     if (!window.AFK_BM || !AFK_BM.itemInfo) return ['AFK_BM 不存在(外掛沒載入或被關掉)'];
@@ -161,9 +174,10 @@ const bmProblems = await page.evaluate(() => {
       const info = AFK_BM.itemInfo(eq);
       if (!info || !(info.max > DB.items[eq].p) || !(info.min > 0) || !(info.min < info.max)) bad.push(`${DB.items[eq].n} 算不出成交價區間(itemInfo 回 ${JSON.stringify(info)})`);
     }
-    // 怪物卡走另一條路徑(固定區間·與售價無關),要分開驗
+    // 怪物卡走另一條路徑(固定區間·與售價無關),要分開驗。收藏關閉(DISABLE_COLLECTION)時卡片不能收購,
+    //   itemInfo 回 null 才是對的 → 只在核心允許收購卡片時驗。
     const card = Object.keys(DB.items).find((id) => DB.items[id] && DB.items[id].eff === 'card' && DB.items[id].cardTier >= 1);
-    if (card) {
+    if (card && pandoraBuyOrderAllowed(card)) {
       const ci = AFK_BM.itemInfo(card);
       if (!ci || !(ci.max > 0)) bad.push(`${DB.items[card].n} 算不出成交價(pandoraCardPriceRange 改了?)`);
     }
@@ -253,14 +267,17 @@ const tctx = await browser.newContext({
 });
 const tpage = await tctx.newPage();
 watch(tpage);
-await tpage.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+// ⚠ 用 file:// 開:http 下 afk-forcemobile 會把平板包進 430px 的手機框(phone.html),這道縫不存在、也驗不到遊戲那層;
+//   只有「下載 repo 直接開 index.html」的平板還是 820 寬的上游桌機幾何 → 那才是這輪要守的情境。
+await tpage.goto(pathToFileURL(join(process.cwd(), 'index.html')).href, { waitUntil: 'domcontentloaded' });
 await tpage.waitForTimeout(3000);
 const tabletProblems = await tpage.evaluate(() => {
   const bad = [];
   const SCROLLABLE = ['auto', 'scroll'];
   const oy = (el) => getComputedStyle(el).overflowY;
-  // 前置:只有「我方當手機、上游當桌機」這道縫才有混搭問題;兩邊同調時本檢查不適用。
-  if (!document.body.classList.contains('m-mobile')) return bad;
+  // 前置:只有「我方當手機、上游當桌機」這道縫才有混搭問題。這輪刻意造出這道縫,沒套上手機殼＝測試環境不對,
+  //   不可默默當通過(以前在 phone.html 外層跑,這兩項一直是空轉)。
+  if (!document.body.classList.contains('m-mobile')) return ['平板沒有套上手機殼(body.m-mobile)→ 這輪沒驗到東西'];
   if (matchMedia('(max-width: 768px), (max-height: 520px) and (pointer: coarse)').matches) return bad;
   const gs = document.getElementById('game-screen');
   if (gs && SCROLLABLE.includes(oy(gs))) return bad;   // 外層自己就是捲動容器 → 分頁攤平是安全的
@@ -283,7 +300,7 @@ const tabletProblems = await tpage.evaluate(() => {
 //     ①某條 @media 條件成立(手機),或 ②有一條 `body.afk-*` 規則,而那個 class 現在真的掛在 body 上(平板)。
 const tabletHudProblems = await tpage.evaluate(() => {
   const bad = [];
-  if (!document.body.classList.contains('m-mobile')) return bad;   // 沒套手機殼就不適用
+  if (!document.body.classList.contains('m-mobile')) return ['平板沒有套上手機殼(body.m-mobile)→ 這輪沒驗到東西'];
   const check = [['afk-battlehud-style', '手機戰鬥狀態列'], ['afk-battlebuffs-style', '手機戰鬥狀態欄']];
   for (const [styleId, label] of check) {
     const st = document.getElementById(styleId);
@@ -310,7 +327,7 @@ const tabletHudProblems = await tpage.evaluate(() => {
 // 🗺️ 地圖名翻譯覆蓋檢查:掉落查詢的「出沒地圖」來源＝DB.maps 的 key,經 AFK_EXTRA.mapName 解析。
 //   mapName 查不到任一中文來源時會原樣回傳英文 id(name === id),這就是「漏翻」的精準訊號。
 //   作者新增「不在 MAP_CATEGORIES/MAP_REGIONS/DB.towns…」的地圖結構時會被這裡擋下 → 提醒補進 mapName。
-const untranslatedMaps = await page.evaluate(() => {
+const untranslatedMaps = await game.evaluate(() => {
   const out = [];
   try {
     const mn = (window.AFK_EXTRA && AFK_EXTRA.mapName) ? AFK_EXTRA.mapName : null;
@@ -327,11 +344,11 @@ const untranslatedMaps = await page.evaluate(() => {
 // 🌓 色彩配置宣告:index.html 必須讓 :root 的 color-scheme 是 dark。沒有的話 Android Chrome 的
 //   「自動深色主題」會自己疊一層反轉,逐張圖判定 → 部分 NPC/怪物 sprite 變成白色人形(玩家回報過)。
 //   症狀完全不像我們的 bug(重繪/重登/清快取都無效、重裝才好),沒有這道檢查掉了不會有人發現。
-const colorScheme = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme);
+const colorScheme = await game.evaluate(() => getComputedStyle(document.documentElement).colorScheme);
 
 // 🔌 首頁只留「開始遊戲」(圖上的登錄鈕):外掛照樣往 #main-menu/舞台塞入口,靠 css/style.css 藏起來。
 //   要驗兩件事:①開始遊戲點得到 ②舞台上沒有漏網的外掛入口(新外掛換了掛法就會冒出來疊在底圖上)。
-const pluginPanelProblems = await page.evaluate(() => {
+const pluginPanelProblems = await game.evaluate(() => {
   const bad = [];
   const start = document.getElementById('btn-start-menu');
   if (!start) { bad.push('首頁「開始遊戲」按鈕不存在'); return bad; }
