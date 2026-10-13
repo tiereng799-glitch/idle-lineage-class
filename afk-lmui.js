@@ -202,6 +202,17 @@
       /* HP/MP：經典天堂那種「左右兩條＋中間圓章」的框。框借上游的 assets/character/血條底圖.png（334×34，桌機狀態面板同一張），
          調成銅色（只濾 ::before 那層，血條本身不受影響）；血條位置照上游 .status-vitals-row 的比例（左 3.3%／右 55.5%、寬 41.2%）。 */
       '#lmui-bars{position:relative;flex:none;width:100%;aspect-ratio:334/34;max-height:40px;}',
+      /* 夥伴列：寵物(項圈圖)／召喚(召喚術圖)／迷魅(迷魅術圖)，一隻一格，壓在血條上緣；點一下看狀態 */
+      '#lmui-comp{position:absolute;left:4px;bottom:100%;margin-bottom:3px;display:flex;gap:4px;z-index:5;}',
+      '.lmui-cp{position:relative;width:28px;height:28px;padding:0;border:1px solid var(--lmui-line);border-radius:4px;background:rgba(0,0,0,.6);box-shadow:0 1px 3px #000;cursor:pointer;}',
+      '.lmui-cp img{width:100%;height:100%;object-fit:contain;display:block;}',
+      '.lmui-cp i{position:absolute;left:1px;right:1px;bottom:1px;height:3px;background:#3b0a0a;}',
+      '.lmui-cp i b{display:block;height:100%;background:#ef4444;}',
+      '.lmui-cp.down{filter:grayscale(1);opacity:.55;}',
+      '.lmui-cp.on{border-color:#fde68a;box-shadow:0 0 6px #fde68a;}',
+      '#lmui-comp-pop{position:absolute;left:4px;bottom:calc(100% + 36px);min-width:150px;padding:6px 9px;background:rgba(12,9,6,.94);border:1px solid var(--lmui-line);border-radius:6px;font-size:12px;line-height:1.6;color:#eee;z-index:6;white-space:nowrap;}',
+      '#lmui-comp-pop.hidden{display:none;}',
+      '#lmui-comp-pop .t{color:#fde68a;font-weight:700;}',
       '#lmui-bars::before{content:"";position:absolute;inset:0;background:url("assets/character/血條底圖.png") center/100% 100% no-repeat;filter:sepia(1) saturate(1.6) hue-rotate(-12deg) brightness(.72) contrast(1.15);z-index:0;pointer-events:none;}',
       '.lmui-bar{position:absolute;top:50%;width:41.2%;height:46%;transform:translateY(-50%);background:#100606;border-radius:2px;overflow:hidden;box-shadow:inset 0 1px 3px #000;z-index:1;}',
       '#lmui-hp{left:3.3%;}#lmui-mp{left:55.5%;}',
@@ -566,6 +577,7 @@
       '</div>' +
       /* 狀態列：血條/魔力條（AUTO 壓在中間圓章上）＋經驗條，釘在戰鬥畫面下緣，任何分頁都在 */
       '<div id="lmui-vit">' +
+        '<div id="lmui-comp"></div><div id="lmui-comp-pop" class="hidden"></div>' +
         '<div id="lmui-bars"><div id="lmui-hp" class="lmui-bar"><i></i><span></span></div><div id="lmui-mp" class="lmui-bar"><i></i><span></span></div>' +
           '<button type="button" id="lmui-auto" class="lmui-hit">AUTO</button></div>' +
         '<div id="lmui-exp"><i></i><span></span></div>' +
@@ -583,6 +595,7 @@
 
     ['ac', 'mr', 'lv', 'hp', 'mp', 'exp', 'align', 'gold', 'mapname', 'mini', 'lines', 'tabs', 'name'].forEach(function (k) { el[k] = $('lmui-' + k); });
     if (el.name) el.name.addEventListener('click', function (e) { e.stopPropagation(); startLmuiRename(); });
+    bindCompanions();
     el.face = hud.querySelector('#lmui-face img');
     slots = Array.prototype.slice.call(hud.querySelectorAll('.lmui-slot')).map(function (b) {
       return { el: b, key: '', kind: null, id: null, uid: null, img: null, cd: b.querySelector('.cd'), n: b.querySelector('.n') };
@@ -1402,6 +1415,70 @@
     renaming = false;
     updateName();
   }
+  // ── 夥伴列(寵物／召喚／迷魅)：一隻一格小圖示，點一下顯示狀態 ─────────────
+  //   資料全讀核心：寵物 petsOutList()(js/22)、召喚 summonV2List()(js/23)＋舊制 player.summon、迷魅 player.charmed(js/07)。
+  //   迷魅的怪在核心是「從場上移除、變成看不見的幫手」，沒有立繪也沒有血量——這一格是唯一看得到牠的地方。
+  var COLLARS = ['哈士奇', '小獵犬', '暴走兔', '杜賓狗', '牧羊犬', '狐狸', '狼', '聖伯納'];
+  function collarIcon(form) {
+    var f = String(form || '').replace(/^(高等|超級|真‧)/, '').replace(/犬$/, '');
+    var hit = COLLARS.filter(function (c) { return f.indexOf(c) >= 0 || c.indexOf(f) >= 0; })[0] || '牧羊犬';
+    return encodeURI('assets/icons/items/項圈 (' + hit + ').png');
+  }
+  var SKILL_ICON = function (n) { return encodeURI('assets/icons/skills/' + n + '.png'); };
+  function companions() {
+    var out = [];
+    try { (typeof petsOutList === 'function' ? petsOutList() : []).forEach(function (p) { out.push({ key: 'pet:' + p.uid, kind: '寵物', icon: collarIcon(p.form), name: p.form, lv: p.lv, hp: p.hp, mhp: p.mhp, mp: p.mp, mmp: p.mmp, down: !!p._downed }); }); } catch (e) {}
+    try { (typeof summonV2List === 'function' ? summonV2List() : []).forEach(function (s, i) { out.push({ key: 'sum:' + (s.uid || i), kind: '召喚', icon: SKILL_ICON('召喚術'), name: s.form, lv: s.lv, hp: s.hp, mhp: s.mhp, down: !!s._downed }); }); } catch (e) {}
+    if (player.summon) out.push({ key: 'sum:old', kind: '召喚', icon: SKILL_ICON('召喚術'), name: String(player.summon.n || '召喚獸'), end: player.summon.endTick, dice: player.summon.dmgDice, itv: player.summon.interval });
+    if (player.charmed) out.push({ key: 'charm', kind: '迷魅', icon: SKILL_ICON('迷魅術'), name: String(player.charmed.n || '').replace(/^迷魅：/, ''), end: player.charmed.endTick, dice: player.charmed.dmgDice, itv: player.charmed.interval });
+    return out;
+  }
+  var compSig = '', compOpen = null, lastLong = 0;
+  function compPopHtml(c) {
+    var L = ['<div class="t">' + c.kind + '：' + c.name + (c.lv ? '　Lv' + c.lv : '') + '</div>'];
+    if (c.mhp) L.push('HP ' + Math.max(0, Math.floor(c.hp || 0)) + ' / ' + Math.floor(c.mhp) + (c.down ? '　<span style="color:#f87171">倒地中</span>' : ''));
+    if (c.mmp) L.push('MP ' + Math.max(0, Math.floor(c.mp || 0)) + ' / ' + Math.floor(c.mmp));
+    if (c.dice && c.dice.length === 2) L.push('傷害 ' + c.dice[0] + '～' + (c.dice[0] * c.dice[1]) + '，每 ' + ((c.itv || 10) / 10) + ' 秒攻擊一次');
+    if (c.end && typeof state !== 'undefined' && state) { var sec = Math.max(0, Math.floor((c.end - state.ticks) / 10)); L.push('剩餘 ' + Math.floor(sec / 60) + ' 分 ' + (sec % 60) + ' 秒'); }
+    return L[0] + L.slice(1).join('<br>');   // 標題本身是 div，後面才用 <br> 接(否則標題下多一行空白)
+  }
+  function updateCompanions() {
+    var bar = $('lmui-comp'), pop = $('lmui-comp-pop'); if (!bar || !pop) return;
+    var list = hasP() ? companions() : [];
+    var sig = list.map(function (c) { return c.key + '|' + (c.mhp ? Math.round(100 * (c.hp || 0) / c.mhp) : '') + '|' + (c.down ? 1 : 0); }).join(',') + '#' + compOpen;
+    if (sig !== compSig) {
+      compSig = sig;
+      bar.innerHTML = list.map(function (c) {
+        var pct = c.mhp ? Math.max(0, Math.min(100, Math.round(100 * (c.hp || 0) / c.mhp))) : null;
+        return '<button type="button" class="lmui-cp lmui-hit' + (c.down ? ' down' : '') + (compOpen === c.key ? ' on' : '') + '" data-k="' + c.key + '" aria-label="' + c.kind + ' ' + c.name + '">'
+          + '<img src="' + c.icon + '" alt="" onerror="this.style.visibility=&quot;hidden&quot;">' + (pct != null ? '<i><b style="width:' + pct + '%"></b></i>' : '') + '</button>';
+      }).join('');
+    }
+    var open = compOpen && list.filter(function (c) { return c.key === compOpen; })[0];
+    if (!open) { compOpen = null; pop.classList.add('hidden'); return; }
+    var h = compPopHtml(open);
+    if (pop.innerHTML !== h) pop.innerHTML = h;
+    pop.classList.remove('hidden');
+  }
+  function bindCompanions() {
+    var bar = $('lmui-comp'); if (!bar) return;
+    bar.addEventListener('click', function (e) {
+      var b = e.target.closest('.lmui-cp'); if (!b) return;
+      e.stopPropagation();
+      if (Date.now() - lastLong < 700) return;   // 長按放開後跟來的那下 click 不要又把它關掉
+      var k = b.getAttribute('data-k');
+      compOpen = (compOpen === k) ? null : k;
+      compSig = ''; updateCompanions();
+    });
+    document.addEventListener('click', function (e) { if (compOpen && !e.target.closest('#lmui-comp,#lmui-comp-pop')) { compOpen = null; compSig = ''; updateCompanions(); } });
+    // 長按也要能看(手機長按不一定觸發 click，Android 會改發 contextmenu)：長按＝打開(不切換)，並擋掉系統選單
+    var pressT = null;
+    var openKey = function (b) { if (!b) return; lastLong = Date.now(); compOpen = b.getAttribute('data-k'); compSig = ''; updateCompanions(); };
+    bar.addEventListener('contextmenu', function (e) { var b = e.target.closest('.lmui-cp'); if (!b) return; e.preventDefault(); openKey(b); });
+    bar.addEventListener('touchstart', function (e) { var b = e.target.closest('.lmui-cp'); clearTimeout(pressT); if (b) pressT = setTimeout(function () { openKey(b); }, 450); }, { passive: true });
+    ['touchend', 'touchmove', 'touchcancel'].forEach(function (ev) { bar.addEventListener(ev, function () { clearTimeout(pressT); }, { passive: true }); });
+  }
+
   function updateStats() {
     updateName();
     setTxt(el.lv, 'Lv.' + (txt('st-lv') || '--'));
@@ -1577,6 +1654,7 @@
     try { pushWindowsBelow(); } catch (e) {}
     try { toggleCls('lmui-win', anyWindowOpen()); } catch (e) {}
     try { updatePopover(); } catch (e) {}
+    try { updateCompanions(); } catch (e) {}
     if (typeof state !== 'undefined' && state && state.ff) return;   // 離線補跑期間不動畫面
     try { updateStats(); } catch (e) {}
     try { updateFace(); } catch (e) {}
