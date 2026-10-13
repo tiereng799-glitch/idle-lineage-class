@@ -1360,9 +1360,9 @@ function _updateUIImpl() {
         }
     }
 
-    // 處理背景圖片：全部職業／性別頭像統一使用 assets/character 對應的 PNG。
+    // 處理背景圖片：全部職業／性別頭像統一使用 assets/character 對應的 webp(原 PNG 一張 400KB+，轉檔後約 45KB)。
     let bgImageName = player.avatar || clsDisplayName;
-    document.getElementById('status-panel').style.backgroundImage = `url('assets/character/${bgImageName}.png')`;
+    document.getElementById('status-panel').style.backgroundImage = `url('assets/character/${bgImageName}.webp')`;
     document.getElementById('status-panel').classList.add('bg-top'); // 確保圖片從頂部對齊
 
     document.getElementById('st-ac').innerText = player.d.ac;
