@@ -1,5 +1,23 @@
 // 由 scripts/sheet-apply.mjs 從試算表自動產生。不要手改這個檔案:改試算表後到 GitHub 按「更新遊戲」。
 window.MY_TWEAKS = {
+ "gifts": [
+  {
+   "id": "2",
+   "to": "大俠梅花鹿",
+   "kind": "item",
+   "cnt": 1,
+   "item": "wpn_manawand",
+   "note": "瑪那魔杖"
+  },
+  {
+   "id": "3",
+   "to": "大俠梅花鹿",
+   "kind": "item",
+   "cnt": 1,
+   "item": "wpn_strwand",
+   "note": "力量魔法杖"
+  }
+ ],
  "deletedNew": [
   "my_sword1"
  ]
