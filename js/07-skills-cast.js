@@ -207,6 +207,7 @@ function manualCast(skId) {
         if (player.d && player.d.charmOnHit) { logSys('裝備斯克巴女皇的魅惑之吻時，迷魅術會改為命中後自動施展。'); return; }
         if(!t) { logSys('沒有目標。'); return; }
         if(t.boss) { logSys('無法魅惑 BOSS。'); return; }
+        if((t.lv || 1) > player.lv + CHARM_LV_OVER) { logSys(`無法魅惑比自己高 ${CHARM_LV_OVER} 級以上的怪物。`); return; }   // 🔧 站長規則：怪物等級 ≤ 玩家等級+5（不扣 MP）
         player.mp -= cost; cost = 0;
         // 🏅 召喚精通：對等級比自己低的非 BOSS 怪物，迷魅必定成功；否則一般迷魅成功率最高 60%（cap=12）
         if(!t.noCharm && ((hasMastery('m_summon') && !t.boss && (t.lv || 1) < player.lv) || abnormalMagicHit(t, 12))) {   // 🔧 不可迷魅(noCharm)標籤：帶此旗標的非頭目怪物迷魅必定失敗（覆蓋召喚精通的必定成功）
@@ -237,9 +238,10 @@ function manualCast(skId) {
 function rollDice(count, sides) { let s = 0; for(let i = 0; i < count; i++) s += roll(1, sides); return s; }
 let _reqWpnWarnAt = -9999;   // 🛡️ v2.6.69 審計#15：reqWpn 不符提示節流（每 60 秒最多一次）
 let _costItemWarnAt = -9999;   // 🌀 costItem 施法材料不足提示節流（每 60 秒最多一次）
+const CHARM_LV_OVER = 5;   // 🔧 站長規則：迷魅只能對「等級 ≤ 玩家等級+5」的怪（手動迷魅術與遺物魅惑之吻共用）
 function relicCharmOnHit(t) {
     let p = player;
-    if (!p || !p.d || !p.d.charmOnHit || p.charmed || !t || t.curHp <= 0 || t._dead || t.boss || t.noCharm) return false;
+    if (!p || !p.d || !p.d.charmOnHit || p.charmed || !t || t.curHp <= 0 || t._dead || t.boss || t.noCharm || (t.lv || 1) > p.lv + CHARM_LV_OVER) return false;
     if (!((hasMastery('m_summon') && (t.lv || 1) < p.lv) || abnormalMagicHit(t, 12))) return false;
     let idx = mapState.mobs.findIndex(m => m && m.uid === t.uid);
     if (idx === -1) return false;
