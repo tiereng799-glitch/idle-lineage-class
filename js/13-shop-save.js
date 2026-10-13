@@ -1792,6 +1792,10 @@ function loadGame() {
         // 修復舊版「召喚死亡後 buff 未清除」卡關：載入時若目前沒有召喚物，清除殘留的召喚 buff，
         // 讓自動施放能立即重新召喚（不必等死亡復活或 buff 自然倒數）。
         if(player.charmed === undefined) player.charmed = null;   // 相容舊存檔：迷魅獨立槽位
+        if(player.charmed && !player.charmed._charm) {   // 🩸 改版前(或遺物魅惑之吻)迷魅到的怪沒有血量：照原怪補上，才看得到血條、也會被打
+            let _cn = String(player.charmed.n || '').replace(/^迷魅：/, ''), _cm = Object.values(DB.mobs).find(m => m && m.n === _cn && !m.boss);
+            if (_cm) Object.assign(player.charmed, { _charm: true, form: _cn, lv: _cm.lv || 1, hp: Math.max(1, _cm.hp || 1), mhp: Math.max(1, _cm.hp || 1), ac: (_cm.ac != null ? _cm.ac : 10), mr: _cm.mr || 0 });
+        }
         if(player.summon && ['sk_zombie', 'sk_elf_summon', 'sk_elf_summon2'].includes(player.summon.skId)) player.summon = null;   // 🧟 v3.2.21 造屍術/屬性精靈改走 v2 實體制：清除舊管線殘留（勾選仍在→v2 自動重新召喚）
         player.summonsV2 = [];   // 🧙 v3.2.40 稽核修：v2 召喚實體不入檔（本行清 v3.2.39 以前舊檔殘留·防改名 null-deref）·勾選仍在→自動重施
         player.guardsV2 = [];    // 🏰 城堡護衛實體不入檔（讀檔後 castleGuardSync 依血盟名冊重建）

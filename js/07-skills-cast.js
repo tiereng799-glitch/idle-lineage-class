@@ -248,7 +248,8 @@ function relicCharmOnHit(t) {
     p.charmed = {
         skId:'sk_charm', n:'迷魅：' + t.n, dmgDice: t.dmg && t.dmg[1] ? t.dmg : [1,4],
         interval: Math.max(10, Math.floor((t.atkSpd || 2) * 10)), ele:'none', kind:'melee',
-        hitBonus:(t.hit||0), proc:null, cd:10, endTick: state.ticks + 36000
+        hitBonus:(t.hit||0), proc:null, cd:10, endTick: state.ticks + 36000,
+        _charm: true, form: t.n, lv: t.lv || 1, hp: Math.max(1, t.hp || 1), mhp: Math.max(1, t.hp || 1), ac: (t.ac != null ? t.ac : 10), mr: t.mr || 0   // 🩸 同手動迷魅：會被打、會死
     };
     logCombat(`<span class="font-bold" style="color:#f0abfc;text-shadow:0 0 6px #d946ef;">【魅惑術】</span><span class="${getMobColor(t.lv)}">${t.n}</span> 成為你的僕人。`, 'magic');
     if (typeof playSpellFx === 'function') { try { playSpellFx('迷魅術', t); } catch (e) {} }

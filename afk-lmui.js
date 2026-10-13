@@ -206,7 +206,7 @@
       '#lmui-comp{position:absolute;left:4px;bottom:100%;margin-bottom:3px;display:flex;gap:4px;z-index:5;}',
       '.lmui-cp{position:relative;width:28px;height:28px;padding:0;border:1px solid var(--lmui-line);border-radius:4px;background:rgba(0,0,0,.6);box-shadow:0 1px 3px #000;cursor:pointer;}',
       '.lmui-cp img{width:100%;height:100%;object-fit:contain;display:block;}',
-      '.lmui-cp i{position:absolute;left:1px;right:1px;bottom:1px;height:3px;background:#3b0a0a;}',
+      '.lmui-cp i{position:absolute;left:1px;right:1px;bottom:1px;height:5px;background:#3b0a0a;}',
       '.lmui-cp i b{display:block;height:100%;background:#ef4444;}',
       '.lmui-cp.down{filter:grayscale(1);opacity:.55;}',
       '.lmui-cp.on{border-color:#fde68a;box-shadow:0 0 6px #fde68a;}',
@@ -1417,7 +1417,7 @@
   }
   // ── 夥伴列(寵物／召喚／迷魅)：一隻一格小圖示，點一下顯示狀態 ─────────────
   //   資料全讀核心：寵物 petsOutList()(js/22)、召喚 summonV2List()(js/23)＋舊制 player.summon、迷魅 player.charmed(js/07)。
-  //   迷魅的怪在核心是「從場上移除、變成看不見的幫手」，沒有立繪也沒有血量——這一格是唯一看得到牠的地方。
+  //   迷魅的怪在核心是「從場上移除、變成看不見的幫手」，沒有立繪；血量在這一格和隊伍分頁(js/23 renderCharmTeamHTML)。
   var COLLAR_ICON = encodeURI('assets/icons/items/項圈 (牧羊犬).png');   // 站長決定：所有寵物都用牧羊犬項圈
   var SKILL_ICON = function (n) { return encodeURI('assets/icons/skills/' + n + '.png'); };
   function companions() {

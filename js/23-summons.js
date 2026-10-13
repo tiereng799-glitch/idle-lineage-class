@@ -712,6 +712,7 @@ function summonTeamSignature() {
         return list.map(s => [s.uid, s.form, s.lv || 1, Math.round((s.hp || 0) / Math.max(1, s.mhp || 1) * 20)].join(':')).join('|')
             + '#' + skId + '#' + (player && player._summonV2On ? 1 : 0) + '#' + remain   // v3.2.42 稽核修：倒數逐秒刷新（原 /10 分桶＝顯示最多滯後 10 秒）
             + '#N:' + necro.map(s => [s.uid, s._necroOwnerKey, s.lv || 1, Math.round((s.hp || 0) / Math.max(1, s.mhp || 1) * 20)].join(':')).join('|')
+            + '#C:' + ((player && player.charmed) ? [player.charmed.form, Math.round((player.charmed.hp || 0) / Math.max(1, player.charmed.mhp || 1) * 20), player.charmed._downed ? 1 : 0, Math.floor(Math.max(0, (player.charmed.endTick || 0) - ((typeof state !== 'undefined' && state && state.ticks) || 0)) / 600)].join(':') : '')   // 💫 迷魅的怪：血量(5%階)/倒下/剩餘分鐘入簽章
             + '#M:' + ((typeof mercSummonList === 'function') ? mercSummonList().map(s => [s.uid, s.form, Math.round((s.hp || 0) / Math.max(1, s.mhp || 1) * 20)].join(':')).join('|') : '');   // 🧱 v3.4.51 傭兵召喚物血量(5%階)入簽章→掉血/死亡/重施 500ms 內刷新 team 分頁
     } catch (e) { return ''; }
 }
@@ -745,6 +746,24 @@ function renderSummonTeamHTML() {
             </div>
             ${rows || '<div class="bg-slate-800/80 border border-purple-900 rounded px-2 py-1 text-xs text-slate-400">等待重新召喚</div>'}
             ${regular.length ? '<button onclick="summonV2Recast()" class="btn w-full text-xs font-bold" style="padding:3px 0;background:linear-gradient(135deg,#4c1d95,#6d28d9);border:1px solid #7c3aed;color:#ddd6fe;border-radius:4px;">重新施放</button>' : ''}`;
+    } catch (e) { return ''; }
+}
+// 💫 迷魅的怪 HP 卡（站長規則：迷魅的怪會被打、會死 → 跟寵物一樣要看得到血量）。樣式比照寵物卡；倒下由 js/07 summonTick 清掉，這裡不畫倒地卡。
+function renderCharmTeamHTML() {
+    try {
+        const c = (typeof player !== 'undefined' && player) ? player.charmed : null;
+        if (!c || !c._charm || c._downed || !(c.mhp > 0)) return '';
+        const hpPct = Math.max(0, Math.min(100, Math.floor((c.hp || 0) / Math.max(1, c.mhp) * 100)));
+        const sec = Math.max(0, Math.floor(((c.endTick || 0) - ((typeof state !== 'undefined' && state && state.ticks) || 0)) / 10));
+        const icon = encodeURI('assets/icons/skills/迷魅術.png');
+        return `<div class="bg-slate-800/80 border rounded text-xs" style="padding:3px 6px;border-color:#9d174d;">
+            <div class="flex items-center gap-2">
+                <img src="${icon}" alt="" style="width:22px;height:22px;object-fit:contain;" onerror="this.style.display='none'">
+                <span class="flex-1 min-w-0" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><span class="text-pink-300 font-bold">💫 ${c.form}</span> <span class="text-amber-300">Lv.${c.lv || 1}</span></span>
+                <span class="text-slate-400 whitespace-nowrap" style="font-size:10px;">剩 ${Math.floor(sec / 60)} 分</span>
+            </div>
+            <div class="bar-bg compact-team-bar" style="margin-top:2px;" title="HP ${c.hp || 0}/${c.mhp}"><div class="bar-fill" style="width:${hpPct}%;background:linear-gradient(90deg,#dc2626,#f87171);"></div><div class="bar-text text-white">${Math.max(0, Math.floor(c.hp || 0))}/${c.mhp}</div></div>
+        </div>`;
     } catch (e) { return ''; }
 }
 // 🧱 v3.4.51 傭兵召喚物 HP 卡（比照玩家召喚物呈現·接在其後）：v3.4.50 起傭兵召喚物無 sprite 但有血量·此為唯一血量可視化。

@@ -2580,7 +2580,8 @@ function renderSquadPanel() {
     let _summonSk = (typeof summonV2ActiveSk === 'function') ? summonV2ActiveSk() : '';
     let _summonVisible = _summons.length > 0 || !!(player && player._summonV2On && _summonSk && typeof summonV2Knows === 'function' && summonV2Knows(_summonSk));
     let _guards = (typeof guardV2List === 'function' && player && player.cls) ? guardV2List() : [];   // 🏰 城堡護衛（可招募的協同角色）
-    if (!allies.length && !_pets.length && !_summonVisible && !_guards.length) { panel.style.display = 'none'; _squadSigTeam = ''; _squadSigSkill = ''; return; }
+    let _charmOut = !!(player && player.charmed && player.charmed._charm && !player.charmed._downed);   // 💫 只有迷魅的怪在身邊也要顯示隊伍面板(看牠的血量)
+    if (!allies.length && !_pets.length && !_summonVisible && !_guards.length && !_charmOut) { panel.style.display = 'none'; _squadSigTeam = ''; _squadSigSkill = ''; return; }
     panel.style.display = '';
     let _sigAllies = allies.map(a => a._slot + ':' + (a._allyName || '') + ':' + (a._downed ? 'D' : '') + ':' + (a.lv || 1)).join('|');
     let sigTeam = _sigAllies
@@ -2617,6 +2618,7 @@ function renderSquadPanel() {
             </div>`;
         }).join('')
             + ((typeof renderPetTeamHTML === 'function') ? renderPetTeamHTML() : '')
+            + ((typeof renderCharmTeamHTML === 'function') ? renderCharmTeamHTML() : '')
             + ((typeof renderSummonTeamHTML === 'function') ? renderSummonTeamHTML() : '')
             + ((typeof renderMercSummonTeamHTML === 'function') ? renderMercSummonTeamHTML() : '')
             + ((typeof renderGuardTeamHTML === 'function') ? renderGuardTeamHTML() : '');   // 隊伍排列：傭兵 → 寵物 → 玩家召喚物 → 傭兵召喚物 → 🏰 城堡護衛
