@@ -2736,3 +2736,29 @@ function setAllyAutoBuff(slot, sid, on) {
 //    自 v2.6.74「自動化設定改分頁內嵌」後已不存在於任何 HTML/CSS，兩函式零外部呼叫者，寫入的 fb5_automation_collapsed 亦零讀取端。
 //    （比照 v2.6.76 處理 _applySquadCollapse/toggleSquadCollapse 的先例。）
 // 🔧 v2.6.76 傭兵隊伍面板收合已移除（恆展開·用戶要求）：_applySquadCollapse/toggleSquadCollapse 刪除、index.html 標題列改純標題無箭頭。
+
+// 🖥️ 畫面狀態 class（掛在 body）：取代 CSS 的 `:has(#某元素:not(.hidden))`。
+//   :has() 掛在 body / #col-center 這種大祖先、參數又看 .hidden 時，畫面上「任何」元素切換 hidden（戰鬥中每秒幾十次）
+//   都會讓瀏覽器把整個祖先子樹重算樣式。手機模擬（CPU 4x、掛機 30 秒）：樣式重算 −75%、長任務 30→7 次。
+//   改成只盯這幾個元素自己的 class，變了才同步到 body；MutationObserver 在下一次繪製前就跑完，畫面不會閃。
+//   核心 css/style.css 與外掛（afk-lmui、afk-npclist）都讀這組 class → 放核心，不可做成能關掉的外掛。
+(function syncViewStateClasses() {
+    const MAP = [
+        ['battle-view', 'view-battle-fit', el => el.classList.contains('area-fit') && !el.classList.contains('hidden')],
+        ['town-view', 'view-town', el => !el.classList.contains('hidden')],
+        ['item-modal', 'item-modal-open', el => !el.classList.contains('hidden')],
+        ['town-interaction-container', 'town-int-open', el => !el.classList.contains('hidden')],
+    ];
+    function apply() {
+        for (const [id, cls, on] of MAP) {
+            const el = document.getElementById(id), want = !!el && on(el);
+            if (document.body.classList.contains(cls) !== want) document.body.classList.toggle(cls, want);
+        }
+    }
+    function start() {
+        const mo = new MutationObserver(apply);
+        for (const [id] of MAP) { const el = document.getElementById(id); if (el) mo.observe(el, { attributes: true, attributeFilter: ['class'] }); }
+        apply();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
