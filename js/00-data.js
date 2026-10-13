@@ -304,6 +304,8 @@ const DISABLE_COLLECTION = true;
 //   NO_REMOTE_WAREHOUSE：製作/NPC 兌換/試煉交付/施法耗材只用背包，不能遠端吃倉庫(要用先自己取出來)；
 //     身上穿的、上鎖的本來就不算材料
 const NO_REMOTE_WAREHOUSE = true;
+//   SHARED_WAREHOUSE：所有角色共用同一個倉庫(不再依經典模式分兩個)；舊的經典倉庫開機時自動併進來(js/12 _mergeClassicWarehouse)
+const SHARED_WAREHOUSE = true;
 
 const DB = {
         items: {

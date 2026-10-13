@@ -4,7 +4,8 @@ const WH_KEY = 'lineage_idle_warehouse';
 // 🎮 模式桶鍵後綴（倉庫桶／圖鑑桶／傭兵同模式招募共用·單一真相）：經典→'_classic'、一般→''。
 //   ⚠️v3.0.83 傳統模式已取消：t 參數忽略（一般+傳統→一般、經典+傳統→經典）；舊 '_tradonly'/'_trad' 桶由下方 _mergeTradBuckets 一次性併入。
 function modeSuffix(c, t){ return c ? '_classic' : ''; }
-function whKey(p){ let _p = (p !== undefined) ? p : player; return WH_KEY + modeSuffix(!!(_p && _p.classicMode), !!(_p && _p.traditionalMode)); }   // 🏛️🎮 依模式組合取對應倉庫桶
+function whKey(p){ if (SHARED_WAREHOUSE) return WH_KEY;   // 所有角色共用一個倉庫(js/00 SHARED_WAREHOUSE)
+    let _p = (p !== undefined) ? p : player; return WH_KEY + modeSuffix(!!(_p && _p.classicMode), !!(_p && _p.traditionalMode)); }   // 🏛️🎮 依模式組合取對應倉庫桶
 const WH_MAX = 5000;   // 倉庫格數上限（🔧 100 → 200 → 500 → 5000）
 const WH_NO_STORE = ['item_dk_insignia','item_mastery_proof',   // 🚫 v3.2.17 舊項圈 id 已隨項圈系統移除
     'item_pride_pass_11','item_pride_pass_21','item_pride_pass_31','item_pride_pass_41','item_pride_pass_51','item_pride_pass_61','item_pride_pass_71','item_pride_pass_81','item_pride_pass_91',
@@ -285,7 +286,29 @@ function _mergeTradBuckets(){
         }
     }
 }
-if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('DOMContentLoaded', function(){ try { _mergeTradBuckets(); } catch(e){} });
+// 🏦 共用倉庫(SHARED_WAREHOUSE)：舊的經典模式倉庫 _classic 併進一般倉庫——物品依 uid 去重、金幣相加、墓碑聯集；
+//   一般桶的墓碑(已被領出的 uid)不併回＝防複製。寫入成功才刪來源；任一桶解不開就整個跳過、原樣保留(下次開機再試)。
+//   每次開機都跑：還開著舊版的分頁若又寫了 _classic，下次也會併回來。
+function _mergeClassicWarehouse(){
+    if (!SHARED_WAREHOUSE) return;
+    let SRC = WH_KEY + '_classic', DST = WH_KEY;
+    let _read = key => { let raw; try { raw = _lsGet(key); } catch(e){ return { bad: true }; } if (raw == null) return { miss: true }; try { let s = _lzGet(key); if (s == null || s === '') return { bad: true }; return { obj: JSON.parse(s) }; } catch(e){ return { bad: true }; } };
+    let sw = _read(SRC); if (!sw.obj) return;
+    let dw = _read(DST); if (dw.bad) return;
+    let st = _read(SRC + '_rm'), dt = _read(DST + '_rm'); if (st.bad || dt.bad) return;
+    let tombs = Object.assign({}, (st.obj && typeof st.obj === 'object') ? st.obj : {}, (dt.obj && typeof dt.obj === 'object') ? dt.obj : {});
+    let d = dw.obj || { items: [], gold: 0 };
+    let items = (d.items || []).slice();
+    let have = new Set(items.map(it => it && it.uid).filter(u => u != null));
+    let moved = 0;
+    (sw.obj.items || []).forEach(it => { if (!it || (it.uid != null && (have.has(it.uid) || tombs[it.uid]))) return; items.push(it); moved++; });
+    let gold = (d.gold || 0) + (sw.obj.gold || 0);
+    if (!_lzSet(DST, JSON.stringify({ items: items, gold: gold }))) return;
+    try { _lzSet(DST + '_rm', JSON.stringify(tombs)); } catch(e){}
+    _lsRemove(SRC); try { _lsRemove(SRC + '_rm'); } catch(e){}
+    if (moved || sw.obj.gold) console.info('[倉庫] 經典模式倉庫已併入共用倉庫：物品 ' + moved + ' 疊、金幣 ' + (sw.obj.gold || 0));
+}
+if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('DOMContentLoaded', function(){ try { _mergeTradBuckets(); } catch(e){} try { _mergeClassicWarehouse(); } catch(e){} });
 // 讀檔／創角時呼叫：把共用桶併進 player.cardDex/equipDex（卡片取較高分·裝備取聯集·只增不減），並回寫共用桶（種子化＋遷移舊存檔 per-character 資料·不丟失）
 function loadSharedCollections(){
     if (!player) return;
@@ -533,10 +556,14 @@ function renderWarehouseNPC(div){
             <span class="text-slate-300 font-bold ms-2">搜尋：</span>
             <input id="wh-search-input" type="search" placeholder="輸入 2 字以上" value="${_whEscAttr(_whSearchInput)}" oninput="whSetSearch(this.value, this.selectionStart, event)" title="輸入 2 字以上時，跨分類模糊搜尋背包與倉庫物品（支援注音等中文輸入法）" class="w-44 bg-slate-900 border border-slate-600 text-white rounded h-8 px-2">
             ${_whSearchInput ? '<button onclick="whClearSearch()" class="btn px-3 text-xs font-bold h-8 inline-flex items-center justify-center" title="清除搜尋">清除</button>' : ''}
-            <span class="text-slate-300 font-bold ms-2">數量：</span>
-            <input id="wh-qty-amt" type="number" min="1" placeholder="全部" value="${_whQtyInput}" oninput="whSetQty(this.value)" title="存入／取出的數量；留空或 0 ＝整疊全部（不再使用跳出式輸入框）" class="w-20 bg-slate-900 border border-slate-600 text-center text-white rounded h-8">
             <button onclick="whOneClickDeposit()" class="btn px-4 text-sm font-bold h-8 inline-flex items-center justify-center ms-auto" style="background: linear-gradient(135deg, #0c4a5e 0%, #0e7490 28%, #0a3d4d 52%, #11657e 76%, #093440 100%); color: #a5f3fc; border-color: #0891b2;" title="把背包中與倉庫現有物品（詞綴+名字+強化值完全相同）的物品自動存入；鎖定物品不動">一鍵存入</button>
             <button onclick="sortWarehouse()" class="btn px-4 text-sm font-bold h-8 inline-flex items-center justify-center" style="background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 28%, #16294a 52%, #1d4ed8 76%, #101f38 100%); color: #bfdbfe; border-color: #3b82f6;" title="依背包一鍵排列的相同規則整理倉庫物品">一鍵排列</button>
+        </div>
+        <div class="flex items-center gap-2 mb-2" style="flex-wrap:wrap;padding:6px 8px;border:1px solid #b7791f;border-radius:8px;background:rgba(120,80,10,.18)">
+            <span class="font-bold text-yellow-300">存取數量</span>
+            <input id="wh-qty-amt" type="number" min="1" placeholder="全部" value="${_whQtyInput}" oninput="whSetQty(this.value)" class="w-20 bg-slate-900 border border-slate-600 text-center text-white rounded h-8">
+            ${['1','10','100',''].map(v => `<button type="button" onclick="whSetQty('${v}');var e=document.getElementById('wh-qty-amt');if(e)e.value='${v}'" class="btn px-3 text-sm font-bold h-8">${v || '全部'}</button>`).join('')}
+            <span class="text-slate-400 text-xs">點物品就存入／取出這個數量；全部＝整疊</span>
         </div>
         <div class="grid grid-cols-2 gap-3">
             <div class="flex flex-col min-h-0">
@@ -736,7 +763,7 @@ function questCountForOwner(owner, id, pending, assignedOnly) {
     let wh = 0;
     try {
         if (!NO_REMOTE_WAREHOUSE && typeof whCountId === 'function' && typeof player !== 'undefined' && player
-            && !!owner.classicMode === !!player.classicMode && !!owner.traditionalMode === !!player.traditionalMode) wh = whCountId(id);
+            && (SHARED_WAREHOUSE || (!!owner.classicMode === !!player.classicMode && !!owner.traditionalMode === !!player.traditionalMode))) wh = whCountId(id);
     } catch (e) {}
     return inv + wh + Math.max(0, Math.floor(Number(pending) || 0));
 }
