@@ -102,7 +102,6 @@
         { id: 'powersave', name: '省電模式', desc: '省電選項：降低畫面更新頻率、關動畫、關光暈濾鏡、關特效與音效', group: '系統與其他' },
         { id: 'skin', name: '首頁外掛入口/資訊', desc: '整理首頁的外掛入口，並顯示原作者連結與最後同步原版的時間', group: '系統與其他' },
         { id: 'offline', name: '離線快速結算', desc: '關掉遊戲回來自動結算掛機收益', group: '遊戲玩法' },
-        { id: 'traditional', name: '傳統模式(偽)', desc: '打到或做出來的裝備自帶隨機強化值（在選角卡右上角逐角色開關）', group: '遊戲玩法' },
         { id: 'dograce', name: '賽狗場', desc: '賭哪隻狗第一，押金幣或龍鑽、中了自動入袋（自動化分頁開啟）', group: '遊戲玩法' },
         { id: 'anyclass', name: '裝備不限職業/性別', desc: '所有裝備都不看職業與性別，任何角色都能裝；關掉後穿不上的會自動卸回背包', group: '遊戲玩法', def: false }
     ].forEach(api.register);

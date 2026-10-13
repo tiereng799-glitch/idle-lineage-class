@@ -136,7 +136,7 @@ function gainItem(id, cnt=1, silent=false, forceNormal=false, affixOld=false, de
     //   既有裝備上的舊詞綴保留顯示（名稱前綴/資訊欄）但不再計入套裝件數（recomputeStats 只掃遺骸欄）。
     let seteff = false;
 
-    let _tEn = (typeof window.__afkTradRollEn === 'function') ? (window.__afkTradRollEn(d, forceNormal, _noAffixCtx) || 0) : 0;   // 🔌 加掛版補丁：偽傳統(自動衝裝)自帶強化值鉤子（外掛 afk-traditional 提供；未載/未開→0）
+    let _tEn = 0;   // 🔧 站長規則：掉落/製作的裝備一律 +0（「傳統模式(偽)」自帶隨機強化值的外掛 afk-traditional 已移除）
     let _probe = { id: id, en: _tEn, bless: bless, anc: anc, attr: attr, seteff: seteff };
     // 🔒 v3.6.92 改為「併入鎖定堆疊」（用戶拍板·取代 v3.5.84 的分裂制）：鎖定的物品再次獲得→直接併同一格，
     //    整疊都受鎖定保護（＝要用就得先手動解鎖整疊）。同簽章永遠只有一格是本作現行不變量，

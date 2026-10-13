@@ -692,7 +692,6 @@
     <!-- afk-buyercompat：收購 NPC 向下兼容（收 +6 也可以繳 +15）——需搭配 apply-core-patches 補丁 13 的 __afkBuyerEnMatch 鉤子；排在 afk-locksafe 之後＝在最外層 -->
     <script src="afk-buyercompat.js?v=c724720a1b"></script>
     <!-- 傳統模式(偽)/自動衝裝：需搭配 scripts/apply-core-patches.mjs 的 gainItem _tEn 鉤子 -->
-    <script src="afk-traditional.js?v=b77e33df5a"></script>
     <script src="afk-warehouse.js?v=ae8c589300"></script>
     <!-- 倉庫批次存取:勾選/全選一次搬完(核心是一件一件搬、每件都 saveGame,幾千格搬不動);排在 afk-warehouse 之後 → afterRender 在它的注入之後才跑 -->
     <script src="afk-whbatch.js?v=40dee81b7f"></script>
