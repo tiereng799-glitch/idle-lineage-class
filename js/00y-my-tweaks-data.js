@@ -18,6 +18,10 @@ window.MY_TWEAKS = {
    "note": "力量魔法杖"
   }
  ],
+ "rates": {
+  "summonHit": 1.2,
+  "compAggro": 1.5
+ },
  "deletedNew": [
   "my_sword1"
  ]
