@@ -53,7 +53,7 @@
             //   兩層巢狀捲動打架＝滾一下就卡住(使用者回報)。把它的 min-height 改成剛好=讓位後可視高度 → 只剩它單層捲。
             'body.m-mobile #load-select-panel:not(.hidden){ min-height: calc(100dvh - var(--orig-bar-h, 0px)) !important; overscroll-behavior: contain !important; }\n'
             // 選角面板顯示時，讓外層 #creation-screen 完全不捲(它自己會捲)→ 只剩 panel 單層捲，不再兩層打架卡住。
-            + 'body.m-mobile #creation-screen:has(#load-select-panel:not(.hidden)){ overflow: hidden !important; }\n'
+            + 'body.m-mobile.load-select-open #creation-screen{ overflow: hidden !important; }\n'   // load-select-open 由核心 js/10 同步(不用 :has，會讓整頁樣式一直重算)
             //   ① 置中類 Tailwind modal(.fixed.inset-0·flex 置中)：padding 把置中內容夾進安全區(遊戲畫面容器用 id 非這組 class，不受影響)。
             + 'body.m-mobile .fixed.inset-0{ padding-top: var(--orig-bar-h, 0px); padding-bottom: var(--m-nav-h, 0px); }\n'
             //   ② A 型·頂端錨定的浮動窗(倉庫/道具詳情/黑市·NPC)：核心手機把它們釘 top:8px + 100dvh 高、無視橫幅與導覽

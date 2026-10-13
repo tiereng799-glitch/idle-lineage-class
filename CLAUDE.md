@@ -80,7 +80,7 @@
 
 - **本 repo 的 `git push` 一定要使用者親口說了才能做**(全域那條「push 不必再問」在這裡不適用):使用者開口後,在指令尾端加註解 `#user-approved` 才放行,**沒得到同意不可以自己加**。已由 `prepush-guard.mjs` 硬擋(Bash / PowerShell 兩個工具都收,實測過)。「誰決定上線」與「內容夠不夠格上線」是兩層,各擋各的——有你同意但 stamp 沒跑,照樣擋。
 - 完整步驟在 skill 裡,這裡只留一條原則:**commit 階段不 bump/stamp**——那是 push/發版流程的事(功能做完就 commit,等說要 push 才跑 /prepush 一次處理)。
-- 其餘不必自己記:`?v=` 沒對齊內容、核心補丁掉了、sw.js 的 `CODE_VERSION` 過時、rebase 衝突標記殘留、afk-*.js 沒在 index.html 引用、音檔索引沒重產、**外掛錨到已不存在的 DOM id**(`scripts/check-dom-ids.mjs`;同步上游流程尾端也會跑) —— `.claude/hooks/prepush-guard.mjs` 會在 `git push` 前 exit 2 硬擋並印出要跑的指令。(`?v=` 漏 bump 的後果是**新舊混搭**:玩家快取時序決定,低機率無法重現,踩過整晚收益歸零——所以才做成硬擋。)
+- 其餘不必自己記:`?v=` 沒對齊內容、核心補丁掉了、sw.js 的 `CODE_VERSION` 過時、rebase 衝突標記殘留、afk-*.js 沒在 index.html 引用、音檔索引沒重產、**外掛錨到已不存在的 DOM id**(`scripts/check-dom-ids.mjs`;同步上游流程尾端也會跑)、**CSS 用 `:has()` 看 `.hidden`**(`scripts/check-css-has.mjs`;會讓手機戰鬥整頁重算樣式而卡頓) —— `.claude/hooks/prepush-guard.mjs` 會在 `git push` 前 exit 2 硬擋並印出要跑的指令。(`?v=` 漏 bump 的後果是**新舊混搭**:玩家快取時序決定,低機率無法重現,踩過整晚收益歸零——所以才做成硬擋。)
 
 ## 暫存 / 測試
 
