@@ -2741,13 +2741,15 @@ function setAllyAutoBuff(slot, sid, on) {
 //   :has() 掛在 body / #col-center 這種大祖先、參數又看 .hidden 時，畫面上「任何」元素切換 hidden（戰鬥中每秒幾十次）
 //   都會讓瀏覽器把整個祖先子樹重算樣式。手機模擬（CPU 4x、掛機 30 秒）：樣式重算 −75%、長任務 30→7 次。
 //   改成只盯這幾個元素自己的 class，變了才同步到 body；MutationObserver 在下一次繪製前就跑完，畫面不會閃。
-//   核心 css/style.css 與外掛（afk-lmui、afk-npclist）都讀這組 class → 放核心，不可做成能關掉的外掛。
+//   scripts/check-css-has.mjs 會在 push 前擋下新的 `:has(… .hidden …)`；要加條件就加進下面的 MAP。
+//   核心 css/style.css 與外掛（afk-lmui、afk-npclist、afk-mobile）都讀這組 class → 放核心，不可做成能關掉的外掛。
 (function syncViewStateClasses() {
     const MAP = [
         ['battle-view', 'view-battle-fit', el => el.classList.contains('area-fit') && !el.classList.contains('hidden')],
         ['town-view', 'view-town', el => !el.classList.contains('hidden')],
         ['item-modal', 'item-modal-open', el => !el.classList.contains('hidden')],
         ['town-interaction-container', 'town-int-open', el => !el.classList.contains('hidden')],
+        ['load-select-panel', 'load-select-open', el => !el.classList.contains('hidden')],
     ];
     function apply() {
         for (const [id, cls, on] of MAP) {
