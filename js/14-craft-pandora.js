@@ -1040,6 +1040,29 @@ function doCraft(npcId, recipeIdx, sherine) {   // 🔮 sherine 參數保留簽�
     // 選擇數量超過可製作數時，自動做出可製作的最大量
     let makeCount = Math.min(qty, maxCraftable);
 
+    // 🥾 配方要的裝備正穿在身上、背包＋倉庫又不夠 → 擋下，不要自動補製。
+    //   身上穿的本來就不算材料；但那件若能被製作(例:長靴＝蛻皮＋線)，ensureMaterial 會悄悄拿底層材料做一件新的來用，
+    //   玩家看到「鋼鐵長靴做好了、身上的長靴還在、蛻皮和線不見了」＝以為穿著的被當材料卻沒扣(玩家回報)。
+    //   玩家本意是用身上那件 → 請他先脫下。整棵配方樹都檢查(中間物也可能是穿著的裝備)。
+    {
+        let _worn = new Set(Object.values(player.eq || {}).filter(Boolean).map(e => e.id));
+        let _blocked = [];
+        let _walk = (req, mult, depth) => {
+            if (depth > 24) return;
+            for (let q of req) {
+                let need = q.cnt * mult, dq = DB.items[q.id];
+                if (dq && ['wpn', 'arm', 'acc'].includes(dq.type) && _worn.has(q.id) && invCountId(q.id) < need) { if (!_blocked.includes(dq.n)) _blocked.push(dq.n); continue; }
+                let sub = RECIPE_BY_RESULT[q.id];
+                if (sub && invCountId(q.id) < need) _walk(sub.req, Math.ceil((need - invCountId(q.id)) / (sub.yield || 1)), depth + 1);
+            }
+        };
+        _walk(recipe.req, makeCount, 0);
+        if (_blocked.length) {
+            logSys(`<span class="text-red-400 font-bold">需要的「${_blocked.join('、')}」正穿在身上，先脫下來再製作。</span>`);
+            return;
+        }
+    }
+
     // 🔮 席琳製作：每件成品消耗 1 個席琳結晶；結晶不足時以結晶數為上限（🔧 含倉庫存量）
     if (sherine) {
         let _cc = invCountId('sherine_crystal');
