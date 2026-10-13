@@ -12,8 +12,9 @@ permissions:
   contents: write
   pages: write
 
+# 與「自動更新版本號」共用同一組:兩支都會推 main,同時跑會互相擠掉
 concurrency:
-  group: apply-sheet
+  group: push-main
   cancel-in-progress: false
 
 jobs:
@@ -58,6 +59,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "更新遊戲:套用試算表的修改(由 ${{ github.actor }} 觸發)"
+          git pull --rebase origin main
           git push
           echo "pushed=yes" >> "$GITHUB_OUTPUT"
           echo "✅ 已上傳,約 5 分鐘後網站更新。" >> "$GITHUB_STEP_SUMMARY"
