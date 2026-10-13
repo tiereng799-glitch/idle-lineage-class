@@ -40,8 +40,8 @@
         //    列表壓成一小條、下面留一大片空白。改成吃滿剩餘高度(整條鏈都要放行,否則某一層 flex:0 0 auto 就卡住)。
         //    只在手機動:桌機 800×450 本來就夠放,不需要改版面。
         '@media (max-width: 768px), (max-height: 520px) and (pointer: coarse){',
-        'body.afk-npclist #game-screen:has(#town-view:not(.hidden)) #col-center{flex:1 1 auto !important;min-height:0;}',
-        'body.afk-npclist #col-center:has(#town-view:not(.hidden)) #map-view-panel{flex:1 1 auto !important;min-height:0;}',
+        'html body.afk-npclist.view-town #game-screen #col-center{flex:1 1 auto !important;min-height:0;}',
+        'html body.afk-npclist.view-town #col-center #map-view-panel{flex:1 1 auto !important;min-height:0;}',
         'body.afk-npclist #town-view:not(.hidden){aspect-ratio:auto !important;height:auto !important;flex:1 1 auto !important;min-height:200px;}',
         '}'
     ].join('\n');

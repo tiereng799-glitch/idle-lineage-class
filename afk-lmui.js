@@ -107,17 +107,17 @@
       B + '.lmui-below>*{max-height:100% !important;overflow:auto !important;}',
       B + '.lmui-below-c{top:var(--lmui-pop-top) !important;bottom:auto !important;left:var(--lmui-pop-side) !important;right:var(--lmui-pop-side) !important;width:auto !important;height:auto !important;max-height:calc(100dvh - var(--lmui-pop-top) - var(--lmui-pop-bot)) !important;transform:none !important;overflow:auto !important;border-radius:10px !important;box-shadow:0 0 0 100vmax rgba(0,0,0,.55),0 10px 40px rgba(0,0,0,.9) !important;}',
       /* 彈窗開著時收起下方 HUD：#app-stage 是 fixed＝自成疊層，裡面的彈窗 z-index 再高也蓋不過 body 層的 HUD。
-         :has() 讓常見的兩種當下就收（不等 tick）；其餘彈窗由 tick 掛 .lmui-win。 */
+         核心 js/10 同步到 body 的 item-modal-open / town-int-open 讓常見的兩種當下就收（不等 tick；不用 :has()，那會讓整頁樣式一直重算）；其餘彈窗由 tick 掛 .lmui-win。 */
       'body.lmui-battle.lmui-win #lmui-hud>:not(#lmui-mobinfo):not(#lmui-tl):not(#lmui-tr):not(#lmui-vit),' +
       'body.lmui-battle.mlog-open #lmui-bottom,' +
       'body.lmui-battle.lmui-map #lmui-bottom,body.lmui-battle.lmui-dead #lmui-bottom,' +
       /* 下方 HUD 只屬於「戰鬥」分頁；切到背包/素質/隊伍時下半給分頁內容 */
       'body.lmui-battle:not(.mview-center) #lmui-bottom{display:none !important;}',
-      'body.lmui-battle:has(#item-modal:not(.hidden)) #lmui-hud>:not(#lmui-mobinfo):not(#lmui-tl):not(#lmui-tr):not(#lmui-vit){display:none !important;}',
+      'body.lmui-battle.item-modal-open #lmui-hud>:not(#lmui-mobinfo):not(#lmui-tl):not(#lmui-tr):not(#lmui-vit){display:none !important;}',
       'body.lmui-battle.lmui-mobinfo #lmui-hud>:not(#lmui-mobinfo):not(#lmui-tl):not(#lmui-tr):not(#lmui-vit){visibility:hidden !important;}',
       /* 子分頁列（工具列正上方那排）也是 fixed、層級很高，彈窗開著時會蓋住視窗底部 → 一起收起 */
       'body.lmui-win #lmui-bagtabs,body.lmui-mobinfo #lmui-bagtabs,body.lmui-npcwin #lmui-bagtabs{display:none !important;}',
-      'body.lmui:has(#item-modal:not(.hidden)) #lmui-bagtabs{display:none !important;}',
+      'body.lmui.item-modal-open #lmui-bagtabs{display:none !important;}',
       /* 怪物血條移到頭上（名字下方）：怪物卡是直向 flex（名字/徽章/圖/狀態/血條），只改 order 不動結構 */
       B + '#mob-list .mob-target>.mob-name{order:-2;}',
       B + '#mob-list .mob-target>.mob-hp-bar{order:-1;margin:1px 0 2px !important;}',
@@ -397,7 +397,7 @@
          村莊沒有戰鬥畫面要避開，可以蓋過上半部的村莊地圖。開著時 HUD（頭像列/狀態列）先收起來（它在 body 層會疊到視窗上）。 */
       'html body.lmui-town #town-interaction-container:not(.hidden){position:fixed !important;top:var(--lmui-pop-top) !important;bottom:auto !important;left:var(--lmui-pop-side) !important;right:var(--lmui-pop-side) !important;width:auto !important;height:auto !important;max-height:calc(100dvh - var(--lmui-pop-top) - var(--lmui-pop-bot)) !important;margin:0 !important;transform:none !important;border-radius:10px !important;border:1px solid #8a6a3a !important;background:linear-gradient(#1f1912,#0e0b08) !important;box-shadow:0 0 0 100vmax rgba(0,0,0,.55),0 10px 40px rgba(0,0,0,.9) !important;z-index:20 !important;}',
       'body.lmui-npcwin #lmui-hud>:not(#lmui-tl):not(#lmui-tr):not(#lmui-vit){display:none !important;}',
-      'body.lmui-town:has(#town-interaction-container:not(.hidden)) #lmui-hud>:not(#lmui-tl):not(#lmui-tr):not(#lmui-vit){display:none !important;}',   // 同上，開的當下就收（不等 tick）
+      'body.lmui-town.town-int-open #lmui-hud>:not(#lmui-tl):not(#lmui-tr):not(#lmui-vit){display:none !important;}',   // 同上，開的當下就收（不等 tick）
       /* 不顯示的 NPC（龍鑽收購、傭兵公會）：卡片與地圖都藏 */
       'html body.lmui-town .lmui-npc-off,html body.lmui-town #afk-npclist .afk-npcl-row.lmui-npc-off{display:none !important;}',
       /* NPC 對話標題：金色「名字（職稱）」＋右邊金幣 */
