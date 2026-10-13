@@ -1153,36 +1153,44 @@ function applyMobMagicToPet(mob, sk, p) {
     petMarkDirty();
 }
 function petTryPotion(p) {   // HP<X% 用治癒藥水（邏輯同傭兵 allyTryPotion：喝「隊長設定的藥水」·缺貨且勾自動購買→補到100瓶）
-    if (typeof pvpArenaPotionBlocked === 'function' && pvpArenaPotionBlocked()) return;   // 🚫 v3.7.17 決鬥中禁治癒藥水（⚠️寵物不像傭兵會被移到場邊·決鬥時仍在場上→這道閘是真的會擋到東西的那一個）
-    if (!(p.potPct > 0) || p._downed) return;
-    if ((p._potCd || 0) > 0) { p._potCd--; return; }
-    if (p.hp <= 0 || p.hp > petMhpEff(p) * (p.potPct / 100)) return;
+    if (companionDrinkPotion(p, p.potPct, petMhpEff(p), `寵物 <span class="text-emerald-300 font-bold">${p.form}</span>`, '寵物')) petMarkDirty();
+}
+// 🧪 夥伴喝水共用（寵物／召喚物／迷魅的怪）：HP 低於 pct% → 喝「設定」裡選的治癒藥水（#set-pot），缺貨且勾自動購買→補 100 瓶。
+//   每隻各自 1 秒冷卻（_potCd·每 tick 呼叫一次）；藥水霜化／汙濁之水減半照舊讀實體自己的 _statuses。回傳 true＝這次有喝。
+function companionDrinkPotion(p, pct, mhp, who, kind) {
+    if (typeof pvpArenaPotionBlocked === 'function' && pvpArenaPotionBlocked()) return false;   // 🚫 v3.7.17 決鬥中禁治癒藥水（⚠️寵物不像傭兵會被移到場邊·決鬥時仍在場上→這道閘是真的會擋到東西的那一個）
+    if (!(pct > 0) || !p || p._downed) return false;
+    if ((p._potCd || 0) > 0) { p._potCd--; return false; }
+    if (p.hp <= 0 || p.hp > mhp * (pct / 100)) return false;
     let potSel = (typeof document !== 'undefined') ? document.getElementById('set-pot') : null;
     let potId = potSel ? potSel.value : 'potion_heal';
     let pdef = DB.items[potId];
-    if (!pdef || pdef.val == null) return;   // 只認固定 val 的治癒藥水（紅/橙/白）
+    if (!pdef || pdef.val == null) return false;   // 只認固定 val 的治癒藥水（紅/橙/白）
     let stack = player.inv && player.inv.find(i => i.id === potId && (i.cnt || 0) > 0);
     if (!stack) {
         let _buyChk = (typeof document !== 'undefined') ? document.getElementById('set-auto-buy-pot') : null;
-        if (!_buyChk || !_buyChk.checked) return;
+        if (!_buyChk || !_buyChk.checked) return false;
         let _unit = (typeof shopPrice === 'function') ? shopPrice(pdef.p || 0) : (pdef.p || 0);
         let _need = 100;
-        if ((player.gold || 0) < _need * _unit) return;
+        if ((player.gold || 0) < _need * _unit) return false;
         player.gold -= _need * _unit;
         gainItem(potId, _need, true, true);
-        logSys(`自動消耗 ${_need * _unit} 金幣購買了 ${_need} 瓶${pdef.n}（供寵物飲用）。`);
+        logSys(`自動消耗 ${_need * _unit} 金幣購買了 ${_need} 瓶${pdef.n}（供${kind}飲用）。`);
         stack = player.inv.find(i => i.id === potId && (i.cnt || 0) > 0);
-        if (!stack) return;
+        if (!stack) return false;
     }
     stack.cnt--; if (stack.cnt <= 0) player.inv = player.inv.filter(i => i.uid !== stack.uid);   // 🛡️ v3.2.42 稽核修：只移除喝空的那疊（原全背包 filter 會誤刪 cnt 為 undefined 的舊物品）
     let h = Math.max(1, Math.floor(potionHealBase(pdef) * (1 + getConPotionPct((player.d && player.d.con) || 0) / 100)));
     if (p._statuses && p._statuses.potionFrost > 0) h = Math.max(1, Math.floor(h * 0.5));   // 🌅 藥水霜化：寵物也以自己的 MR/狀態判定，不再借用主角色結果
     if (p._statuses && p._statuses.foulWater > 0) h = Math.max(1, Math.floor(h * 0.5));   // 🌊 v3.6.20 汙濁之水：治癒藥水也減半
-    p.hp = Math.min(petMhpEff(p), p.hp + h);
+    p.hp = Math.min(mhp, p.hp + h);
     p._potCd = 10;
-    logCombat(`寵物 <span class="text-emerald-300 font-bold">${p.form}</span> 飲用 ${pdef.n}，恢復 ${h} 點 HP。`, 'heal');
-    petMarkDirty();
+    logCombat(`${who} 飲用 ${pdef.n}，恢復 ${h} 點 HP。`, 'heal');
+    return true;
 }
+// 召喚物／迷魅的怪的喝水門檻（存在角色上：召喚物會重召、迷魅會換怪，設定要留著）
+function setSummonPotPct(v) { if (typeof player === 'undefined' || !player || !player.cls) return; player.sumPotPct = Math.max(0, Math.min(95, parseInt(v) || 0)); }
+function setCharmPotPct(v) { if (typeof player === 'undefined' || !player || !player.cls) return; player.charmPotPct = Math.max(0, Math.min(95, parseInt(v) || 0)); }
 function _petReviveDone(p, via) {
     p._downed = false; p._reviveCd = 0;
     p.hp = Math.max(1, Math.floor(petMhpEff(p) * 0.5)); p.mp = p.mmp + (((typeof petDerive === 'function' && petDerive(p)) || {}).mmpBonus || 0);   // 🦴 v3.2.42 稽核修：復活 MP 補到含防具精神加成的有效上限（與 petsTick _mmpEff 一致）
@@ -1551,6 +1559,7 @@ function _ptBar(cur, max, kind) {
     return `<div class="bar-bg" style="height:14px;" title="${kind === 'mp' ? 'MP' : 'HP'} ${Math.max(0, Math.floor(cur || 0))}/${max}"><div class="bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${grad});"></div><div class="bar-text text-white" style="font-size:11px;line-height:14px;">${kind === 'mp' ? 'MP' : 'HP'} ${Math.max(0, Math.floor(cur || 0))}/${max}</div></div>`;
 }
 function _ptCard(o) {
+    if (o.head) return o.head;
     return `<div class="bg-slate-800/80 border rounded" style="padding:6px 8px;border-color:${o.border};${o.down ? 'opacity:.6;' : ''}">
         <div class="flex items-center gap-2">
             <span class="shrink-0" style="width:60px;height:56px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(0,0,0,.35);border-radius:4px;"><img src="${o.img}" alt="" style="width:110px;max-width:none;flex:none;image-rendering:pixelated;${o.down ? 'filter:grayscale(1);' : ''}" onerror="${o.fallback ? `this.onerror=null;this.style.width='40px';this.src='${o.fallback}'` : `this.style.visibility='hidden'`}"></span>
@@ -1562,6 +1571,9 @@ function _ptCard(o) {
         </div>
         ${o.extra || ''}
     </div>`;
+}
+function _ptPot(val, onchange) {
+    return `<span class="text-slate-400 whitespace-nowrap" style="font-size:11px;">HP&lt;<input type="number" min="0" max="95" value="${val || 0}" onchange="${onchange}" class="bg-slate-900 border border-slate-600 rounded text-center" style="width:3rem;font-size:11px;height:18px;padding:0 2px;">%喝水</span>`;
 }
 function _ptTime(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
 function _ptGearBtn(p, key) {
@@ -1577,21 +1589,24 @@ function _petsTabData() {
         let mmp = p.mmp + (((typeof petDerive === 'function' && petDerive(p)) || {}).mmpBonus || 0);
         out.push({ key: 'p' + p.uid, tag: '🐾', color: '#6ee7b7', border: '#475569', name: petDisplayName(p), lv: p.lv, hp: p.hp, mhp: petMhpEff(p), mp: p.mp, mmp: mmp, down: !!p._downed,
             img: 'assets/anim/' + enc(p.formGfx || p.form) + '/d6/idle_0.png',
-            extra: `<div class="flex gap-1" style="margin-top:5px;">${_ptGearBtn(p, 'wpn')}${_ptGearBtn(p, 'arm')}</div>`,
-            sig: [p.eq && p.eq.wpn && p.eq.wpn.id, p.eq && p.eq.wpn && p.eq.wpn.en, p.eq && p.eq.arm && p.eq.arm.id, p.eq && p.eq.arm && p.eq.arm.en].join(',') });
+            extra: `<div class="flex items-center gap-1" style="margin-top:5px;">${_ptGearBtn(p, 'wpn')}${_ptGearBtn(p, 'arm')}${_ptPot(p.potPct, `petSetPotPct('${p.uid}',this.value)`)}</div>`,
+            sig: [p.eq && p.eq.wpn && p.eq.wpn.id, p.eq && p.eq.wpn && p.eq.wpn.en, p.eq && p.eq.arm && p.eq.arm.id, p.eq && p.eq.arm && p.eq.arm.en, p.potPct || 0].join(',') });
     });
     let skId = (typeof summonV2ActiveSk === 'function') ? summonV2ActiveSk() : '';
     let remain = (player.buffs && skId) ? (player.buffs[skId] || 0) : 0;
     let sums = (typeof summonV2List === 'function') ? summonV2List() : [];
     if (typeof necroSkeletonList === 'function') sums = sums.concat(necroSkeletonList().filter(s => !s._necroOwnerKey || (typeof _necroOwnerByKey === 'function' && _necroOwnerByKey(s._necroOwnerKey) === player)));
-    sums.filter(s => s && !s._downed && (s.hp || 0) > 0).forEach((s, i) => {
+    let _sumAlive = sums.filter(s => s && !s._downed && (s.hp || 0) > 0);
+    if (_sumAlive.length) out.push({ key: 'sh', head: `<div class="flex items-center justify-between gap-2" style="padding:2px 2px 0;"><span class="font-bold" style="color:#d8b4fe;">🔮 召喚物（${_sumAlive.length}）</span>${_ptPot(player.sumPotPct, 'setSummonPotPct(this.value)')}</div>`, sig: player.sumPotPct || 0 });
+    _sumAlive.forEach((s, i) => {
         out.push({ key: 's' + (s.uid || i), tag: '🔮', color: '#d8b4fe', border: '#6b21a8', name: s.form, lv: s.lv, hp: s.hp, mhp: s.mhp, time: remain > 0 ? _ptTime(remain) : '',
             img: 'assets/anim/' + enc(s.formGfx || s.form) + '/d6/idle_0.png', fallback: encodeURI('assets/icons/skills/召喚術.png') });
     });
     let c = player.charmed;
     if (c && c._charm && !c._downed && (c.hp || 0) > 0) {
         out.push({ key: 'c', tag: '💫', color: '#f9a8d4', border: '#9d174d', name: c.form, lv: c.lv, hp: c.hp, mhp: c.mhp, time: _ptTime(((c.endTick || 0) - ((typeof state !== 'undefined' && state && state.ticks) || 0)) / 10),
-            img: 'assets/anim/' + enc(c.form) + '/idle_0.png', fallback: encodeURI('assets/icons/skills/迷魅術.png') });
+            img: 'assets/anim/' + enc(c.form) + '/idle_0.png', fallback: encodeURI('assets/icons/skills/迷魅術.png'),
+            extra: `<div class="flex justify-end" style="margin-top:4px;">${_ptPot(player.charmPotPct, 'setCharmPotPct(this.value)')}</div>`, sig: player.charmPotPct || 0 });
     }
     return out;
 }
@@ -1599,6 +1614,7 @@ function renderPetsTab(force) {
     try {
         let el = document.getElementById('tab-pets');
         if (!el || (!force && (el.classList.contains('hidden') || !el.offsetParent))) return;
+        if (!force && document.activeElement && el.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;   // 正在輸入喝水 %：輸入完(離開欄位)再重畫
         let list = _petsTabData();
         let sig = list.map(o => [o.key, o.name, o.lv, Math.floor(o.hp || 0), o.mhp, Math.floor(o.mp || 0), o.mmp, o.down ? 1 : 0, o.time, o.sig].join(':')).join('|');
         if (!force && sig === _petsTabSig) return;

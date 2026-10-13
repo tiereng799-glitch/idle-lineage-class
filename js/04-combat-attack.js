@@ -1317,6 +1317,10 @@ const PET_AGGRO_OVERRIDE = { '杜賓狗': 3, '高等杜賓狗': 3, '狼': 3, '�
 function petAggroWeight(p) { if (!p) return 2; if (PET_AGGRO_OVERRIDE[p.form] != null) return PET_AGGRO_OVERRIDE[p.form]; let d = (typeof PET_BOOK !== 'undefined') && PET_BOOK[p.form]; return (d && PET_KIND_WEIGHT[d.kind]) || 2; }
 // 🧙 v3.2.82 召喚物被攻擊權重（物理/魔法受害者池共用）：召喚術/造屍術＝4·屬性精靈＝3。
 function summonAggroWeight(s) { return (s && (s.skId === 'sk_elf_summon' || s.skId === 'sk_elf_summon2')) ? 3 : 4; }
+// 🔧 站長規則：怪物選目標(普攻＋單體魔法)時，寵物／召喚物／迷魅的怪的權重「整體」×3（基礎×K＋累積仇恨一起乘）＝更常替玩家挨打；
+//   試算表「倍率」分頁的「夥伴被打」再乘上去（0＝完全不打夥伴）。
+const COMPANION_AGGRO_MULT = 3;
+function companionAggroMult() { return COMPANION_AGGRO_MULT * ((typeof myRate === 'function') ? myRate('compAggro') : 1); }
 // 🏺 聖甲蟲的孵育巢（aggroHide 旗標）：掃 entity 全部裝備欄是否裝備「迴避仇恨」物品（玩家/傭兵通用）。
 function _hasAggroHide(c) {
     if (!c || !c.eq) return false;
@@ -1355,18 +1359,19 @@ function enemyAttackChooseVictim(mob, idx) {
     let _petW = petAggroWeight, _sumW = summonAggroWeight, _gW = (typeof guardAggroWeight === 'function') ? guardAggroWeight : (() => 4);   // 🐾🧙🏰 v3.2.82 模組共用權重
     // 🎯 v3.7.97 仇恨制：選敵權重＝baseThreat×K + 累積仇恨（累積恆 0 時＝舊靜態權重比例·零風險回退）。base 仍走上面各 aggroWeight。
     let _tw = (typeof victimThreatWeight === 'function') ? victimThreatWeight : (m, e, b) => b;
+    let _cm = companionAggroMult(), _cw = (m, e, b) => _tw(m, e, b) * _cm;   // 寵物／召喚物／迷魅的怪：整體 ×夥伴倍率
     let pw = pool.playerIn ? _tw(mob, player, mercAggroWeight(player)) : 0;
     let total = pw; for (let a of allies) total += _tw(mob, a, mercAggroWeight(a));
-    for (let p of pets) total += _tw(mob, p, _petW(p));
-    for (let s of sums) total += _tw(mob, s, _sumW(s));
+    for (let p of pets) total += _cw(mob, p, _petW(p));
+    for (let s of sums) total += _cw(mob, s, _sumW(s));
     for (let g of guards) total += _tw(mob, g, _gW(g));
     if (total <= 0) { enemyPhysicalAttack(mob, idx, 0, null, null, true); return; }
     let r = Math.random() * total;
     r -= pw;
     if (r < 0) { enemyPhysicalAttack(mob, idx, 0, null, null, true); return; }   // 抽中玩家
     for (let a of allies) { r -= _tw(mob, a, mercAggroWeight(a)); if (r < 0) { enemyAttackAlly(mob, a, true); return; } }
-    for (let p of pets) { r -= _tw(mob, p, _petW(p)); if (r < 0) { if (typeof enemyAttackPet === 'function') enemyAttackPet(mob, p); else enemyPhysicalAttack(mob, idx, 0, null, null, true); return; } }
-    for (let s of sums) { r -= _tw(mob, s, _sumW(s)); if (r < 0) { if (typeof enemyAttackSummon === 'function') enemyAttackSummon(mob, s); else enemyPhysicalAttack(mob, idx, 0, null, null, true); return; } }
+    for (let p of pets) { r -= _cw(mob, p, _petW(p)); if (r < 0) { if (typeof enemyAttackPet === 'function') enemyAttackPet(mob, p); else enemyPhysicalAttack(mob, idx, 0, null, null, true); return; } }
+    for (let s of sums) { r -= _cw(mob, s, _sumW(s)); if (r < 0) { if (typeof enemyAttackSummon === 'function') enemyAttackSummon(mob, s); else enemyPhysicalAttack(mob, idx, 0, null, null, true); return; } }
     for (let g of guards) { r -= _tw(mob, g, _gW(g)); if (r < 0) { if (typeof enemyAttackGuard === 'function') enemyAttackGuard(mob, g); else enemyPhysicalAttack(mob, idx, 0, null, null, true); return; } }
     // Floating-point fallback must respect aggro hiding and keep pets in the candidate pool.
     if (pool.playerIn) enemyPhysicalAttack(mob, idx, 0, null, null, true);
@@ -1760,16 +1765,17 @@ function castMobMagic(mob, sk) {
     let pool = aggroVictimPool(allies);   // 🏺 聖甲蟲的孵育巢：單體指定魔法同樣「未裝備者優先」（全體魔法走上方 AOE 分支不受影響）
     allies = pool.allies;
     let _tw = (typeof victimThreatWeight === 'function') ? victimThreatWeight : (m, e, b) => b;   // 🎯 v3.7.97 仇恨制：單體魔法選敵同走 base×K+累積
+    let _cm = companionAggroMult(), _cw = (m, e, b) => _tw(m, e, b) * _cm;   // 寵物／召喚物／迷魅的怪：整體 ×夥伴倍率
     let pw = pool.playerIn ? _tw(mob, player, mercAggroWeight(player)) : 0, total = pw; for (let a of allies) total += _tw(mob, a, mercAggroWeight(a));
-    for (let p of pets) total += _tw(mob, p, petWeight(p));
-    if (sumIn) for (let s of sums) total += _tw(mob, s, summonAggroWeight(s));   // 🧙 v3.2.82 傷害型魔法：召喚物入池
+    for (let p of pets) total += _cw(mob, p, petWeight(p));
+    if (sumIn) for (let s of sums) total += _cw(mob, s, summonAggroWeight(s));   // 🧙 v3.2.82 傷害型魔法：召喚物入池
     if (guardIn) for (let g of guards) total += _tw(mob, g, _gW(g));   // 🏰 傷害型魔法：護衛入池
     if (total <= 0) { applyMobMagic(mob, sk); return; }
     let r = Math.random() * total; r -= pw;
     if (r < 0) { applyMobMagic(mob, sk); return; }
     for (let a of allies) { r -= _tw(mob, a, mercAggroWeight(a)); if (r < 0) { applyMobMagicToAlly(mob, sk, a); return; } }
-    for (let p of pets) { r -= _tw(mob, p, petWeight(p)); if (r < 0) { if (typeof applyMobMagicToPet === 'function') applyMobMagicToPet(mob, sk, p); return; } }
-    if (sumIn) for (let s of sums) { r -= _tw(mob, s, summonAggroWeight(s)); if (r < 0) { if (typeof applyMobMagicToSummon === 'function') applyMobMagicToSummon(mob, sk, s); return; } }   // 🧙 v3.2.82
+    for (let p of pets) { r -= _cw(mob, p, petWeight(p)); if (r < 0) { if (typeof applyMobMagicToPet === 'function') applyMobMagicToPet(mob, sk, p); return; } }
+    if (sumIn) for (let s of sums) { r -= _cw(mob, s, summonAggroWeight(s)); if (r < 0) { if (typeof applyMobMagicToSummon === 'function') applyMobMagicToSummon(mob, sk, s); return; } }   // 🧙 v3.2.82
     if (guardIn) for (let g of guards) { r -= _tw(mob, g, _gW(g)); if (r < 0) { if (typeof applyMobMagicToGuard === 'function') applyMobMagicToGuard(mob, sk, g); return; } }   // 🏰 護衛
     if (pool.playerIn) applyMobMagic(mob, sk);
     else if (allies.length) applyMobMagicToAlly(mob, sk, allies[allies.length - 1]);

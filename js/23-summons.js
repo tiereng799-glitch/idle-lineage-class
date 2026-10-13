@@ -105,12 +105,15 @@ function _sumCountFor(name, owner) {   // 數量：floor((魅力+6)/div)·上限
 //   → 50級滿編無精通召喚略勝無精靈精通的強力精靈；階級倍率同時保證 68級單隻仍高於所有低階滿編（含第6隻）。
 // 🏺 v3.7.20 珍藏的巨大胡蘿蔔（summonMdmg）：掃 owner 全裝備欄的「召喚物魔法傷害+N」，併入 dmgMult 的 magicDmg 基底
 function _sumOwnerMdBonus(owner) { let s = 0; if (owner && owner.eq) { for (let k in owner.eq) { let e = owner.eq[k]; if (!e) continue; let d = DB.items[e.id]; if (d && d.summonMdmg) s += d.summonMdmg; } } return s; }
+// 🔧 站長規則：召喚物命中 ×1.25（原本對同等級怪只有三～五成、打高 AC 怪一兩成）；試算表「倍率」分頁的「召喚命中」再乘上去
+const SUMMON_HIT_MULT = 1.25;
 function _sumScaledHit(mobLv, tierIdx, mastery, owner) {
     owner = owner || player;
     const lv = Math.max(1, owner.lv || 1);
     const cha = Math.max(0, (owner.d && owner.d.cha) || 0);
-    return lv + Math.floor(lv * 0.75 + cha * 0.35)
+    const base = lv + Math.floor(lv * 0.75 + cha * 0.35)
         + Math.floor((mobLv || 1) / 8) + Math.max(0, tierIdx || 0) + (mastery ? 5 : 0);
+    return Math.floor(base * SUMMON_HIT_MULT * ((typeof myRate === 'function') ? myRate('summonHit') : 1));
 }
 function _sumSkillPower(s, owner) {
     owner = owner || player;
@@ -524,6 +527,7 @@ function summonV2Tick() {
     }
     // 玩家死亡：召喚物全數消散（比照舊制 killPlayer 清 player.summon）
     if (player.dead) { if (list.length) { player.summonsV2 = []; renderSummonPanel(true); } return; }
+    _summonPotionTick();   // 🧪 HP 低於「寵物」分頁設定的 % → 喝藥水
     // 到期：全滅處理交由下方自動重施
     if ((player.buffs[skId] || 0) <= 0 && list.length) {
         logCombat(`<span class="text-purple-300">${SUMMON_V2_TITLES[skId] || '召喚物'}</span> 的契約到期消失了。`, 'magic', 'summon');
@@ -558,6 +562,13 @@ function summonV2Tick() {
     const before = (player.summonsV2 || []).length;
     player.summonsV2 = (player.summonsV2 || []).filter(s => !s._downed || (now - (s._diedAt || 0)) < 2200);
     if ((player.summonsV2 || []).length !== before) renderSummonPanel(true);
+}
+function _summonPotionTick() {
+    const pct = player.sumPotPct || 0;
+    if (!(pct > 0) || typeof companionDrinkPotion !== 'function') return;
+    let list = (player.summonsV2 || []).filter(s => s && !s._downed && (s.hp || 0) > 0);
+    if (typeof necroSkeletonList === 'function') list = list.concat(necroSkeletonList().filter(s => s && !s._downed && (s.hp || 0) > 0 && (!s._necroOwnerKey || _necroOwnerByKey(s._necroOwnerKey) === player)));
+    for (const s of list) companionDrinkPotion(s, pct, s.mhp || 1, `召喚物 <span class="text-purple-300 font-bold">${s.form}</span>`, '召喚物');
 }
 function summonV2AttackOnce(s, d, t, owner) {
     owner = owner || player;   // 🩸 v3.3.23 owner 參數化：傭兵召喚術抽象輸出共用（讀 owner 裝備/精通；killMob 仍歸真隊長·不換身）
