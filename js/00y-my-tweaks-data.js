@@ -2,7 +2,7 @@
 window.MY_TWEAKS = {
  "gifts": [
   {
-   "id": "2",
+   "id": "1",
    "to": "大俠梅花鹿",
    "kind": "item",
    "cnt": 1,
@@ -10,7 +10,7 @@ window.MY_TWEAKS = {
    "note": "瑪那魔杖"
   },
   {
-   "id": "3",
+   "id": "2",
    "to": "大俠梅花鹿",
    "kind": "item",
    "cnt": 1,
