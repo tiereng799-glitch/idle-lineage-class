@@ -170,6 +170,11 @@
       '#lmui-stats b{color:#fff;font-weight:600;}',
       '#lmui-align .k,#lmui-align b{color:#d1d5db;}#lmui-align.justice .k,#lmui-align.justice b{color:#60a5fa;}#lmui-align.evil .k,#lmui-align.evil b{color:#f87171;}',
       '#lmui-gold b{color:#f5d77b;}',
+      /* 角色名字(點一下改名；沒名字的舊角色顯示灰色「（點此取名）」) */
+      '#lmui-name{all:unset;cursor:pointer;font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 2px #000;max-width:150px;overflow:hidden;text-overflow:ellipsis;}',
+      '#lmui-name.empty{color:#94a3b8;font-weight:400;}',
+      '#lmui-name-input{width:96px;font-size:13px;padding:1px 4px;border-radius:3px;border:1px solid #d9bf86;background:#020617;color:#fff;}',
+      '#lmui-name-ok{margin-left:4px;padding:0 6px;font-weight:700;color:#4ade80;background:rgba(0,0,0,.6);border:1px solid #4ade80;border-radius:3px;}',
 
       /* 右上：地圖名稱框＋小地圖 */
       '#lmui-tr{position:absolute;top:6px;right:6px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;}',
@@ -550,6 +555,7 @@
       '<div id="lmui-tl">' +
         '<div id="lmui-face"><div class="pic"><img alt=""></div><span id="lmui-lv"></span><button type="button" id="lmui-buffbtn" class="lmui-hit" aria-label="狀態圖示">≫</button></div>' +
         '<div id="lmui-stats">' +
+          '<div class="row"><button type="button" id="lmui-name" class="lmui-hit"></button></div>' +
           '<div class="row"><span><span class="k">AC</span><b id="lmui-ac"></b></span><span><span class="k">MR</span><b id="lmui-mr"></b></span><span id="lmui-align"><span class="k"></span><b></b></span></div>' +
           '<div class="row"><span id="lmui-gold"><span class="k">💰</span><b></b></span></div>' +
         '</div>' +
@@ -575,7 +581,8 @@
       '</div>';
     document.body.appendChild(hud);
 
-    ['ac', 'mr', 'lv', 'hp', 'mp', 'exp', 'align', 'gold', 'mapname', 'mini', 'lines', 'tabs'].forEach(function (k) { el[k] = $('lmui-' + k); });
+    ['ac', 'mr', 'lv', 'hp', 'mp', 'exp', 'align', 'gold', 'mapname', 'mini', 'lines', 'tabs', 'name'].forEach(function (k) { el[k] = $('lmui-' + k); });
+    if (el.name) el.name.addEventListener('click', function (e) { e.stopPropagation(); startLmuiRename(); });
     el.face = hud.querySelector('#lmui-face img');
     slots = Array.prototype.slice.call(hud.querySelectorAll('.lmui-slot')).map(function (b) {
       return { el: b, key: '', kind: null, id: null, uid: null, img: null, cd: b.querySelector('.cd'), n: b.querySelector('.n') };
@@ -1361,7 +1368,42 @@
       el.mini.appendChild(dot);
     });
   }
+  // ── 角色名字 / 改名(天堂M介面把原版左欄整個藏起來，原版「點狀態欄名字改名」在這裡點不到 → 自己做一個) ──
+  //   規則與創角/原版改名同一套(js/13 characterNameProblem·characterNamesInUse)，存檔走原版 saveGame。
+  var renaming = false;
+  function updateName() {
+    if (!el.name || renaming || !hasP()) return;
+    var n = player.name || '';
+    setTxt(el.name, n || '（點此取名）');
+    if (el.name.classList.contains('empty') === !!n) el.name.classList.toggle('empty', !n);
+  }
+  function startLmuiRename() {
+    if (renaming || !hasP() || !el.name) return;
+    renaming = true;
+    var cur = String(player.name || '').replace(/"/g, '&quot;');
+    el.name.innerHTML = '<input id="lmui-name-input" type="text" maxlength="12" value="' + cur + '" placeholder="2~12 字"><button type="button" id="lmui-name-ok">✓</button>';
+    var inp = $('lmui-name-input'), ok = $('lmui-name-ok');
+    inp.addEventListener('click', function (e) { e.stopPropagation(); });
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); finishLmuiRename(); } else if (e.key === 'Escape') { renaming = false; updateName(); } });
+    ok.addEventListener('click', function (e) { e.stopPropagation(); finishLmuiRename(); });
+    inp.focus(); inp.select();
+  }
+  function finishLmuiRename() {
+    var inp = $('lmui-name-input'); if (!inp) { renaming = false; return; }
+    var v = inp.value.trim();
+    if (v !== (player.name || '')) {
+      if (typeof characterNameProblem === 'function') {
+        var problem = characterNameProblem(v, typeof characterNamesInUse === 'function' ? characterNamesInUse(currentSlot) : null);
+        if (problem) { alert(problem); inp.focus(); return; }
+      }
+      player.name = v;
+      try { if (typeof updateUI === 'function') updateUI(); if (typeof saveGame === 'function' && player.cls) saveGame(); } catch (e) { console.warn('[AFK-lmui] 改名存檔失敗', e); }
+    }
+    renaming = false;
+    updateName();
+  }
   function updateStats() {
+    updateName();
     setTxt(el.lv, 'Lv.' + (txt('st-lv') || '--'));
     setTxt(el.ac, txt('st-ac') || '--');
     setTxt(el.mr, txt('st-mr') || '--');
