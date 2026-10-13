@@ -1396,7 +1396,7 @@ function _updateUIImpl() {
         document.getElementById('dt-con').innerText = player.d.con;
         document.getElementById('dt-int').innerText = player.d.int;
         document.getElementById('dt-wis').innerText = player.d.wis;
-        if(document.getElementById('dt-cha')) document.getElementById('dt-cha').innerText = player.d.cha;
+        if(document.getElementById('dt-cha')) document.getElementById('dt-cha').innerText = player.d.cha + (player._hiddenCha ? ' (+' + player._hiddenCha + ')' : '');   // 🧙 法師隱藏魅力：顯示「14 (+6)」
     }
     
     const sign = v => (v >= 0 ? '+' : '') + v;
