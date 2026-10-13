@@ -463,7 +463,7 @@ function _petEnforceCarry() {   // 換角色載入：魅力不足/超過4隻→�
     let cha = Number(player.d.cha), used = 0, n = 0;
     out.forEach(p => {
         let need = (PET_BOOK[p.form] || {}).cha || 6;
-        if (n >= PET_CARRY_MAX || used + need > cha) {
+        if (n >= PET_CARRY_MAX || (n > 0 && used + need > cha)) {   // 站長規則：魅力不夠也至少能帶 1 隻(第一隻不看魅力)
             p.outOwner = null; p.outSlot = null; p.outV = _petNowStamp(); _petRosterDirty = true;
             // 🐾 v3.3.30 補訊息（用戶回報黃金龍「莫名自己收回」＝原本靜默）：說明原因（魅力不足/超過上限）·同一寵收回後不再入 petsOutList→不會重複洗版
             try { logSys(`<span class="text-amber-300">⚠ ${n >= PET_CARRY_MAX ? `超過攜帶上限 ${PET_CARRY_MAX} 隻` : `魅力不足（${petDisplayName(p)} 需 ${need}·已用 ${used}／目前魅力 ${cha}）`}，${petDisplayName(p)} 已自動返回寵物保管。</span>`); } catch (e) {}
@@ -616,7 +616,7 @@ function petDeployToggle(uidv) {
         let outs = petsOutList();
         if (outs.length >= PET_CARRY_MAX) { logSys(`<span class="text-red-400">最多同時攜帶 ${PET_CARRY_MAX} 隻寵物。</span>`); return; }
         let need = (PET_BOOK[p.form] || {}).cha || 6;
-        if (petChaUsed() + need > (player.d.cha || 0)) { logSys(`<span class="text-red-400">魅力不足：攜帶 ${p.form} 需要魅力 ${need}（目前已用 ${petChaUsed()}/${player.d.cha || 0}）。</span>`); return; }
+        if (outs.length > 0 && petChaUsed() + need > (player.d.cha || 0)) { logSys(`<span class="text-red-400">魅力不足：攜帶 ${p.form} 需要魅力 ${need}（目前已用 ${petChaUsed()}/${player.d.cha || 0}）。</span>`); return; }
         p.outOwner = owner; p.outSlot = slot; p.outV = _petNowStamp(); p.hp = Math.max(1, p.hp);
         logSys(`<span class="text-green-300 font-bold">${petDisplayName(p)} 加入了隊伍！</span>`);
     }

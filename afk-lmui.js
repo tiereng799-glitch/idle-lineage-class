@@ -1418,19 +1418,14 @@
   // ── 夥伴列(寵物／召喚／迷魅)：一隻一格小圖示，點一下顯示狀態 ─────────────
   //   資料全讀核心：寵物 petsOutList()(js/22)、召喚 summonV2List()(js/23)＋舊制 player.summon、迷魅 player.charmed(js/07)。
   //   迷魅的怪在核心是「從場上移除、變成看不見的幫手」，沒有立繪也沒有血量——這一格是唯一看得到牠的地方。
-  var COLLARS = ['哈士奇', '小獵犬', '暴走兔', '杜賓狗', '牧羊犬', '狐狸', '狼', '聖伯納'];
-  function collarIcon(form) {
-    var f = String(form || '').replace(/^(高等|超級|真‧)/, '').replace(/犬$/, '');
-    var hit = COLLARS.filter(function (c) { return f.indexOf(c) >= 0 || c.indexOf(f) >= 0; })[0] || '牧羊犬';
-    return encodeURI('assets/icons/items/項圈 (' + hit + ').png');
-  }
+  var COLLAR_ICON = encodeURI('assets/icons/items/項圈 (牧羊犬).png');   // 站長決定：所有寵物都用牧羊犬項圈
   var SKILL_ICON = function (n) { return encodeURI('assets/icons/skills/' + n + '.png'); };
   function companions() {
     var out = [];
-    try { (typeof petsOutList === 'function' ? petsOutList() : []).forEach(function (p) { out.push({ key: 'pet:' + p.uid, kind: '寵物', icon: collarIcon(p.form), name: p.form, lv: p.lv, hp: p.hp, mhp: p.mhp, mp: p.mp, mmp: p.mmp, down: !!p._downed }); }); } catch (e) {}
+    try { (typeof petsOutList === 'function' ? petsOutList() : []).forEach(function (p) { out.push({ key: 'pet:' + p.uid, kind: '寵物', icon: COLLAR_ICON, name: p.form, lv: p.lv, hp: p.hp, mhp: p.mhp, mp: p.mp, mmp: p.mmp, down: !!p._downed }); }); } catch (e) {}
     try { (typeof summonV2List === 'function' ? summonV2List() : []).forEach(function (s, i) { out.push({ key: 'sum:' + (s.uid || i), kind: '召喚', icon: SKILL_ICON('召喚術'), name: s.form, lv: s.lv, hp: s.hp, mhp: s.mhp, down: !!s._downed }); }); } catch (e) {}
     if (player.summon) out.push({ key: 'sum:old', kind: '召喚', icon: SKILL_ICON('召喚術'), name: String(player.summon.n || '召喚獸'), end: player.summon.endTick, dice: player.summon.dmgDice, itv: player.summon.interval });
-    if (player.charmed) out.push({ key: 'charm', kind: '迷魅', icon: SKILL_ICON('迷魅術'), name: String(player.charmed.n || '').replace(/^迷魅：/, ''), end: player.charmed.endTick, dice: player.charmed.dmgDice, itv: player.charmed.interval });
+    if (player.charmed) { var ch = player.charmed; out.push({ key: 'charm', kind: '迷魅', icon: SKILL_ICON('迷魅術'), name: String(ch.n || '').replace(/^迷魅：/, ''), lv: ch.lv, hp: ch.hp, mhp: ch.mhp, down: !!ch._downed, end: ch.endTick, dice: ch.dmgDice, itv: ch.interval }); }
     return out;
   }
   var compSig = '', compOpen = null, lastLong = 0;

@@ -409,6 +409,7 @@ function _spiritDerive(s) {
 }
 // 依實體所屬技能分派衍生數值（攻速/防禦；召喚術另含傷害）
 function _sumDeriveAny(s, owner) {
+    if (s && s._charm) return { ac: s.ac != null ? s.ac : 10, dr: 0, mr: s.mr || 0 };   // 🩸 迷魅的怪：防禦照原怪
     if (s && s._necroSkeleton) return _necroSkeletonDerive(s, owner);
     if (s.skId === 'sk_zombie') return _zmbDerive(s, owner);
     if (s.skId === 'sk_elf_summon' || s.skId === 'sk_elf_summon2') return _spiritDerive(s);

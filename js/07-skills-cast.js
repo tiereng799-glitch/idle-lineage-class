@@ -116,6 +116,7 @@ function summonAttack(sm, owner) {
 function summonTick(sm, clearFn, owner) {
     owner = owner || player;   // 🩸 v2.6.25 owner 參數化（傭兵召喚共用）
     if(!sm) return;
+    if(sm._charm && sm._downed) { if (owner.buffs && sm.skId) owner.buffs[sm.skId] = 0; clearFn(); return; }   // 🩸 迷魅的怪被打倒＝迷魅結束(「倒下消散了」由 enemyAttackSummon 印)
     if(state.ticks >= sm.endTick || (sm.skId && ((owner.buffs && owner.buffs[sm.skId]) || 0) <= 0)) {
         logCombat(`<span class="text-purple-300">${sm.n}</span> 消失了。`, 'magic');
         clearFn(); return;
@@ -214,7 +215,9 @@ function manualCast(skId) {
             player.charmed = {
                 skId:'sk_charm', n:'迷魅：' + t.n, dmgDice: t.dmg && t.dmg[1] ? t.dmg : [1,4],
                 interval: Math.max(10, Math.floor((t.atkSpd || 2) * 10)), ele:'none', kind:'melee',
-                hitBonus:(t.hit||0), proc:null, cd:10, endTick: state.ticks + 36000
+                hitBonus:(t.hit||0), proc:null, cd:10, endTick: state.ticks + 36000,
+                // 🩸 站長規則：迷魅的怪跟寵物/召喚物一樣會被打、會死(js/04 受害者池·js/23 enemyAttackSummon)；血量/防禦照原怪
+                _charm: true, form: t.n, lv: t.lv || 1, hp: Math.max(1, t.hp || 1), mhp: Math.max(1, t.hp || 1), ac: (t.ac != null ? t.ac : 10), mr: t.mr || 0
             };
             logCombat(`<span class="${getMobColor(t.lv)}">${t.n}</span> 成為你的僕人。`, 'magic');
             if(typeof playSpellFx === 'function') { try { playSpellFx(sk.n, t); } catch(e){} }   // 🔮 迷魅術特效疊在目標身上（於移除前·否則卡片消失無法錨定）
