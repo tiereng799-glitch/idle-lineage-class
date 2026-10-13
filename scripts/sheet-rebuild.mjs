@@ -16,17 +16,24 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import ExcelJS from 'exceljs';
-import { ROOT, ID_HEAD, NEW_PREFIX, MAGIC_SLOTS, loadGame, RECORD_SHEETS, mobNamer } from './sheet-lib.mjs';
+import { ROOT, ID_HEAD, DATA_VERSION_LABEL, NEW_PREFIX, MAGIC_SLOTS, loadGame, RECORD_SHEETS, mobNamer } from './sheet-lib.mjs';
 
 const args = process.argv.slice(2);
 const bi = args.indexOf('--base');
-const base = bi >= 0 ? args.splice(bi, 2)[1] : null;
+let base = bi >= 0 ? args.splice(bi, 2)[1] : null;
 const src = args[0];
-if (!src || !base) { console.error('用法:node scripts/sheet-rebuild.mjs <舊試算表.xlsx> [輸出.xlsx] --base <舊表匯出時的 git 版本>'); process.exit(1); }
+if (!src) { console.error('用法:node scripts/sheet-rebuild.mjs <舊試算表.xlsx> [輸出.xlsx] [--base <舊表匯出時的 git 版本>]'); process.exit(1); }
 const out = path.resolve(args[1] || path.join(ROOT, '..', '遊戲數值表(重建).xlsx'));
 const G = loadGame();
 const wb = new ExcelJS.Workbook();
 await wb.xlsx.readFile(src);
+// 沒給 --base 就讀表裡記的資料版本;兩者都沒有就不做(猜錯基準會把別人的修改蓋掉)
+if (!base) {
+  const help = wb.getWorksheet('使用說明');
+  help?.eachRow(row => { const t = String(row.getCell(1).value || ''); if (t.startsWith(DATA_VERSION_LABEL)) base = t.slice(DATA_VERSION_LABEL.length).trim() || null; });
+}
+if (!base) { console.error(`這份試算表沒有記錄是從哪一版遊戲匯出的(「使用說明」分頁最後一列),請用 --base 指定。`); process.exit(1); }
+console.log('比對基準(這份表匯出時的遊戲版本):' + base);
 const text = (c) => { let v = c.value; if (v && typeof v === 'object') v = v.result ?? v.text ?? (v.richText ? v.richText.map(t => t.text).join('') : null); return v == null ? '' : String(v).trim(); };
 const colOf = (ws) => { const m = {}; ws.getRow(1).eachCell((c, i) => { m[text(c)] = i; }); return m; };
 const removed = {};
@@ -103,7 +110,8 @@ try {
   console.error('\n清掉對不到的列之後,表裡還有上面這些問題,先修好再重跑。');
   process.exit(1);
 }
-execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'sheet-export.mjs'), out], { env, stdio: 'inherit' });
+const nowVer = (() => { try { return execFileSync('git', ['log', '-1', '--format=%H', '--', 'js/00-data.js', 'js/01-drops-config.js', 'js/11-world-map.js'], { cwd: ROOT }).toString().trim(); } catch { return ''; } })();
+execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'sheet-export.mjs'), out], { env: { ...env, SHEET_DATA_VERSION: nowVer }, stdio: 'inherit' });
 
 console.log('\n拿掉的列(遊戲裡已經沒有這些東西):');
 for (const [s, list] of Object.entries(removed)) console.log(`  ${s} ${list.length} 列:${list.slice(0, 12).join('、')}${list.length > 12 ? ' …' : ''}`);

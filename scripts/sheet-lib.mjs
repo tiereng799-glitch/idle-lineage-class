@@ -19,6 +19,7 @@ export const CONFIG = path.join(ROOT, 'sheet-config.json');
 // 讀遊戲原始資料的位置;sheet-rebuild 會指到「舊版本」的 js/ 來分辨「誰改的」
 const GAME_ROOT = process.env.SHEET_GAME_ROOT || ROOT;
 export const ID_HEAD = 'ID(不要改)';
+export const DATA_VERSION_LABEL = '(系統用,請勿修改)資料版本:';   // 寫在「使用說明」分頁最後一列
 export const TPL_HEAD = '範本ID(新增用)';
 export const CUSTOM_IMG_DIR = 'assets/custom/';   // 自訂圖檔放這裡;試算表只填檔名
 export const NEW_PREFIX = 'my_';   // 試算表新增的東西一律用這個開頭,打錯既有 ID 才不會被當成新增

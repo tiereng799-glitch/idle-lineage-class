@@ -7,8 +7,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import ExcelJS from 'exceljs';
+import { execFileSync } from 'node:child_process';
 import {
-  ROOT, CUSTOM_IMG_DIR, DATA_OUT, ID_HEAD, loadGame, getPath, setPath, RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS,
+  ROOT, CUSTOM_IMG_DIR, DATA_OUT, ID_HEAD, DATA_VERSION_LABEL, loadGame, getPath, setPath, RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS,
   reqToZh, dropHidden, mobNamer,
 } from './sheet-lib.mjs';
 
@@ -71,6 +72,17 @@ help.columns = [{ width: 100 }];
   '      機率是百分比:填 1 代表 1%,填 0.01 代表 0.01%。物品 ID 可以到武器/防具/飾品/道具分頁查。',
 ].forEach(t => help.addRow([t]));
 help.getRow(1).font = { bold: true };
+// 記下這份表是從哪一版遊戲資料匯出的(sheet-rebuild 靠它分辨「我們改的」和「別人後來改的」)。
+//   SHEET_DATA_VERSION 由 sheet-rebuild 傳入(它疊的是「現在」的遊戲);否則取資料檔最後一次被改的 commit。
+{
+  let ver = process.env.SHEET_DATA_VERSION || '';
+  if (!ver) try {
+    ver = execFileSync('git', ['log', '-1', '--format=%H', '--', 'js/00-data.js', 'js/01-drops-config.js', 'js/11-world-map.js'], { cwd: ROOT }).toString().trim();
+  } catch { /* 沒有 git 就不記;rebuild 時要手動給 --base */ }
+  help.addRow([]);
+  const r = help.addRow([DATA_VERSION_LABEL + ver]);
+  r.font = { color: { argb: 'FF9CA3AF' }, size: 9 };
+}
 
 // ── 首頁 ────────────────────────────────────────────────
 const home = wb.addWorksheet('首頁');
