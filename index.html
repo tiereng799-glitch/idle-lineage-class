@@ -14,7 +14,7 @@
     <title>放置天堂 - 日出之國</title>
     <link rel="icon" type="image/png" href="assets/favicon.png">   <!-- 🖼️ 瀏覽器分頁圖示(favicon)：把你的圖放到 assets/favicon.png 即生效；可改 href 路徑或副檔名(.ico/.svg) -->
 
-    <link rel="stylesheet" href="css/style.css?v=b5ccff6976.8.6-npc-private-chat">
+    <link rel="stylesheet" href="css/style.css?v=00981207eb.8.6-npc-private-chat">
     <link rel="stylesheet" href="css/floating-ui.css?v=f9232e9e67.5.100-audit-tail">
     <link rel="stylesheet" href="css/tailwind-built.css?v=c0926cfba4"><!-- 🔧 預編譯 Tailwind（取代執行期 JIT tailwind.js）：只含實際用到的 class，省 407KB runtime + 移除持續掃描 DOM 的成本。置於 style.css 之後以保留原 cascade（utility 平手時勝過自訂 class，與舊 JIT 注入順序一致） -->
 </head>
@@ -30,7 +30,7 @@
            (CSS 另有 60 秒自動消失的保底)。data-scripts / data-script-kb 是本頁 <script src> 的數量與總大小，由 scripts/stamp-code-versions.mjs 自動對齊。
            無痕模式／第一次開沒有快取，光下載程式就要十幾秒；以前這段進度條停在 0% 不動，看起來像卡死。
            主要照「已下載的位元組」算(檔案大小差很多，00-data 一支就 640KB，只數檔數會一卡好幾秒)；瀏覽器不給大小時退回數檔數。 -->
-      <div id="boot-loader" aria-live="polite" data-scripts="111" data-script-kb="6165">
+      <div id="boot-loader" aria-live="polite" data-scripts="111" data-script-kb="6167">
         <div class="boot-box"><div class="boot-label">載入中 <span class="boot-pct">0%</span></div><div class="boot-bar"><div class="boot-bar-fill"></div></div></div>
       </div>
       <script>
@@ -552,7 +552,7 @@
     <script src="js/07-skills-cast.js?v=192a35ef93.8.26-flywing-relics"></script>
 <script src="js/08-items-equip.js?v=7084df6b83.8.16-wis-regen-interval"></script>
 <script src="js/09-vfx-render.js?v=7a262e9beb.8.32-merc-vfx-origin"></script>
-    <script src="js/10-ui-tabs.js?v=142a0cece2.8.14-merc-guild"></script>
+    <script src="js/10-ui-tabs.js?v=9d9a0f2e26.8.14-merc-guild"></script>
 <script src="js/11-world-map.js?v=f1ad039451.8.17-item-stack-source"></script>
 <script src="js/12-npc-quests.js?v=40c4ee816f.8.34-merc-trial-class-loot"></script>
 <script src="js/13-shop-save.js?v=8e559590ba.8.18-desktop-save-isolation"></script>
@@ -650,7 +650,7 @@
     <script src="afk-itemsearch.js?v=23d5c1b91e"></script>
     <script src="afk-invlist.js?v=638e5a43ed"></script>
     <script src="afk-eqlist.js?v=7a7533b7ce"></script>
-    <script src="afk-npclist.js?v=071220cc57"></script>
+    <script src="afk-npclist.js?v=27593e2bf2"></script>
     <!-- afk-npclabel：村莊 NPC 名牌不要跑出畫面 -->
     <script src="afk-npclabel.js?v=21861a88d8"></script>
     <script src="afk-mobname.js?v=d74c25c2c9"></script>
@@ -674,7 +674,7 @@
     <!-- 手機戰鬥框下方的主動技能列：排在 afk-battlebuffs 之後 → 插入時看得到 #m-battle-buffs，才排得到它上面（那支關掉就直接接戰鬥框） -->
     <script src="afk-skillbar.js?v=496ea95617"></script>
     <!-- afk-lmui：天堂M風格介面（afk-mobile 子選項）——戰鬥滿版＋浮動 HUD／技能列／聊天框、導覽列圖示化；排在 afk-skillbar 之後 -->
-    <script src="afk-lmui.js?v=091d15f97e"></script>
+    <script src="afk-lmui.js?v=a8702d6411"></script>
     <script src="afk-toast.js?v=f6bc41ad16"></script>
     <!-- 手機長按 .tip-host 顯示原版資料框（倉庫清單由 afk-warehouse 自理，故排在它之前無妨） -->
     <script src="afk-touchtip.js?v=e26211cc66"></script>
