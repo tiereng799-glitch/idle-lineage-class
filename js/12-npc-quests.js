@@ -645,7 +645,7 @@ function trialExName(n, rewardId) { return `${DB.items[rewardId].n}${n > 1 ? ` �
 // 版型比照「製作」(renderUniversalCraft js/14)：左＝遺骸圖示＋名稱＋兌換材料(craftReqHtml)，右＝數量輸入＋兌換鈕。
 function renderIoExchange(div) {
     let html = `<div class="text-slate-300 text-sm mb-1 px-1">伊奧：「席琳的力量凝於遺骸之中。獻上結晶，選擇你要的部位吧——至於它承載哪一種祝福，由席琳決定。」</div>
-        <div class="text-slate-400 text-xs mb-3 px-1">每件消耗 <span class="c-sherine font-bold">席琳結晶 ×1</span>（背包優先，不足扣共用倉庫）。兌換出的遺骸必附<span class="c-sherine">隨機一種席琳套裝詞綴</span>；集齊相同套裝名的遺骸（裝備欄底部 8 格）即可發動套裝效果。</div>`;
+        <div class="text-slate-400 text-xs mb-3 px-1">每件消耗 <span class="c-sherine font-bold">席琳結晶 ×1</span>（要放在背包、沒上鎖；倉庫裡的要先取出）。兌換出的遺骸必附<span class="c-sherine">隨機一種席琳套裝詞綴</span>；集齊相同套裝名的遺骸（裝備欄底部 8 格）即可發動套裝效果。</div>`;
     SHERINE_REMAINS.forEach(r => {
         let d = DB.items[r.id];
         let reqHtml = craftReqHtml([{ id: 'sherine_crystal', cnt: 1 }]);   // 🔧 共用製作的需求列（顏色/數量/含倉庫存量判定一致）

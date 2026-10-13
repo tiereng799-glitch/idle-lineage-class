@@ -1285,13 +1285,13 @@ function renderSherinePray(div) {
             <div class="text-slate-300 text-sm leading-relaxed">席琳：旅人啊……是否願意凝視這個世界的另一面？（需等級 40 以上，可自由開啟/關閉；兩種世界互斥）</div>
             <div class="bg-slate-800/60 border ${on ? 'border-red-700' : 'border-slate-600'} rounded p-3 text-sm leading-relaxed">
                 <div class="font-bold mb-1 ${on ? 'c-sherine' : 'text-slate-200'}">席琳的世界：目前 ${on ? '<span class="text-red-300">開啟</span>' : '<span class="text-slate-400">關閉</span>'}</div>
-                <div class="text-slate-200 text-xs">怪物 HP×3、傷害×2、經驗/金錢×5，掉落×3，可能出現<span class="c-sherine font-bold">珍稀套裝裝備</span>與<span class="c-sherine font-bold">席琳結晶</span>。</div>
+                <div class="text-slate-200 text-xs">怪物 HP×3、傷害×2、經驗/金錢×5，掉落×3，會掉<span class="c-sherine font-bold">席琳結晶</span>（找伊奧換遺骸）。</div>
             </div>
             <button class="btn py-3 text-base font-bold ${!lvOk ? 'bg-slate-600 border-slate-500 opacity-60 cursor-not-allowed' : (on ? 'bg-slate-700 hover:bg-slate-600 border-slate-500' : 'bg-red-800 hover:bg-red-700 border-red-600')}"
                 ${!lvOk ? 'disabled' : ''} onclick="toggleSherineWorld()">${!lvOk ? '等級不足（需 Lv40）' : (on ? '🙏 祈禱：關閉席琳的世界' : '🙏 祈禱：開啟席琳的世界')}</button>
             <div class="bg-slate-900/70 border ${mad ? 'border-rose-600' : 'border-slate-700'} rounded p-3 text-sm leading-relaxed">
                 <div class="font-bold mb-1 ${mad ? 'c-sherine' : 'text-rose-300'}">🔥 瘋狂的席琳世界：目前 ${mad ? '<span class="text-rose-300">開啟</span>' : '<span class="text-slate-400">關閉</span>'}</div>
-                <div class="text-slate-200 text-xs">極致試煉。怪物 HP×5、AC 降低（一般怪−10、頭目−20）、MR 提高（最多額外＋200）、命中×2、傷害×3、經驗/金錢×10，掉落與詞綴×5；<span class="c-sherine font-bold">套裝效果與席琳結晶掉率為一般席琳的 3 倍</span>。</div>
+                <div class="text-slate-200 text-xs">極致試煉。怪物 HP×5、AC 降低（一般怪−10、頭目−20）、MR 提高（最多額外＋200）、命中×2、傷害×3、經驗/金錢×10，掉落與詞綴×5；<span class="c-sherine font-bold">席琳結晶掉率為一般席琳的 3 倍</span>。</div>
             </div>
             <button class="btn py-3 text-base font-bold ${!lvOk ? 'bg-slate-600 border-slate-500 opacity-60 cursor-not-allowed' : (mad ? 'bg-slate-700 hover:bg-slate-600 border-slate-500' : 'bg-rose-900 hover:bg-rose-800 border-rose-600')}"
                 ${!lvOk ? 'disabled' : ''} onclick="toggleSherineMad()">${!lvOk ? '等級不足（需 Lv40）' : (mad ? '🙏 祈禱：關閉瘋狂的席琳世界' : '🔥 祈禱：開啟瘋狂的席琳世界')}</button>
