@@ -1280,10 +1280,9 @@
     var nb = navBtn('right'); if (nb) nb.click();
     var b = rightTabBtn(tab); if (b) b.click();
   }
-  // 順序照玩家給的參考圖：卷軸(說明)・信封(聊天)・人形(素質)・星(魔法)・袋子(背包)・握手(隊伍)・扳手(設定)・門(離開)，最前面加戰鬥
+  // 順序照玩家給的參考圖：信封(聊天)・人形(素質)・星(魔法)・袋子(背包)・握手(隊伍)・扳手(設定)・門(離開)，最前面加戰鬥
   var TOOLS = [
     { id: 'battle', name: '狩獵場', run: function () { var b = navBtn('center'); if (b) b.click(); openMaps(); }, toggle: true },
-    { id: 'help', name: '說明', run: function () { if (window.AFK_WIKI_API) AFK_WIKI_API.goto({}); }, need: function () { return !!window.AFK_WIKI_API; } },
     { id: 'chat', name: '聊天', run: openChat },
     { id: 'stats', name: '角色素質', label: '能力', run: function () { openTab('stats'); } },
     { id: 'skill', name: '魔法', run: function () { openTab('skill'); if (typeof refreshClassicSkillBookOnly === 'function') { try { refreshClassicSkillBookOnly(); } catch (e) {} } } },
@@ -1294,7 +1293,6 @@
   // 線條圖示；畫兩次（黑色粗描邊＋銀色漸層細線）做出參考圖那種金屬浮雕感
   var SVG = {
     battle: '<path d="M4 4l11 11M20 4L9 15M4 20l3-3M20 20l-3-3M6 15l3 3M18 15l-3 3"/>',
-    help: '<path d="M7 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7"/><path d="M7 4a2 2 0 0 0-2 2v1h4V6a2 2 0 0 0-2-2zM7 20a2 2 0 0 1-2-2v-1h4v1a2 2 0 0 1-2 2z"/><path d="M10 9h6M10 12h6M10 15h4"/>',
     chat: '<path d="M3 6h18v12H3z"/><path d="M3 6l9 7 9-7"/>',
     stats: '<circle cx="12" cy="5.5" r="2.8"/><path d="M8 21l1-7-3-1 1.5-4.5h9L18 13l-3 1 1 7"/>',
     skill: '<circle cx="12" cy="12" r="8.5"/><path d="M12 6l1.8 4 4.2.3-3.2 2.7 1 4.1L12 15l-3.8 2.1 1-4.1L6 10.3l4.2-.3z"/>',
