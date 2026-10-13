@@ -9,7 +9,7 @@ import path from 'node:path';
 import ExcelJS from 'exceljs';
 import { execFileSync } from 'node:child_process';
 import {
-  ROOT, CUSTOM_IMG_DIR, DATA_OUT, ID_HEAD, DATA_VERSION_LABEL, DELETED_SHEET, RATE_SHEET, RATE_ROWS, GIFT_SHEET, GIFT_COLS, loadGame, getPath, setPath, RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS,
+  ROOT, CONFIG, CUSTOM_IMG_DIR, DATA_OUT, ID_HEAD, DATA_VERSION_LABEL, DELETED_SHEET, RATE_SHEET, RATE_ROWS, GIFT_SHEET, GIFT_COLS, loadGame, getPath, setPath, RECORD_SHEETS, HOME_ROWS, HOME_DEFAULTS,
   reqToZh, dropHidden, mobNamer,
 } from './sheet-lib.mjs';
 
@@ -49,6 +49,16 @@ function header(ws, cols, frozenCols) {
 // ── 使用說明 ─────────────────────────────────────────────
 const help = wb.addWorksheet('使用說明');
 help.columns = [{ width: 100 }];
+// 第一列:「更新遊戲」頁的連結(update.html，網址取 sheet-config.json 的 site)。改完點它就好，不用自己去 GitHub。
+{
+  let site = '';
+  try { site = String(JSON.parse(fs.readFileSync(CONFIG, 'utf8')).site || ''); } catch {}
+  if (site) {
+    const c = help.addRow([{ text: '👉 改完按這裡更新遊戲', hyperlink: site.replace(/\/?$/, '/') + 'update.html' }]).getCell(1);
+    c.font = { bold: true, size: 14, color: { argb: 'FF2563EB' }, underline: true };
+    help.addRow([]);
+  }
+}
 [
   '怎麼改:',
   '1. 到下方分頁直接改數字或文字。',
@@ -64,7 +74,7 @@ help.columns = [{ width: 100 }];
   '查詢:「查詢」分頁輸入怪物ID或物品ID,會列出牠的掉落、魔法、出現地圖,或哪些怪會掉這件東西。',
   '禮物:「禮物」分頁一列一份,按「更新遊戲」後,收件角色下次登入自動收到(每份每個角色只領一次)。發過的編號不要改。',
   '',
-  '4. 改完到 GitHub → Actions → 「更新遊戲」→ Run workflow,約 5 分鐘後上線。',
+  '4. 改完點最上面的「改完按這裡更新遊戲」,按頁面上的按鈕,約 5 分鐘後上線(也可以到 GitHub → Actions → 「更新遊戲」→ Run workflow)。',
   '5. 填錯(例如數字欄填了文字)不會上線,GitHub 上會顯示是哪一格要改。',
   '',
   '可用職業:用「、」分隔,例如:騎士、妖精。全部職業可用就填:全職業',
