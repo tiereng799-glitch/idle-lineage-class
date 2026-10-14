@@ -1997,6 +1997,7 @@ const ALLY_GUILD_TOWN_SPOTS = {
 };
 function ensureTownAllyGuilds() {
     if (!DB || !DB.towns) return;
+    if (MERC_CLOSED) return;   // 🚫 傭兵關閉：不補傭兵公會（js/00-data 末尾已下架）
     Object.keys(ALLY_GUILD_TOWN_SPOTS).forEach(townId => {
         let town = DB.towns[townId];
         if (!town || !Array.isArray(town.npcs) || town.npcs.some(npc => npc && npc.type === 'ally')) return;

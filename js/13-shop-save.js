@@ -1787,6 +1787,15 @@ function loadGame() {
         // 相容舊存檔：單一 partner → partners 陣列
         if(player.partners === undefined) player.partners = (player.partner ? [player.partner] : []);
         if(player.allies === undefined || !Array.isArray(player.allies)) player.allies = [];   // 協力角色（其他存檔位）
+        // 🚫 傭兵關閉：舊存檔帶著的傭兵一律解散（經驗照常記入待領帳本，原角色下次載入／回村時領取）；副本助戰者清空
+        if (typeof MERC_CLOSED !== 'undefined' && MERC_CLOSED) {
+            if (player.allies.length) {
+                try { player.allies.forEach(a => { try { if (typeof _settleAllyExp === 'function') _settleAllyExp(a, 'dismiss'); } catch (e) {} }); } catch (e) {}
+                player.allies = [];
+                try { if (typeof syncMercenaryEmploymentRegistry === 'function') syncMercenaryEmploymentRegistry(true); } catch (e) {}
+            }
+            if (player.antharasHelpers && Object.keys(player.antharasHelpers).length) player.antharasHelpers = {};
+        }
         // 🐾 v3.2.17 夥伴系統 v2：舊項圈/肉/哨子/舊進化果實/舊 petStorage 一次性轉換與清除（項圈→新寵物入共用保管）
         try { if (typeof petMigrateLegacy === 'function') petMigrateLegacy(); } catch (e) { console.warn('petMigrateLegacy', e); }
         // 舊網頁版匯入資料的倉庫可能很大。下方清理、套裝修正與三種圖鑑遷移共用同一份解析結果，

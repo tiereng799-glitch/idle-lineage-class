@@ -3182,6 +3182,7 @@ function toggleAlly(slotN) {
         player.allies = player.allies.filter(a => a && a._slot !== slotN);
         logSys(`協力傭兵（存檔 ${slotN}）已解散。${_expMsg}`);
     } else {
+        if (MERC_CLOSED) { logSys('<span class="text-red-400">傭兵系統已關閉。</span>'); return; }   // 🚫 傭兵關閉：只剩解散
         let _allyCap = allyActiveCap();
         if ((player.allies.length || 0) >= _allyCap) {   // 非王族固定 3；王族為 3＋floor(魅力/15)，封頂 7。
             logSys(`<span class="text-red-400">協力傭兵最多同時上場 ${_allyCap} 名，請先解除一名再招募。</span>`);

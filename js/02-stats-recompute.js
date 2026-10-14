@@ -675,7 +675,7 @@ d.mr += (baseMr + bonusMr);
     // 🐉 v3.7.57 安塔瑞斯副本助戰者（僅主玩家·快照制 player.antharasHelpers）：精準=等級5%額外命中(≤20)·破壞=近/遠/魔傷/SP各5%(各≤20)·
     //    抵抗=地抗100%(≤+30)·護衛=MR10%傷害減免(≤20%·存 p._antHelperDr·js/04 受擊點消費——⚠️獨立函式不動被 C# 包裝的 teamDmgReduceMult)
     p._antHelperDr = 0;
-    if (!_recomputingAlly && p.antharasHelpers) {
+    if (!_recomputingAlly && p.antharasHelpers && !MERC_CLOSED) {   // 🚫 助戰者關閉時不給加成
         let _ah = p.antharasHelpers;
         if (_ah.precision) d.extraHit += antHelperPrecisionBonus(_ah.precision.lv);
         if (_ah.destroy) {

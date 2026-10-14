@@ -3455,3 +3455,8 @@ const SKILL_FX = {
 };
 // 雙重破壞的觸發機率(%)：玩家／傭兵／說明框共用
 function darkDoubleChance(lv) { let f = SKILL_FX.sk_dark_double; lv = lv || 1; return f.base + (lv >= f.fromLv ? Math.floor((lv - f.fromLv) / f.perLv) : 0); }
+
+// 🚫 2026-10-14 站長：傭兵（招募其他存檔位的角色）與安塔瑞斯副本「助戰者」整套關閉——程式留著，改回 false 即恢復。
+//    關閉後：各村傭兵公會下架、不能招募／指派助戰者；舊存檔帶著的傭兵在載入時自動解散（累積經驗照常記入待領帳本還給原角色）。
+const MERC_CLOSED = true;
+if (MERC_CLOSED) { try { for (const t of Object.values(DB.towns)) if (t && Array.isArray(t.npcs)) t.npcs = t.npcs.filter(n => n.type !== 'ally'); } catch (_) {} }

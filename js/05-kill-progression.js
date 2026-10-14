@@ -950,6 +950,7 @@ function _antReadSlotStats(slotN) {   // 輕量讀取存檔位角色能力快照
     } catch (e) { return null; }
 }
 function antharasHelperAssign(role, slotN) {
+    if (MERC_CLOSED) { logSys('<span class="text-red-400">助戰者已關閉。</span>'); return; }   // 🚫 傭兵關閉（含副本助戰者）
     if (!ANT_HELPER_ROLES[role]) return;
     player.antharasHelpers = player.antharasHelpers || {};
     if (player.allies && player.allies.some(a => a && String(a._slot) === String(slotN))) { logSys('<span class="text-red-400">該角色已受僱為傭兵，請先解僱再指定為助戰者。</span>'); return; }
@@ -1005,7 +1006,7 @@ function renderDorugaBell(div) {   // 🐉 NPC 多魯嘉貝爾：進入副本＋
         <div class="text-slate-300">被侵蝕的龍之巢穴就在村外的地底深處。每個角色每天可擔任主戰或傭兵通關一次；成功時主戰與所有出戰傭兵都會消耗今日次數（UTC+8 凌晨 12 點重置），挑戰失敗不消耗。區內無法選擇地圖，也無法使用傳送術與瞬間移動卷軸。</div>
         ${cleared ? `<div class="text-xs text-amber-300">今日已使用次數：${usedToday.map(ref => ref.name).join('、')}</div>` : ''}
         <button onclick="antharasEnter()" ${cleared ? 'disabled' : ''} class="btn w-full font-bold py-2 rounded ${cleared ? 'bg-slate-700 border-slate-600 opacity-60 cursor-not-allowed' : 'bg-amber-700 hover:bg-amber-600 border-amber-500'}">${cleared ? '隊伍有角色今日已通關' : '🐉 進入 侵蝕的安塔瑞斯巢穴'}</button>
-        <div class="border-t border-slate-700 pt-2"><div class="font-bold text-amber-300 mb-2">助戰者設定（最多 4 位·未雇傭角色）</div><div class="text-xs text-slate-400 mb-2">每次對話都會依來源角色的最新存檔刷新助戰能力；若角色遭刪除或在同一存檔位重建，將自動解除。助戰限制只套用目前角色的傭兵名單，不影響同模式其他角色。</div>${rows}</div>
+        ${MERC_CLOSED ? '' : `<div class="border-t border-slate-700 pt-2"><div class="font-bold text-amber-300 mb-2">助戰者設定（最多 4 位·未雇傭角色）</div><div class="text-xs text-slate-400 mb-2">每次對話都會依來源角色的最新存檔刷新助戰能力；若角色遭刪除或在同一存檔位重建，將自動解除。助戰限制只套用目前角色的傭兵名單，不影響同模式其他角色。</div>${rows}</div>`}
       </div>`;
 }
 // ---------- 🐉 地龍之魔眼（slot:eye·eyePetrify）：被石化時觸發（js/04 石化分支呼叫） ----------
