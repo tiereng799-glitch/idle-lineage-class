@@ -547,11 +547,11 @@ function petReleaseSlotAssignments(slot) {
 }
 
 // ---------- 四、道具使用（誘捕/幼龍蛋）與擊殺捕捉 ----------
-function petUseLureItem(d, silent) {   // eff:'petlure' → 掛 120 秒誘捕 buff（重複使用重置時間）
+function petUseLureItem(d, silent) {   // eff:'petlure' → 掛 300 秒誘捕 buff（重複使用重置時間）
     let key = d.lure, cfg = PET_LURES[key];
     if (!cfg) return false;
-    player.buffs[key] = d.dur || 120;
-    if (!silent) logSys(`你使用了 ${d.n}，獲得增益 <span class="text-pink-300 font-bold">${cfg.n}</span>，持續 ${d.dur || 120} 秒。打倒對應動物時有機會捕獲。`);
+    player.buffs[key] = d.dur || 300;
+    if (!silent) logSys(`你使用了 ${d.n}，獲得增益 <span class="text-pink-300 font-bold">${cfg.n}</span>，持續 ${d.dur || 300} 秒。打倒對應動物時有機會捕獲。`);
     try { updateUI(); } catch (e) {}
     return true;   // 呼叫端 fallthrough 消耗道具
 }
