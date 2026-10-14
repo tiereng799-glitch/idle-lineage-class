@@ -1,6 +1,5 @@
 /**
  * afk-warehouse.js — 倉庫擴充(純外掛,自 main 的核心版移植):
- *   ① 金幣「全部存入/全部取出」鈕(填滿數量欄後走核心 whGold,交易快照/防複製全重用)。
  *   ② 主分類補「遺物」(橫跨武器/防具/飾品;原本分類下仍查得到,不動 whCategory)。
  *   ③ 主分類補「席琳遺骸」,子分類=套裝名(詞綴在實例 seteff 上,核心 whMatchFilter 只吃 id
  *      → 套裝子分類改在 render 後依清單列的 data-tip-uid 反查實例後過濾,不動核心簽名)。
@@ -84,18 +83,6 @@
     window.whMatchSearch = function (it) {
         try { if (_wearOnly && it && _cannotWear(it.id)) return false; } catch (e) {}
         return _search.apply(this, arguments);
-    };
-
-    // ── 金幣全部存入/取出:填滿數量欄再走核心 whGold(整套交易保護重用) ──
-    window.__afkWhGoldAll = function (dir) {
-        try {
-            var w = loadWarehouse();
-            var amt = dir === 'in' ? (player.gold || 0) : ((w && w.gold) || 0);
-            if (amt <= 0) return;
-            var inp = document.getElementById('wh-gold-amt');
-            if (inp) inp.value = amt;
-            whGold(dir);
-        } catch (e) {}
     };
 
     // ── 觸控長按看物品資料 ─────────────────────────────────────
@@ -249,16 +236,16 @@
             //   重複 class 把權重墊高一級,先後順序就不影響結果。
             '#wh-inv-list .afk-wh-noeq.afk-wh-noeq,#wh-store-list .afk-wh-noeq.afk-wh-noeq{background:rgba(80,12,22,.55) !important;border-color:#9f1239 !important;border-left-width:4px !important;}',
             '#wh-inv-list .afk-wh-noeq.afk-wh-noeq:hover,#wh-store-list .afk-wh-noeq.afk-wh-noeq:hover{background:rgba(110,18,30,.7) !important;}',
-            // 字樣與顏色跟背包那邊對齊(核心 js/10 是 text-red-500 text-[10px] font-bold 的 [無法裝備])
-            '#wh-inv-list .afk-wh-noeq::after,#wh-store-list .afk-wh-noeq::after{content:"　[無法裝備]";font-size:10px;font-weight:bold;color:#ef4444;}',
+            // 字樣與顏色跟背包那邊對齊(核心 js/10 是 text-red-500 font-bold 的 [無法裝備]);放在名稱底下,不跟取出/存入鈕搶寬度
+            '#wh-inv-list .afk-wh-noeq .whx-name::after,#wh-store-list .afk-wh-noeq .whx-name::after{content:"[無法裝備]";display:block;font-size:12px;font-weight:bold;color:#ef4444;}',
             // 魔法書:無法學習＝同一套紅底(跟「無法裝備」是同一類「這隻用不了」,不該長得不一樣);
             //         已學習＝灰底壓暗(核心背包用 bg-slate-900 opacity-70,這裡用等效的底色,不動整列透明度以免圖示也一起糊掉)
             '#wh-inv-list .afk-wh-nolearn.afk-wh-nolearn,#wh-store-list .afk-wh-nolearn.afk-wh-nolearn{background:rgba(80,12,22,.55) !important;border-color:#9f1239 !important;border-left-width:4px !important;}',
             '#wh-inv-list .afk-wh-nolearn.afk-wh-nolearn:hover,#wh-store-list .afk-wh-nolearn.afk-wh-nolearn:hover{background:rgba(110,18,30,.7) !important;}',
-            '#wh-inv-list .afk-wh-nolearn::after,#wh-store-list .afk-wh-nolearn::after{content:"　[無法學習]";font-size:10px;font-weight:bold;color:#ef4444;}',
+            '#wh-inv-list .afk-wh-nolearn .whx-name::after,#wh-store-list .afk-wh-nolearn .whx-name::after{content:"[無法學習]";display:block;font-size:12px;font-weight:bold;color:#ef4444;}',
             '#wh-inv-list .afk-wh-learned.afk-wh-learned,#wh-store-list .afk-wh-learned.afk-wh-learned{background:rgba(15,23,42,.85) !important;border-color:#475569 !important;border-left-width:4px !important;}',
             '#wh-inv-list .afk-wh-learned.afk-wh-learned:hover,#wh-store-list .afk-wh-learned.afk-wh-learned:hover{background:rgba(30,41,59,.9) !important;}',
-            '#wh-inv-list .afk-wh-learned::after,#wh-store-list .afk-wh-learned::after{content:"　[已學習]";font-size:10px;font-weight:bold;color:#94a3b8;}'
+            '#wh-inv-list .afk-wh-learned .whx-name::after,#wh-store-list .afk-wh-learned .whx-name::after{content:"[已學習]";display:block;font-size:12px;font-weight:bold;color:#94a3b8;}'
         ].join('\n');
         (document.head || document.documentElement).appendChild(s);
     }
@@ -305,20 +292,6 @@
         var inp = document.getElementById('wh-gold-amt');
         if (!inp) return;   // 倉庫面板不在畫面上
         try { _wearCSS(); _injectWearToggle(); _markNoEquip(); } catch (e) {}
-        var goldRow = inp.parentElement;
-        if (goldRow && !document.getElementById('afk-wh-allin')) {
-            var mk = function (id, txt, tip, dir) {
-                var b = document.createElement('button');
-                b.id = id; b.type = 'button'; b.textContent = txt;
-                b.title = tip; b.setAttribute('aria-label', tip);
-                b.className = 'whx-btn whx-btn-icon';
-                b.addEventListener('click', function () { window.__afkWhGoldAll(dir); });
-                return b;
-            };
-            // 圖示鈕(文字太佔位),跟核心存入/取出同一組金色鈕
-            goldRow.appendChild(mk('afk-wh-allin', '📥', '金幣全部存入', 'in'));
-            goldRow.appendChild(mk('afk-wh-allout', '📤', '金幣全部取出', 'out'));
-        }
         // 主分類下拉補 遺物/席琳遺骸(核心每次重繪都重建 select → 每次補)
         var sel = document.querySelector('select[onchange*="whSetFilter"]');
         if (sel && !sel.querySelector('option[value="relic"]')) {
