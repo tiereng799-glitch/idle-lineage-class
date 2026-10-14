@@ -2,7 +2,7 @@
  * afk-toggles.js — 外掛開關中樞（所有 afk-* 外掛的地基，必須「最先」載入）
  *
  * 目的：核心永遠是原作者原版；我們的功能全是外掛疊上去。外掛靠「包核心函式」運作，
- *   上游一改名就可能斷。此開關讓「某支外掛壞掉時，玩家自己在首頁關掉它 → 遊戲回到原版
+ *   上游一改名就可能斷。此開關讓「某支外掛壞掉時，玩家自己關掉它 → 遊戲回到原版
  *   行為照常能玩」，作者再慢慢修。
  *
  * 契約：
@@ -120,7 +120,10 @@
         var ov = document.createElement('div');
         ov.id = 'afk-toggles-overlay';
         ov.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.66);display:flex;align-items:flex-start;justify-content:center;padding:14px 12px 12px;';
-        applyBannerPad(ov);   // 開啟當下實測橫幅高度直接設 padding-top（不靠 afk-mobile 的非同步 --orig-bar-h，避免量測未就緒時被橫幅蓋住）
+        applyBannerPad(ov);
+        // 網址入口（?plugins）在頁面一載好就開，那時遊戲的橫幅可能還沒插進來 → 開著的期間每秒再量一次，標題列與「關閉」才不會被後到的橫幅蓋住
+        var padTimer = setInterval(function () { if (!ov.parentNode) { clearInterval(padTimer); return; } applyBannerPad(ov); }, 1000);
+        // （以下原註解）開啟當下實測橫幅高度直接設 padding-top（不靠 afk-mobile 的非同步 --orig-bar-h，避免量測未就緒時被橫幅蓋住）
         var card = document.createElement('div');
         // 直向 flex:頭與尾(重新整理鈕)固定,只有中間清單區捲動 → 項目再多,底部按鈕永遠在畫面上
         card.style.cssText = 'background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:14px;max-width:560px;width:100%;max-height:calc(100vh - var(--orig-bar-h,0px) - 30px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.6);';
@@ -197,7 +200,14 @@
             card.querySelectorAll('input[data-tgid]').forEach(function (cb) { cb.checked = api.enabled(cb.getAttribute('data-tgid')); });
             note.style.display = 'block';
         });
-        card.querySelector('#afk-tg-reload').addEventListener('click', function () { try { location.reload(); } catch (e) { close(); } });
+        card.querySelector('#afk-tg-reload').addEventListener('click', function () {
+            try {
+                if (wantPanel()) {   // 從 ?plugins 網址進來的：重新整理時把它拿掉，不然面板又自己跳出來
+                    var u = new URL(location.href); u.searchParams.delete('plugins'); if (u.hash === '#plugins') u.hash = '';
+                    location.replace(u.toString());
+                } else location.reload();
+            } catch (e) { close(); }
+        });
 
         // ── 篩選：搜尋 ＋ 只看我改過的（兩者同時生效，共用同一支 applyFilter）──
         // 勾選當下不重算（剛按到的東西會在眼前消失）；只有按鈕切換／打字才重算。
@@ -264,56 +274,15 @@
 
     function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
-    // ── 永遠可達的入口（逃生門）：左上角固定小按鈕（首頁 + 遊戲內都在；本按鈕不可被關）──
-    //   🚨 位置不可只靠 --orig-bar-h：那個變數是 afk-mobile 設的，而 afk-mobile 是「可以被玩家關掉」的外掛
-    //      → 關掉後變數留在 0，本按鈕就縮到橫幅底下完全點不到（逃生門失效＝玩家再也開不了開關面板）。
-    //      本函式自己量一次橫幅當保底，並持續跟著橫幅高度變化調整。
-    function bannerBottom() {
-        try {
-            var bar = document.getElementById('_orig_pbar');
-            if (bar) { var h = bar.getBoundingClientRect().height; if (h > 0) return Math.ceil(h) + 6; }
-        } catch (e) {}
-        return 0;
-    }
-    function syncEntryTop() {
-        var btn = document.getElementById('afk-toggles-entry'); if (!btn) return;
-        var varPx = 0;
-        try { varPx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--orig-bar-h')) || 0; } catch (e) {}
-        btn.style.top = (Math.max(varPx, bannerBottom()) + 6) + 'px';   // 取兩者較大者：誰量到都不會被蓋
-    }
-    function injectEntry() {
-        if (document.getElementById('afk-toggles-entry')) return true;
-        if (!document.body) return false;
-        var btn = document.createElement('button');
-        btn.id = 'afk-toggles-entry';
-        btn.textContent = '🎚️ 外掛';   // 只放 emoji 時玩家認不出是按鈕（回報過「左上角找不到」），補上文字
-        btn.title = '外掛開關';
-        btn.style.cssText = 'position:fixed;left:6px;top:calc(var(--orig-bar-h,0px) + 6px);z-index:100001;background:rgba(15,23,42,.92);border:1px solid #64748b;color:#e2e8f0;border-radius:8px;padding:4px 9px;font-size:14px;font-weight:700;line-height:1.35;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.5);';
-        // 再點一次=關閉(toggle):面板開著就收掉,沒開才開。
-        btn.addEventListener('click', function () {
-            var ov = document.getElementById('afk-toggles-overlay');
-            if (ov) { if (ov.parentNode) ov.parentNode.removeChild(ov); }
-            else openPanel();
-        });
-        document.body.appendChild(btn);
-        return true;
-    }
-    injectEntry();
-    // 🏠 小百科／掉落查詢的獨立分頁（?view=…）也要藏：那裡頁首有自己的導覽列（首頁／小百科／掉落查詢），
-    //    這顆固定按鈕的位置正好蓋住第一顆「🏠 首頁」讓人點不到（玩家回報）。獨立分頁只看 location.search，
-    //    不碰任何外掛設的變數／class（逃生門不可依賴可被關掉的東西）；回到首頁就看得到這顆鈕，逃生門仍在。
-    function inStandaloneView() { try { return !!new URLSearchParams(location.search).get('view'); } catch (e) { return false; } }
-    // 只在首頁顯示：進遊戲（#game-screen 顯示 / #main-menu 隱藏）就把左上角開關鈕藏起來。
-    function syncEntryVisibility() {
-        var btn = document.getElementById('afk-toggles-entry');
-        if (!btn) { injectEntry(); btn = document.getElementById('afk-toggles-entry'); if (!btn) return; }
-        // 以「遊戲畫面是否顯示」為準（最可靠）：game-screen 沒隱藏＝在遊戲中→藏開關鈕；否則(首頁/選角/創角)顯示。
-        var gs = document.getElementById('game-screen');
-        var inGame = gs && !gs.classList.contains('hidden');
-        btn.style.display = (inGame || inStandaloneView()) ? 'none' : '';
-        syncEntryTop();   // 橫幅由遊戲 loop 晚注入、高度也會變（換行）→ 每秒跟著校正一次
-    }
-    syncEntryVisibility();
-    setInterval(function () { if (!document.hidden) syncEntryVisibility(); }, 1000);   // 背景分頁看不到畫面，量測/校正純浪費
+    // 🚪 2026-10-14 站長：左上角「🎚️ 外掛」按鈕拿掉。
+    //    逃生門改成「網址入口」：在網址後面加 ?plugins（或 #plugins）開啟就會直接跳出開關面板——
+    //    某支外掛壞掉時，告訴玩家用這個網址開，就能把它關掉回到原版。入口只看網址，不碰任何外掛（逃生門不可依賴可被關掉的東西）。
+    //    要等所有外掛載完（DOMContentLoaded：body 尾端的外掛 script 都跑完了）才開，面板清單才完整。
+    function wantPanel() { try { return new URLSearchParams(location.search).has('plugins') || location.hash === '#plugins'; } catch (e) { return false; } }
+    api.panelFromUrl = wantPanel;
+    function openFromUrl() { if (wantPanel()) { try { openPanel(); } catch (e) {} } }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', openFromUrl);
+    else openFromUrl();
+    window.addEventListener('hashchange', openFromUrl);
     try { console.log('[AFK-toggles] ready'); } catch (e) {}
 })();

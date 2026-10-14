@@ -594,11 +594,9 @@
       S + '.status-icon{background-color:#120d09 !important;}',
       S + '.mob-hp-bar>div{background:#1c0b08 !important;box-shadow:0 0 0 1px #000;}',
       /* 左上角「外掛」入口（逃生門，afk-toggles）：只換顏色，位置/大小/可點性完全不動 */
-      S + '#afk-toggles-entry{background:linear-gradient(#3a2d1d,#1d150d) !important;border-color:' + BD2 + ' !important;color:#f0e2bf !important;}',
       /* 「外掛」入口按鈕：玩家要求登入畫面與遊戲中都不顯示（不帶 body.lmui 前綴＝登入畫面也藏）。
          ⚠️ 這是外掛開關面板唯一的入口（逃生門）：藏了之後玩家無法自行關掉出問題的外掛。
             要叫出面板：主控台執行 AFK_TOGGLES.openPanel()；或在外掛面板外把本檔關掉後按鈕就回來。 */
-      '#afk-toggles-entry{display:none !important;}',
       /* afk-mobile / afk-battlehud 的元件（村莊裡還看得到） */
       S + '#m-status{background:linear-gradient(#211a12,#120d09) !important;border-color:' + BD + ' !important;}',
       S + '#m-log-sheet{background:#110d09 !important;border-top-color:' + BD2 + ' !important;}',
