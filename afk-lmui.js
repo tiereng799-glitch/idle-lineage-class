@@ -86,6 +86,8 @@
       B + '#status-icon-bar .status-icon{width:28px !important;height:28px !important;min-width:28px;border:1px solid rgba(0,0,0,.8);box-shadow:0 1px 3px #000;}',
       B + '#status-icon-bar .status-icon img{width:100% !important;height:100% !important;object-fit:cover;}',
       'body.lmui-battle.lmui-nobuff #status-icon-bar{display:none !important;}',
+      /* 點狀態圖示看名稱與剩餘時間（內容取自核心寫在圖示上的 title，每秒更新） */
+      '#lmui-stip{position:fixed;z-index:2147483000;display:none;max-width:70vw;padding:6px 10px;border:1px solid #6b5636;border-radius:6px;background:rgba(20,16,12,.96);color:#f1e6cf;font-size:15px;line-height:1.4;box-shadow:0 4px 12px rgba(0,0,0,.6);pointer-events:none;white-space:nowrap;}',
       /* 戰鬥畫面不被視窗遮住：彈窗一律改放在「場景下緣以下」（蓋住按鈕/快捷列/聊天框，不蓋場景）。
          afk-mobile / afk-banner 的彈窗讓位規則全是 top＝var(--orig-bar-h)、高＝100dvh−bar−nav，
          所以只要在「彈窗元素自己身上」把 --orig-bar-h 換成場景下緣，那整套規則（A 型/B 型/內卡封頂）就自動跟著改。
@@ -1895,6 +1897,34 @@
     order.sort(function (a, b) { return a - b; });
     return order.map(function (t) { return { tier: t, ids: g[t] }; });
   }
+  // 右上角狀態圖示：點一下就顯示名稱／剩餘秒數（原本只有滑鼠停留的 title，手機要長按才看得到）
+  var stipFor = null, stipTimer = null, stipHide = 0;
+  function stipBox() {
+    var b = $('lmui-stip');
+    if (!b) { b = document.createElement('div'); b.id = 'lmui-stip'; document.body.appendChild(b); }
+    return b;
+  }
+  function stipClose() { stipFor = null; if (stipTimer) { clearInterval(stipTimer); stipTimer = null; } var b = $('lmui-stip'); if (b) b.style.display = 'none'; }
+  function stipPaint() {
+    var bar = $('status-icon-bar'), b = stipBox();
+    var icon = bar && stipFor != null ? bar.querySelector('[data-status-index="' + stipFor + '"]') : null;
+    if (!icon || !icon.getClientRects().length || Date.now() > stipHide) { stipClose(); return; }
+    b.textContent = (icon.getAttribute('title') || '').replace('｜', '　');
+    b.style.display = 'block';
+    var r = icon.getBoundingClientRect(), w = b.offsetWidth;
+    b.style.top = Math.round(r.bottom + 6) + 'px';
+    b.style.left = Math.round(Math.max(6, Math.min(window.innerWidth - w - 6, r.right - w))) + 'px';
+  }
+  document.addEventListener('click', function (e) {
+    var icon = e.target && e.target.closest && e.target.closest('#status-icon-bar .status-icon');
+    if (!icon) { if (stipFor != null) stipClose(); return; }
+    var idx = icon.getAttribute('data-status-index');
+    if (stipFor === idx) { stipClose(); return; }   // 再點一次同一個＝收起
+    stipFor = idx; stipHide = Date.now() + 5000;
+    stipPaint();
+    if (!stipTimer) stipTimer = setInterval(stipPaint, 500);
+  }, true);
+
   // 點一下＝看說明（叫出核心的資料框：朝格子派一個 mousemove，內容與定位都交給核心，同 afk-touchtip 長按的做法）；
   //   說明開著時再點同一格＝施放（只限學會、能用的主動魔法）。點到別處就重新算「第一下」。
   var skTipId = null;
