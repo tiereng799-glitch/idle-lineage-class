@@ -162,14 +162,17 @@
       /* 左上：頭像＋數值 */
       '#lmui-tl{position:absolute;top:6px;left:6px;display:flex;gap:6px;align-items:flex-start;}',
       '#lmui-face{width:44px;flex:none;display:flex;flex-direction:column;align-items:center;}',
-      '#lmui-face .pic{width:44px;height:50px;border:1px solid var(--lmui-line);background:rgba(0,0,0,.5);overflow:hidden;box-shadow:0 1px 4px #000;}',
+      /* 第三批（範例圖）：頭像金色雙框 */
+      '#lmui-face .pic{width:44px;height:50px;border:2px solid #d8b062;border-radius:3px;background:radial-gradient(circle at 50% 35%,#2a2218,#0a0806);overflow:hidden;box-shadow:inset 0 0 0 1px #2a1c08,inset 0 0 8px rgba(0,0,0,.8),0 0 0 1px #3a280c,0 0 0 2px #9c7535,0 2px 6px #000;}',
       '#lmui-face img{width:100%;height:100%;object-fit:cover;object-position:50% 40%;transform:scale(3.2);transform-origin:50% 36%;}',
       '#lmui-face img.logo{object-fit:contain;object-position:center;transform:none;padding:4px;}',
       '#lmui-face{position:relative;}',
       '#lmui-face .pic{cursor:pointer;}',
       /* 頭像下方：性向（正義／中立／邪惡）兩行——頭像只有 44px 寬，「正義 +32767」一行放不下 */
-      '#lmui-face #lmui-align{margin-top:3px;display:flex;flex-direction:column;align-items:center;font-size:11px;line-height:1.15;white-space:nowrap;}',
-      '#lmui-stats{display:flex;flex-direction:column;gap:2px;padding-top:2px;font-size:13px;}',
+      '#lmui-face #lmui-align{margin-top:6px;width:48px;padding:2px 0 3px;display:flex;flex-direction:column;align-items:center;font-size:11px;line-height:1.2;white-space:nowrap;border:1px solid #9c7535;border-radius:3px;background:linear-gradient(rgba(28,22,14,.92),rgba(10,8,5,.92));box-shadow:inset 0 1px 0 rgba(255,220,150,.15),0 1px 3px #000;}',
+      '#lmui-stats{display:flex;flex-direction:column;gap:2px;padding:3px 22px 4px 9px;margin-left:2px;font-size:13px;position:relative;background:linear-gradient(90deg,rgba(12,9,6,.82),rgba(12,9,6,.6) 70%,rgba(12,9,6,0));}',
+      '#lmui-stats::before,#lmui-stats::after{content:"";position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,#c9a050,rgba(201,160,80,.5) 70%,rgba(201,160,80,0));}',
+      '#lmui-stats::before{top:0;}#lmui-stats::after{bottom:0;}',
       '#lmui-stats .row{display:flex;gap:9px;align-items:baseline;white-space:nowrap;}',
       '#lmui-stats .k{color:#bdbdbd;margin-right:3px;}',
       '#lmui-stats b{color:#fff;font-weight:600;}',
@@ -183,7 +186,13 @@
 
       /* 右上：地圖名稱框＋小地圖 */
       '#lmui-tr{position:absolute;top:6px;right:6px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;}',
-      '#lmui-mapname{min-width:104px;max-width:160px;padding:3px 10px 3px;border:1px solid #7a6440;border-radius:3px;background:linear-gradient(#4a3c2a,#211910);color:#f0e2bf;text-align:center;box-shadow:inset 0 1px 0 rgba(255,235,190,.2),0 1px 4px #000;}',
+      /* 地圖名：金色切角框＋左側地點圖示（圖示依地圖名判斷：森林／村莊／城堡／塔／洞穴／島／山谷，其餘交叉劍） */
+      '#lmui-mapname{position:relative;display:flex;align-items:center;gap:6px;min-width:120px;max-width:190px;padding:5px 12px 5px 9px;border:0;background:none;color:#f0e2bf;filter:drop-shadow(0 2px 3px #000);}',
+      '#lmui-mapname::before{content:"";position:absolute;inset:0;background:linear-gradient(#f3d58a,#a77a2c 45%,#6b4a17 55%,#d6ac57);clip-path:polygon(9px 0,calc(100% - 9px) 0,100% 9px,100% calc(100% - 9px),calc(100% - 9px) 100%,9px 100%,0 calc(100% - 9px),0 9px);}',
+      '#lmui-mapname::after{content:"";position:absolute;inset:2px;background:linear-gradient(#3a2d1c,#140f09);clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px);}',
+      '#lmui-mapname .mi{position:relative;z-index:1;flex:none;width:26px;height:26px;}',
+      '#lmui-mapname .mi svg{width:100%;height:100%;fill:none;stroke:#e6c06c;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 1px #000);}',
+      '#lmui-mapname .mt{position:relative;z-index:1;min-width:0;flex:1;text-align:center;}',
       '#lmui-mapname b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       '#lmui-mapname small{display:block;font-size:12px;color:#bfae86;line-height:1.2;}',
       '#lmui-mini{display:none !important;position:relative;width:92px;height:92px;border-radius:50%;padding:0;border:1px solid rgba(255,255,255,.22);background:radial-gradient(circle,rgba(30,30,30,.35),rgba(0,0,0,.6));box-shadow:0 0 0 1px rgba(0,0,0,.6),inset 0 0 14px rgba(0,0,0,.7);overflow:hidden;}',
@@ -631,7 +640,7 @@
         '</div>' +
       '</div>' +
       '<div id="lmui-tr">' +
-        '<button type="button" id="lmui-mapname" class="lmui-hit"><b></b><small></small></button>' +
+        '<button type="button" id="lmui-mapname" class="lmui-hit"><span class="mi"></span><span class="mt"><b></b><small></small></span></button>' +
         '<button type="button" id="lmui-mini" class="lmui-hit" aria-label="地圖"><span class="moon">🌙</span><i class="me" style="left:50%;top:50%"></i></button>' +
       '</div>' +
       /* 狀態列：經驗條（等級）＋血條/魔力條（AUTO 壓在中間圓章上），釘在戰鬥畫面下緣，任何分頁都在 */
@@ -1805,7 +1814,34 @@
     }
     var ms = $('map-select'), mc = $('map-category');
     setTxt(el.mapname.querySelector('b'), ms && ms.selectedOptions[0] ? ms.selectedOptions[0].text : '');
+    setMapIcon((ms && ms.selectedOptions[0] ? ms.selectedOptions[0].text : '') + ' ' + (mc && mc.selectedOptions[0] ? mc.selectedOptions[0].text : ''));
     setTxt(el.mapname.querySelector('small'), mc && mc.selectedOptions[0] ? mc.selectedOptions[0].text : '');  }
+
+  // 地圖名前面的地點圖示（金色線條）：依地圖名＋分類名的關鍵字挑一個；換地圖才重畫
+  var MAP_ICO = {
+    tree: '<path d="M12 2.5l4.2 5.5h-2.4l3.7 4.8h-2.4l3.9 4.7H5l3.9-4.7H6.5l3.7-4.8H7.8z"/><path d="M12 17.5V21.5"/>',
+    house: '<path d="M3.5 11.5L12 4l8.5 7.5"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>',
+    castle: '<path d="M4 20V9h3v2h2V9h2v2h2V9h2v2h2V9h3v11z"/><path d="M10.5 20v-4a1.5 1.5 0 0 1 3 0v4"/>',
+    tower: '<path d="M8 21V8h8v13"/><path d="M7 8V4.5h2V6h2V4.5h2V6h2V4.5h2V8"/><path d="M11 21v-4h2v4M11 11h2"/>',
+    cave: '<path d="M3 20c1-6 4-11 9-11s8 5 9 11z"/><path d="M8.5 20c.5-3 1.8-5.5 3.5-5.5s3 2.5 3.5 5.5"/>',
+    island: '<path d="M3 17c2-1.5 4-1.5 6 0s4 1.5 6 0 4-1.5 6 0"/><path d="M3 20.5c2-1.5 4-1.5 6 0s4 1.5 6 0 4-1.5 6 0"/><path d="M12 14V7M12 7c-2-2-5-1.5-6 0M12 7c2-2 5-1.5 6 0"/>',
+    mountain: '<path d="M2.5 20l6.5-11 3.5 5.5 2.5-3.5 6.5 9z"/><path d="M7.5 11.5l1.5 1.5 1.5-1.5"/>',
+    swords: '<path d="M5 5l9 9M19 5l-9 9M7.5 14.5l2 2M16.5 14.5l-2 2M4.5 19.5l3-3M19.5 19.5l-3-3"/>'
+  };
+  var mapIconKey = '';
+  function setMapIcon(name) {
+    var k = /森林|樹|精靈/.test(name) ? 'tree'
+      : /村|城鎮|港口|安全區/.test(name) ? 'house'
+      : /塔/.test(name) ? 'tower'
+      : /城|要塞|城墎|王國/.test(name) ? 'castle'
+      : /洞|地監|窟|穴|巢|地下|墓/.test(name) ? 'cave'
+      : /島|海/.test(name) ? 'island'
+      : /谷|山|沙漠|雪|荒野/.test(name) ? 'mountain' : 'swords';
+    if (k === mapIconKey) return;
+    var box = el.mapname && el.mapname.querySelector('.mi'); if (!box) return;
+    mapIconKey = k;
+    box.innerHTML = '<svg viewBox="0 0 24 24">' + MAP_ICO[k] + '</svg>';
+  }
 
   // F1~F6：先放已學會的手動技能（名單規則同 afk-skillbar，但不讀那支的 DOM），剩下的放身上的藥水/瞬移卷軸
   var lastHotKey = '', lastHotSig = '';
