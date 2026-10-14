@@ -883,10 +883,11 @@ function petsTick() {
         // 選目標：最近的敵人（依戰場座標；無座標退 getTarget）
         let tgt = _petPickTarget(p);
         if (!tgt) return;
+        let _swPause = !companionReadyFor(p, tgt);   // ⏸ 上一個目標剛死：換下一隻前停頓（同近戰）
         // 技能（依施法速度節奏·MP 足夠才放）
         if (d.castItv > 0 && def.sk.length && !((pst.silence || 0) > 0 || (pst.magicseal || 0) > 0)) {
             p._castCd = (p._castCd != null ? p._castCd : (d.castItv - 1)) - 1;
-            if (p._castCd <= 0 && (p._actionCd || 0) <= 0) {
+            if (p._castCd <= 0 && (p._actionCd || 0) <= 0 && !_swPause) {
                 let _ok; if (typeof threatWrap === 'function') threatWrap(p, () => { _ok = petCastSkill(p, d, tgt); }); else _ok = petCastSkill(p, d, tgt);   // 🎯 v3.7.97 仇恨：寵物技能傷害→記給該寵物
                 if (_ok) { p._castCd = Math.max(3, Math.round(d.castItv * companionSpdMul(p))); p._actionCd = 4; }
                 else p._castCd = Math.min(10, d.castItv);
@@ -895,7 +896,7 @@ function petsTick() {
         // 一般攻擊（依攻擊速度）
         p._atkCd = (p._atkCd != null ? p._atkCd : (d.atkItv - 1)) - 1;
         p._stunCycle = false;
-        if (p._atkCd <= 0 && (p._actionCd || 0) <= 0) {
+        if (p._atkCd <= 0 && (p._actionCd || 0) <= 0 && !_swPause) {
             tgt = _petPickTarget(p);   // 技能可能已擊殺
             if (tgt) { if (typeof threatWrap === 'function') threatWrap(p, () => petAttackOnce(p, d, tgt)); else petAttackOnce(p, d, tgt); p._actionCd = 3; }   // 🎯 v3.7.97 仇恨：寵物普攻傷害→記給該寵物
             p._atkCd = Math.ceil(d.atkItv * companionSpdMul(p) * ((pst.slowAtk || 0) > 0 ? 2 : 1));   // 喝了綠水：攻擊間隔 ÷1.33
@@ -1195,6 +1196,18 @@ function companionDrinkPotion(p, pct, mhp, who, kind, wantId) {
 // 🟢 夥伴喝綠水（自我加速藥水）：開著時沒加速就喝一瓶（缺貨且勾「自動購買」→買 10 瓶）；加速中攻擊間隔 ÷1.33（加速術同倍率）。
 //   傷害全部 ×0.75（COMPANION_DMG_MULT），喝了綠水 ≈ 改版前的輸出。
 const COMPANION_DMG_MULT = 0.75;
+// ⏸ 2026-10-15 站長規則：寵物／召喚物／迷魅打死目標後也要停頓才打下一隻，比照近戰（0.8 秒；主人開日光術 0.6 秒）。
+//   每隻自己記上一個目標；那隻已經不在場上 → 從這一刻起停頓。只是換打另一隻活著的怪不停。
+function companionReadyFor(ent, t) {
+    if (!ent || !t) return true;
+    let now = (typeof state !== 'undefined' && state) ? state.ticks : 0;
+    if (ent._lastTgt && ent._lastTgt !== t.uid) {
+        let prevAlive = (mapState.mobs || []).some(m => m && m.uid === ent._lastTgt && !m._dead && (m.curHp || 0) > 0);
+        if (!prevAlive) ent._swUntil = now + ((typeof killPauseTicks === 'function') ? killPauseTicks(false) : 8);
+    }
+    ent._lastTgt = t.uid;
+    return !((ent._swUntil || 0) > now);
+}
 function companionHasted(ent) { return !!ent && (ent._hasteUntil || 0) > (((typeof state !== 'undefined' && state) ? state.ticks : 0) || 0); }
 function companionSpdMul(ent) { return companionHasted(ent) ? 1 / (((typeof SKILL_FX !== 'undefined' && SKILL_FX.haste && SKILL_FX.haste.spd) || 1.33)) : 1; }
 function companionDrinkGreen(ent, on, who, kind) {

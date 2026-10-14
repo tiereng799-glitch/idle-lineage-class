@@ -123,6 +123,7 @@ function summonTick(sm, clearFn, owner) {
         clearFn(); return;
     }
     if(sm._charm && owner === player && typeof companionDrinkGreen === 'function') companionDrinkGreen(sm, !!player.charmGreen, `<span class="text-pink-300 font-bold">${sm.form}</span>`, '迷魅的怪');   // 🟢 綠水
+    if(sm._charm && typeof companionReadyFor === 'function' && sm.cd <= 1) { let _ct = getTarget(); if (_ct && !companionReadyFor(sm, _ct)) { sm.cd = 1; return; } }   // ⏸ 迷魅的怪：打死後停頓
     if(--sm.cd <= 0) { sm.cd = (sm._charm && typeof companionSpdMul === 'function') ? Math.max(5, Math.round(sm.interval * companionSpdMul(sm))) : sm.interval; summonAttack(sm, owner); }
     // 高階召喚物技能固定間隔施放；召喚精通使間隔縮短15%。
     if(sm.proc) {

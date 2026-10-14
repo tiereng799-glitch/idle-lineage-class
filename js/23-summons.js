@@ -359,6 +359,7 @@ function necroSkeletonTick() {
         s._atkCd = Math.max(1, Math.round(d.aspd * ((typeof companionSpdMul === 'function') ? companionSpdMul(s) : 1)));   // 喝了綠水：攻擊間隔 ÷1.33
         let t = (typeof _petPickTarget === 'function') ? _petPickTarget(s) : getTarget();
         if (!t) continue;
+        if (typeof companionReadyFor === 'function' && !companionReadyFor(s, t)) { s._atkCd = 1; continue; }   // ⏸ 打死後停頓
         if (typeof threatWrap === 'function') threatWrap(s, () => summonV2AttackOnce(s, d, t, owner));
         else summonV2AttackOnce(s, d, t, owner);
     }
@@ -552,6 +553,7 @@ function summonV2Tick() {
         s._atkCd = Math.max(1, Math.round(d.aspd * ((typeof companionSpdMul === 'function') ? companionSpdMul(s) : 1)));   // 喝了綠水：攻擊間隔 ÷1.33
         const t = (typeof _petPickTarget === 'function') ? _petPickTarget(s) : getTarget();
         if (!t) continue;
+        if (typeof companionReadyFor === 'function' && !companionReadyFor(s, t)) { s._atkCd = 1; continue; }   // ⏸ 打死後停頓
         // 🎯 v3.7.97 仇恨：召喚物攻擊傷害（含 proc/AOE 波及）→記給該召喚物實體
         if (typeof threatWrap === 'function') threatWrap(s, () => { if (s.skId === 'sk_elf_summon' || s.skId === 'sk_elf_summon2') spiritAttackOnce(s, t); else summonV2AttackOnce(s, d, t); });
         else if (s.skId === 'sk_elf_summon' || s.skId === 'sk_elf_summon2') spiritAttackOnce(s, t);   // 🧝 屬性精靈：玩家／傭兵共用公式（傭兵呼叫點見 js/07）
