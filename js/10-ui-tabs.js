@@ -1968,6 +1968,9 @@ function _renderAutoSellBtn() {
 }
 
 // ===== 自動販賣規則（初版） =====
+// 🗑️ 2026-10-14 站長決定：自動賣出只認「清單」（overrides[id]==='sell'，天堂M背包「自動賣出」分類裡新增／移除）；
+//    依強化值整批賣武器防具、藥水留幾個、各種保護等整批規則一律不再生效（設定值留在存檔裡不動）。
+const AUTOSELL_LIST_ONLY = true;
 function getAutoSellRules() {
     if (!player.autoSellRules) player.autoSellRules = {
         delaySec: 60,
@@ -2037,6 +2040,7 @@ function _autoSellDecision(i, ruleSnapshot, craftRemain) {   // 🔧 v2.6.77 rul
     let ov = r.overrides[i.id];
     if (ov === 'keep') return { sell:false };
     if (ov === 'sell') return { sell:true, qty:i.cnt };
+    if (AUTOSELL_LIST_ONLY) return { sell:false };   // 🗑️ 2026-10-14 只賣「自動賣出清單」裡的道具（下面那套整批規則停用）
     // 🏛️ v2.7.56 解除封印後的「古老的○○」是普通武器／防具，沒有詞綴且多數無法強化，會立即符合一般裝備販賣規則；整系列優先保護（個別「永遠販賣」例外仍優先，故置於 overrides 之後）。
     if (r.protectOldSeries && (String(i.id).startsWith('wpn_old_') || String(i.id).startsWith('amr_old_'))) return { sell:false };
     if (r.protectRelic !== false && typeof isRelic === 'function' && isRelic(d)) return { sell:false };   // 🏺 v3.1.44 保護遺物（預設開·個別「永遠販賣」例外仍優先）
