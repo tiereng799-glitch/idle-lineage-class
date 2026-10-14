@@ -549,7 +549,7 @@ function maybeSpawnMobs() {
                     delay = 50;                                                 // 🐉 v3.7.57 侵蝕的安塔瑞斯棲息地（BOSS房）：固定 5 秒重生
                 } else if (MOB_RESPAWN_FIXED_TICKS) {
                     delay = MOB_RESPAWN_FIXED_TICKS;                            // ⏱ 2026-10-14 站長：怪死後固定 4 秒才出下一隻（不再受加速縮短）
-                    if (player.buffs && player.buffs.sk_sunlight > 0) delay = MOB_RESPAWN_SUNLIGHT_TICKS;   // ☀️ 日光術：縮短為 3 秒
+                    if (player.buffs && (player.buffs.sk_sunlight > 0 || player.buffs.sk_holy_dash > 0)) delay = MOB_RESPAWN_SUNLIGHT_TICKS;   // ☀️ 日光術／🏃 神聖疾走(2026-10-15 站長)：縮短為 3 秒（兩個一起開也是 3 秒）
                     if (isSiegeArea(mapState.current) && typeof npcClanSiegeRespawnMultiplier === 'function') {
                         delay = Math.max(1, Math.round(delay * npcClanSiegeRespawnMultiplier()));
                     }

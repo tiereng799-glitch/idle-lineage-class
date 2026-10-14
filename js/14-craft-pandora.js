@@ -1866,7 +1866,7 @@ window.onload = () => {
         if(sk.darkPoison) eff.push('一般攻擊命中 50% 機率使目標中毒：每秒該次攻擊 60% 傷害、持續 5 秒、最多 1 層（取較高傷害並刷新；劇毒精通→100%、每秒 200%）');
         if(sk.moveSpeedMult){
             let moveSpeedText = '移動速度+'+Math.round((sk.moveSpeedMult - 1) * 100)+'%（速度×'+sk.moveSpeedMult;
-            if(sid === 'sk_holy_dash') moveSpeedText += '，與風之疾走互斥';
+            if(sid === 'sk_holy_dash') { moveSpeedText += '，與風之疾走互斥'; eff.push('怪物重生等待 4 秒→3 秒（與日光術不疊加）'); }
             else if(sid === 'sk_elf_winddash') moveSpeedText += '，與神聖疾走互斥，取代精靈餅乾移速';
             moveSpeedText += '）';
             eff.push(moveSpeedText);
