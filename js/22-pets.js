@@ -547,11 +547,11 @@ function petReleaseSlotAssignments(slot) {
 }
 
 // ---------- 四、道具使用（誘捕/幼龍蛋）與擊殺捕捉 ----------
-function petUseLureItem(d, silent) {   // eff:'petlure' → 掛 600 秒誘捕 buff（重複使用重置時間）
+function petUseLureItem(d, silent) {   // eff:'petlure' → 掛 120 秒誘捕 buff（重複使用重置時間）
     let key = d.lure, cfg = PET_LURES[key];
     if (!cfg) return false;
-    player.buffs[key] = d.dur || 600;
-    if (!silent) logSys(`你使用了 ${d.n}，獲得增益 <span class="text-pink-300 font-bold">${cfg.n}</span>，持續 ${d.dur || 600} 秒。擊殺對應動物即可捕獲！`);
+    player.buffs[key] = d.dur || 120;
+    if (!silent) logSys(`你使用了 ${d.n}，獲得增益 <span class="text-pink-300 font-bold">${cfg.n}</span>，持續 ${d.dur || 120} 秒。打倒對應動物時有機會捕獲。`);
     try { updateUI(); } catch (e) {}
     return true;   // 呼叫端 fallthrough 消耗道具
 }
@@ -587,8 +587,12 @@ function petCaptureOnKill(mob) {   // killMob 掛點：專屬誘捕優先於一�
         let form = PET_LURES[key].mobs[mob.n];
         if (!form) continue;
         if (petRoster().length >= PET_STORAGE_MAX) { logSys(`<span class="text-red-400">寵物保管已滿，${PET_LURES[key].n} 未消耗——請先整理保管。</span>`); return; }
+        // 🔧 站長規則：捕獲率看寵物魅力（6＝45%、12 以上＝25%）；沒抓到誘捕效果也一樣消失（飼料袋的不會）
+        let _cha = (PET_BOOK[form] || {}).cha || 6, _rate = _cha <= 6 ? 0.45 : 0.25;
+        let _roll = (typeof lootRng === 'function') ? lootRng('petcapture') : Math.random();
+        if (!player._allLures) player.buffs[key] = 0;
+        if (_roll >= _rate) { logSys(`<span class="text-slate-300">${form} 掙脫逃走了，${PET_LURES[key].n} 的效果消失了。</span>`); return; }
         let snap = _petMutationSnapshot();
-        if (!player._allLures) player.buffs[key] = 0;   // 🐾 一般誘捕道具捕獲後消耗；飼料袋提供的誘捕不消耗（卸下即失效）
         let added = petStoreAdd(form, null, true);
         if (!added || !_petCommitMutation(snap)) return;
         logSys(`<span class="text-green-300 font-bold">🐾 誘捕成功！${form}（Lv.${added.lv}）已送往寵物保管。</span>`);
@@ -1305,6 +1309,20 @@ function petNpcCollar(uidv) {   // 保管人：領項圈
     if (petGiveCollar(p)) { try { updateUI(); } catch (e) {} }
     else logSys(`你身上已經有 ${p.form} 的項圈了。`);
 }
+// 解散：召喚物全部消失並關掉自動重召（不然 2 秒後又召回來）；迷魅：放走那隻怪
+function dismissSummons() {
+    if (typeof player === 'undefined' || !player || !player.cls) return;
+    let skId = (typeof summonV2ActiveSk === 'function') ? summonV2ActiveSk() : '';
+    player.summonsV2 = []; player._summonV2On = false;
+    if (skId && player.buffs) player.buffs[skId] = 0;
+    logSys('召喚物解散了。');
+    try { renderSummonPanel(true); } catch (e) {}
+}
+function dismissCharm() {
+    if (typeof player === 'undefined' || !player || !player.charmed) return;
+    logSys(`${player.charmed.form || '迷魅的怪'} 解除了迷魅。`);
+    player.charmed = null; if (player.buffs) player.buffs.sk_charm = 0;
+}
 function setSummonGreen(on) { if (typeof player === 'undefined' || !player || !player.cls) return; player.sumGreen = !!on; }
 function setCharmGreen(on) { if (typeof player === 'undefined' || !player || !player.cls) return; player.charmGreen = !!on; }
 // 召喚物／迷魅的怪的喝水門檻（存在角色上：召喚物會重召、迷魅會換怪，設定要留著）
@@ -1425,7 +1443,7 @@ function renderPetStorageNPC(div, confirmUid) {
                 ${!otherOut && canEvo && p.lv >= 30 ? `<button onclick="petEvolve('${p.uid}')" class="btn px-2 py-1 text-xs font-bold" style="background:linear-gradient(135deg,#713f12,#ca8a04);color:#fef9c3;border-color:#eab308;" title="進化：${_evoTip}（兩種果實都有可選擇）">進化</button>` : ''}
                 <button onclick="petGearOpen('${p.uid}','wpn')" ${otherOut ? 'disabled' : ''} class="btn px-2 py-1 text-xs font-bold" style="border-color:${p.eq && p.eq.wpn ? '#f59e0b' : '#475569'};color:${p.eq && p.eq.wpn ? '#fcd34d' : '#94a3b8'};${otherOut ? 'opacity:.4;' : ''}" title="${p.eq && p.eq.wpn && DB.items[p.eq.wpn.id] ? DB.items[p.eq.wpn.id].n + ((p.eq.wpn.en || 0) > 0 ? '+' + p.eq.wpn.en : '') : '未裝備寵物武器'}">武器</button>
                 <button onclick="petGearOpen('${p.uid}','arm')" ${otherOut ? 'disabled' : ''} class="btn px-2 py-1 text-xs font-bold" style="border-color:${p.eq && p.eq.arm ? '#f59e0b' : '#475569'};color:${p.eq && p.eq.arm ? '#fcd34d' : '#94a3b8'};${otherOut ? 'opacity:.4;' : ''}" title="${p.eq && p.eq.arm && DB.items[p.eq.arm.id] ? DB.items[p.eq.arm.id].n + ((p.eq.arm.en || 0) > 0 ? '+' + p.eq.arm.en : '') : '未裝備寵物防具'}">防具</button>
-                <button onclick="${isOut ? `petStash('${p.uid}')` : `petNpcCollar('${p.uid}')`}" ${otherOut ? 'disabled' : ''} class="btn px-2 py-1 text-xs font-bold" style="background:linear-gradient(135deg,${isOut ? '#374151,#4b5563' : (otherOut ? '#334155,#475569' : '#065f46,#059669')});color:${isOut ? '#e5e7eb' : (otherOut ? '#94a3b8' : '#a7f3d0')};border-color:${isOut ? '#6b7280' : (otherOut ? '#64748b' : '#10b981')};${otherOut ? 'opacity:.65;' : ''}">${isOut ? '收回' : (otherOut ? '使用中' : '領項圈')}</button>
+                <button onclick="petDeployToggle('${p.uid}')" ${otherOut ? 'disabled' : ''} class="btn px-2 py-1 text-xs font-bold" style="background:linear-gradient(135deg,${isOut ? '#374151,#4b5563' : (otherOut ? '#334155,#475569' : '#065f46,#059669')});color:${isOut ? '#e5e7eb' : (otherOut ? '#94a3b8' : '#a7f3d0')};border-color:${isOut ? '#6b7280' : (otherOut ? '#64748b' : '#10b981')};${otherOut ? 'opacity:.65;' : ''}">${isOut ? '收回' : (otherOut ? '使用中' : '出戰')}</button>
                 ${otherOut || p.locked ? '' : `<button onclick="petRelease('${p.uid}')" class="btn px-2 py-1 text-xs font-bold" style="background:linear-gradient(135deg,#7f1d1d,#991b1b);color:#fecaca;border-color:#b91c1c;">放生</button>`}
             </span>
         </div>`;
@@ -1712,7 +1730,7 @@ function _petsTabData() {
             img: 'assets/anim/' + enc(p.formGfx || p.form) + '/d6/idle_0.png',
             extra: (p._downed
                 ? `<div class="flex items-center gap-1" style="margin-top:5px;">${(player.skills || []).includes('sk_resurrection') ? `<button type="button" onclick="petRevive('${p.uid}','rez')" class="btn text-xs font-bold flex-1" style="padding:5px;">返生術</button>` : ''}<button type="button" onclick="petRevive('${p.uid}','scroll')" class="btn text-xs font-bold flex-1" style="padding:5px;">復活卷軸${(p._reviveCd || 0) > 0 ? `（${Math.ceil(p._reviveCd / 10)} 秒）` : ''}</button></div>`
-                : `<div class="flex items-center gap-1" style="margin-top:5px;">${_ptGearBtn(p, 'wpn')}${_ptGearBtn(p, 'arm')}</div>`)
+                : `<div class="flex items-center gap-1" style="margin-top:5px;">${_ptGearBtn(p, 'wpn')}${_ptGearBtn(p, 'arm')}<button type="button" onclick="petStash('${p.uid}')" class="btn text-xs font-bold" style="padding:4px 8px;white-space:nowrap;">寄放</button></div>`)
                 + `<div class="flex items-center justify-end gap-3" style="margin-top:4px;">${_ptPot(p.potPct, `petSetPotPct('${p.uid}',this.value)`)}${_ptGreen(p.green, `petSetGreen('${p.uid}',this.checked)`)}</div>`,
             sig: [p.eq && p.eq.wpn && p.eq.wpn.id, p.eq && p.eq.wpn && p.eq.wpn.en, p.eq && p.eq.arm && p.eq.arm.id, p.eq && p.eq.arm && p.eq.arm.en, p.potPct || 0, p.green ? 1 : 0, Math.ceil((p._reviveCd || 0) / 10)].join(',') });
     });
@@ -1721,7 +1739,7 @@ function _petsTabData() {
     let sums = (typeof summonV2List === 'function') ? summonV2List() : [];
     if (typeof necroSkeletonList === 'function') sums = sums.concat(necroSkeletonList().filter(s => !s._necroOwnerKey || (typeof _necroOwnerByKey === 'function' && _necroOwnerByKey(s._necroOwnerKey) === player)));
     let _sumAlive = sums.filter(s => s && !s._downed && (s.hp || 0) > 0);
-    if (_sumAlive.length) out.push({ key: 'sh', head: `<div class="flex items-center justify-between gap-2" style="padding:2px 2px 0;"><span class="font-bold" style="color:#d8b4fe;">🔮 召喚物（${_sumAlive.length}）</span><span class="flex items-center gap-3">${_ptPot(player.sumPotPct, 'setSummonPotPct(this.value)')}${_ptGreen(player.sumGreen, 'setSummonGreen(this.checked)')}</span></div>`, sig: (player.sumPotPct || 0) + (player.sumGreen ? 'g' : '') });
+    if (_sumAlive.length) out.push({ key: 'sh', head: `<div class="flex items-center justify-between gap-2" style="padding:2px 2px 0;"><span class="font-bold" style="color:#d8b4fe;">🔮 召喚物（${_sumAlive.length}）</span><button type="button" onclick="dismissSummons()" class="btn text-xs font-bold" style="padding:3px 10px;">解散</button></div><div class="flex items-center justify-end gap-3" style="padding:0 2px;">${_ptPot(player.sumPotPct, 'setSummonPotPct(this.value)')}${_ptGreen(player.sumGreen, 'setSummonGreen(this.checked)')}</div>`, sig: (player.sumPotPct || 0) + (player.sumGreen ? 'g' : '') });
     _sumAlive.forEach((s, i) => {
         out.push({ key: 's' + (s.uid || i), tag: '🔮', color: '#d8b4fe', border: '#6b21a8', name: s.form, lv: s.lv, hp: s.hp, mhp: s.mhp, time: remain > 0 ? _ptTime(remain) : '',
             img: 'assets/anim/' + enc(s.formGfx || s.form) + '/d6/idle_0.png', fallback: encodeURI('assets/icons/skills/召喚術.png') });
@@ -1730,7 +1748,7 @@ function _petsTabData() {
     if (c && c._charm && !c._downed && (c.hp || 0) > 0) {
         out.push({ key: 'c', tag: '💫', color: '#f9a8d4', border: '#9d174d', name: c.form, lv: c.lv, hp: c.hp, mhp: c.mhp, time: _ptTime(((c.endTick || 0) - ((typeof state !== 'undefined' && state && state.ticks) || 0)) / 10),
             img: 'assets/anim/' + enc(c.form) + '/idle_0.png', fallback: encodeURI('assets/icons/skills/迷魅術.png'),
-            extra: `<div class="flex items-center justify-end gap-3" style="margin-top:4px;">${_ptPot(player.charmPotPct, 'setCharmPotPct(this.value)')}${_ptGreen(player.charmGreen, 'setCharmGreen(this.checked)')}</div>`, sig: (player.charmPotPct || 0) + (player.charmGreen ? 'g' : '') });
+            extra: `<div class="flex items-center justify-end gap-3" style="margin-top:4px;">${_ptPot(player.charmPotPct, 'setCharmPotPct(this.value)')}${_ptGreen(player.charmGreen, 'setCharmGreen(this.checked)')}<button type="button" onclick="dismissCharm()" class="btn text-xs font-bold" style="padding:3px 10px;">解散</button></div>`, sig: (player.charmPotPct || 0) + (player.charmGreen ? 'g' : '') });
     }
     return out;
 }
@@ -1758,12 +1776,11 @@ function openCompanionPanel() {
     ov.id = 'companion-overlay';
     ov.style.cssText = 'position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:12px;';
     ov.innerHTML = `<div style="width:100%;max-width:380px;max-height:82vh;display:flex;flex-direction:column;background:#0f0c09;border:1px solid #b7791f;border-radius:10px;overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #4a3f30;color:#fbbf24;font-weight:bold;font-size:16px;">🐾 夥伴<span style="flex:1"></span><button type="button" data-stash="1" class="btn text-sm font-bold" style="padding:3px 12px;${petsOutList().length ? '' : 'display:none;'}">寄放</button><button type="button" data-close="1" style="background:none;border:0;color:#aaa;font-size:18px;cursor:pointer;">✕</button></div>
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #4a3f30;color:#fbbf24;font-weight:bold;font-size:16px;">🐾 夥伴<span style="flex:1"></span><button type="button" data-close="1" style="background:none;border:0;color:#aaa;font-size:18px;cursor:pointer;">✕</button></div>
         <div id="companion-overlay-body" class="flex flex-col gap-2" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:8px;"></div>
     </div>`;
     ov.addEventListener('click', ev => {
         if (ev.target === ov || ev.target.closest('[data-close]')) { closeCompanionPanel(); return; }
-        if (ev.target.closest('[data-stash]')) { petStashAll(); closeCompanionPanel(); }   // 寄放：寵物回保管、背包補項圈
     });
     document.body.appendChild(ov);
     renderCompanionPanel(true);

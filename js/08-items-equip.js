@@ -1214,7 +1214,7 @@ function renderStatusIconBar() {
     if(player.buffs.cautious>0)add('慎重藥水',player.buffs.cautious,'慎重藥水');
     if(player.buffs.elfcookie>0)add('精靈餅乾',player.buffs.elfcookie,'精靈餅乾');
     // 🐾 v3.2.17 誘捕狀態（7 種·共用「誘捕」圖示·label 區分）：期間擊殺對應動物即捕獲
-    if(typeof PET_LURES!=='undefined')Object.keys(PET_LURES).forEach(k=>{if((player.buffs[k]||0)>0)add('誘捕|'+k,player.buffs[k],PET_LURES[k].n,'誘捕');});
+    if(typeof PET_LURES!=='undefined')Object.keys(PET_LURES).forEach(k=>{if((player.buffs[k]||0)>0)add('誘捕|'+k,player.buffs[k],PET_LURES[k].n,'assets/icons/items/肉.png');});   // 🍖 圖示用「肉」(路徑含 / ＝直接用這張圖)
     if(player._setPoly||(player.buffs.poly>0&&player.poly))add('變形術',player.buffs.poly||0,'變身');
     Object.keys(STATUS_ICON_SKILLS).forEach(id=>{if((player.buffs[id]||0)>0)add(STATUS_ICON_SKILLS[id],player.buffs[id],DB.skills[id]?DB.skills[id].n:STATUS_ICON_SKILLS[id]);});
     // 🤝 v3.5.36 全隊光環（大地祝福/灼熱武器/閃亮之盾等 TEAM_AURA_SKILLS）：玩家未自持 buff 但隊友維持中→也亮圖示（標「隊友提供」·倒數取隊友最長剩餘）。玩家自持時上方主迴圈已加(seen 去重)→此段只補「純受益」情形。TEAM_SHARE_BUFFS 類會給玩家自己一份 buff·已由主迴圈顯示故不列入。寵物/召喚無此圖示列不涵蓋。
@@ -1230,7 +1230,7 @@ function renderStatusIconBar() {
     let sig=rows.map(x=>x.name+'|'+x.label).join('||');
     if(bar.dataset.statusSig!==sig){
         bar.dataset.statusSig=sig;
-        bar.innerHTML=rows.map((x,i)=>{let title=x.label+(x.ticks>0?'｜剩餘 '+x.sec+' 秒':'');return `<div class="status-icon${x.ally?' status-icon--ally':''}" data-status-index="${i}" title="${title}"><img src="assets/state-icons/${encodeURIComponent(x.icon||x.name)}.jpg" alt="${x.label}"></div>`;}).join('');
+        bar.innerHTML=rows.map((x,i)=>{let title=x.label+(x.ticks>0?'｜剩餘 '+x.sec+' 秒':'');return `<div class="status-icon${x.ally?' status-icon--ally':''}" data-status-index="${i}" title="${title}"><img src="${(x.icon||'').indexOf('/')>=0?encodeURI(x.icon):'assets/state-icons/'+encodeURIComponent(x.icon||x.name)+'.jpg'}" alt="${x.label}"></div>`;}).join('');
     } else {
         rows.forEach((x,i)=>{let icon=bar.querySelector(`[data-status-index="${i}"]`);if(!icon)return;icon.title=x.label+(x.ticks>0?'｜剩餘 '+x.sec+' 秒':'');});
     }
