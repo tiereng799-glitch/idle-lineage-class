@@ -1886,8 +1886,8 @@
     var usable = learned && eleOk && eleChosen && (isGranted || needLv === undefined || player.lv >= needLv);
     var cls = 'lsk-cell tip-host' + (learned ? (usable ? '' : ' is-off') : ' is-unlearned');
     var img = '<img src="' + (typeof getIconUrl === 'function' ? getIconUrl(sk, true) : '') + '" onerror="this.style.display=\'none\'" alt="">';
-    var cast = (learned && usable && sk.type === 'manual') ? ' onclick="manualCast(\'' + id + '\')"' : '';
-    return '<div class="' + cls + '" data-tip-skill="' + id + '" title="' + (sk.n || '') + '"' + cast + '>' + img + '</div>';
+    var can = (learned && usable && sk.type === 'manual') ? 1 : 0;
+    return '<div class="' + cls + '" data-tip-skill="' + id + '" onclick="__lmuiSkTap(this,\'' + id + '\',' + can + ')">' + img + '</div>';
   }
   function byTier(ids) {
     var g = {}, order = [];
@@ -1895,6 +1895,25 @@
     order.sort(function (a, b) { return a - b; });
     return order.map(function (t) { return { tier: t, ids: g[t] }; });
   }
+  // 點一下＝看說明（叫出核心的資料框：朝格子派一個 mousemove，內容與定位都交給核心，同 afk-touchtip 長按的做法）；
+  //   說明開著時再點同一格＝施放（只限學會、能用的主動魔法）。點到別處就重新算「第一下」。
+  var skTipId = null;
+  window.__lmuiSkTap = function (el, id, can) {
+    if (can && skTipId === id) {
+      skTipId = null;
+      try { document.body.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 0, clientY: 0 })); } catch (e) {}   // 收掉資料框
+      if (typeof manualCast === 'function') manualCast(id);
+      return;
+    }
+    var r = el.getBoundingClientRect();
+    try { el.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true, view: window, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 })); } catch (e) {}
+    skTipId = id;
+  };
+  document.addEventListener('pointerdown', function (e) {
+    if (!skTipId) return;
+    var c = e.target && e.target.closest && e.target.closest('.lsk-cell[data-tip-skill]');
+    if (!c || c.getAttribute('data-tip-skill') !== skTipId) skTipId = null;
+  }, true);
   // 書籤：all＝全體魔法（通用＋職業＋裝備授予）、cls＝職業魔法、eq＝裝備授予；左側數字＝各書的階數，點了捲到那一階
   var skBook = 'all', skScroll = {};
   var CLS_TAB = { elf: '妖精', knight: '騎士', mage: '法師', dark: '黑暗妖精', royal: '王族' };
