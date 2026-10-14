@@ -1344,7 +1344,7 @@ function renderRiftEntrance(container) {
         <button onclick="enterRift()" class="btn w-full py-4 text-xl font-bold bg-violet-800 hover:bg-violet-700 border border-violet-400 text-white shadow-lg">🌀 進入時空裂痕</button>
         <button onclick="claimRiftReward()" class="btn w-full py-4 text-xl font-bold ${pending ? 'bg-amber-700 hover:bg-amber-600 border-amber-400' : 'bg-slate-700 border-slate-500'} text-white shadow-lg">🎁 領取獎勵${pending ? '（可領取）' : '（無）'}</button>
         ${rankBlock(player.riftRank, false)}
-        ${player.classicMode ? '' : rankBlock(player.riftRankSherine, true)}
+        ${(player.classicMode || SHERINE_CLOSED) ? '' : rankBlock(player.riftRankSherine, true)}
         <div class="text-slate-500 text-xs">進入需消耗 <span class="text-amber-300">1 顆 龜裂之核</span>（目前持有 ${cores}）。停留越久排名越前、獎勵越好；裂痕內無法傳送，離開後須先領取上次獎勵才能再次進入。${player.classicMode ? '' : '一般與席琳的世界排名各自獨立。'}</div>`;
     container.appendChild(box);
 }

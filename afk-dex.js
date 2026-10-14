@@ -4,7 +4,6 @@
  * 首頁(#main-menu)加一顆「📖 怪物 / 掉落查詢」按鈕,開搜尋面板。
  *   - 單一搜尋框:可同時搜 怪物名 / 地圖名 / 掉落物名;有輸入才顯示結果(空的不渲染,不卡)。
  *   - 每筆結果是「怪物卡」:數值 + 出沒地圖 + 掉落清單(物品名 + 機率%)。
- *   - 「掉落率模式」下拉(一般/席琳的世界 ×3/瘋狂的席琳世界 ×5):重算怪卡掉落率顯示(席琳上限 100%)。
  *   - 純讀取遊戲全域資料(DB.mobs / DB.maps / MOB_DROPS / DB.items),不改遊戲;桌機手機共用。
  *
  * 掛接:在 index.html 的 </body> 前加一行 <script src="afk-dex.js"></script>
@@ -300,8 +299,7 @@
     var results = document.getElementById('m-dex-results');
     if (!input || !results) return;
     syncUrl();   // 同步搜尋字到網址(獨立頁才會動)
-    var modeEl = document.getElementById('m-dex-mode');
-    var mult = modeEl ? parseFloat(modeEl.value) : 1;
+    var mult = 1;   // 席琳的世界已關閉：掉落一律照一般機率
     var clearBtn = document.getElementById('m-dex-clear');
     if (clearBtn) clearBtn.classList.toggle('show', !!input.value);   // 有字才顯示清除鈕
     var q = (input.value || '').trim().toLowerCase();
@@ -690,7 +688,7 @@
   });
 
   function cardHTML(h, mult, q) {
-    var modeLabel = mult >= 5 ? '（瘋狂的席琳世界 ×5）' : (mult > 1 ? '（席琳的世界 ×3）' : '');
+    var modeLabel = '';
     var m = h.mob;
     var tags = '';
     if (m.boss) tags += '<span class="m-dex-tag tag-boss">BOSS</span>';
@@ -782,39 +780,14 @@
   // 所以不會出現在上面的怪物卡掉落清單。整理成一個預設收合的面板,點開才展開,不佔主版面。
   // 全域特殊掉落規則:每條一個可摺疊區塊(預設收合,面板保持精簡);搜到該條關鍵字會自動展開+高亮+捲到它
   var SPECIAL_BLOCKS = [
-    { id: 'dropmult', title: '🔮 掉落倍率：席琳的世界 ×3、瘋狂的席琳世界 ×5、恩賜怪 ×10', keys: ['掉落倍率', '倍率', '席琳的世界', '瘋狂的席琳世界', '經典模式', '恩賜怪', '恩賜'], lines: [
-      '<b>怪物卡上顯示的是「一般」掉落機率</b>，下列狀態會整體放大／縮小：',
-      '<b>席琳的世界</b>：被席琳化的怪掉落機率 <b>×3</b>（<b>瘋狂的席琳世界</b> <b>×5</b>）；其中「恩賜怪」更高，<b>×10</b>',
-      '<b>經典模式</b>：掉落機率<b>與一般模式完全相同</b>，不打任何折',
-      '<b>固定、不受倍率影響的例外</b>：怪物卡片（普／銀／金卡）、萬能藥（屬性藥）、黑魔石、銀礦石（各條另有標註）；其餘怪卡掉落都會被倍率放大／縮小',
-      '<b>席琳結晶</b>比較特別：不吃「席琳的世界 ×3」與「恩賜怪 ×10」（機率直接由怪物等級決定），只吃「瘋狂 ×3」；經典模式與它無關（經典角色進不了席琳神殿）——詳見下方席琳結晶那條',
-      '上方的「<b>掉落率模式</b>」下拉可把席琳倍率直接套到怪卡的掉落數字'
-    ] },
     { id: 'panacea', title: '🧪 萬能藥（屬性藥）', keys: ['萬能藥', '屬性藥'], lines: [
       '條件：怪物等級 40 以上、且不是血盟',
       '一般怪 0.01%、頭目 1%，掉落時隨機給 力量／敏捷／體質／智力／精神／魅力 萬能藥之一',
-      '夢幻之島的頭目不走這條，改走自己的一般掉落表（搜該頭目可看到固定掉的萬能藥）',
-      '機率固定，<b>不受</b>「席琳的世界 ×3」影響'
-    ] },
-    { id: 'sherine', title: '🔮 席琳結晶（席琳的世界限定）', keys: ['席琳結晶'], lines: [
-      '條件：開啟「席琳的世界」後，被席琳化的怪掉（血盟怪不掉；沒有等級下限）',
-      '機率直接由<b>怪物等級</b>決定：<b>一般怪 ＝ 0.001% × 等級</b>、<b>頭目 ＝ 0.01% × 等級</b>',
-      '例：Lv30 一般怪 0.03%、Lv60 一般怪 0.06%；Lv60 頭目 0.6%、Lv100 頭目 1%',
-      '倍率：<b>不受</b>「席琳的世界 ×3」與「恩賜怪 ×10」影響；<b>瘋狂的席琳世界 ×3</b>',
-      '<b>經典模式</b>：與結晶無關——經典角色進不了席琳神殿，開不了席琳的世界，也就不會掉結晶',
-      '用途：席琳神殿的「<b>伊奧</b>」處，1 顆換 1 件指定部位的<b>席琳遺骸</b>（詞綴隨機）'
-    ] },
-    { id: 'remains', title: '🦴 席琳遺骸（套裝效果的唯一來源）', keys: ['席琳遺骸', '遺骸', '之爪', '之眼', '之血', '之肉', '之心', '之骨', '之牙', '之鱗', '伊奧', '菈克希絲'], lines: [
-      '<b>怪物不會掉遺骸</b>，裝備上也不會再自己長出席琳套裝詞綴。取得只有一條路：',
-      '<b>席琳神殿・伊奧</b>：<b>席琳結晶 ×1</b> 換 1 件指定部位的遺骸（8 部位任選），附帶的席琳套裝詞綴<b>隨機一種</b>（共 12 組）',
-      '遺骸裝在「裝備」分頁最下面的專屬 8 格（之爪／之眼／之血／之肉／之心／之骨／之牙／之鱗），本身沒有任何數值、不佔負重、不能強化',
-      '<b>同一組名</b>的遺骸湊滿 <b>2／3／5</b> 格 → 發動該席琳套裝的 2／3／5 件效果',
-      '<b>一般裝備上的舊詞綴已不再計入套裝件數</b>（只是留著顯示）——穿在身上去席琳神殿找「菈克希絲」，可以把詞綴拆成同套裝、對應部位的遺骸（裝備的強化和其他詞綴都保留）'
+      '夢幻之島的頭目不走這條，改走自己的一般掉落表（搜該頭目可看到固定掉的萬能藥）'
     ] },
     { id: 'blessscroll', title: '✦ 賦予祝福卷軸（等級 40 以上頭目）', keys: ['賦予祝福', '祝福卷軸'], lines: [
       '條件：等級 40 以上頭目，夢幻之島、攻城區除外',
-      '賦予武器祝福卷軸 0.1%、賦予盔甲祝福卷軸 0.1%、賦予飾品祝福卷軸 0.01%',
-      '會受「席琳的世界 ×3」加成'
+      '賦予武器祝福卷軸 0.1%、賦予盔甲祝福卷軸 0.1%、賦予飾品祝福卷軸 0.01%'
     ] },
     { id: 'castscroll', title: '📜 施法卷軸掉落時變祝福／詛咒', keys: ['施法卷軸', '詛咒'], lines: [
       '打怪掉到「對武器施法的卷軸」或「對盔甲施法的卷軸」時，<b>各有 1% 變成「祝福的」、1% 變成「詛咒的」</b>（兩者互斥）。',
@@ -826,13 +799,11 @@
     ] },
     { id: 'areadrop', title: '🌿 區域額外掉落（妖精森林周邊、眠龍洞穴 1~3 樓）', keys: ['米索莉', '精靈玉', '元素石'], lines: [
       '該區所有怪：精靈玉 20%；粗糙的米索莉塊／元素石 各 2%',
-      '學會「世界樹的呼喚」則為 精靈玉 30%；粗糙的米索莉塊／元素石 各 3%',
-      '會受「席琳的世界 ×3」加成'
+      '學會「世界樹的呼喚」則為 精靈玉 30%；粗糙的米索莉塊／元素石 各 3%'
     ] },
     { id: 'blackstone', title: '⛏ 黑魔石（黑暗妖精素材）', keys: ['黑魔石'], lines: [
       '沉默洞穴周邊：二級黑魔石 20%、三級黑魔石 10%（學「提煉魔石」提高為 30%／15%）',
-      '其他野外／地監：需學「提煉魔石」才掉，二級黑魔石 1%、三級黑魔石 0.5%、四級黑魔石 0.1%',
-      '機率固定，<b>不受</b>席琳世界 ×3 影響'
+      '其他野外／地監：需學「提煉魔石」才掉，二級黑魔石 1%、三級黑魔石 0.5%、四級黑魔石 0.1%'
     ] },
     { id: 'silverore', title: '🪙 銀礦石（黑暗妖精製作材料）', keys: ['銀礦石'], lines: [
       '石頭高崙／鋼鐵高崙：100%',
@@ -850,24 +821,11 @@
       '抽到裝備一定帶強化：多在 +0～該裝備安定值；超出安定值的機率 +1 為 0.1%、+2 0.01%、+3 0.001%、+4 0.0001%。另 1% 帶「祝福的」',
       '⚠️ <b>攻城區內擊殺玩家 NPC 一律不掉</b>'
     ] },
-    { id: 'npcrelic', title: '🏺 玩家 NPC 掉遺物（獨立判定）', keys: ['玩家NPC', '玩家 NPC', '白目玩家', '遺物'], lines: [
-      '擊殺玩家 NPC 時另有一次<b>完全獨立</b>的判定：<b>0.001%</b> 機率掉落一件遺物',
-      '<b>從全部遺物裡等機率抽</b>（不看稀有度、不限該怪專屬），持有<b>幸運暴走兔腳</b>時機率翻倍',
-      '與上面的「攜帶物」互不排擠，可能同時中；<b>攻城區內不掉</b>。玩法詳見小百科「PVP／性向值」分頁'
-    ] },
     { id: 'holyrelic', title: '🏛️ 聖地遺物（拉斯塔巴德傳說武器材料）', keys: ['聖地遺物', '聖地的遺物', '死亡騎士之印記'], lines: [
       '<b>取得①</b>：持有「死亡騎士之印記」時，在<b>拉斯塔巴德區域</b>擊敗<b>任何</b>怪物，<b>0.1%</b> 機率掉落（此條不在固定掉落表、只能搜「聖地遺物」）。',
       '<b>取得②</b>：<b>黑暗妖精聖地</b>的怪物（地獄奴隸／受詛咒的黑暗妖精鬥士·法師·騎士／食腐獸／特提斯／翼龍）固定 <b>0.5%</b> 掉（在一般掉落表內，直接搜怪名即可）。',
       '「死亡騎士之印記」哪來：拉斯塔巴德地監的「長老．X」系列怪掉（各約 3%）——可直接搜「死亡騎士之印記」看是哪些怪。印記唯一、不佔倉、可賣。',
       '用途：可羅蘭斯（沉默洞穴）製作拉斯塔巴德五件傳說武器（每件需聖地遺物 ×100）。'
-    ] },
-    { id: 'relic', title: '🏺 遺物（各怪專屬的極稀有裝備）', keys: ['遺物', 'relic', '遺物收集冊'], lines: [
-      '<b>每隻怪物各有一件專屬遺物</b>，擊殺時 <b>0.0001%</b>（百萬分之一）機率掉落——搜怪物名，該怪的掉落表就會列出那件遺物',
-      '機率<b>會吃掉落倍率</b>：席琳的世界 <b>×3</b>、瘋狂的席琳世界 <b>×5</b>、恩賜怪 <b>×10</b>',
-      '遺物<b>無法強化</b>，也<b>不會</b>帶祝福／詛咒、屬性／遠古詞綴或席琳套裝效果——數值永遠固定',
-      '能給哪些職業用，以裝備卡上標示的職業為準',
-      '取得任何遺物會登錄「<b>遺物收集冊</b>」（遊戲內「收藏」面板第 4 本；進度依一般／經典兩種模式各自一份、與倉庫同規則；只記錄進度、無全收集加成）',
-      '自動賣出<b>預設保護遺物</b>不賣（可在自動賣出設定關閉；對單件設「永遠販賣」則照賣）'
     ] }
   ];
   var SPECIAL_KEYS = SPECIAL_BLOCKS.reduce(function (a, b) { return a.concat(b.keys); }, []);
@@ -904,15 +862,12 @@
           '</span>' +
           '<button id="m-dex-close" type="button" title="關閉">✕</button>' +
         '</div>' +
-        '<div id="m-dex-sherine-row"><label for="m-dex-mode">掉落率模式</label>' +
-          '<select id="m-dex-mode"><option value="1">一般模式</option><option value="3">席琳的世界（×3）</option><option value="5">瘋狂的席琳世界（×5）</option></select></div>' +
         '<div id="m-dex-results"><div class="m-dex-hint">輸入 怪物名 / 地圖 / 掉落物 開始搜尋；搜物品名可直接點看詳情</div></div>' +
         specialPanelHTML() +
       '</div>' +
       '<div id="m-dex-itempop"><div id="m-dex-itempop-card"><button id="m-dex-itempop-close" type="button" title="關閉" aria-label="關閉">✕</button><div id="m-dex-itempop-body"></div></div></div>';
     document.body.appendChild(m);
     document.getElementById('m-dex-input').addEventListener('input', debouncedSearch);
-    document.getElementById('m-dex-mode').addEventListener('change', doSearch);
     document.getElementById('m-dex-close').addEventListener('click', userCloseTop);
     document.getElementById('m-dex-clear').addEventListener('click', function () {
       var i = document.getElementById('m-dex-input');
@@ -981,9 +936,6 @@
       '#m-dex-clear:active{background:#64748b;}',
       '#m-dex-close{flex:0 0 auto;width:42px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;border-radius:8px;font-size:16px;cursor:pointer;font-family:inherit;}',
       '#m-dex-close:active{background:#334155;}',
-      '#m-dex-sherine-row{display:flex;align-items:center;gap:8px;padding:9px 14px;color:#cbd5e1;font-size:14px;border-bottom:1px solid #1e293b;flex:0 0 auto;}',
-      '#m-dex-sherine-row label{flex:0 0 auto;}',
-      '#m-dex-mode{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:4px 8px;font-size:14px;font-family:inherit;outline:none;cursor:pointer;}',
       '#m-dex-results{flex:1 1 auto;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;}',
       '.m-dex-hint{color:#94a3b8;text-align:center;padding:22px 8px;font-size:14px;line-height:1.6;}',
       '.m-dex-card{background:#111c30;border:1px solid #334155;border-radius:10px;padding:12px;}',

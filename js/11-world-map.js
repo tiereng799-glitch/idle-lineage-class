@@ -4,7 +4,7 @@ const MAP_CATEGORIES = {
         {v:'town_silver_knight',t:'銀騎士村'}, {v:'town_elf',t:'妖精森林'}, {v:'town_talking',t:'說話之島'},
         {v:'town_gludio',t:'燃柳村'}, {v:'town_gludin',t:'古魯丁村莊'}, {v:'town_giran',t:'奇岩'}, {v:'town_heine',t:'海音'},
         {v:'town_oren',t:'歐瑞村莊'}, {v:'town_aden',t:'亞丁',c:'#facc15'}, {v:'town_ivory_tower',t:'象牙塔'}, {v:'town_witon',t:'威頓村'},
-        {v:'town_sherine',t:'席琳神殿',c:'#4ade80',classicHide:true}, {v:'town_silent',t:'沉默洞穴',c:'#a78bfa'}, {v:'town_flame_audience',t:'炎魔謁見所',c:'#ff6b35',questReq:'demonTemple',affinityReq:1000}, {v:'town_elder_council',t:'長老會議廳',c:'#a5b4fc'}
+        {v:'town_sherine',t:'席琳神殿',c:'#4ade80',classicHide:true,closed:true}, {v:'town_silent',t:'沉默洞穴',c:'#a78bfa'}, {v:'town_flame_audience',t:'炎魔謁見所',c:'#ff6b35',questReq:'demonTemple',affinityReq:1000}, {v:'town_elder_council',t:'長老會議廳',c:'#a5b4fc'}
     ],
     wild: [
         {v:'silver_knight',t:'銀騎士地區'}, {v:'talking_island',t:'說話之島周邊'}, {v:'zone_01',t:'妖精森林周邊'},
@@ -157,7 +157,7 @@ const MAP_REGIONS = [
         {v:'sunrise_castle', t:'日出之國城墎'}, {v:'sunrise_east', t:'日出之國東之地'}, {v:'sunrise_west', t:'日出之國西之地'}, {v:'sunrise_north', t:'日出之國北之地'}
     ]},
     { key: 'sherine', label: '席琳神殿', maps: [
-        {v:'town_sherine', t:'席琳神殿'}
+        {v:'town_sherine', t:'席琳神殿', closed:true}
     ]}
 ];
 // 由地圖 v 找回 MAP_CATEGORIES 的原始定義（顏色/進入條件/原名）
@@ -184,8 +184,10 @@ function regionMapList(rk) {
     }
     return out;
 }
-// 地區在目前模式下是否有可見地圖（經典模式隱藏整個只剩席琳神殿的地區，避免空分類）
-function regionHasVisible(rk) { return regionMapList(rk).some(m => !(m.classicHide && player.classicMode)); }
+// 地圖是否整個不顯示、也不可進入：closed＝永久關閉（2026-10-14 起席琳神殿）；classicHide＝經典模式隱藏
+function mapHiddenEntry(m) { return !!(m && (m.closed || (m.classicHide && player.classicMode))); }
+// 地區在目前模式下是否有可見地圖（隱藏整個只剩席琳神殿的地區，避免空分類）
+function regionHasVisible(rk) { return regionMapList(rk).some(m => !mapHiddenEntry(m)); }
 // ===== 🔧 攻城城池設定（肯特城／風木城；機制相同，僅城門/守護塔/地圖/城堡不同）=====
 const SIEGE_CITY = {
     kent:     { key:'kent',     name:'肯特城', outer:'kent_outer', outerName:'肯特外門區', inner:'kent_inner', innerName:'肯特內城', castle:'town_kent_castle',     castleName:'肯特城', gate:'肯特城門', tower:'肯特守護塔' },
@@ -293,7 +295,7 @@ function mapOptDisabled(m) {
     // 🧑‍🤝‍🧑 v3.7.84 受僱為其他角色的傭兵期間＝只能停留在安全區 → 下拉中所有非 town_ 地圖一律灰階不可選
     //    （與 changeMap 的 mercenaryRoleBattleBlocked 同一條規則·此處只是把它前推到 UI 上；快取版避免每個選項都掃 localStorage）
     if (m.v && !String(m.v).startsWith('town_') && typeof mercRoleSafeAreaOnly === 'function' && mercRoleSafeAreaOnly()) return true;
-    if (m.classicHide && player.classicMode) return true;   // 🔥 經典模式：席琳神殿不可進入（縱深防護，配合 populateMapSelect 隱藏選項）
+    if (mapHiddenEntry(m)) return true;   // 🔥 已關閉的地圖／經典模式的席琳神殿不可進入（縱深防護，配合 populateMapSelect 隱藏選項）
     if (m.needKey && !player.inv.some(i => i.id === m.needKey && (i.cnt || 1) >= 1)) return true;   // 🔑 需鑰匙地圖：背包無鑰匙 → 灰色不可選
     // 🗼 傲慢之塔樓層門檻：2~10樓需曾擊敗潔尼斯女王；11樓以上需持有對應傳送符/支配符/移動卷軸
     if (m.questReq === 'demonTemple' && !player.demonTempleOpen) return true;   // 🔥 魔族神殿：須完成該角色 50 級試煉指定階段才開放（逐角色）
@@ -308,7 +310,7 @@ function populateMapSelect(cat) {
     sel.innerHTML = '';
     let list = regionMapList(cat);
     list.forEach(m => {
-        if (m.classicHide && player.classicMode) return;   // 🔥 經典模式：隱藏席琳神殿（連選項都不顯示）
+        if (mapHiddenEntry(m)) return;   // 🔥 已關閉／經典模式隱藏的地圖連選項都不顯示
         let o = document.createElement('option');
         o.value = m.v; o.textContent = m.t;
         if (mapOptDisabled(m)) { o.disabled = true; o.style.color = '#64748b'; }
@@ -1113,6 +1115,9 @@ function ismaelBuyAcc() {
 }
 
 function changeMap(force) {
+    // 🚫 目標地圖不在下拉選單裡（已關閉的席琳神殿、經典模式隱藏的地圖）→ select 值是空字串，照走會把所在地清成 ''；原地不動
+    let _mapSel = document.getElementById('map-select');
+    if (_mapSel && !_mapSel.value && mapState.current) { syncMapSelectors(); return; }
     // 行動限制狀態（石化／麻痺／冰凍／暈眩）時無法主動切換地圖；force=true 供復活、載入等內部流程略過
     if (!force && player.statuses &&
         (player.statuses.stone > 0 || player.statuses.paralyze > 0 || player.statuses.freeze > 0 || player.statuses.stun > 0 || player.statuses.sleep > 0)) {
@@ -1253,6 +1258,7 @@ function changeMap(force) {
 
 // ===== 🔮 席琳神殿：祈禱（席琳的世界 開關介面）=====
 function toggleSherineWorld() {
+    if (SHERINE_CLOSED) return;   // 🚫 席琳的世界已關閉
     if ((player.lv || 1) < 40) { logSys('<span class="text-red-400">等級未達 40，席琳對你的祈禱沒有回應。</span>'); return; }
     player.sherineWorld = !player.sherineWorld;
     if (player.sherineWorld) player.sherineMad = false;   // 🔮 互斥：開啟一般席琳 → 關閉瘋狂席琳
@@ -1265,6 +1271,7 @@ function toggleSherineWorld() {
     let el = document.getElementById('interaction-content'); if (el) renderSherinePray(el);
 }
 function toggleSherineMad() {
+    if (SHERINE_CLOSED) return;   // 🚫 席琳的世界已關閉
     if ((player.lv || 1) < 40) { logSys('<span class="text-red-400">等級未達 40，席琳對你的祈禱沒有回應。</span>'); return; }
     player.sherineMad = !player.sherineMad;
     if (player.sherineMad) player.sherineWorld = false;   // 🔮 互斥：開啟瘋狂席琳 → 關閉一般席琳
@@ -1481,7 +1488,7 @@ function renderPrideEntrance(container) {
         <button onclick="startPrideClimb(false)" class="btn w-full py-4 text-xl font-bold bg-rose-800 hover:bg-rose-700 border border-rose-500 text-white shadow-lg">🗼 進入傲慢之塔</button>
         <button onclick="startPrideClimb(true)" class="btn w-full py-4 text-xl font-bold bg-amber-800 hover:bg-amber-700 border border-amber-500 text-white shadow-lg">🏆 挑戰排名模式</button>
         ${rankBlock(player.prideRank, false)}
-        ${player.classicMode ? '' : rankBlock(player.prideRankSherine, true)}
+        ${(player.classicMode || SHERINE_CLOSED) ? '' : rankBlock(player.prideRankSherine, true)}
         <div class="text-slate-500 text-xs">排名模式中即使持有支配符也無法使用傳送術與瞬間移動卷軸；回村或擊敗 100 層頭目時結算。${player.classicMode ? '' : '一般與席琳的世界的排名各自獨立計算。'}</div>`;
     container.appendChild(box);
 }
@@ -1643,6 +1650,7 @@ function openPandoraShortcut() {
 function interactNPC(npcId, townId) {
     let npc = DB.towns[townId].npcs.find(n => n.id === npcId);
     if(!npc) return;
+    if (townId === 'town_sherine' && SHERINE_CLOSED) return;   // 🚫 席琳神殿已關閉：席琳／伊奧／菈克希絲一律打不開
     if ((npc.id === 'npc_esti' || npc.id === 'npc_tros') && typeof clanNpcVisible === 'function' && !clanNpcVisible(npc.id, townId)) return;
     if (npc.classicHide && player.classicMode) return;   // 🔥 經典模式：漢 不可互動（縱深防護，正常情況卡片已不渲染；v3.0.77 碧恩經典可用）
     if (npc.classicOnly && !player.classicMode) return;   // 🕊️ 經典限定 NPC（聖使阿卡塔）：一般模式不可互動（縱深防護，渲染層已過濾）
