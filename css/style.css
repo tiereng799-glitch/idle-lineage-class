@@ -2831,14 +2831,15 @@ button.classic-skill-cell { cursor:pointer; }
 #tab-clan .clan-dip-enemy,  .clan-dip-enemy  { color: #fca5a5; }                                  /* 對方宣戰：淺紅 */
 #tab-clan .clan-dip-mutual, .clan-dip-mutual { color: #dc2626; text-shadow: 0 0 6px rgba(220,38,38,.55); }   /* 互相宣戰：深紅＋微光 */
 
-/* 🗺️ 2026-10-14 一般狩獵 4 格：人物在左、怪物 2×2 在右（站長給的參考圖）。js/09 在 4 格模式給 #mob-list 加 .mob-grid4，
-   前排＝格 0,1（下排）、後排＝格 2,3（上排、往上錯開半張）；玩家／傭兵站位見 js/09 _partySpritePos。
+/* 🗺️ 2026-10-14 一般狩獵：人物在左、怪物在右（站長給的參考圖）。js/09 在 mobGridMode 給 #mob-list 加 .mob-grid（3 格再加 .mob-grid3），
+   前排＝格 0,1（下排）、後排＝格 2(,3)（上排、往上錯開半張；3 格時後排一隻置中）；玩家／傭兵站位見 js/09 _partySpritePos。
    放檔尾＋!important：要壓過上面 area-fit／手機 MQ 對 #mob-list:has(.mob-back) 的 flex、固定帶高與前後排位移。 */
-#battle-view.area-fit #mob-list.mob-grid4 { --g4h: clamp(100px, 36vw, 170px); display: grid !important; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; align-items: end; column-gap: 2px; width: 60% !important; margin-left: auto !important; height: auto !important; }
-#battle-view.area-fit #mob-list.mob-grid4 .mob-target { position: relative; height: var(--g4h) !important; min-width: 0; }
-#battle-view.area-fit #mob-list.mob-grid4 .mob-back { grid-row: 1; z-index: 1; }
-#battle-view.area-fit #mob-list.mob-grid4 .mob-front { grid-row: 2; z-index: 2; margin-top: calc(var(--g4h) * -0.45); }
-#battle-view.area-fit #mob-list.mob-grid4 .mob-back .mob-img-inner,
-#battle-view.area-fit #mob-list.mob-grid4 .mob-front:not(.boss-zoom) .mob-img-inner { transform: translateY(2px) scale(1.285); transform-origin: bottom center; }
-#battle-view.area-fit #mob-list.mob-grid4 .mob-back .mob-img-inner.mob-anim,
-#battle-view.area-fit #mob-list.mob-grid4 .mob-front .mob-img-inner.mob-anim { transform: translateY(2px) !important; }
+#battle-view.area-fit #mob-list.mob-grid { --g4h: clamp(100px, 36vw, 170px); display: grid !important; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; align-items: end; column-gap: 2px; width: 60% !important; margin-left: auto !important; height: auto !important; }
+#battle-view.area-fit #mob-list.mob-grid .mob-target { position: relative; height: var(--g4h) !important; min-width: 0; }
+#battle-view.area-fit #mob-list.mob-grid .mob-back { grid-row: 1; z-index: 1; }
+#battle-view.area-fit #mob-list.mob-grid .mob-front { grid-row: 2; z-index: 2; margin-top: calc(var(--g4h) * -0.45); }
+#battle-view.area-fit #mob-list.mob-grid .mob-back .mob-img-inner,
+#battle-view.area-fit #mob-list.mob-grid .mob-front:not(.boss-zoom) .mob-img-inner { transform: translateY(2px) scale(1.285); transform-origin: bottom center; }
+#battle-view.area-fit #mob-list.mob-grid .mob-back .mob-img-inner.mob-anim,
+#battle-view.area-fit #mob-list.mob-grid .mob-front .mob-img-inner.mob-anim { transform: translateY(2px) !important; }
+#battle-view.area-fit #mob-list.mob-grid3 .mob-back { grid-column: 1 / span 2; justify-self: center; width: 50%; }

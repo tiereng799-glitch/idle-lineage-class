@@ -536,7 +536,7 @@ function maybeSpawnMobs() {
             // 🏛️ 雙BOSS祭壇：不逐格自動補怪（初次生成於 changeMap；單隻陣亡不補）。防呆：兩隻皆亡卻未標記全滅 → 補標，交由 settleDeadMobs 啟動 5 秒同時復活
             if(state._kbVictory !== true && !mapState.mobs.some(m => m && m.boss)) state._kbVictory = true;
         } else {
-            let slotCount = mobSlotCount();                                    // 🆕 一般狩獵最多 4 隻（2026-10-14 站長：5→4）；四軍王房 5 格；純BOSS房 3 格
+            let slotCount = mobSlotCount();                                    // 🆕 一般狩獵最多 3 隻（2026-10-14 站長：5→4→3）；四軍王房 5 格；純BOSS房 3 格
             for(let i=0; i<slotCount; i++) {
                 if(mapState.mobs[i]) { mapState.spawnAt[i] = null; continue; } // 有怪：清除排程
                 if(isPureBossMap && i !== 1) continue;                          // 純 BOSS 房只生中央
@@ -978,11 +978,20 @@ const BOSS_BIG_MAPS = ['antaras_lair', 'fafurion_lair', 'valakas_lair'];   // �
 //    單體純BOSS房與雙BOSS祭壇維持三格；攻城建築出現時也不會壓縮為三格。
 // ⏱ 一般狩獵的重生延遲（tick，10 tick＝1 秒）：0＝走舊制（5 秒 × 移動速度倍率、日光術 ×0.8）
 const MOB_RESPAWN_FIXED_TICKS = 40;
-// 🗺️ 一張圖同時最多幾隻怪：一般狩獵 4（2026-10-14 站長：5→4·畫面改成人物在左、怪物 2×2 在右）；
+// 🗺️ 一張圖同時最多幾隻怪：一般狩獵 3（2026-10-14 站長：5→4→3·畫面是人物在左、怪物在右）；
 //    四軍王房維持 5 格（軍王＋兩側＋後排的站位寫死在 kbRoomRespawn）；純 BOSS 房 3 格。
+const HUNT_MOB_SLOTS = 3;
 function mobSlotCount() {
     if (!backSlotsActive()) return 3;
-    return KING_ROOMS[mapState.current] ? 5 : 4;
+    return KING_ROOMS[mapState.current] ? 5 : HUNT_MOB_SLOTS;
+}
+// 一般狩獵的「怪物在右」版面（js/09 渲染與玩家站位共用）：格數 < 5、且多出來的格子沒有怪（別的系統塞的就退回 5 格版面，不讓牠隱形）
+function mobGridMode() {
+    if (!backSlotsActive()) return false;
+    let n = mobSlotCount();
+    if (n >= 5) return false;
+    for (let i = n; i < 5; i++) if (mapState.mobs[i]) return false;
+    return true;
 }
 function backSlotsActive() {
     let kingRoom = KING_ROOMS[mapState.current];
