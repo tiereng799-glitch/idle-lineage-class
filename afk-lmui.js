@@ -265,12 +265,6 @@
       '#lmui-tabs button{flex:1;padding:3px 0;font-size:15px;color:#c9b88f;background:linear-gradient(#3b3022,#1c160e);border:1px solid #4d3e29;border-radius:2px;}',
       '#lmui-tabs button.on{color:#fff6dc;background:linear-gradient(#7a5f35,#3f2f18);border-color:#b8955a;}',
       '#lmui-tabs .more{flex:0 0 22px;}',
-      '#lmui-tabs .flt{flex:0 0 38px;}',
-      'body.lmui-flt #lmui-tabs .flt{color:#fff6dc;border-color:#b8955a;}',
-      /* 篩選列：搬進來的是核心原本那排 #combat-filter-pills（id 不變，核心的開關與存檔照舊） */
-      '#lmui-flt{display:none;flex-wrap:wrap;gap:3px;padding:3px 4px;border-bottom:1px solid #3d3326;flex:none;}',
-      'body.lmui-flt #lmui-flt{display:flex;}',
-      '#lmui-flt #combat-filter-pills{display:flex !important;flex-wrap:wrap;gap:3px;justify-content:flex-start !important;}',
       /* ▲ 放大：聊天框吃掉整個下方面板（血條/快捷列先收起） */
       'body.lmui-chatbig #lmui-hot{display:none !important;}',   /* 血條在固定狀態列裡，放大聊天框時不收 */
       'body.lmui-chatbig #lmui-tabs .more{color:#fff6dc;border-color:#b8955a;}',
@@ -637,10 +631,9 @@
         '<div id="lmui-hot" data-mode="0">' + hot + '</div>' +
         '<div id="lmui-chat" class="lmui-hit">' +
           '<div id="lmui-tabs">' +
-            '<div class="row"><button type="button" class="more" data-t="big" aria-label="放大聊天框">▲</button><button type="button" data-t="sys">系統</button><button type="button" data-t="combat">戰鬥</button><button type="button" data-t="drop">掉落</button><button type="button" class="flt" data-t="filter">篩選</button></div>' +
+            '<div class="row"><button type="button" class="more" data-t="big" aria-label="放大聊天框">▲</button><button type="button" data-t="sys">系統</button><button type="button" data-t="combat">戰鬥</button><button type="button" data-t="drop">掉落</button></div>' +
             '<div class="row"><button type="button" data-t="say">一般</button><button type="button" data-t="world">世界</button><button type="button" data-t="party">隊伍</button><button type="button" data-t="clan">血盟</button></div>' +
           '</div>' +
-          '<div id="lmui-flt"></div>' +
           '<div id="lmui-lines"></div>' +
           '<div id="lmui-input"><select id="lmui-ch" aria-label="頻道"><option value="say">一般</option><option value="world">世界</option><option value="party">隊伍</option><option value="clan">血盟</option></select>' +
             '<input id="lmui-say" type="text" maxlength="60" autocomplete="off" enterkeyhint="send" placeholder="輸入訊息"><button type="button" id="lmui-send">發送</button></div>' +
@@ -668,7 +661,6 @@
       e.stopPropagation();
       var t = b.getAttribute('data-t');
       if (t === 'big') { document.body.classList.toggle('lmui-chatbig'); return; }
-      if (t === 'filter') { toggleFilter(); return; }
       chatTab = t; lastChatSig = ''; renderChat(true);
     });
     $('lmui-send').addEventListener('click', sendChat);
@@ -1014,7 +1006,7 @@
   }
   function closeAllWindows() {
     var body = document.body;
-    body.classList.remove('lmui-map', 'lmui-cmp', 'lmui-chatbig', 'lmui-flt', 'lmui-townchat', 'lmui-maps', 'lmui-mobinfo', 'lmui-exitwin');
+    body.classList.remove('lmui-map', 'lmui-cmp', 'lmui-chatbig', 'lmui-townchat', 'lmui-maps', 'lmui-mobinfo', 'lmui-exitwin');
     var tic = $('town-interaction-close');   // 村莊 NPC 對話/商店
     if (tic && tic.getClientRects().length) { try { tic.click(); } catch (e) {} }
     var im = $('item-modal');
@@ -1029,13 +1021,8 @@
       if (x) { try { x.click(); } catch (e) {} }
     }
   }
-  // 聊天框取代完整日誌面板：篩選（搬入核心那排篩選鈕）、世界頻道說話、工具列「聊天」
+  // 聊天框取代完整日誌面板：世界頻道說話、工具列「聊天」（篩選分頁 2026-10-14 站長要求拿掉）
   //   （回村鈕已拿掉；打開聊天不會自動 focus 輸入框＝手機不會跳鍵盤，要打字自己點輸入框）
-  function toggleFilter() {
-    var box = $('lmui-flt'), pills = $('combat-filter-pills');
-    if (box && pills && pills.parentNode !== box) box.appendChild(pills);   // 只搬一次；id 不變，核心的 toggleCombatFilter 等照舊找得到
-    document.body.classList.toggle('lmui-flt');
-  }
   // 聊天頻道：世界＝核心世界頻道（#world-log，由 worldChannelAsk 印）；一般／隊伍／血盟目前只在本機顯示自己說的話，
   //   存在三個不顯示的容器裡（只放記憶體、重新整理就清空），之後做線上版再把別人的訊息接進同一個容器。
   var CH_KEEP = 200;
