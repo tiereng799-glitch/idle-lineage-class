@@ -2121,6 +2121,7 @@ function worldChannelAsk() {
     if (!input) return;
     let q = String(input.value || '').trim();
     if (!q) return;
+    if (typeof myChatCommand === 'function' && myChatCommand(q)) { input.value = ''; return; }   // 「.道具名稱 數量」測試寄信指令（js/00z）
     let now = Date.now();
     if (now < _wcAskCooldownUntil) {
         logWorld('<span class="wc-sys">你講太快了，讓別人也說一下話。</span>');

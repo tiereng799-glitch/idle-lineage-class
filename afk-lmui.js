@@ -1058,6 +1058,7 @@
     var say = $('lmui-say'), sel = $('lmui-ch');
     var v = say ? say.value.trim() : '';
     if (!v) return;
+    if (typeof myChatCommand === 'function' && myChatCommand(v)) { say.value = ''; return; }   // 「.道具名稱 數量」測試寄信指令（js/00z）
     var ch = (sel && sel.value) || 'say';
     if (ch === 'world') {
       var src = $('world-input');
