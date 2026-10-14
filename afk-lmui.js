@@ -81,7 +81,7 @@
       /* 角色/夥伴是 absolute 貼戰鬥框底（核心 inline bottom:2px），padding 對它們無效 → 底線跟著抬 */
       B + '#player-morph-sprite{bottom:calc(' + STAND + ' + 2px) !important;}',
       B + '#pet-layer{top:0 !important;height:auto !important;bottom:' + STAND + ' !important;}',
-      B + '#status-icon-bar{position:absolute !important;top:var(--lmui-sib-top,60px) !important;right:6px !important;left:auto !important;max-width:62% !important;z-index:5;display:flex !important;flex-flow:row-reverse wrap !important;justify-content:flex-start !important;gap:3px;}',   // 右上角、地圖鈕下方，從右往左排
+      B + '#status-icon-bar{position:absolute !important;top:8px !important;right:6px !important;left:auto !important;max-width:62% !important;z-index:5;display:flex !important;flex-flow:row-reverse wrap !important;justify-content:flex-start !important;gap:3px;}',   // 右上角、地圖鈕下方，從右往左排
       /* 狀態（魔法）圖示放大：上游手機只有 ~12px，看不出是哪個魔法 */
       B + '#status-icon-bar .status-icon{width:28px !important;height:28px !important;min-width:28px;border:1px solid rgba(0,0,0,.8);box-shadow:0 1px 3px #000;}',
       B + '#status-icon-bar .status-icon img{width:100% !important;height:100% !important;object-fit:cover;}',
@@ -186,15 +186,10 @@
 
       /* 右上：地圖名稱框＋小地圖 */
       '#lmui-tr{position:absolute;top:6px;right:6px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;}',
-      /* 地圖名：金色切角框＋左側地點圖示（圖示依地圖名判斷：森林／村莊／城堡／塔／洞穴／島／山谷，其餘交叉劍） */
-      '#lmui-mapname{position:relative;display:flex;align-items:center;gap:6px;min-width:120px;max-width:190px;padding:5px 12px 5px 9px;border:0;background:none;color:#f0e2bf;}',   /* 不加 filter（同經驗條：iPhone 上字會糊） */
-      '#lmui-mapname::before{content:"";position:absolute;inset:0;background:linear-gradient(#f3d58a,#a77a2c 45%,#6b4a17 55%,#d6ac57);clip-path:polygon(9px 0,calc(100% - 9px) 0,100% 9px,100% calc(100% - 9px),calc(100% - 9px) 100%,9px 100%,0 calc(100% - 9px),0 9px);}',
-      '#lmui-mapname::after{content:"";position:absolute;inset:2px;background:linear-gradient(#3a2d1c,#140f09);clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px);}',
-      '#lmui-mapname .mi{position:relative;z-index:1;flex:none;width:26px;height:26px;}',
-      '#lmui-mapname .mi svg{width:100%;height:100%;fill:none;stroke:#e6c06c;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 1px #000);}',
-      '#lmui-mapname .mt{position:relative;z-index:1;min-width:0;flex:1;text-align:center;}',
-      '#lmui-mapname b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-      '#lmui-mapname small{display:block;font-size:12px;color:#bfae86;line-height:1.2;}',
+      /* 地區名（站長：右上角的框拿掉，改成純文字放在等級條上方靠左；點了一樣打開地圖清單） */
+      '#lmui-mapname{position:absolute;left:8px;bottom:100%;margin-bottom:5px;z-index:5;display:flex;align-items:baseline;gap:6px;max-width:60%;padding:0;border:0;background:none;color:#f0e2bf;text-shadow:0 1px 2px #000,0 0 3px #000,1px 0 0 #000,-1px 0 0 #000;cursor:pointer;}',
+      '#lmui-mapname b{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '#lmui-mapname small{font-size:12px;color:#cdbb90;white-space:nowrap;}',
       '#lmui-mini{display:none !important;position:relative;width:92px;height:92px;border-radius:50%;padding:0;border:1px solid rgba(255,255,255,.22);background:radial-gradient(circle,rgba(30,30,30,.35),rgba(0,0,0,.6));box-shadow:0 0 0 1px rgba(0,0,0,.6),inset 0 0 14px rgba(0,0,0,.7);overflow:hidden;}',
       '#lmui-mini i{position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#ef4444;box-shadow:0 0 4px #ef4444;}',
       '#lmui-mini i.me{width:7px;height:7px;margin:-3.5px 0 0 -3.5px;background:#fef3c7;box-shadow:0 0 5px #fde68a;}',
@@ -224,14 +219,14 @@
          調成銅色（只濾 ::before 那層，血條本身不受影響）；血條位置照上游 .status-vitals-row 的比例（左 3.3%／右 55.5%、寬 41.2%）。 */
       '#lmui-bars{position:relative;flex:none;width:100%;aspect-ratio:334/34;max-height:40px;}',
       /* 夥伴列：寵物(項圈圖)／召喚(召喚術圖)／迷魅(迷魅術圖)，一隻一格，壓在血條上緣；點一下看狀態 */
-      '#lmui-comp{position:absolute;left:4px;bottom:100%;margin-bottom:3px;display:flex;gap:4px;z-index:5;}',
+      '#lmui-comp{position:absolute;left:4px;bottom:100%;margin-bottom:28px;display:flex;gap:4px;z-index:5;}',
       '.lmui-cp{position:relative;width:28px;height:28px;padding:0;border:1px solid var(--lmui-line);border-radius:4px;background:rgba(0,0,0,.6);box-shadow:0 1px 3px #000;cursor:pointer;}',
       '.lmui-cp img{width:100%;height:100%;object-fit:contain;display:block;}',
       '.lmui-cp i{position:absolute;left:1px;right:1px;bottom:1px;height:3px;background:#3b0a0a;}',
       '.lmui-cp i b{display:block;height:100%;background:#ef4444;}',
       '.lmui-cp.down{filter:grayscale(1);opacity:.55;}',
       '.lmui-cp.on{border-color:#fde68a;box-shadow:0 0 6px #fde68a;}',
-      '#lmui-comp-pop{position:absolute;left:4px;bottom:calc(100% + 36px);min-width:150px;padding:6px 9px;background:rgba(12,9,6,.94);border:1px solid var(--lmui-line);border-radius:6px;font-size:14px;line-height:1.6;color:#eee;z-index:6;white-space:nowrap;}',
+      '#lmui-comp-pop{position:absolute;left:4px;bottom:calc(100% + 61px);min-width:150px;padding:6px 9px;background:rgba(12,9,6,.94);border:1px solid var(--lmui-line);border-radius:6px;font-size:14px;line-height:1.6;color:#eee;z-index:6;white-space:nowrap;}',
       '#lmui-comp-pop.hidden{display:none;}',
       '#lmui-comp-pop .t{color:#fde68a;font-weight:700;}',
       '#lmui-bars::before{content:"";position:absolute;inset:0;background:url("assets/character/血條底圖.png") center/100% 100% no-repeat;filter:sepia(1) saturate(1.6) hue-rotate(-12deg) brightness(.72) contrast(1.15);z-index:0;pointer-events:none;}',
@@ -633,11 +628,11 @@
         '</div>' +
       '</div>' +
       '<div id="lmui-tr">' +
-        '<button type="button" id="lmui-mapname" class="lmui-hit"><span class="mi"></span><span class="mt"><b></b><small></small></span></button>' +
         '<button type="button" id="lmui-mini" class="lmui-hit" aria-label="地圖"><span class="moon">🌙</span><i class="me" style="left:50%;top:50%"></i></button>' +
       '</div>' +
       /* 狀態列：經驗條（等級）＋血條/魔力條（AUTO 壓在中間圓章上），釘在戰鬥畫面下緣，任何分頁都在 */
       '<div id="lmui-vit">' +
+        '<button type="button" id="lmui-mapname" class="lmui-hit"><b></b><small></small></button>' +   // 地區名：純文字，靠左貼在等級條上方
         '<div id="lmui-comp"></div><div id="lmui-comp-pop" class="hidden"></div>' +
         '<div id="lmui-exp"><i></i><span class="lv"><em>等級</em><b></b></span><span class="pc"></span></div>' +
         '<div id="lmui-bars"><div id="lmui-hp" class="lmui-bar"><i></i><span></span></div><div id="lmui-mp" class="lmui-bar"><i></i><span></span></div>' +
@@ -1773,7 +1768,7 @@
     ['mouseup', 'mouseleave'].forEach(function (ev) { bar.addEventListener(ev, function () { clearTimeout(pressT); }); });
   }
 
-  var lastAlignC = null, lastNameC = null, lastSibTop = '';
+  var lastAlignC = null, lastNameC = null;
   function updateStats() {
     updateName();
     // 名字那一排：右邊不可壓到地圖名框（框寬隨地圖名變）→ 量出可用寬度，名字太長就省略號
@@ -1811,44 +1806,9 @@
         if (el.name) el.name.style.color = nc;
       }
     }
-    // 狀態圖示列貼在地圖名框正下方：框的高度會隨字型／圖示變，量實際位置（換算成相對戰鬥畫面的 top）
-    try {
-      var bvEl = $('battle-view'), mr = el.mapname.getBoundingClientRect();
-      if (bvEl && mr.height) {
-        var sib = Math.round(mr.bottom - bvEl.getBoundingClientRect().top + 4) + 'px';
-        if (sib !== lastSibTop && parseInt(sib, 10) > 0) { lastSibTop = sib; document.documentElement.style.setProperty('--lmui-sib-top', sib); }
-      }
-    } catch (e) {}
     var ms = $('map-select'), mc = $('map-category');
     setTxt(el.mapname.querySelector('b'), ms && ms.selectedOptions[0] ? ms.selectedOptions[0].text : '');
-    setMapIcon((ms && ms.selectedOptions[0] ? ms.selectedOptions[0].text : '') + ' ' + (mc && mc.selectedOptions[0] ? mc.selectedOptions[0].text : ''));
     setTxt(el.mapname.querySelector('small'), mc && mc.selectedOptions[0] ? mc.selectedOptions[0].text : '');  }
-
-  // 地圖名前面的地點圖示（金色線條）：依地圖名＋分類名的關鍵字挑一個；換地圖才重畫
-  var MAP_ICO = {
-    tree: '<path d="M12 2.5l4.2 5.5h-2.4l3.7 4.8h-2.4l3.9 4.7H5l3.9-4.7H6.5l3.7-4.8H7.8z"/><path d="M12 17.5V21.5"/>',
-    house: '<path d="M3.5 11.5L12 4l8.5 7.5"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>',
-    castle: '<path d="M4 20V9h3v2h2V9h2v2h2V9h2v2h2V9h3v11z"/><path d="M10.5 20v-4a1.5 1.5 0 0 1 3 0v4"/>',
-    tower: '<path d="M8 21V8h8v13"/><path d="M7 8V4.5h2V6h2V4.5h2V6h2V4.5h2V8"/><path d="M11 21v-4h2v4M11 11h2"/>',
-    cave: '<path d="M3 20c1-6 4-11 9-11s8 5 9 11z"/><path d="M8.5 20c.5-3 1.8-5.5 3.5-5.5s3 2.5 3.5 5.5"/>',
-    island: '<path d="M3 17c2-1.5 4-1.5 6 0s4 1.5 6 0 4-1.5 6 0"/><path d="M3 20.5c2-1.5 4-1.5 6 0s4 1.5 6 0 4-1.5 6 0"/><path d="M12 14V7M12 7c-2-2-5-1.5-6 0M12 7c2-2 5-1.5 6 0"/>',
-    mountain: '<path d="M2.5 20l6.5-11 3.5 5.5 2.5-3.5 6.5 9z"/><path d="M7.5 11.5l1.5 1.5 1.5-1.5"/>',
-    swords: '<path d="M5 5l9 9M19 5l-9 9M7.5 14.5l2 2M16.5 14.5l-2 2M4.5 19.5l3-3M19.5 19.5l-3-3"/>'
-  };
-  var mapIconKey = '';
-  function setMapIcon(name) {
-    var k = /森林|樹|精靈/.test(name) ? 'tree'
-      : /村|城鎮|港口|安全區/.test(name) ? 'house'
-      : /塔/.test(name) ? 'tower'
-      : /城|要塞|城墎|王國/.test(name) ? 'castle'
-      : /洞|地監|窟|穴|巢|地下|墓/.test(name) ? 'cave'
-      : /島|海/.test(name) ? 'island'
-      : /谷|山|沙漠|雪|荒野/.test(name) ? 'mountain' : 'swords';
-    if (k === mapIconKey) return;
-    var box = el.mapname && el.mapname.querySelector('.mi'); if (!box) return;
-    mapIconKey = k;
-    box.innerHTML = '<svg viewBox="0 0 24 24">' + MAP_ICO[k] + '</svg>';
-  }
 
   // F1~F6：先放已學會的手動技能（名單規則同 afk-skillbar，但不讀那支的 DOM），剩下的放身上的藥水/瞬移卷軸
   var lastHotKey = '', lastHotSig = '';
