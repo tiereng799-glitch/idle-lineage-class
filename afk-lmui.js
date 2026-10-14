@@ -160,17 +160,17 @@
       '#lmui-hud .lmui-hit{pointer-events:auto;}',
 
       /* 左上：頭像＋數值 */
-      '#lmui-tl{position:absolute;top:6px;left:6px;display:flex;gap:6px;align-items:flex-start;}',
+      '#lmui-tl{position:absolute;top:4px;left:5px;display:flex;gap:5px;align-items:flex-start;}',
       '#lmui-face{width:44px;flex:none;display:flex;flex-direction:column;align-items:center;}',
       /* 第三批（範例圖）：頭像金色雙框 */
-      '#lmui-face .pic{width:44px;height:50px;border:2px solid #d8b062;border-radius:3px;background:radial-gradient(circle at 50% 35%,#2a2218,#0a0806);overflow:hidden;box-shadow:inset 0 0 0 1px #2a1c08,inset 0 0 8px rgba(0,0,0,.8),0 0 0 1px #3a280c,0 0 0 2px #9c7535,0 2px 6px #000;}',
+      '#lmui-face .pic{width:42px;height:42px;border:2px solid #d8b062;border-radius:3px;background:radial-gradient(circle at 50% 35%,#2a2218,#0a0806);overflow:hidden;box-shadow:inset 0 0 0 1px #2a1c08,inset 0 0 8px rgba(0,0,0,.8),0 0 0 1px #3a280c,0 0 0 2px #9c7535,0 2px 6px #000;}',
       '#lmui-face img{width:100%;height:100%;object-fit:cover;object-position:50% 40%;transform:scale(3.2);transform-origin:50% 36%;}',
       '#lmui-face img.logo{object-fit:contain;object-position:center;transform:none;padding:4px;}',
       '#lmui-face{position:relative;}',
       '#lmui-face .pic{cursor:pointer;}',
       /* 頭像下方：性向（正義／中立／邪惡）兩行——頭像只有 44px 寬，「正義 +32767」一行放不下 */
-      '#lmui-face #lmui-align{margin-top:6px;width:48px;padding:2px 0 3px;display:flex;flex-direction:column;align-items:center;font-size:11px;line-height:1.2;white-space:nowrap;border:1px solid #9c7535;border-radius:3px;background:linear-gradient(rgba(28,22,14,.92),rgba(10,8,5,.92));box-shadow:inset 0 1px 0 rgba(255,220,150,.15),0 1px 3px #000;}',
-      '#lmui-stats{display:flex;flex-direction:column;gap:2px;padding:3px 22px 4px 9px;margin-left:2px;font-size:13px;position:relative;background:linear-gradient(90deg,rgba(12,9,6,.82),rgba(12,9,6,.6) 70%,rgba(12,9,6,0));}',
+      '#lmui-face #lmui-align{margin-top:4px;width:48px;padding:0 0 1px;display:flex;flex-direction:column;align-items:center;font-size:11px;line-height:1.2;white-space:nowrap;border:1px solid #9c7535;border-radius:3px;background:linear-gradient(rgba(28,22,14,.92),rgba(10,8,5,.92));box-shadow:inset 0 1px 0 rgba(255,220,150,.15),0 1px 3px #000;}',
+      '#lmui-stats{display:flex;flex-direction:column;gap:0;line-height:1.3;padding:1px 22px 2px 9px;margin-left:2px;font-size:13px;position:relative;background:linear-gradient(90deg,rgba(12,9,6,.82),rgba(12,9,6,.6) 70%,rgba(12,9,6,0));}',
       '#lmui-stats::before,#lmui-stats::after{content:"";position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,#c9a050,rgba(201,160,80,.5) 70%,rgba(201,160,80,0));}',
       '#lmui-stats::before{top:0;}#lmui-stats::after{bottom:0;}',
       '#lmui-stats .row{display:flex;gap:9px;align-items:baseline;white-space:nowrap;}',
@@ -189,7 +189,7 @@
       /* 地區名（站長：右上角的框拿掉，改成純文字放在等級條上方靠左；點了一樣打開地圖清單） */
       '#lmui-mapname{position:absolute;left:8px;bottom:100%;margin-bottom:5px;z-index:5;display:flex;align-items:baseline;gap:6px;max-width:60%;padding:0;border:0;background:none;color:#f0e2bf;text-shadow:0 1px 2px #000,0 0 3px #000,1px 0 0 #000,-1px 0 0 #000;cursor:pointer;}',
       '#lmui-mapname b{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-      '#lmui-mapname small{font-size:12px;color:#cdbb90;white-space:nowrap;}',
+      '#lmui-mapname small{display:none;}',   /* 站長：只放地圖名，不放所屬地區 */
       '#lmui-mini{display:none !important;position:relative;width:92px;height:92px;border-radius:50%;padding:0;border:1px solid rgba(255,255,255,.22);background:radial-gradient(circle,rgba(30,30,30,.35),rgba(0,0,0,.6));box-shadow:0 0 0 1px rgba(0,0,0,.6),inset 0 0 14px rgba(0,0,0,.7);overflow:hidden;}',
       '#lmui-mini i{position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#ef4444;box-shadow:0 0 4px #ef4444;}',
       '#lmui-mini i.me{width:7px;height:7px;margin:-3.5px 0 0 -3.5px;background:#fef3c7;box-shadow:0 0 5px #fde68a;}',
