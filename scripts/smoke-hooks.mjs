@@ -164,7 +164,7 @@ const _mDeadline = Date.now() + 20000;
 while (Date.now() < _mDeadline && !seen(needMobileOnly)) await mpage.waitForTimeout(200);
 
 // --- 第三輪:手機 + 「手機版面」外掛關閉 ---
-//   為什麼要驗這個:玩家可以逐支關外掛,但 afk-toggles 的逃生門按鈕與各外掛入口「不可以跟著消失」——
+//   為什麼要驗這個:玩家可以逐支關外掛,但 afk-toggles 的逃生門(?plugins 網址開的面板)與各外掛入口「不可以跟著消失」——
 //   否則玩家關掉某支外掛後連把它開回來的入口都沒有,變成死結(2026-07-20 實際回報)。
 //   歷史成因都是「基礎設施依賴了可被關掉的外掛」:逃生門的 top 讀 afk-mobile 設的 --orig-bar-h、
 //   afk-skin 靠 afk-mobile 掛的 body.m-mobile 判斷手機。前兩輪都是「全開」狀態,永遠測不到。
@@ -173,7 +173,8 @@ const opage = await octx.newPage();
 watch(opage);
 await opage.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'domcontentloaded' });
 await opage.evaluate(() => localStorage.setItem('afk_toggle_mobile', '0'));
-await opage.reload({ waitUntil: 'domcontentloaded' });
+// 逃生門入口是網址 ?plugins（2026-10-14 起左上角按鈕拿掉）→ 用這個網址開，驗面板會自己跳出來、關閉鈕點得到
+await opage.goto(`http://127.0.0.1:${PORT}/index.html?plugins`, { waitUntil: 'domcontentloaded' });
 await opage.waitForTimeout(3000);
 // 模擬線上的非官方橫幅(本機沒有;逃生門必須避開它)
 await opage.evaluate(() => {
@@ -199,13 +200,14 @@ const toggleOffProblems = await opage.evaluate(() => {
     const el = document.getElementById(id);
     if (el && el.getBoundingClientRect().top < barBottom) bad.push(`#${id} 頂端(${Math.round(el.getBoundingClientRect().top)}px)還在橫幅底下,會被蓋住`);
   }
-  const btn = document.getElementById('afk-toggles-entry');
-  if (!btn) bad.push('左上角「外掛開關」逃生門按鈕不存在');
+  const btn = document.getElementById('afk-tg-close');
+  if (!document.getElementById('afk-toggles-overlay') || !btn) bad.push('用 ?plugins 網址開,外掛開關面板(逃生門)沒有跳出來');
   else {
     const r = btn.getBoundingClientRect();
     const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-    if (!(r.width > 0 && r.height > 0)) bad.push('逃生門按鈕沒有尺寸');
-    else if (!(top === btn || btn.contains(top))) bad.push(`逃生門按鈕被「${(top && (top.id || top.tagName)) || '未知元素'}」蓋住,點不到`);
+    if (!(r.width > 0 && r.height > 0)) bad.push('逃生門面板的「關閉」沒有尺寸');
+    else if (!(top === btn || btn.contains(top))) bad.push(`逃生門面板的「關閉」被「${(top && (top.id || top.tagName)) || '未知元素'}」蓋住,點不到`);
+    else btn.click();   // 收掉面板,後面才驗得到「開始遊戲」沒被擋
   }
   // 首頁唯一的入口「開始遊戲」(圖上的登錄鈕)關掉手機版面後仍要點得到
   const start = document.getElementById('btn-start-menu');
