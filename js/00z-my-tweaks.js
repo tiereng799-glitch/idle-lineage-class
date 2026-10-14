@@ -303,7 +303,14 @@
     });
     setInterval(updateMailButton, 1000);   // 改名、回主選單、天堂M介面重建時跟著更新
   }
-  function onReady() { copyWeaponTags(); applyHome(); hookGifts(); }
+  // 登入畫面「記住帳號密碼」勾選框：目前還沒有帳號系統，只記住勾選狀態本身（之後接帳號登入時由它決定要不要記）
+  var REMEMBER_KEY = 'lineage_login_remember';
+  function bindRemember() {
+    var cb = document.getElementById('login-remember-cb'); if (!cb) return;
+    try { cb.checked = localStorage.getItem(REMEMBER_KEY) === '1'; } catch (e) {}
+    cb.addEventListener('change', function () { try { localStorage.setItem(REMEMBER_KEY, cb.checked ? '1' : '0'); } catch (e) {} });
+  }
+  function onReady() { copyWeaponTags(); applyHome(); hookGifts(); bindRemember(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
   else onReady();
 
