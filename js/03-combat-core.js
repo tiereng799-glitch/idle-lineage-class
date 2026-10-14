@@ -548,7 +548,8 @@ function maybeSpawnMobs() {
                 } else if(mapState.current === 'antharas_lair') {
                     delay = 50;                                                 // 🐉 v3.7.57 侵蝕的安塔瑞斯棲息地（BOSS房）：固定 5 秒重生
                 } else if (MOB_RESPAWN_FIXED_TICKS) {
-                    delay = MOB_RESPAWN_FIXED_TICKS;                            // ⏱ 2026-10-14 站長：怪死後固定 4 秒才出下一隻（不再受加速／日光術縮短）
+                    delay = MOB_RESPAWN_FIXED_TICKS;                            // ⏱ 2026-10-14 站長：怪死後固定 4 秒才出下一隻（不再受加速縮短）
+                    if (player.buffs && player.buffs.sk_sunlight > 0) delay = MOB_RESPAWN_SUNLIGHT_TICKS;   // ☀️ 日光術：縮短為 3 秒
                     if (isSiegeArea(mapState.current) && typeof npcClanSiegeRespawnMultiplier === 'function') {
                         delay = Math.max(1, Math.round(delay * npcClanSiegeRespawnMultiplier()));
                     }
@@ -978,6 +979,7 @@ const BOSS_BIG_MAPS = ['antaras_lair', 'fafurion_lair', 'valakas_lair'];   // �
 //    單體純BOSS房與雙BOSS祭壇維持三格；攻城建築出現時也不會壓縮為三格。
 // ⏱ 一般狩獵的重生延遲（tick，10 tick＝1 秒）：0＝走舊制（5 秒 × 移動速度倍率、日光術 ×0.8）
 const MOB_RESPAWN_FIXED_TICKS = 40;
+const MOB_RESPAWN_SUNLIGHT_TICKS = 30;   // ☀️ 日光術期間（2026-10-14 站長：4 秒→3 秒）
 // 🗺️ 一張圖同時最多幾隻怪：一般狩獵 3（2026-10-14 站長：5→4→3·畫面是人物在左、怪物在右）；
 //    四軍王房維持 5 格（軍王＋兩側＋後排的站位寫死在 kbRoomRespawn）；純 BOSS 房 3 格。
 const HUNT_MOB_SLOTS = 3;
