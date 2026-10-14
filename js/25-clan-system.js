@@ -1240,7 +1240,7 @@ function npcClanGroupBattleFill() {
     if (!npcClanGroupBattleActive() || mapState._npcClanBattleFilling) return;
     mapState._npcClanBattleFilling = true;
     try {
-        let slots = typeof backSlotsActive === 'function' && backSlotsActive() ? 5 : 3;
+        let slots = typeof mobSlotCount === 'function' ? mobSlotCount() : 3;
         for (let i = 0; i < slots; i++) {
             if (!mapState.mobs[i]) spawnMob(i);
         }
