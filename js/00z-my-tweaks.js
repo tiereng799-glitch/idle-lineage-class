@@ -183,9 +183,20 @@
     { k: 'trade', name: '交易所', run: function () { logSys('交易所尚未開放。'); } },
     { k: 'rank', name: '排行榜', run: function () { logSys('排行榜尚未開放。'); } }
   ];
-  function closeFnMenu() { var m = document.getElementById('my-fn-menu'); if (m) m.remove(); }
+  // 開：選單從功能鈕的位置彈出、選項依序滑入；關：先播收合動畫再移除（點選項時直接移除，不等動畫）
+  function closeFnMenu(instant) {
+    var m = document.getElementById('my-fn-menu'), b = document.getElementById('my-mail-btn');
+    if (b) b.classList.remove('open');
+    if (!m) return;
+    if (instant || m.classList.contains('closing')) { m.remove(); return; }
+    m.classList.add('closing');
+    setTimeout(function () { if (m.parentNode) m.remove(); }, 140);
+  }
   function toggleFnMenu(btn) {
-    if (document.getElementById('my-fn-menu')) { closeFnMenu(); return; }
+    var cur = document.getElementById('my-fn-menu');
+    if (cur && !cur.classList.contains('closing')) { closeFnMenu(); return; }
+    if (cur) cur.remove();
+    btn.classList.add('open');
     var m = document.createElement('div');
     m.id = 'my-fn-menu'; m.className = 'lmui-hit';
     var n = pendingGifts().length;
@@ -194,7 +205,7 @@
     }).join('');
     m.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-k]'); if (!b) return;
-      e.stopPropagation(); closeFnMenu();
+      e.stopPropagation(); closeFnMenu(true);
       var it = FN_ITEMS.filter(function (x) { return x.k === b.getAttribute('data-k'); })[0];
       if (it) it.run();
     });
@@ -206,7 +217,7 @@
   }, true);
   function updateMailButton() {
     var btn = document.getElementById('my-mail-btn');
-    if (!loaded()) { if (btn) btn.style.display = 'none'; closeFnMenu(); return; }
+    if (!loaded()) { if (btn) btn.style.display = 'none'; closeFnMenu(true); return; }
     if (!btn) {
       btn = document.createElement('button');
       btn.type = 'button'; btn.id = 'my-mail-btn'; btn.className = 'lmui-hit'; btn.setAttribute('aria-label', '功能');
@@ -215,7 +226,7 @@
     }
     var vit = document.getElementById('lmui-vit');
     var host = vit || document.body;
-    if (btn.parentNode !== host) { closeFnMenu(); host.appendChild(btn); }
+    if (btn.parentNode !== host) { closeFnMenu(true); host.appendChild(btn); }
     btn.classList.toggle('my-mail-float', host === document.body);
     btn.style.display = '';   // 在 #lmui-vit 裡就跟著血條列一起顯示/隱藏(切到能力/背包等畫面時不會跑去擋別的東西)
     var n = pendingGifts().length, badge = btn.querySelector('i');
@@ -269,6 +280,16 @@
     '#my-fn-menu button{position:relative;display:flex;align-items:center;gap:8px;min-width:112px;padding:8px 14px 8px 10px;border:1px solid #5a4630;border-radius:5px;background:linear-gradient(#2c2218,#18120c);color:#f0e2bf;font-size:15px;font-weight:700;text-align:left;cursor:pointer}' +
     '#my-fn-menu button svg{flex:none;width:20px;height:20px;fill:none;stroke:#e2bd6b;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 1px #000)}' +
     '#my-fn-menu button:active{filter:brightness(1.3)}' +
+    '#my-fn-menu{transform-origin:100% 100%;animation:myFnPop .2s cubic-bezier(.2,.9,.3,1.25) both}' +
+    'body>#my-fn-menu{transform-origin:100% 0}' +
+    '#my-fn-menu.closing{animation:myFnOut .14s ease-in both}' +
+    '#my-fn-menu button{animation:myFnItem .24s ease-out both}' +
+    '#my-fn-menu button:nth-child(2){animation-delay:.05s}#my-fn-menu button:nth-child(3){animation-delay:.1s}' +
+    '#my-fn-menu.closing button{animation:none}' +
+    '@keyframes myFnPop{from{opacity:0;transform:scale(.55) translateX(14px)}to{opacity:1;transform:none}}' +
+    '@keyframes myFnOut{from{opacity:1;transform:none}to{opacity:0;transform:scale(.7) translateX(10px)}}' +
+    '@keyframes myFnItem{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}' +
+    '#my-mail-btn.open .my-fn-ico{border-color:#f0cd7a;box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),0 0 0 1px #3a280c,0 0 10px rgba(240,190,90,.55)}' +
     '#my-fn-menu i{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;border:1px solid #fff;background:#dc2626;color:#fff;font:bold 11px/16px sans-serif;font-style:normal}' +
     '#my-mail-btn>i{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;border:1px solid #fff;background:#dc2626;color:#fff;font:bold 11px/16px sans-serif;font-style:normal;text-align:center;box-shadow:0 1px 2px #000}' +
     '#my-mail-btn i:empty{display:none}' +
