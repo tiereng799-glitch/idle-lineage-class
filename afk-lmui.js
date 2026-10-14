@@ -196,11 +196,15 @@
       /* 半透明圓鈕（天堂M那種玻璃感） */
       '.lmui-round{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:radial-gradient(circle at 50% 40%,rgba(60,60,60,.35),rgba(0,0,0,.45) 75%);color:rgba(255,255,255,.85);box-shadow:inset 0 0 14px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:0;font-weight:600;}',
       '.lmui-round:active{background:radial-gradient(circle at 50% 40%,rgba(120,110,90,.45),rgba(0,0,0,.45) 75%);}',
-      /* AUTO：小紅球，壓在血條上緣正中 */
-      '#lmui-auto{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;width:40px;height:40px;padding:0;border-radius:50%;font:700 12px/1 inherit;letter-spacing:.3px;border:1px solid rgba(255,200,150,.7);background:radial-gradient(circle at 40% 35%,#f87171,#991b1b 55%,#3b0a0a);color:#fff;text-shadow:0 1px 1px #000;box-shadow:0 0 10px rgba(239,68,68,.55),0 1px 4px #000;cursor:pointer;}',
-      '#lmui-auto:active{filter:brightness(1.3);}',
-      /* AUTO 暫停中：灰掉、不發光 */
-      '#lmui-auto.off{border-color:rgba(255,255,255,.35);background:radial-gradient(circle at 40% 35%,#9ca3af,#4b5563 55%,#1f2937);box-shadow:0 1px 4px #000;color:#e5e7eb;}',
+      /* AUTO：圓鈕壓在血條正中；開著＝紅球＋外圈光環，關著＝暗灰鈕 */
+      '#lmui-auto{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;width:44px;height:44px;padding:0;border-radius:50%;border:2px solid #d9c9a8;background:radial-gradient(circle at 45% 35%,#ff6b5b,#c81e1e 50%,#5a0606 85%);color:#fff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),inset 0 -4px 8px rgba(0,0,0,.45),0 1px 4px #000;cursor:pointer;display:flex;align-items:center;justify-content:center;}',
+      '#lmui-auto svg{width:100%;height:100%;display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.8));pointer-events:none;}',
+      /* 光環只動 opacity（合成層就能做，不重算版面）；省電「關動畫」時停在全亮 */
+      '#lmui-auto::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(255,190,120,.95);box-shadow:0 0 8px 3px rgba(255,70,40,.85),inset 0 0 6px rgba(255,90,50,.7);pointer-events:none;animation:lmuiAutoGlow 1.4s ease-in-out infinite alternate;}',
+      '@keyframes lmuiAutoGlow{from{opacity:1;}to{opacity:.45;}}',
+      '#lmui-auto:active{filter:brightness(1.25);}',
+      '#lmui-auto.off{border-color:#9a9184;background:radial-gradient(circle at 45% 35%,#4b4b4b,#262626 55%,#0d0d0d 90%);color:#e5e5e5;}',
+      '#lmui-auto.off::after{content:none;}',
 
       /* ── 下方堆疊：血條 → 快捷列 → 聊天框 ── */
       '#lmui-vit{position:absolute;left:0;right:0;top:calc(var(--lmui-mtop) - var(--lmui-vit) - var(--orig-bar-h,0px));height:var(--lmui-vit);padding:3px 4px 0;display:flex;flex-direction:column;justify-content:center;gap:2px;background:linear-gradient(#1d1711,#0e0b08);border-top:1px solid #4a3f30;box-shadow:0 -3px 8px rgba(0,0,0,.6);pointer-events:auto;z-index:3;}',
@@ -622,7 +626,7 @@
       '<div id="lmui-vit">' +
         '<div id="lmui-comp"></div><div id="lmui-comp-pop" class="hidden"></div>' +
         '<div id="lmui-bars"><div id="lmui-hp" class="lmui-bar"><i></i><span></span></div><div id="lmui-mp" class="lmui-bar"><i></i><span></span></div>' +
-          '<button type="button" id="lmui-auto" class="lmui-hit">AUTO</button></div>' +
+          '<button type="button" id="lmui-auto" class="lmui-hit" aria-label="AUTO">' + AUTO_SVG + '</button></div>' +
         '<div id="lmui-exp"><i></i><span></span></div>' +
       '</div>' +
       '<div id="lmui-bottom">' +
@@ -677,6 +681,11 @@
   //   狀態按角色存 localStorage（my_autopause_<slot>）→ 重開遊戲照樣暫停；
   //   afk-offline 讀同一個鍵（且本外掛開著）時不結算離線收益——暫停中關掉瀏覽器不該還在掛機賺。
   //   本外掛被關掉時 wrapper 透明放行，暫停自然失效（按鈕也不在了，不能留一個解不開的暫停）。
+  // AUTO 鈕圖示：上下兩道順時針箭頭夾著 AUTO 字（顏色跟 currentColor）
+  var AUTO_SVG = '<svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">' +
+    '<path d="M9.9 18.9A15 15 0 0 1 37 16.5"/><path d="M38.1 29.1A15 15 0 0 1 11 31.5"/>' +
+    '<path d="M30.6 13.8L37 16.5L37.9 9.6M17.4 34.2L11 31.5L10.1 38.4" stroke-linejoin="round"/>' +
+    '<text x="24" y="28.2" text-anchor="middle" fill="currentColor" stroke="none" font-size="11.5" font-weight="800" font-family="Arial,Helvetica,sans-serif" letter-spacing=".3">AUTO</text></svg>';
   function pauseKey() { return 'my_autopause_' + (typeof currentSlot !== 'undefined' ? currentSlot : ''); }
   function isPaused() { try { return localStorage.getItem(pauseKey()) === '1'; } catch (e) { return false; } }
   function setPaused(v) {
@@ -691,6 +700,18 @@
       if (on() && hasP() && isPaused()) return;
       return _origTick.apply(this, arguments);
     };
+    // 玩家自己換到另一個獵場 → AUTO 先關，到了再按開始；回村、復活、載入（force）不動
+    if (typeof window.changeMap === 'function') {
+      var _origCM = window.changeMap;
+      window.changeMap = function (force) {
+        var prev = (typeof mapState !== 'undefined' && mapState) ? mapState.current : null;
+        var r = _origCM.apply(this, arguments);
+        try {
+          if (force !== true && on() && hasP() && mapState.current && mapState.current !== prev && !inTownView()) setPaused(true);
+        } catch (e) {}
+        return r;
+      };
+    }
     setInterval(renderAuto, 500);
   }
 
