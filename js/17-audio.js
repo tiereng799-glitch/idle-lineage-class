@@ -1,5 +1,8 @@
-// 🔊 戰鬥音效引擎（取樣音檔 · HTMLAudioElement 池）
+// 🔊 戰鬥音效引擎（取樣音檔 · 網站用 Web Audio，file:// 用 HTMLAudioElement 池）
 //   音檔放 assets/sfx/<file>.<mp3|ogg|wav>；缺檔→該事件靜音（優雅降級、無錯誤）。
+//   ⚡ http(s)（網站／加到主畫面）改用 Web Audio：音檔解碼一次存成 AudioBuffer，每次播放只建一個 BufferSource。
+//     原本每次命中都對 <audio> 做 currentTime=0＋play()，iPhone 上每次都要動用媒體管線、卡住主執行緒——
+//     玩家實測「省電模式關掉音效就不卡」。某個音檔解碼失敗（格式不支援）→ 只有那一個退回 <audio> 池。
 //   ⚠️用 <audio> 元素載入而非 fetch：Chromium 會擋下對 file:// 本機檔案的 fetch()，
 //     打包版(Electron·loadFile→file://) 與「直接雙擊網頁(file://)」都會因此無聲；
 //     <audio>（媒體元素）與 <img> 一樣可讀 file://／asar，故網頁版(http/file://)與打包版「行為完全一致」。
@@ -46,13 +49,53 @@ function _audioExts(index, file, fallback) {
     return fallback;
 }
 
-// 載入單一音效：素材庫以 ogg 為主，依序試 ogg→mp3→wav；第一個能播者→建立 N 個元素的播放池；全部失敗→該事件保持靜音
+// ── Web Audio（只在 http(s)：file:// 下 fetch 讀不到本機檔，維持 <audio>，見檔頭）──
+var _sfxCtx = null, _sfxCtxFailed = false;
+function _sfxCtxGet() {
+    if (_sfxCtx || _sfxCtxFailed) return _sfxCtx;
+    try {
+        var AC = (typeof window !== 'undefined') && (window.AudioContext || window.webkitAudioContext);
+        if (!AC || typeof location === 'undefined' || !/^https?:$/.test(location.protocol) || typeof fetch !== 'function') { _sfxCtxFailed = true; return null; }
+        _sfxCtx = new AC();
+        // iOS：AudioContext 要在使用者手勢裡 resume 才會出聲；被系統打斷（來電、切走）後也會回到 suspended → 每次點擊都補一次
+        var unlock = function () { if (_sfxCtx && _sfxCtx.state !== 'running') { try { var p = _sfxCtx.resume(); if (p && p.catch) p.catch(function () {}); } catch (e) {} } };
+        ['pointerdown', 'touchend', 'keydown'].forEach(function (ev) { document.addEventListener(ev, unlock, true); });
+    } catch (e) { _sfxCtx = null; _sfxCtxFailed = true; }
+    return _sfxCtx;
+}
+// 抓檔＋解碼成 AudioBuffer：ok(buf)；檔案不存在 → missing()；解碼失敗（格式不支援）→ undecodable()
+function _sfxLoadBuffer(url, ok, missing, undecodable) {
+    var ctx = _sfxCtxGet(); if (!ctx) { undecodable(); return; }
+    fetch(url).then(function (r) {
+        if (!r.ok) { missing(); return; }
+        return r.arrayBuffer().then(function (ab) {
+            var done = false;
+            var good = function (b) { if (done) return; done = true; ok(b); };
+            var bad = function () { if (done) return; done = true; undecodable(); };
+            try { var pr = ctx.decodeAudioData(ab, good, bad); if (pr && pr.catch) pr.catch(bad); } catch (e) { bad(); }   // 舊版 Safari 只認 callback 寫法
+        });
+    }).catch(function () { missing(); });
+}
+
+// 載入單一音效：素材庫以 ogg 為主，依序試 ogg→mp3→wav；第一個能播者→建立播放池；全部失敗→該事件保持靜音
+//   池的形狀：Web Audio＝[{ buf, live:[播放中的 source] }]（長度 1）；<audio>＝N 個元素。其餘程式只看「有沒有、長度」。
 //   onDone(可省)：這個音效有結果了(可播／確定沒有)才呼叫，供 _sfxInit 一個一個排隊預載。
 function _sfxTryLoad(key, def, onDone) {
     var exts = _audioExts(typeof SFX_INDEX !== 'undefined' ? SFX_INDEX : null, def.file, ['ogg', 'mp3', 'wav']), i = 0;
     function tryNext() {
         if (i >= exts.length) { _sfxPool[key] = null; if (onDone) onDone(); return; }
         var url = 'assets/sfx/' + def.file + '.' + exts[i++];
+        if (_sfxCtxGet()) {
+            _sfxLoadBuffer(url, function (buf) {
+                if (_sfxPool[key]) return;
+                _sfxPool[key] = [{ buf: buf, live: [] }]; _sfxIdx[key] = 0;
+                if (onDone) onDone();
+            }, tryNext, function () { loadElements(url); });   // 缺檔 → 下一個副檔名；解碼不了 → 這個音效改用 <audio>
+            return;
+        }
+        loadElements(url);
+    }
+    function loadElements(url) {
         var probe = new Audio();
         probe.preload = 'auto';
         probe.addEventListener('canplaythrough', function () {
@@ -67,6 +110,30 @@ function _sfxTryLoad(key, def, onDone) {
         try { probe.load(); } catch (e) {}
     }
     tryNext();
+}
+
+// 播放池裡的一個音：Web Audio → 新建 BufferSource（可無限重疊、幾乎零成本）；<audio> → round-robin 元素。回傳有沒有播。
+function _sfxStart(poolKey, arr, vol) {
+    var v = Math.max(0, Math.min(1, (vol || 0.5) * (_sfxCfg.vol / 100)));   // 每音效基準 × 全域音量
+    var e0 = arr[0];
+    if (e0 && e0.buf) {
+        var ctx = _sfxCtx; if (!ctx) return false;
+        if (ctx.state === 'suspended') { try { var rp = ctx.resume(); if (rp && rp.catch) rp.catch(function () {}); } catch (e) {} }
+        var src = ctx.createBufferSource(), g = ctx.createGain();
+        src.buffer = e0.buf; g.gain.value = v;
+        src.connect(g); g.connect(ctx.destination);
+        e0.live.push(src);
+        src.onended = function () { var k = e0.live.indexOf(src); if (k >= 0) e0.live.splice(k, 1); try { g.disconnect(); } catch (e) {} };
+        src.start(0);
+        return true;
+    }
+    var idx = _sfxIdx[poolKey] || 0;
+    var a = arr[idx % arr.length]; _sfxIdx[poolKey] = idx + 1;   // round-robin → 可重疊播放
+    a.volume = v;
+    try { a.currentTime = 0; } catch (e) {}
+    var p = a.play();
+    if (p && p.catch) p.catch(function () {});   // autoplay 尚未解鎖（無互動）→忽略；首次互動後即正常
+    return true;
 }
 
 // 預載一次只抓一個：全部同時開會跟登入圖、地圖、主角圖搶頻寬(手機無痕／第一次開最明顯)。
@@ -154,20 +221,14 @@ function playSfx(key) {
     var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     if (def.throttle && _sfxLast[key] && (now - _sfxLast[key]) < def.throttle) return;   // 節流用 base key（同角色一次只一種變體）
     _sfxLast[key] = now;
-    try {
-        var idx = _sfxIdx[poolKey] || 0;
-        var a = arr[idx % arr.length]; _sfxIdx[poolKey] = idx + 1;   // round-robin → 可重疊播放
-        a.volume = Math.max(0, Math.min(1, (def.vol || 0.5) * (_sfxCfg.vol / 100)));   // 每音效基準 × 全域音量
-        try { a.currentTime = 0; } catch (e) {}
-        var p = a.play();
-        if (p && p.catch) p.catch(function () {});   // autoplay 尚未解鎖（無互動）→忽略；首次互動後即正常
-    } catch (e) {}
+    try { _sfxStart(poolKey, arr, def.vol); } catch (e) {}
 }
 
 function stopCreationFrameSfx() {
     if (!_creationSfxActiveKey) return;
     var arr = _sfxPool[_creationSfxActiveKey];
     if (arr && arr.length) arr.forEach(function (a) {
+        if (a.buf) { a.live.slice().forEach(function (s) { try { s.stop(); } catch (e) {} }); a.live.length = 0; return; }   // Web Audio
         try { a.pause(); a.currentTime = 0; } catch (e) {}
     });
     _creationSfxActiveKey = null;
@@ -453,13 +514,7 @@ function _mobAtkSfxNum(name) {   // 解析怪名→攻擊音編號（精確→�
 function _sfxPlayPool(poolKey, vol) {   // 直接播放指定 pool key（不查 SFX_DEFS、不額外節流；節流由呼叫端負責）
     if (typeof catchupActive === 'function' && catchupActive()) return false;
     var arr = _sfxPool[poolKey]; if (!arr || !arr.length) return false;
-    try {
-        var idx = _sfxIdx[poolKey] || 0; var a = arr[idx % arr.length]; _sfxIdx[poolKey] = idx + 1;
-        a.volume = Math.max(0, Math.min(1, (vol || 0.5) * (_sfxCfg.vol / 100)));
-        try { a.currentTime = 0; } catch (e) {}
-        var p = a.play(); if (p && p.catch) p.catch(function () {});
-        return true;
-    } catch (e) { return false; }
+    try { return _sfxStart(poolKey, arr, vol); } catch (e) { return false; }
 }
 function _sfxDynLoad(poolKey, file) { if (typeof catchupActive === 'function' && catchupActive()) return; if (_sfxDynTried[poolKey]) return; _sfxDynTried[poolKey] = true; _sfxTryLoad(poolKey, { file: file || poolKey }); }
 function playMobHurt(mob) {
