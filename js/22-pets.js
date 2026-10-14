@@ -1304,6 +1304,22 @@ function petStashAll() {
     outs.forEach(p => petStash(p.uid));
     try { updateUI(); } catch (e) {}
 }
+// 保管人「出戰」：領出來收 1,000 金幣（收回免費）
+const PET_NPC_COST = 1000;
+function petNpcDeploy(uidv) {
+    let p = _petFindFresh(uidv); if (!p) return;
+    let owner = _petCurrentOwnerKey();
+    if (owner && String(p.outOwner || '') === owner) { petDeployToggle(uidv); return; }
+    if ((player.gold || 0) < PET_NPC_COST) { logSys(`<span class="text-red-400">金幣不足 ${PET_NPC_COST.toLocaleString()}，領不出寵物。</span>`); return; }
+    petDeployToggle(uidv);
+    let q = _petFind(uidv);
+    if (q && owner && String(q.outOwner || '') === owner) {
+        player.gold -= PET_NPC_COST;
+        logSys(`支付保管費 ${PET_NPC_COST.toLocaleString()} 金幣。`);
+        try { updateUI(); } catch (e) {}
+        let _d = document.getElementById('interaction-content'); if (_d && _d.querySelector('[data-petui]')) renderPetStorageNPC(_d);
+    }
+}
 function petNpcCollar(uidv) {   // 保管人：領項圈
     let p = _petFindFresh(uidv); if (!p) return;
     if (petGiveCollar(p)) { try { updateUI(); } catch (e) {} }
@@ -1443,7 +1459,7 @@ function renderPetStorageNPC(div, confirmUid) {
                 ${!otherOut && canEvo && p.lv >= 30 ? `<button onclick="petEvolve('${p.uid}')" class="btn px-2 py-1 text-xs font-bold" style="background:linear-gradient(135deg,#713f12,#ca8a04);color:#fef9c3;border-color:#eab308;" title="進化：${_evoTip}（兩種果實都有可選擇）">進化</button>` : ''}
                 <button onclick="petGearOpen('${p.uid}','wpn')" ${otherOut ? 'disabled' : ''} class="btn px-2 py-1 text-xs font-bold" style="border-color:${p.eq && p.eq.wpn ? '#f59e0b' : '#475569'};color:${p.eq && p.eq.wpn ? '#fcd34d' : '#94a3b8'};${otherOut ? 'opacity:.4;' : ''}" title="${p.eq && p.eq.wpn && DB.items[p.eq.wpn.id] ? DB.items[p.eq.wpn.id].n + ((p.eq.wpn.en || 0) > 0 ? '+' + p.eq.wpn.en : '') : '未裝備寵物武器'}">武器</button>
                 <button onclick="petGearOpen('${p.uid}','arm')" ${otherOut ? 'disabled' : ''} class="btn px-2 py-1 text-xs font-bold" style="border-color:${p.eq && p.eq.arm ? '#f59e0b' : '#475569'};color:${p.eq && p.eq.arm ? '#fcd34d' : '#94a3b8'};${otherOut ? 'opacity:.4;' : ''}" title="${p.eq && p.eq.arm && DB.items[p.eq.arm.id] ? DB.items[p.eq.arm.id].n + ((p.eq.arm.en || 0) > 0 ? '+' + p.eq.arm.en : '') : '未裝備寵物防具'}">防具</button>
-                <button onclick="petDeployToggle('${p.uid}')" ${otherOut ? 'disabled' : ''} class="btn px-2 py-1 text-xs font-bold" style="background:linear-gradient(135deg,${isOut ? '#374151,#4b5563' : (otherOut ? '#334155,#475569' : '#065f46,#059669')});color:${isOut ? '#e5e7eb' : (otherOut ? '#94a3b8' : '#a7f3d0')};border-color:${isOut ? '#6b7280' : (otherOut ? '#64748b' : '#10b981')};${otherOut ? 'opacity:.65;' : ''}">${isOut ? '收回' : (otherOut ? '使用中' : '出戰')}</button>
+                <button onclick="petNpcDeploy('${p.uid}')" ${otherOut ? 'disabled' : ''} class="btn px-2 py-1 text-xs font-bold" style="background:linear-gradient(135deg,${isOut ? '#374151,#4b5563' : (otherOut ? '#334155,#475569' : '#065f46,#059669')});color:${isOut ? '#e5e7eb' : (otherOut ? '#94a3b8' : '#a7f3d0')};border-color:${isOut ? '#6b7280' : (otherOut ? '#64748b' : '#10b981')};${otherOut ? 'opacity:.65;' : ''}">${isOut ? '收回' : (otherOut ? '使用中' : '出戰 1,000')}</button>
                 ${otherOut || p.locked ? '' : `<button onclick="petRelease('${p.uid}')" class="btn px-2 py-1 text-xs font-bold" style="background:linear-gradient(135deg,#7f1d1d,#991b1b);color:#fecaca;border-color:#b91c1c;">放生</button>`}
             </span>
         </div>`;
