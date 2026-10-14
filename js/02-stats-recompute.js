@@ -1149,8 +1149,8 @@ function refreshPolyFormSelect() {
     let pick = player.polyPick || '';
     if (pick && !opts.some(f => f.n === pick)) pick = '';   // 指定的已經用不了(例:沒戒指了)→ 顯示回隨機，存檔值保留
     let html = '<option value="">隨機</option>' + opts.map(f => '<option value="' + f.n + '">Lv' + f.lv + ' ' + f.n + (RANGED_POLY_FORMS.has(f.n) ? '(遠)' : '') + '</option>').join('');
-    if (sel.innerHTML !== html) sel.innerHTML = html;
-    sel.value = pick;
+    if (sel.dataset.sig !== html) { sel.dataset.sig = html; sel.innerHTML = html; sel.value = pick; }   // 🖱️ 名單沒變就不動：電腦按下去的瞬間重建選項會把剛打開的下拉關掉(innerHTML 比對永遠不相等)
+    else if (sel.value !== pick && document.activeElement !== sel) sel.value = pick;
 }
 function onPolyPickChange(name) {
     if (typeof player === 'undefined' || !player || !player.cls) return;

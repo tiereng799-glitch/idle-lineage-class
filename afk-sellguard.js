@@ -103,6 +103,9 @@
         var n = Math.min(Number(count) || 1, it.cnt || 1);
         var got = n * (Number(unitPrice) || 0);
         var msg = '賣掉' + (n > 1 ? ' ' + n + ' 個' : '') + '「' + plainName(it) + '」換 ' + got.toLocaleString() + ' 金幣？賣掉就拿不回來。';
+        var self = this, args = arguments;
+        // 用遊戲內的確認框：瀏覽器自己的 confirm 被玩家勾「不要再顯示」後會一律回「取消」→ 好裝備永遠賣不掉
+        if (window.AFK_UI && AFK_UI.confirm) { AFK_UI.confirm({ title: '確定賣掉？', message: msg, okText: '賣掉', cancelText: '取消', danger: true, onOk: function () { _sellItem.apply(self, args); } }); return; }
         if (!confirm(msg)) return;
         return _sellItem.apply(this, arguments);
     };
