@@ -206,6 +206,9 @@
       '#lmui-auto.off{border-color:#9a9184;background:radial-gradient(circle at 45% 35%,#4b4b4b,#262626 55%,#0d0d0d 90%);color:#e5e5e5;}',
       '#lmui-auto.off::after{content:none;}',
 
+      /* 提示訊息（afk-toast）：放在戰鬥畫面正中間，不壓到血條／聊天框 */
+      'html body.lmui-battle #m-toast-wrap{top:calc((var(--lmui-bar) + var(--lmui-mtop) - var(--lmui-vit)) / 2);}',
+
       /* ── 下方堆疊：血條 → 快捷列 → 聊天框 ── */
       '#lmui-vit{position:absolute;left:0;right:0;top:calc(var(--lmui-mtop) - var(--lmui-vit) - var(--orig-bar-h,0px));height:var(--lmui-vit);padding:3px 4px 0;display:flex;flex-direction:column;justify-content:center;gap:2px;background:linear-gradient(#1d1711,#0e0b08);border-top:1px solid #4a3f30;box-shadow:0 -3px 8px rgba(0,0,0,.6);pointer-events:auto;z-index:3;}',
       '#lmui-bottom{position:absolute;left:0;right:0;bottom:0;height:var(--lmui-stack);display:flex;flex-direction:column;gap:4px;padding:6px 4px 4px;background:linear-gradient(#1a1612,#0b0907);border-top:1px solid #4a3f30;box-shadow:0 -6px 14px rgba(0,0,0,.65);}',
@@ -713,6 +716,33 @@
       };
     }
     setInterval(renderAuto, 500);
+  }
+
+  // ── 掉落分頁：打怪掉的東西＋怪物給的金幣 ─────────────────
+  //   掉落物：核心 gainItem 寫進系統日誌的「怪名 給你 物品 。」（.sys-item-gain）抄一份到 #lmui-ch-drop；系統分頁不再顯示這些行。
+  //   金幣：核心 killMob 加錢後呼叫 window.onMobGoldDrop（核心本來就不逐殺記金幣，怕洗系統日誌）→ 只寫進這裡。
+  var DROP_MAX = 100;
+  function dropLine(html) {
+    var b = chBox('drop');
+    b.insertAdjacentHTML('beforeend', '<div class="log-entry text-slate-100">' + html + '</div>');
+    while (b.children.length > DROP_MAX) b.removeChild(b.firstChild);
+  }
+  function hookDrops() {
+    if (typeof window.logSys === 'function') {
+      var _origLog = window.logSys;
+      window.logSys = function (msg) {
+        var r = _origLog.apply(this, arguments);
+        try { if (on() && !(typeof state !== 'undefined' && state && state.ff) && String(msg).indexOf('sys-item-gain') >= 0) dropLine(msg); } catch (e) {}
+        return r;
+      };
+    }
+    window.onMobGoldDrop = function (mob, g) {
+      try {
+        if (!on() || !mob || !(g > 0) || (typeof state !== 'undefined' && state && state.ff)) return;
+        var mc = (typeof getMobColor === 'function') ? getMobColor(mob.lv) : '';
+        dropLine('<span class="sys-item-gain"><span class="' + mc + '">' + escTxt(mob.n || '') + '</span> 給你 <span class="text-yellow-300 font-bold">' + Number(g).toLocaleString() + ' 金幣</span> 。</span>');
+      } catch (e) {}
+    };
   }
 
   function navBtn(view) { var n = $('m-nav'); return n ? n.querySelector('.m-nav-btn[data-view="' + view + '"]') : null; }
@@ -1849,10 +1879,9 @@
   }
 
   // 聊天框：鏡射來源日誌的最後幾行（cloneNode，不搬動原本的節點）
-  //   系統＝系統日誌、戰鬥＝戰鬥日誌、掉落＝系統日誌裡「獲得/掉落」的那幾行；
+  //   系統＝系統日誌（不含打怪掉落）、戰鬥＝戰鬥日誌、掉落＝本外掛的掉落容器（見 hookDrops：擊殺掉落物＋怪物給的金幣）；
   //   一般／隊伍／血盟＝本外掛自己的頻道容器（見 sendChat）、世界＝世界頻道
-  var CHAT_SRC = { sys: 'sys-log', combat: 'combat-log', drop: 'sys-log', say: 'lmui-ch-say', world: 'world-log', party: 'lmui-ch-party', clan: 'lmui-ch-clan' };
-  var DROP_RE = /獲得|掉落|撿到|得到/;
+  var CHAT_SRC = { sys: 'sys-log', combat: 'combat-log', drop: 'lmui-ch-drop', say: 'lmui-ch-say', world: 'world-log', party: 'lmui-ch-party', clan: 'lmui-ch-clan' };
   var lastChatSig = '', chatDirty = true;
   function linesAtBottom() { var l = el.lines; return !l || l.scrollHeight - l.scrollTop - l.clientHeight < 24; }
   function renderChat(force) {
@@ -1861,7 +1890,7 @@
     // 玩家往上捲在看舊訊息 → 先不刷新（同核心日誌的捲動鎖定）；捲回最底時由 scroll 事件補上
     if (!force && !linesAtBottom()) { chatDirty = true; return; }
     var src = $(CHAT_SRC[chatTab]);
-    if (!src && /^(say|party|clan)$/.test(chatTab)) src = chBox(chatTab);
+    if (!src && /^(say|party|clan|drop)$/.test(chatTab)) src = chBox(chatTab);
     if (!src) { el.lines.innerHTML = ''; return; }
     var kids = src.children, n = kids.length;
     var last = n ? kids[n - 1] : null;
@@ -1870,9 +1899,8 @@
     lastChatSig = sig;
     var pick = [];
     for (var j = n - 1; j >= 0 && pick.length < CHAT_LINES; j--) {
-      if (chatTab === 'drop' && !DROP_RE.test(kids[j].textContent || '')) continue;
+      if (chatTab === 'sys' && kids[j].querySelector('.sys-item-gain')) continue;   // 掉落改看「掉落」分頁
       pick.unshift(kids[j]);
-      if (chatTab === 'drop' && n - j > 300) break;   // 往回最多翻 300 行，免得長日誌每次掃到底
     }
     var frag = document.createDocumentFragment();
     pick.forEach(function (node) {
@@ -2250,6 +2278,7 @@
     // 怪物重畫（換怪/換目標）後立刻把名字＋血條擺回頭頂，不等下一個 tick（否則會先在卡片頂端閃一下）
     try { hookHunt(); } catch (e) {}
     try { hookPause(); } catch (e) { console.warn('[AFK-lmui] AUTO 暫停掛不上', e); }
+    try { hookDrops(); } catch (e) { console.warn('[AFK-lmui] 掉落分頁掛不上', e); }
     //   包 _renderMobsImpl（真正寫 DOM 的那支）：戰鬥 tick 中 renderMobs 只標記 dirty，之後由 flushTickRender 直呼 _renderMobsImpl，包外層會漏掉
     var MOB_RENDER = typeof window._renderMobsImpl === 'function' ? '_renderMobsImpl' : 'renderMobs';
     if (typeof window[MOB_RENDER] === 'function') {
