@@ -18,7 +18,7 @@
   if (window.AFK_TOGGLES) {
     AFK_TOGGLES.register({
       id: 'norelic', name: '隱藏遺物系統', group: '遊戲玩法', def: true,
-      desc: '遺物不再掉落，收藏的遺物冊與黑市遺物布告欄也不顯示（已擁有的照常使用）'
+      desc: '遺物不再掉落，收藏的遺物冊也不顯示（已擁有的照常使用）'
     });
   }
   function on() { return !window.AFK_TOGGLES || AFK_TOGGLES.enabled('norelic'); }
