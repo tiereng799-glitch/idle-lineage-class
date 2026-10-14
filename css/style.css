@@ -1083,7 +1083,7 @@ body.view-town #col-center #log-row { flex: 1 1 0; }
 #load-delete-dialog .ldd-ok:disabled { opacity:.4; cursor:not-allowed; }
 #creation-screen #login-art-stage { position:relative; width:min(100vw, calc((100dvh - var(--orig-bar-h, 0px)) * 576 / 1024)); height:auto; min-height:0; aspect-ratio:576 / 1024; flex:0 0 auto; margin:auto; display:block; overflow:hidden; background:#050505; box-shadow:0 0 45px #000; container-type:inline-size; }
 #creation-screen #login-bg-image { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; opacity:1; pointer-events:none; user-select:none; }
-#creation-screen #login-art-stage > :not(#login-bg-image):not(.login-field-hint):not(.login-scroll-note):not(.login-deco):not(#main-menu) { display:none !important; }
+#creation-screen #login-art-stage > :not(#login-bg-image):not(.login-field-hint):not(.login-scroll-note):not(.login-deco):not(.login-remember):not(#main-menu) { display:none !important; }
 /* ── 登入畫面裝飾（站長 2026-10-14）：上方 logo＋背景劍的光芒。全部不吃點擊，位置都是對 login.webp(576×1024) 量的百分比 ── */
 .login-deco { position:absolute; inset:0; pointer-events:none; user-select:none; }
 .login-deco > * { position:absolute; }
@@ -1117,6 +1117,13 @@ body.view-town #col-center #log-row { flex: 1 1 0; }
 .login-field-hint { position:absolute; left:27.5%; width:51%; height:4.1%; display:flex; align-items:center; padding-left:1.5%; background:#0c0c0c; color:#a89f8e; font-size:2.9cqw; letter-spacing:.08em; pointer-events:none; user-select:none; }
 .login-field-account { top:68.9%; }
 .login-field-password { top:74.75%; }
+/* 「記住帳號密碼」：密碼框正下方、跟帳密框左緣對齊，夾在密碼框與登錄鈕之間 */
+.login-remember { position:absolute; left:28%; top:79.15%; height:2.2%; display:flex; align-items:center; gap:1.6cqw; color:#a89f8e; font-size:2.9cqw; letter-spacing:.08em; cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
+.login-remember input { appearance:none; -webkit-appearance:none; flex:none; width:3.2cqw; height:3.2cqw; margin:0; border:1px solid #7d6c4c; border-radius:2px; background:#0c0c0c; display:grid; place-items:center; cursor:pointer; }
+.login-remember input::after { content:""; width:1.7cqw; height:.9cqw; border:solid #e2bd6b; border-width:0 0 .45cqw .45cqw; transform:translateY(-.2cqw) rotate(-45deg); opacity:0; }
+.login-remember input:checked { border-color:#d9b25e; }
+.login-remember input:checked::after { opacity:1; }
+.login-remember input:focus-visible { outline:1px solid #e2bd6b; outline-offset:2px; }
 /* 開始遊戲＝圖上的「登錄」鈕：透明熱區 */
 #creation-screen #main-menu { position:absolute; z-index:4; left:26.5%; top:81.4%; width:47%; height:5.8%; margin:0 !important; display:block; }
 #main-menu.hidden { display:none !important; }
