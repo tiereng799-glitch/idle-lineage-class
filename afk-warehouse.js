@@ -7,7 +7,6 @@
  *   ④ 觸控裝置長按倉庫/背包清單物品 → 顯示物品資料(核心只有 hover tooltip,手機看不到)。
  *   ⑤ 「只列可穿」勾選 ＋ 穿不了的列標紅(核心倉庫兩欄只印物品全名,完全看不出本職業能不能穿,
  *      四個角色共用一個倉庫時尤其難挑)。判定一律走核心 checkCanEquip,不自己重寫職業規則。
- *   ⑥ 背包區塊可摺疊(手機:兩份清單上下疊、整個視窗一起捲,背包擋在倉庫前面)。
  *
  * 作法:包 whSubCatOptions/whMatchFilter/whMatchSearch/renderWarehouseNPC 四支全域;缺任一→console.warn 後停用。
  */
@@ -280,87 +279,6 @@
             });
         });
     }
-    // ── 背包區塊可摺疊 ──────────────────────────────────────────
-    // 手機版面下上游把兩個清單的限高解掉(css/style.css 手機 MQ 內
-    // `#warehouse-window-content #wh-inv-list,#wh-store-list{max-height:none!important}`),
-    // 兩份清單改成上下疊、整個視窗一起捲 → 背包 88 件就有 3,300px,要看倉庫得先滑過整個背包。
-    // 摺起背包,倉庫才會直接出現在畫面上。
-    //
-    // 「現在是不是那個版面」直接問清單的 computed max-height,不看 body class 也不複製那條 media query:
-    //   body.m-mobile 由可被玩家關掉的 afk-mobile 掛(關掉就判成桌機);複製 media query 則是上游改了
-    //   我們這邊會安靜失效。max-height 有沒有被解掉,正是「會不會擋住倉庫」的直接成因。
-    var LS_FOLD = 'afk_wh_invfold';
-    function _foldRead() { try { return localStorage.getItem(LS_FOLD) === '1'; } catch (e) { return false; } }
-    function _foldWrite(v) { try { localStorage.setItem(LS_FOLD, v ? '1' : '0'); } catch (e) {} }
-
-    function _foldCSS() {
-        if (document.getElementById('afk-wh-fold-style')) return;
-        var s = document.createElement('style'); s.id = 'afk-wh-fold-style';
-        // 藏「標題以外的所有兄弟」而不是只藏 #wh-inv-list:批次存取(afk-whbatch)會把它的工具列
-        // insertBefore 到清單前面,而且它的注入時機不保證早於這裡 → 用 CSS 涵蓋整欄才不會漏掉後來才出現的。
-        s.textContent = '.afk-wh-invfold > *:not(:first-child){display:none !important;}';
-        (document.head || document.documentElement).appendChild(s);
-    }
-
-    // 摺疊時把標題後半的「(點擊存入 ▶)」換成灰色的「(已收起,點擊展開)」:
-    //   ① 那句話在摺疊時是錯的指示 —— 清單都收起來了,根本沒東西可點。
-    //   ② 狀態是記住的,下次開倉庫會直接看到「背包」與「倉庫」兩行標題疊在一起、背包底下空空的,
-    //      不講清楚會被讀成「背包是空的」。
-    //   ③ 我們的 ▶ 箭頭跟原標題結尾的「存入 ▶」同一個符號,一行兩個 ▶ 很難看出哪個是摺疊狀態。
-    // 只換括號那段、名字沿用上游原字(不寫死「背包」),上游改字也跟著變。
-    function _foldLabel(head, folded) {
-        var lab = head.querySelector('.afk-wh-lab'); if (!lab) return;
-        var orig = head.dataset.afkLabel || '';
-        lab.textContent = '';
-        if (!folded) { lab.textContent = orig; return; }
-        var i = orig.indexOf('（');
-        lab.appendChild(document.createTextNode(i > 0 ? orig.slice(0, i) : orig));
-        var tag = document.createElement('span');
-        tag.textContent = '（已收起，點擊展開）';
-        tag.setAttribute('style', 'color:#94a3b8;font-weight:400;');
-        lab.appendChild(tag);
-    }
-
-    function _foldApply(col, head, folded) {
-        col.classList.toggle('afk-wh-invfold', folded);
-        head.dataset.afkFold = folded ? '1' : '0';
-        head.setAttribute('aria-expanded', folded ? 'false' : 'true');
-        var caret = head.querySelector('.afk-wh-caret');
-        if (caret) caret.textContent = folded ? '▶' : '▼';
-        _foldLabel(head, folded);
-    }
-
-    function _injectInvFold() {
-        var list = document.getElementById('wh-inv-list'); if (!list) return;
-        if (getComputedStyle(list).maxHeight !== 'none') return;   // 清單本來就限高(桌機)→ 沒有擋住倉庫的問題
-        var col = list.parentElement; if (!col) return;
-        var head = col.firstElementChild;
-        if (!head || head === list || head.querySelector('.afk-wh-caret')) return;
-        _foldCSS();
-        var caret = document.createElement('span');
-        caret.className = 'afk-wh-caret';
-        caret.style.cssText = 'display:inline-block;width:1em;';
-        // 標題是純文字時才接手內容(重建成 caret+文字兩段);上游哪天在標題裡放了元素就只加箭頭,不動它
-        if (!head.children.length) {
-            head.dataset.afkLabel = (head.textContent || '').trim();
-            head.textContent = '';
-            var lab = document.createElement('span');
-            lab.className = 'afk-wh-lab';
-            head.appendChild(lab);
-        }
-        head.insertBefore(caret, head.firstChild);
-        head.setAttribute('style', 'cursor:pointer;-webkit-user-select:none;user-select:none;padding:4px 0;');
-        head.setAttribute('role', 'button');
-        head.setAttribute('tabindex', '0');
-        head.title = '摺疊／展開背包';
-        head.addEventListener('click', function () {
-            var next = head.dataset.afkFold !== '1';
-            _foldWrite(next);
-            _foldApply(col, head, next);
-        });
-        _foldApply(col, head, _foldRead());
-    }
-
     // 分類列插入「只列可穿」勾選(核心每次重繪整塊 innerHTML → 每次重新插)
     function _injectWearToggle() {
         var sel = document.querySelector('select[onchange*="whSetFilter"]');
@@ -386,21 +304,20 @@
         } catch (e) {}
         var inp = document.getElementById('wh-gold-amt');
         if (!inp) return;   // 倉庫面板不在畫面上
-        try { _wearCSS(); _injectWearToggle(); _markNoEquip(); _injectInvFold(); } catch (e) {}
+        try { _wearCSS(); _injectWearToggle(); _markNoEquip(); } catch (e) {}
         var goldRow = inp.parentElement;
         if (goldRow && !document.getElementById('afk-wh-allin')) {
-            var mk = function (id, txt, tip, dir, style) {
+            var mk = function (id, txt, tip, dir) {
                 var b = document.createElement('button');
                 b.id = id; b.type = 'button'; b.textContent = txt;
                 b.title = tip; b.setAttribute('aria-label', tip);
-                b.className = 'btn px-2 text-sm font-bold h-8 inline-flex items-center justify-center';
-                b.setAttribute('style', style);
+                b.className = 'whx-btn whx-btn-icon';
                 b.addEventListener('click', function () { window.__afkWhGoldAll(dir); });
                 return b;
             };
-            // 圖示鈕(文字太佔位);沿用核心存入/取出鈕的配色,一眼看得出同組
-            goldRow.appendChild(mk('afk-wh-allin', '📥', '金幣全部存入', 'in', 'background: linear-gradient(135deg, #0c4a5e 0%, #0e7490 28%, #0a3d4d 52%, #11657e 76%, #093440 100%); color: #a5f3fc; border-color: #0891b2;'));
-            goldRow.appendChild(mk('afk-wh-allout', '📤', '金幣全部取出', 'out', 'background: linear-gradient(135deg, #6b2a10 0%, #b3490e 28%, #5a230e 52%, #9a3e0c 76%, #4a1d0c 100%); color: #fed7aa; border-color: #c2410c;'));
+            // 圖示鈕(文字太佔位),跟核心存入/取出同一組金色鈕
+            goldRow.appendChild(mk('afk-wh-allin', '📥', '金幣全部存入', 'in'));
+            goldRow.appendChild(mk('afk-wh-allout', '📤', '金幣全部取出', 'out'));
         }
         // 主分類下拉補 遺物/席琳遺骸(核心每次重繪都重建 select → 每次補)
         var sel = document.querySelector('select[onchange*="whSetFilter"]');
