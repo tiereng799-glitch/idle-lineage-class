@@ -1233,7 +1233,7 @@ function buildItemDescHTML(item) {
     }
 
     // 🛡️ 適用職業：以職業 logo 顯示可裝備此裝備的職業（騎士/妖精/法師/黑暗妖精/王族；黑暗妖精走 darkEquipOk 真實規則）
-    if (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') {
+    if ((d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') && d.slot !== 'petwpn' && d.slot !== 'petarm') {   // 🦴 寵物裝備是給寵物穿的，不列職業
         // 改用文字顯示（logo 太小認不出）
         const _EQ_CLASSES = [['knight','騎士'], ['elf','妖精'], ['mage','法師'], ['dark','黑暗妖精'], ['royal','王族']];
         let _logos = _EQ_CLASSES

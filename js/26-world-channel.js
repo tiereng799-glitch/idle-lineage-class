@@ -559,6 +559,10 @@ function _wcItemInfoAnswers(itemId) {
     if (!d) return WC_UNKNOWN_LINES;
     let desc = String(d.d || '').replace(/<[^>]*>/g, '').trim();
     let req = d.req && d.req !== 'all' ? String(d.req).split(',').map(_wcClsName).join('／') : '全職業';
+    if (d.slot === 'petwpn' || d.slot === 'petarm') {   // 🦴 寵物裝備是給寵物穿的，不講職業
+        if (desc) return [`${d.n}：${desc}`, `${d.n}的物品說明寫的是：${desc}`];
+        return [`${d.n}是寵物裝備，能力以物品資訊面板顯示為準。`];
+    }
     if (desc) return [`${d.n}：${desc} 可用職業是${req}。`, `${d.n}的物品說明寫的是：${desc}`];
     return [`${d.n}可用職業是${req}；這件沒有額外用途文字，能力以物品資訊面板顯示為準。`];
 }
