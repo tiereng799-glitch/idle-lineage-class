@@ -290,7 +290,7 @@
       '#lmui-exp{position:relative;flex:none;height:14px;border-width:1px;margin:0 6px;border-radius:7px;background:linear-gradient(#1b1611,#050403);border:1px solid #9b958a;box-shadow:inset 0 0 0 1px #2c261e,inset 0 2px 4px rgba(0,0,0,.9),0 0 0 1px #1d1812,0 1px 3px #000;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;align-items:center;}',
       '#lmui-exp i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:7px;background:linear-gradient(90deg,rgba(146,96,20,.55),rgba(214,170,60,.55));}',
       '#lmui-exp span{position:relative;display:flex;align-items:baseline;justify-content:center;gap:8px;font-weight:700;font-size:12px;line-height:1;color:#f3f0ea;text-shadow:1px 1px 0 #000,-1px -1px 0 #000;letter-spacing:.5px;}',
-      '#lmui-exp em{font-style:normal;font-weight:700;color:#8f8a82;text-shadow:0 1px 0 rgba(255,255,255,.15),0 -1px 0 #000;letter-spacing:2px;}',
+      '#lmui-exp em{font-style:normal;font-weight:inherit;color:inherit;text-shadow:inherit;letter-spacing:inherit;}',   /* 「等級」字與數字同色同樣式 */
 
       /* ── 右欄面板（能力/魔法/背包/設定）拉高：從頭像列下方一路到工具列，蓋住戰鬥畫面下半與血條 ──
          #game-screen（捲動區）上緣改到頭像列下方；#col-center（戰鬥）照跑，只用 clip-path 裁成頭像列那一條當底圖（不動版面，切回狩獵場不會重排）。
