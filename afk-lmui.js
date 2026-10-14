@@ -251,7 +251,9 @@
       '.lmui-slot .cd{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.65);color:#fca5a5;font-size:15px;font-weight:700;}',
       '.lmui-slot.is-cd .cd{display:flex;}',
       '#lmui-chat{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:rgba(0,0,0,.5);overflow:hidden;}',
-      '#lmui-tabs{display:flex;gap:2px;padding:2px 2px 0;flex:none;align-items:stretch;}',
+      /* 分頁兩排：上排＝系統／戰鬥／掉落（遊戲訊息），下排＝一般／世界／隊伍／血盟（聊天頻道，之後接線上版） */
+      '#lmui-tabs{display:flex;flex-direction:column;gap:2px;padding:2px 2px 0;flex:none;}',
+      '#lmui-tabs .row{display:flex;gap:2px;align-items:stretch;}',
       '#lmui-tabs button{flex:1;padding:3px 0;font-size:15px;color:#c9b88f;background:linear-gradient(#3b3022,#1c160e);border:1px solid #4d3e29;border-radius:2px;}',
       '#lmui-tabs button.on{color:#fff6dc;background:linear-gradient(#7a5f35,#3f2f18);border-color:#b8955a;}',
       '#lmui-tabs .more{flex:0 0 22px;}',
@@ -267,6 +269,9 @@
       '#lmui-lines{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:2px 5px;}',
       '#lmui-lines>*{margin:0 !important;padding:0 !important;font-size:13px !important;line-height:1.4 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none !important;border:0 !important;}',
       '#lmui-input{display:flex;gap:4px;align-items:center;padding:2px 3px 3px;flex:none;}',
+      '#lmui-ch{flex:none;padding:3px 2px;border:1px solid #4d3e29;background:#1c160e;color:#e8d7b0;font-size:16px;font-family:inherit;border-radius:2px;outline:none;}',   /* 16px：iOS 小於 16px 一點就整頁放大 */
+      '#lmui-lines .lmui-ch-line{white-space:normal !important;}',
+      '.lmui-ch-say .lmui-ch-msg{color:#f1f1f1;}.lmui-ch-party .lmui-ch-msg{color:#86efac;}.lmui-ch-clan .lmui-ch-msg{color:#93c5fd;}',
       '#lmui-say{flex:1;min-width:0;padding:4px 8px;border:1px solid #3d3326;background:rgba(0,0,0,.6);color:#eee;font-size:17px;line-height:1.1;font-family:inherit;outline:none;}',   /* 16px：iOS 小於 16px 的輸入框一聚焦就整頁放大 */
       '#lmui-say::placeholder{color:#7d7058;font-size:14px;}',
       '#lmui-send{flex:none;padding:3px 10px;border:1px solid #2563eb;background:linear-gradient(#1e3a8a,#172554);color:#dbeafe;font-size:13px;}',
@@ -608,10 +613,14 @@
       '<div id="lmui-bottom">' +
         '<div id="lmui-hot" data-mode="0">' + hot + '</div>' +
         '<div id="lmui-chat" class="lmui-hit">' +
-          '<div id="lmui-tabs"><button type="button" class="more" data-t="big" aria-label="放大聊天框">▲</button><button type="button" data-t="sys">一般</button><button type="button" data-t="world">世界</button><button type="button" data-t="combat">戰鬥</button><button type="button" data-t="drop">掉落</button><button type="button" class="flt" data-t="filter">篩選</button></div>' +
+          '<div id="lmui-tabs">' +
+            '<div class="row"><button type="button" class="more" data-t="big" aria-label="放大聊天框">▲</button><button type="button" data-t="sys">系統</button><button type="button" data-t="combat">戰鬥</button><button type="button" data-t="drop">掉落</button><button type="button" class="flt" data-t="filter">篩選</button></div>' +
+            '<div class="row"><button type="button" data-t="say">一般</button><button type="button" data-t="world">世界</button><button type="button" data-t="party">隊伍</button><button type="button" data-t="clan">血盟</button></div>' +
+          '</div>' +
           '<div id="lmui-flt"></div>' +
           '<div id="lmui-lines"></div>' +
-          '<div id="lmui-input"><input id="lmui-say" type="text" maxlength="60" autocomplete="off" enterkeyhint="send" placeholder="在世界頻道說話"><button type="button" id="lmui-send">發送</button></div>' +
+          '<div id="lmui-input"><select id="lmui-ch" aria-label="頻道"><option value="say">一般</option><option value="world">世界</option><option value="party">隊伍</option><option value="clan">血盟</option></select>' +
+            '<input id="lmui-say" type="text" maxlength="60" autocomplete="off" enterkeyhint="send" placeholder="輸入訊息"><button type="button" id="lmui-send">發送</button></div>' +
         '</div>' +
       '</div>';
     document.body.appendChild(hud);
@@ -640,8 +649,8 @@
       if (t === 'filter') { toggleFilter(); return; }
       chatTab = t; lastChatSig = ''; renderChat(true);
     });
-    $('lmui-send').addEventListener('click', sendWorld);
-    $('lmui-say').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); sendWorld(); } });
+    $('lmui-send').addEventListener('click', sendChat);
+    $('lmui-say').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); sendChat(); } });
     // 捲回最底時，把捲上去那段期間累積的新訊息補上
     el.lines.addEventListener('scroll', function () { if (chatDirty && linesAtBottom()) { chatDirty = false; renderChat(); } }, { passive: true });
     bindHot();
@@ -961,20 +970,46 @@
     if (box && pills && pills.parentNode !== box) box.appendChild(pills);   // 只搬一次；id 不變，核心的 toggleCombatFilter 等照舊找得到
     document.body.classList.toggle('lmui-flt');
   }
-  function sendWorld() {
-    var say = $('lmui-say'), src = $('world-input');
+  // 聊天頻道：世界＝核心世界頻道（#world-log，由 worldChannelAsk 印）；一般／隊伍／血盟目前只在本機顯示自己說的話，
+  //   存在三個不顯示的容器裡（只放記憶體、重新整理就清空），之後做線上版再把別人的訊息接進同一個容器。
+  var CH_KEEP = 200;
+  function chBox(ch) {
+    var id = 'lmui-ch-' + ch, b = $(id);
+    if (!b) {
+      b = document.createElement('div'); b.id = id; b.style.display = 'none';
+      document.body.appendChild(b);
+      if (chatMo) chatMo.observe(b, { childList: true });
+    }
+    return b;
+  }
+  function escTxt(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function sendChat() {
+    var say = $('lmui-say'), sel = $('lmui-ch');
     var v = say ? say.value.trim() : '';
-    if (!v || !src || typeof worldChannelAsk !== 'function') return;
-    src.value = v;
-    try { worldChannelAsk(); } catch (e) { console.warn('[AFK-lmui] 世界頻道送出失敗', e); return; }
+    if (!v) return;
+    var ch = (sel && sel.value) || 'say';
+    if (ch === 'world') {
+      var src = $('world-input');
+      if (!src || typeof worldChannelAsk !== 'function') return;
+      src.value = v;
+      try { worldChannelAsk(); } catch (e) { console.warn('[AFK-lmui] 世界頻道送出失敗', e); return; }
+    } else {
+      var me = (typeof player !== 'undefined' && player && player.name) ? player.name : '你';
+      var nameHtml = (typeof _wcStaticNameHtml === 'function') ? _wcStaticNameHtml(me, player && player.alignmentValue) : escTxt(me);
+      var box = chBox(ch), line = document.createElement('div');
+      line.className = 'lmui-ch-line lmui-ch-' + ch;
+      line.innerHTML = nameHtml + '：<span class="lmui-ch-msg">' + escTxt(v) + '</span>';
+      box.appendChild(line);
+      while (box.children.length > CH_KEEP) box.removeChild(box.firstChild);
+    }
     say.value = '';
-    chatTab = 'world'; lastChatSig = ''; chatDirty = true;
+    chatTab = ch; lastChatSig = ''; chatDirty = true;
     try { renderChat(true); } catch (e) {}
   }
   function openChat() {
     if (!document.body.classList.contains('lmui-battle')) { chatTab = 'world'; openFullLog(); return; }   // 村莊沒有聊天框 → 照舊開日誌面板
     var b = navBtn('center'); if (b) b.click();
-    chatTab = 'world'; lastChatSig = ''; chatDirty = true;
+    chatTab = 'say'; lastChatSig = ''; chatDirty = true;
     document.body.classList.add('lmui-chatbig');
     if (document.body.classList.contains('lmui-town')) document.body.classList.add('lmui-townchat');   // 村莊：聊天框蓋在 NPC 卡片上，按其他工具就收回
     try { renderChat(true); } catch (e) {}
@@ -1730,8 +1765,9 @@
   }
 
   // 聊天框：鏡射來源日誌的最後幾行（cloneNode，不搬動原本的節點）
-  //   一般＝系統日誌、世界＝世界頻道、戰鬥＝戰鬥日誌、掉落＝系統日誌裡「獲得/掉落」的那幾行
-  var CHAT_SRC = { sys: 'sys-log', world: 'world-log', combat: 'combat-log', drop: 'sys-log' };
+  //   系統＝系統日誌、戰鬥＝戰鬥日誌、掉落＝系統日誌裡「獲得/掉落」的那幾行；
+  //   一般／隊伍／血盟＝本外掛自己的頻道容器（見 sendChat）、世界＝世界頻道
+  var CHAT_SRC = { sys: 'sys-log', combat: 'combat-log', drop: 'sys-log', say: 'lmui-ch-say', world: 'world-log', party: 'lmui-ch-party', clan: 'lmui-ch-clan' };
   var DROP_RE = /獲得|掉落|撿到|得到/;
   var lastChatSig = '', chatDirty = true;
   function linesAtBottom() { var l = el.lines; return !l || l.scrollHeight - l.scrollTop - l.clientHeight < 24; }
@@ -1741,6 +1777,7 @@
     // 玩家往上捲在看舊訊息 → 先不刷新（同核心日誌的捲動鎖定）；捲回最底時由 scroll 事件補上
     if (!force && !linesAtBottom()) { chatDirty = true; return; }
     var src = $(CHAT_SRC[chatTab]);
+    if (!src && /^(say|party|clan)$/.test(chatTab)) src = chBox(chatTab);
     if (!src) { el.lines.innerHTML = ''; return; }
     var kids = src.children, n = kids.length;
     var last = n ? kids[n - 1] : null;
@@ -1764,10 +1801,11 @@
     el.lines.appendChild(frag);
     el.lines.scrollTop = el.lines.scrollHeight;
   }
+  var chatMo = null;
   function watchChat() {
     if (typeof MutationObserver !== 'function') return;
-    var mo = new MutationObserver(function () { chatDirty = true; });
-    ['sys-log', 'world-log', 'combat-log'].forEach(function (id) { var s = $(id); if (s) mo.observe(s, { childList: true }); });
+    chatMo = new MutationObserver(function () { chatDirty = true; });
+    ['sys-log', 'world-log', 'combat-log', 'lmui-ch-say', 'lmui-ch-party', 'lmui-ch-clan'].forEach(function (id) { var s = $(id); if (s) chatMo.observe(s, { childList: true }); });
   }
 
   // ── 主迴圈 ──────────────────────────────────────────────
