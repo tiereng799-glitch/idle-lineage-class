@@ -1758,7 +1758,7 @@ window.onload = () => {
 (function(){
     let tipEl = null, ICON2ID = null;
     const TYPE_LABEL = { wpn:'武器', arm:'防具', acc:'飾品', scroll:'卷軸', pot:'藥水', skillbk:'魔法書', etc:'道具', material:'素材' };
-    const STAT_LABEL = { ac:'AC', mr:'魔防(MR)', dr:'傷害減免', er:'迴避(ER)', str:'力量', dex:'敏捷', con:'體質', int:'智力', wis:'精神', cha:'魅力', mhp:'HP上限', mmp:'MP上限', hpR:'HP恢復', mpR:'MP恢復', resFire:'火屬性抗性', resWater:'水屬性抗性', resEarth:'地屬性抗性', resWind:'風屬性抗性', meleeHit:'近距離命中', rangedHit:'遠距離命中', meleeDmg:'近距離傷害', rangedDmg:'遠距離傷害', mdmg:'魔法傷害', extraHit:'額外命中', extraDmg:'額外傷害' };
+    const STAT_LABEL = { ac:'AC', mr:'魔防(MR)', dr:'傷害減免', er:'迴避(ER)', str:'力量', dex:'敏捷', con:'體質', int:'智力', wis:'精神', cha:'魅力', mhp:'HP上限', mmp:'MP上限', hpR:'HP恢復', mpR:'MP恢復', resFire:'火屬性抗性', resWater:'水屬性抗性', resEarth:'地屬性抗性', resWind:'風屬性抗性', meleeHit:'近距離命中', rangedHit:'遠距離命中', meleeDmg:'近距離傷害', rangedDmg:'遠距離傷害', mdmg:'魔攻', extraHit:'額外命中', extraDmg:'額外傷害' };
     const EFF_LABEL = { moonburst:'月光爆裂', pierce:'穿透', dice_death:'即死', haste:'自我加速', immStone:'免疫石化', mp_drain:'命中恢復MP', crush:'重擊', cleave:'切割' };
     function sgn(v){ return (v>=0?'+':'') + v; }
     // ⚠️ 先定義者勝：多件物品可能共用同一張圖（例：沙哈之箭借用 箭.png），後者若覆蓋 key 會讓前者的 hover tooltip 顯示成後者。
@@ -1768,7 +1768,7 @@ window.onload = () => {
     // ===== 技能 tooltip（技能頁：游標移到技能上顯示能力）=====
     const SK_TYPE = { atk:'攻擊', heal:'治癒', buff:'增益', manual:'手動', convert:'轉換', summon:'召喚' };
     const SK_ELE = { fire:'火', water:'水', earth:'地', wind:'風', none:'無' };
-    const SK_STAT2 = { ac:'防禦', mr:'魔防', dr:'傷害減免', er:'迴避', str:'力量', dex:'敏捷', con:'體質', int:'智力', wis:'精神', cha:'魅力', extraDmg:'額外傷害', extraHit:'額外命中', magicDmg:'魔法傷害', extraMp:'額外魔力', mpR:'魔力恢復', hpR:'體力恢復', meleeHit:'近距命中', rangedHit:'遠距命中', meleeDmg:'近距傷害', rangedDmg:'遠距傷害', resFire:'火屬性抗性', resWater:'水屬性抗性', resEarth:'地屬性抗性', resWind:'風屬性抗性' };
+    const SK_STAT2 = { ac:'防禦', mr:'魔防', dr:'傷害減免', er:'迴避', str:'力量', dex:'敏捷', con:'體質', int:'智力', wis:'精神', cha:'魅力', extraDmg:'額外傷害', extraHit:'額外命中', magicDmg:'魔攻', extraMp:'額外魔力', mpR:'魔力恢復', hpR:'體力恢復', meleeHit:'近距命中', rangedHit:'遠距命中', meleeDmg:'近距傷害', rangedDmg:'遠距傷害', resFire:'火屬性抗性', resWater:'水屬性抗性', resEarth:'地屬性抗性', resWind:'風屬性抗性' };
     // 📜 2026-10-14 站長：說明框改顯示魔法的「實際功能」，不顯示施放台詞(sk.msg)。
     //    下列是資料欄位組不出效果字的魔法；數字一律讀 SKILL_FX（js/00-data 末尾·效果程式也讀同一張表）或技能資料欄位，
     //    改數值只改那裡，說明自動跟著變。⚠️ 改的是「效果機制」（不只是數字）時，這裡的文字也要一起改。
@@ -1903,7 +1903,7 @@ window.onload = () => {
             let ex = [];
             if(d.hit) ex.push(`${ranged?'遠距':'近距'}命中 ${sgn(d.hit)}`);
             if(d.dmgBonus !== undefined && d.dmgBonus !== 0) ex.push(`${ranged?'遠距':'近距'}傷害 ${sgn(d.dmgBonus)}`);
-            if(d.mdmg) ex.push(`魔法傷害 ${sgn(d.mdmg)}`);
+            if(d.mdmg) ex.push(`魔攻 ${sgn(d.mdmg)}`);
             if(ex.length) parts.push(`<div class="text-slate-300">${ex.join(' / ')}</div>`);
         } else if(d.type === 'arm' || d.type === 'acc'){
             let st = [];

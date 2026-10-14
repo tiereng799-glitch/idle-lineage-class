@@ -726,7 +726,7 @@ function weaponPurposeLabels(d) {
     if (!d || d.type !== 'wpn') return [];
     const out = [];
     if (d.mpRPerEn) out.push(`MP自然恢復每強化+${d.mpRPerEn}`);
-    if (d.mdmgEnFrom7Max3) out.push('魔法傷害成長（+7起魔法傷害+1，之後每強化+1，最高+3）');
+    if (d.mdmgEnFrom7Max3) out.push('魔攻成長（+7起魔攻+1，之後每強化+1，最高+3）');
     if (d.equipHaste) out.push('裝備加速（常駐加速，與加速術／自我加速藥水不重疊）');
     if (d.dragonStrike) out.push(`龍的一擊 ${d.dragonStrike}%（每次一般攻擊皆判定且不論命中；對全體造成（3～力量×3）＋30 固定物理傷害）`);
     if (d.procBurstPoison) {
@@ -878,7 +878,7 @@ function tooltipItemDescription(d, itemId) {
     addValue('HP\\s*(?:上限)?', d.mhp); addValue('MP\\s*(?:上限)?', d.mmp);
     addValue('HP\\s*(?:自然)?(?:恢復|回復)(?:量)?', d.hpR);
     addValue('MP\\s*(?:自然)?(?:恢復|回復)(?:量)?', d.mpR);
-    addValue('魔法傷害', d.mdmg); addValue('魔法命中', d.magicHit);
+    addValue('魔攻', d.mdmg); addValue('魔法命中', d.magicHit);
     addValue('額外魔法點數', d.extraMp); addValue('額外傷害', d.extraDmg); addValue('額外命中', d.extraHit);
     addValue('(?:傷害減免|減傷)', d.dr); addValue('(?:迴避|ER)', d.er); addValue('負重(?:上限)?', d.weightCap);
     addValue('(?:近距離|遠距離)命中', d.hit); addValue('(?:近距離|遠距離)傷害', d.dmgBonus);
@@ -931,7 +931,7 @@ function dedupeGeneratedTooltipEffects(effects, d, options) {
     });
 }
 
-const GENIE_WISH_LABEL = { hp60: 'HP +60', mp30: 'MP +30', md3: '近距離傷害 +3', rd3: '遠距離傷害 +3', mdmg2: '魔法傷害 +2', sp6: '額外魔法點數 +6', hpr10: 'HP 自然恢復量 +10', mpr5: 'MP 自然恢復量 +5', dr3: '傷害減免 +3', ac3: 'AC -3', mr6: 'MR +6', str1: '力量 +1', dex1: '敏捷 +1', int1: '智力 +1', wis1: '精神 +1', con1: '體質 +1', cha1: '魅力 +1' };   // 🏺 v3.6.44 巨靈的三個願望
+const GENIE_WISH_LABEL = { hp60: 'HP +60', mp30: 'MP +30', md3: '近距離傷害 +3', rd3: '遠距離傷害 +3', mdmg2: '魔攻 +2', sp6: '額外魔法點數 +6', hpr10: 'HP 自然恢復量 +10', mpr5: 'MP 自然恢復量 +5', dr3: '傷害減免 +3', ac3: 'AC -3', mr6: 'MR +6', str1: '力量 +1', dex1: '敏捷 +1', int1: '智力 +1', wis1: '精神 +1', con1: '體質 +1', cha1: '魅力 +1' };   // 🏺 v3.6.44 巨靈的三個願望
 function buildItemDescHTML(item) {
     let d = DB.items[item.id];
     if(!d) return '';
@@ -958,7 +958,7 @@ function buildItemDescHTML(item) {
         if(d.hit) desc += ` / ${hitLabel}: ${formatBonus(d.hit)}`;
         if(d.dmgBonus !== undefined) desc += ` / ${dmgLabel}: ${formatBonus(d.dmgBonus)}`; // 加上 !== undefined 避免 0 被漏掉
         
-        if(d.mdmg) desc += ` / 魔法傷害: ${formatBonus(d.mdmg)}`;
+        if(d.mdmg) desc += ` / 魔攻: ${formatBonus(d.mdmg)}`;
         // ⚔️ 攻擊速度依「職業性別×武器種類」查表顯示（以目前角色為準）
         if (typeof atkSpdApm === 'function' && typeof player !== 'undefined' && player && player.cls && atkSpdFamily(item.id)) {   // 箭矢等非揮擊武器不顯示
             let _apm = atkSpdApm(player, item.id);
@@ -1035,7 +1035,7 @@ function buildItemDescHTML(item) {
             let val = (ag.base || 0) + tier;
             let perEnHp = en * 10;
             if(ag.stat === 'mhp') desc += `<br><span class="text-amber-300">HP +${val + perEnHp}（特效 +${val}、每強化 HP+10 共 +${perEnHp}）</span>`;
-            else if(ag.stat && ag.stat !== 'none' && val) { let _agLbl = ag.stat === 'dr' ? '額外減傷' : ag.stat === 'magicDmg' ? '魔法傷害' : ag.stat === 'rangedDmg' ? '遠距離傷害' : ag.stat === 'meleeDmg' ? '近距離傷害' : ag.stat; desc += `<br><span class="text-amber-300">${_agLbl} +${val}　HP +${perEnHp}（每強化+1，HP+10）</span>`; }
+            else if(ag.stat && ag.stat !== 'none' && val) { let _agLbl = ag.stat === 'dr' ? '額外減傷' : ag.stat === 'magicDmg' ? '魔攻' : ag.stat === 'rangedDmg' ? '遠距離傷害' : ag.stat === 'meleeDmg' ? '近距離傷害' : ag.stat; desc += `<br><span class="text-amber-300">${_agLbl} +${val}　HP +${perEnHp}（每強化+1，HP+10）</span>`; }
             else desc += `<br><span class="text-amber-300">HP +${perEnHp}（每強化+1，HP+10）</span>`;   // 🛡️ 無門檻特效臂甲（如龍鱗臂甲 stat:none）：只顯示每強化HP，不顯示「none +0」
         }
     }
@@ -1046,7 +1046,7 @@ function buildItemDescHTML(item) {
         if (d.unBonus) _eff.push('不死／狼人加成（額外造成 1～20 傷害）');   // 🧹 v3.5.87 #128：unDice / sp:'elf' 全 DB.items 零定義（恆假死運算元）→ 只留 unBonus
         if (d.eff === 'pierce')     _eff.push('穿透 ' + (d.pierceChance !== undefined ? d.pierceChance : 100) + '%（命中後追加攻擊另一名敵人）');
         if (d.alsoPierce)           _eff.push('穿透 ' + (d.pierceChance !== undefined ? d.pierceChance : 100) + '%（命中後追加攻擊另一名敵人）');   // 主特效槽被占用時仍可附帶「穿透」；與無視硬皮的「貫穿」不同
-        if (d.eff === 'moonburst')  _eff.push('月光爆裂（命中時8%造成1～30＋強化×2風屬性魔法傷害·受魔法傷害公式與MR影響）');
+        if (d.eff === 'moonburst')  _eff.push('月光爆裂（命中時8%造成1～30＋強化×2風屬性魔法傷害·受魔攻與MR影響）');
         if (d.eff === 'dice_death') _eff.push('即死（命中時1%使非首領目標死亡）');
         if (d.eff === 'haste')      _eff.push('自我加速（裝備時常駐加速）');
         if (d.eff === 'crush')      _eff.push('重擊（提高重擊機率，重擊取武器最大傷害）');
@@ -1148,7 +1148,7 @@ function buildItemDescHTML(item) {
     if(d.hpR) statsArr.push(`HP恢復${formatBonus(d.hpR)}`);
     if(d.mpR) statsArr.push(`MP恢復${formatBonus(d.mpR)}`);
     // 補齊通用裝備能力。前方武器/防具區已列出的欄位不重複加入。
-    if(d.mdmg && d.type !== 'wpn') statsArr.push(`魔法傷害${formatBonus(d.mdmg)}`);
+    if(d.mdmg && d.type !== 'wpn') statsArr.push(`魔攻${formatBonus(d.mdmg)}`);
     if(d.extraMp) statsArr.push(`額外魔法點數${formatBonus(d.extraMp)}`);
     if(d.magicHit) statsArr.push(`魔法命中${formatBonus(d.magicHit)}`);
     if(d.extraDmg) statsArr.push(`額外傷害${formatBonus(d.extraDmg)}`);
@@ -1205,7 +1205,7 @@ function buildItemDescHTML(item) {
         let _slot = (d.type === 'wpn') ? 'wpn' : (_acc ? 'acc' : 'arm');
         let _v = (item.anc === true) ? 'ancient' : item.anc;
         let _at;
-        if(_slot === 'wpn')      _at = (_v==='eternal') ? '額外傷害+4' : (_v==='immortal') ? '額外命中+4' : (_v==='primordial') ? '魔法傷害+2' : '額外傷害+2，魔法傷害+1';
+        if(_slot === 'wpn')      _at = (_v==='eternal') ? '額外傷害+4' : (_v==='immortal') ? '額外命中+4' : (_v==='primordial') ? '魔攻+2' : '額外傷害+2，魔攻+1';
         else if(_slot === 'arm') _at = (_v==='eternal') ? '防禦(AC)-2' : (_v==='immortal') ? '迴避(ER)+2' : (_v==='primordial') ? '魔防(MR)+4' : '傷害減免+2';
         else                     _at = (_v==='eternal') ? '額外傷害+1，防禦(AC)-1' : (_v==='immortal') ? '額外傷害+1，額外命中+1' : (_v==='primordial') ? '魔防(MR)+2，額外魔法點數+2' : '傷害減免+1，魔防(MR)+1';
         desc += `<br><span class="${ancColorClass(item.anc)}">${ancName(item.anc)}：${_at}</span>`;
