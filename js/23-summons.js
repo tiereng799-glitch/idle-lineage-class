@@ -570,7 +570,7 @@ function _summonPotionTick() {   // 紅水（HP 低於 %）＋綠水（沒加速
     if (typeof necroSkeletonList === 'function') list = list.concat(necroSkeletonList().filter(s => s && !s._downed && (s.hp || 0) > 0 && (!s._necroOwnerKey || _necroOwnerByKey(s._necroOwnerKey) === player)));
     for (const s of list) {
         const who = `召喚物 <span class="text-purple-300 font-bold">${s.form}</span>`;
-        if (pct > 0) companionDrinkPotion(s, pct, s.mhp || 1, who, '召喚物');
+        if (pct > 0) companionDrinkPotion(s, pct, s.mhp || 1, who, '召喚物', player.sumPotId);
         if (green && typeof companionDrinkGreen === 'function') companionDrinkGreen(s, true, who, '召喚物');
     }
 }

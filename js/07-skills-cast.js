@@ -117,7 +117,7 @@ function summonTick(sm, clearFn, owner) {
     owner = owner || player;   // 🩸 v2.6.25 owner 參數化（傭兵召喚共用）
     if(!sm) return;
     if(sm._charm && sm._downed) { if (owner.buffs && sm.skId) owner.buffs[sm.skId] = 0; clearFn(); return; }   // 🩸 迷魅的怪被打倒＝迷魅結束(「倒下消散了」由 enemyAttackSummon 印)
-    if(sm._charm && owner === player && typeof companionDrinkPotion === 'function') companionDrinkPotion(sm, player.charmPotPct || 0, sm.mhp || 1, `<span class="text-pink-300 font-bold">${sm.form}</span>`, '迷魅的怪');   // 🧪 HP 低於「寵物」分頁設定的 % → 喝藥水
+    if(sm._charm && owner === player && typeof companionDrinkPotion === 'function') companionDrinkPotion(sm, player.charmPotPct || 0, sm.mhp || 1, `<span class="text-pink-300 font-bold">${sm.form}</span>`, '迷魅的怪', player.charmPotId);   // 🧪 HP 低於「寵物」分頁設定的 % → 喝藥水
     if(state.ticks >= sm.endTick || (sm.skId && ((owner.buffs && owner.buffs[sm.skId]) || 0) <= 0)) {
         logCombat(`<span class="text-purple-300">${sm.n}</span> 消失了。`, 'magic');
         clearFn(); return;

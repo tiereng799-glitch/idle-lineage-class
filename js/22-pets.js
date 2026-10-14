@@ -349,7 +349,7 @@ function _petMergeFromBucket(cur, key) {
         }
         // 其他角色出戰中的寵物，以共用桶為即時狀態來源；本角色不可用過期鏡像覆蓋其 HP/MP/等級。
         if (_petOutStateKey(p) && _petOutStateKey(p) !== _petCurrentOwnerKey() && _petOutStateKey(f) === _petOutStateKey(p) && _fOutV === (Number(p.outV) || 0)) {
-            for (let k of ['form','lv','exp','expReqV','mhp','mmp','hp','mp','potPct','green','name','locked']) if (f[k] !== undefined) p[k] = f[k];
+            for (let k of ['form','lv','exp','expReqV','mhp','mmp','hp','mp','potPct','potId','green','name','locked']) if (f[k] !== undefined) p[k] = f[k];
             // 🩸 v3.5.95 倒地狀態必須跟著 hp 一起搬（上面那行搬 hp 卻不搬 _downed → 多分頁可繞過 v3.5.94 的防免費復活）：
             //   分頁A 寵物倒地寫桶(hp:0,_downed:1) → 分頁B 合併只拿到 hp:0、_downed 仍 undefined → 分頁B 下次
             //   petRosterSave 時 _petPersist 的 `if (p._downed)` 為假 → 把 _downed 從共用桶抹掉、hp:0 留著 →
@@ -423,7 +423,7 @@ function _petTombsWrite(key, tombs) {   // 只留最近 300 筆（uid 不重複�
     try { let ks = Object.keys(tombs); if (ks.length > 300) ks.slice(0, ks.length - 300).forEach(k => delete tombs[k]); _lzSet(key + '_rm', _saveWrap(JSON.stringify(tombs))); } catch (e) {}
 }
 function _petPersist(p) {   // 只序列化長生欄位（戰鬥暫存 _ 前綴不入桶）
-    let o = { uid: p.uid, form: p.form, lv: p.lv, exp: p.exp, expReqV: p.expReqV || PET_EXP_REQ_VERSION, mhp: p.mhp, mmp: p.mmp, hp: p.hp, mp: p.mp, outOwner: p.outOwner ? String(p.outOwner) : null, outSlot: p.outSlot == null ? null : String(p.outSlot), outV: p.outV || 0, eqV: p.eqV || 0, potPct: p.potPct || 0, green: p.green ? 1 : 0, name: p.name || '', locked: !!p.locked };
+    let o = { uid: p.uid, form: p.form, lv: p.lv, exp: p.exp, expReqV: p.expReqV || PET_EXP_REQ_VERSION, mhp: p.mhp, mmp: p.mmp, hp: p.hp, mp: p.mp, outOwner: p.outOwner ? String(p.outOwner) : null, outSlot: p.outSlot == null ? null : String(p.outSlot), outV: p.outV || 0, eqV: p.eqV || 0, potPct: p.potPct || 0, potId: p.potId || '', green: p.green ? 1 : 0, name: p.name || '', locked: !!p.locked };
     // 🩸 v3.5.94 倒地狀態必須入桶（例外於「_ 前綴不入桶」通則）：不存的話重新整理後 _downed 消失、
     //    hp 被夾成 1 ＝ 免費復活。_reviveCd 一併存，避免重整規避 5 秒冷卻。
     if (p._downed) { o._downed = 1; if (p._reviveCd > 0) o._reviveCd = p._reviveCd; }
@@ -728,6 +728,7 @@ function petEvoChoose(p, avail) {   // 🐉 v3.2.63 兩種果實都有時的進�
     document.body.appendChild(ov);
 }
 function petDisplayName(p) { return (p.name ? p.name + '（' + p.form + '）' : p.form); }
+function petSetPotId(uidv, id) { let p = _petFindFresh(uidv); if (!p || _petRejectForeignMutation(p)) return; p.potId = COMPANION_POTS.some(x => x[0] === id) ? id : ''; petMarkDirty(); }
 function petSetGreen(uidv, on) { let p = _petFindFresh(uidv); if (!p || _petRejectForeignMutation(p)) return; p.green = on ? 1 : 0; petMarkDirty(); }
 function petSetPotPct(uidv, v) { let p = _petFindFresh(uidv); if (!p || _petRejectForeignMutation(p)) return; p.potPct = Math.max(0, Math.min(95, parseInt(v, 10) || 0)); petMarkDirty(); }
 
@@ -1156,17 +1157,17 @@ function applyMobMagicToPet(mob, sk, p) {
     petMarkDirty();
 }
 function petTryPotion(p) {   // HP<X% 用治癒藥水（邏輯同傭兵 allyTryPotion：喝「隊長設定的藥水」·缺貨且勾自動購買→補到100瓶）
-    if (companionDrinkPotion(p, p.potPct, petMhpEff(p), `寵物 <span class="text-emerald-300 font-bold">${p.form}</span>`, '寵物')) petMarkDirty();
+    if (companionDrinkPotion(p, p.potPct, petMhpEff(p), `寵物 <span class="text-emerald-300 font-bold">${p.form}</span>`, '寵物', p.potId)) petMarkDirty();
 }
 // 🧪 夥伴喝水共用（寵物／召喚物／迷魅的怪）：HP 低於 pct% → 喝「設定」裡選的治癒藥水（#set-pot），缺貨且勾自動購買→補 100 瓶。
 //   每隻各自 1 秒冷卻（_potCd·每 tick 呼叫一次）；藥水霜化／汙濁之水減半照舊讀實體自己的 _statuses。回傳 true＝這次有喝。
-function companionDrinkPotion(p, pct, mhp, who, kind) {
+function companionDrinkPotion(p, pct, mhp, who, kind, wantId) {
     if (typeof pvpArenaPotionBlocked === 'function' && pvpArenaPotionBlocked()) return false;   // 🚫 v3.7.17 決鬥中禁治癒藥水（⚠️寵物不像傭兵會被移到場邊·決鬥時仍在場上→這道閘是真的會擋到東西的那一個）
     if (!(pct > 0) || !p || p._downed) return false;
     if ((p._potCd || 0) > 0) { p._potCd--; return false; }
     if (p.hp <= 0 || p.hp > mhp * (pct / 100)) return false;
     let potSel = (typeof document !== 'undefined') ? document.getElementById('set-pot') : null;
-    let potId = potSel ? potSel.value : 'potion_heal';
+    let potId = (wantId && DB.items[wantId]) ? wantId : (potSel ? potSel.value : 'potion_heal');   // 🧪 夥伴自己選的藥水（紅/橙/白）優先
     let pdef = DB.items[potId];
     if (!pdef || pdef.val == null) return false;   // 只認固定 val 的治癒藥水（紅/橙/白）
     let stack = player.inv && player.inv.find(i => i.id === potId && (i.cnt || 0) > 0);
@@ -1339,6 +1340,8 @@ function dismissCharm() {
     logSys(`${player.charmed.form || '迷魅的怪'} 解除了迷魅。`);
     player.charmed = null; if (player.buffs) player.buffs.sk_charm = 0;
 }
+function setSummonPotId(id) { if (typeof player === 'undefined' || !player || !player.cls) return; player.sumPotId = id || ''; }
+function setCharmPotId(id) { if (typeof player === 'undefined' || !player || !player.cls) return; player.charmPotId = id || ''; }
 function setSummonGreen(on) { if (typeof player === 'undefined' || !player || !player.cls) return; player.sumGreen = !!on; }
 function setCharmGreen(on) { if (typeof player === 'undefined' || !player || !player.cls) return; player.charmGreen = !!on; }
 // 召喚物／迷魅的怪的喝水門檻（存在角色上：召喚物會重召、迷魅會換怪，設定要留著）
@@ -1724,8 +1727,11 @@ function _ptCard(o) {
         ${o.extra || ''}
     </div>`;
 }
-function _ptPot(val, onchange) {   // inputmode=numeric＋pattern：手機直接跳數字鍵盤
-    return `<span class="text-slate-400 whitespace-nowrap" style="font-size:12px;">HP&lt;<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="${val || 0}" onchange="${onchange}" class="bg-slate-900 border border-slate-600 rounded text-center" style="width:2.6rem;font-size:13px;height:22px;padding:0 2px;">%喝紅水</span>`;
+const COMPANION_POTS = [['potion_heal', '紅水'], ['potion_strong', '橙水'], ['potion_ult', '白水']];
+function _ptPot(val, onchange, potId, onPot) {   // inputmode=numeric＋pattern：手機直接跳數字鍵盤；後面選喝哪一種
+    let cur = potId || ((document.getElementById('set-pot') || {}).value) || 'potion_heal';
+    let opts = COMPANION_POTS.map(([id, n]) => `<option value="${id}"${id === cur ? ' selected' : ''}>${n}</option>`).join('');
+    return `<span class="text-slate-400 whitespace-nowrap" style="font-size:12px;display:inline-flex;align-items:center;gap:2px;">HP&lt;<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="${val || 0}" onchange="${onchange}" class="bg-slate-900 border border-slate-600 rounded text-center" style="width:2.6rem;font-size:13px;height:22px;padding:0 2px;">%喝<select onchange="${onPot}" class="bg-slate-900 border border-slate-600 rounded" style="font-size:12px;height:22px;padding:0 2px;">${opts}</select></span>`;
 }
 function _ptGreen(on, onchange) {
     return `<label class="text-green-300 whitespace-nowrap" style="font-size:12px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" ${on ? 'checked' : ''} onchange="${onchange}" style="width:15px;height:15px;">喝綠水</label>`;
@@ -1747,15 +1753,15 @@ function _petsTabData() {
             extra: (p._downed
                 ? `<div class="flex items-center gap-1" style="margin-top:5px;">${(player.skills || []).includes('sk_resurrection') ? `<button type="button" onclick="petRevive('${p.uid}','rez')" class="btn text-xs font-bold flex-1" style="padding:5px;">返生術</button>` : ''}<button type="button" onclick="petRevive('${p.uid}','scroll')" class="btn text-xs font-bold flex-1" style="padding:5px;">復活卷軸${(p._reviveCd || 0) > 0 ? `（${Math.ceil(p._reviveCd / 10)} 秒）` : ''}</button></div>`
                 : `<div class="flex items-center gap-1" style="margin-top:5px;">${_ptGearBtn(p, 'wpn')}${_ptGearBtn(p, 'arm')}<button type="button" onclick="petStash('${p.uid}')" class="btn text-xs font-bold" style="padding:4px 8px;white-space:nowrap;">寄放</button></div>`)
-                + `<div class="flex items-center justify-end gap-3" style="margin-top:4px;">${_ptPot(p.potPct, `petSetPotPct('${p.uid}',this.value)`)}${_ptGreen(p.green, `petSetGreen('${p.uid}',this.checked)`)}</div>`,
-            sig: [p.eq && p.eq.wpn && p.eq.wpn.id, p.eq && p.eq.wpn && p.eq.wpn.en, p.eq && p.eq.arm && p.eq.arm.id, p.eq && p.eq.arm && p.eq.arm.en, p.potPct || 0, p.green ? 1 : 0, Math.ceil((p._reviveCd || 0) / 10)].join(',') });
+                + `<div class="flex items-center justify-end gap-3" style="margin-top:4px;">${_ptPot(p.potPct, `petSetPotPct('${p.uid}',this.value)`, p.potId, `petSetPotId('${p.uid}',this.value)`)}${_ptGreen(p.green, `petSetGreen('${p.uid}',this.checked)`)}</div>`,
+            sig: [p.eq && p.eq.wpn && p.eq.wpn.id, p.eq && p.eq.wpn && p.eq.wpn.en, p.eq && p.eq.arm && p.eq.arm.id, p.eq && p.eq.arm && p.eq.arm.en, p.potPct || 0, p.potId || '', p.green ? 1 : 0, Math.ceil((p._reviveCd || 0) / 10)].join(',') });
     });
     let skId = (typeof summonV2ActiveSk === 'function') ? summonV2ActiveSk() : '';
     let remain = (player.buffs && skId) ? (player.buffs[skId] || 0) : 0;
     let sums = (typeof summonV2List === 'function') ? summonV2List() : [];
     if (typeof necroSkeletonList === 'function') sums = sums.concat(necroSkeletonList().filter(s => !s._necroOwnerKey || (typeof _necroOwnerByKey === 'function' && _necroOwnerByKey(s._necroOwnerKey) === player)));
     let _sumAlive = sums.filter(s => s && !s._downed && (s.hp || 0) > 0);
-    if (_sumAlive.length) out.push({ key: 'sh', head: `<div class="flex items-center justify-between gap-2" style="padding:2px 2px 0;"><span class="font-bold" style="color:#d8b4fe;">🔮 召喚物（${_sumAlive.length}）</span><button type="button" onclick="dismissSummons()" class="btn text-xs font-bold" style="padding:3px 10px;">解散</button></div><div class="flex items-center justify-end gap-3" style="padding:0 2px;">${_ptPot(player.sumPotPct, 'setSummonPotPct(this.value)')}${_ptGreen(player.sumGreen, 'setSummonGreen(this.checked)')}</div>`, sig: (player.sumPotPct || 0) + (player.sumGreen ? 'g' : '') });
+    if (_sumAlive.length) out.push({ key: 'sh', head: `<div class="flex items-center justify-between gap-2" style="padding:2px 2px 0;"><span class="font-bold" style="color:#d8b4fe;">🔮 召喚物（${_sumAlive.length}）</span><button type="button" onclick="dismissSummons()" class="btn text-xs font-bold" style="padding:3px 10px;">解散</button></div><div class="flex items-center justify-end gap-3" style="padding:0 2px;">${_ptPot(player.sumPotPct, 'setSummonPotPct(this.value)', player.sumPotId, 'setSummonPotId(this.value)')}${_ptGreen(player.sumGreen, 'setSummonGreen(this.checked)')}</div>`, sig: (player.sumPotPct || 0) + (player.sumGreen ? 'g' : '') + (player.sumPotId || '') });
     _sumAlive.forEach((s, i) => {
         out.push({ key: 's' + (s.uid || i), tag: '🔮', color: '#d8b4fe', border: '#6b21a8', name: s.form, lv: s.lv, hp: s.hp, mhp: s.mhp, time: remain > 0 ? _ptTime(remain) : '',
             img: 'assets/anim/' + enc(s.formGfx || s.form) + '/d6/idle_0.png', fallback: encodeURI('assets/icons/skills/召喚術.png') });
@@ -1764,12 +1770,12 @@ function _petsTabData() {
     if (c && c._charm && !c._downed && (c.hp || 0) > 0) {
         out.push({ key: 'c', tag: '💫', color: '#f9a8d4', border: '#9d174d', name: c.form, lv: c.lv, hp: c.hp, mhp: c.mhp, time: _ptTime(((c.endTick || 0) - ((typeof state !== 'undefined' && state && state.ticks) || 0)) / 10),
             img: 'assets/anim/' + enc(c.form) + '/idle_0.png', fallback: encodeURI('assets/icons/skills/迷魅術.png'),
-            extra: `<div class="flex items-center justify-end gap-3" style="margin-top:4px;">${_ptPot(player.charmPotPct, 'setCharmPotPct(this.value)')}${_ptGreen(player.charmGreen, 'setCharmGreen(this.checked)')}<button type="button" onclick="dismissCharm()" class="btn text-xs font-bold" style="padding:3px 10px;">解散</button></div>`, sig: (player.charmPotPct || 0) + (player.charmGreen ? 'g' : '') });
+            extra: `<div class="flex items-center justify-end gap-3" style="margin-top:4px;">${_ptPot(player.charmPotPct, 'setCharmPotPct(this.value)', player.charmPotId, 'setCharmPotId(this.value)')}${_ptGreen(player.charmGreen, 'setCharmGreen(this.checked)')}<button type="button" onclick="dismissCharm()" class="btn text-xs font-bold" style="padding:3px 10px;">解散</button></div>`, sig: (player.charmPotPct || 0) + (player.charmGreen ? 'g' : '') + (player.charmPotId || '') });
     }
     return out;
 }
 function _petsPanelFill(el, force) {
-    if (!force && document.activeElement && el.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;   // 正在輸入喝水 %：輸入完(離開欄位)再重畫
+    if (!force && document.activeElement && el.contains(document.activeElement) && /^(INPUT|SELECT)$/.test(document.activeElement.tagName)) return;   // 正在輸入喝水 %／選藥水：弄完(離開欄位)再重畫
     let list = _petsTabData();
     let sig = list.map(o => [o.key, o.name, o.lv, Math.floor(o.hp || 0), o.mhp, Math.floor(o.mp || 0), o.mmp, o.down ? 1 : 0, o.time, o.sig].join(':')).join('|');
     if (!force && sig === el._ptSig) return;
