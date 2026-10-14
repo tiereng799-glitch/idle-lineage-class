@@ -30,7 +30,7 @@
            (CSS 另有 60 秒自動消失的保底)。data-scripts / data-script-kb 是本頁 <script src> 的數量與總大小，由 scripts/stamp-code-versions.mjs 自動對齊。
            無痕模式／第一次開沒有快取，光下載程式就要十幾秒；以前這段進度條停在 0% 不動，看起來像卡死。
            主要照「已下載的位元組」算(檔案大小差很多，00-data 一支就 640KB，只數檔數會一卡好幾秒)；瀏覽器不給大小時退回數檔數。 -->
-      <div id="boot-loader" aria-live="polite" data-scripts="111" data-script-kb="6173">
+      <div id="boot-loader" aria-live="polite" data-scripts="108" data-script-kb="6144">
         <div class="boot-box"><div class="boot-label">載入中 <span class="boot-pct">0%</span></div><div class="boot-bar"><div class="boot-bar-fill"></div></div></div>
       </div>
       <script>
@@ -556,7 +556,7 @@
 <script src="js/11-world-map.js?v=f1ad039451.8.17-item-stack-source"></script>
 <script src="js/12-npc-quests.js?v=40c4ee816f.8.34-merc-trial-class-loot"></script>
 <script src="js/13-shop-save.js?v=8e559590ba.8.18-desktop-save-isolation"></script>
-<script src="js/14-craft-pandora.js?v=5d932ea1ff.8.17-item-stack-source"></script>
+<script src="js/14-craft-pandora.js?v=16df39ca5d.8.17-item-stack-source"></script>
 <script src="js/15-cards.js?v=9f3f5ca582.7.66"></script>
 <script src="js/16-equip-book.js?v=d0f2dd908e.8.15-legacy-import-smooth"></script>
 <script src="js/18-misc-book.js?v=e3c0995919.8.15-legacy-import-smooth"></script>
@@ -567,9 +567,9 @@
 <script src="js/21-relic-book.js?v=7d118874fb.8.15-legacy-import-smooth"></script>
     <script src="js/23-summons.js?v=622bb33211.8.23-sherine-set-rework"></script>
     <script src="js/22-pets.js?v=7d0eb2bf7f.8.23-sherine-set-rework"></script>
-    <script src="js/24-pandora-relic-market.js?v=3fd2e4228a.7.70"></script>
-    <script src="js/25-clan-system.js?v=89b47c5bb9.8.7-social-private"></script>
-    <script src="js/26-world-channel.js?v=bed2dd5029.8.13-private-bond"></script>
+    <script src="js/24-pandora-relic-market.js?v=cefb0adcbd.7.70"></script>
+    <script src="js/25-clan-system.js?v=18d7197f97.8.7-social-private"></script>
+    <script src="js/26-world-channel.js?v=1f4eab364c.8.13-private-bond"></script>
 <script src="js/28-pvp-arena.js?v=b736b1f4b6.7.89-stage33-host-sign"></script>
 <script src="js/29-siege-v2-data.js?v=19f81e3707.7.63-siege-v2"></script>
 <script src="js/30-siege-v2.js?v=616f9643f4.7.89-castle-ring-layout"></script>
@@ -582,7 +582,7 @@
          無開關：這是顯示正確性，不是功能。實測 forceDarkModeEnabled+darkModeImagePolicy=smart 可重現、加這行即解。 -->
     <style>:root{color-scheme:dark}</style>
     <!-- afk-toggles 必須最先載入：外掛開關中樞（逃生門，自己不可被關；某支外掛壞掉時玩家關掉它就能用原版繼續玩） -->
-    <script src="afk-toggles.js?v=542a579b9b"></script>
+    <script src="afk-toggles.js?v=ece3d478ed"></script>
     <!-- afk-forcemobile：一律使用手機版面(已鎖定、無開關)——寬螢幕導去 phone.html（手機寬 iframe 包 index.html）；緊接 afk-toggles，越早導走外層白跑越少 -->
     <script src="afk-forcemobile.js?v=de0117561e"></script>
     <!-- afk-banner：非官方轉載橫幅讓位（基礎設施、無開關；不可掛在 afk-mobile 裡，玩家關掉手機版面就會整個頂端被蓋住） -->
@@ -614,7 +614,7 @@
     <script src="afk-petui.js?v=8ecc6dfd96"></script>
     <!-- 資訊頁 / 查詢頁 -->
     <script src="afk-dexload.js?v=b57709c0f4"></script>
-    <template id="afk-lazy-dex" data-file="afk-dex.js?v=db775ffcc7"></template><!-- 掉落查詢：玩家點開才由 afk-dexload 下載(template 不會被抓，stamp 照樣對齊 ?v=) -->
+    <template id="afk-lazy-dex" data-file="afk-dex.js?v=f718bc4214"></template><!-- 掉落查詢：玩家點開才由 afk-dexload 下載(template 不會被抓，stamp 照樣對齊 ?v=) -->
     <!-- 設定選單 / 存檔 / 診斷 / 離線紀錄 -->
     <script src="afk-storage.js?v=302890a0df"></script>
     <!-- 整包備份／還原（本機檔案）：入口掛在 afk-storage 的設定選單裡，必須排在它之後 -->
@@ -684,9 +684,9 @@
     <!-- afk-anyclass：去除裝備職業限制（預設關）——包 checkCanEquip，執行期間暫時放行職業那幾關 -->
     <script src="afk-anyclass.js?v=05cac1e24f"></script>
     <!-- afk-norelic：隱藏遺物系統——遺物不再掉落/販售/製作/抽到，收藏遺物冊與黑市遺物布告欄隱藏；已擁有的不動 -->
-    <script src="afk-norelic.js?v=8b3f424306"></script>
+    <script src="afk-norelic.js?v=971c180633"></script>
     <!-- afk-noblackmarket：黑市永久關閉（已鎖定、無開關）——村莊潘朵拉、地圖面板黑市鈕、世界頻道黑市跑馬燈都藏起來並擋下 -->
-    <script src="afk-noblackmarket.js?v=1b17f93bf3"></script>
+    <script src="afk-noblackmarket.js?v=1298f6651f"></script>
     <!-- 傳統模式(偽)/自動衝裝：需搭配 scripts/apply-core-patches.mjs 的 gainItem _tEn 鉤子 -->
     <script src="afk-warehouse.js?v=ae8c589300"></script>
     <!-- 倉庫批次存取:勾選/全選一次搬完(核心是一件一件搬、每件都 saveGame,幾千格搬不動);排在 afk-warehouse 之後 → afterRender 在它的注入之後才跑 -->
