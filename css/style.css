@@ -745,12 +745,11 @@
         }
         .bless-glow { animation: blessGlow 2s infinite ease-in-out; }
 
-        /* 詛咒的：鮮紅螢光（亮度比照祝福，色相改紅） */
-        @keyframes curseGlow {
-            0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 32, 32, 0.55)); }
-            50% { filter: drop-shadow(0 0 10px rgba(255, 32, 32, 1)); }
-        }
-        .curse-glow { animation: curseGlow 2s infinite ease-in-out; }
+        /* 詛咒的：不發光，整張圖染成暗紅（站長 2026-10-14 給的範例：詛咒卷軸＝紅褐色羊皮紙）。靜態濾鏡、不跑動畫。
+           sepia 先把圖轉成單一褐色調，再推飽和、色相往紅偏、壓暗一點；尾端補回圖示原本的小陰影。
+           ⚠️ 要 !important：圖示另有 #game-screen img、天堂M 背包格的 filter（特異度都比 class 高），
+              以前是動畫所以壓得過，改靜態就被蓋掉。省電模式的 filter:none 也因此不會拔掉它——這是辨認詛咒唯一的標記，靜態濾鏡也不吃效能。 */
+        .curse-glow { filter: sepia(1) saturate(2.2) hue-rotate(-40deg) brightness(.64) drop-shadow(0 1px 1px #000) !important; }
         .c-cursed { color: #ff2d2d; text-shadow: 0 0 5px rgba(255,45,45,.55); }
 
         /* 遠古物品的紅色螢光呼吸特效（亮度比照祝福） */
