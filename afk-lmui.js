@@ -1360,6 +1360,14 @@
       b.addEventListener('click', function () {
         // 可開關的（狩獵場）：已經開著就只收起來
         if (t.toggle && document.body.classList.contains('lmui-maps')) { closeAllWindows(); try { syncToolbar(); } catch (e) {} return; }
+        // 再點一次同一顆＝關掉它開的畫面、回到戰鬥畫面（這些頁面本身沒有關閉鈕；狩獵場另有上面那條「開關地圖清單」）
+        var again = (t.id === 'exit') ? document.body.classList.contains('lmui-exitwin') : (t.id !== 'battle' && currentTool() === t.id);
+        if (again) {
+          closeAllWindows();
+          if (t.id !== 'exit') { var cb = navBtn('center'); if (cb) cb.click(); }
+          try { syncBag(); syncToolbar(); } catch (e) {}
+          return;
+        }
         closeAllWindows();
         try { t.run(); } catch (e) { console.warn('[AFK-lmui] 工具列「' + t.name + '」失敗', e); }
         try { syncBag(); syncToolbar(); } catch (e) {}   // 立刻更新子分頁列/亮燈，不等下一個 tick（否則切換後有一瞬間空白）
