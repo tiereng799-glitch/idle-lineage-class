@@ -2014,10 +2014,14 @@ window.onload = () => {
         el.style.display = 'block';
         let pad = 16, w = el.offsetWidth, h = el.offsetHeight;
         let x = e.clientX + pad, y = e.clientY + pad;
+        // 下緣以手機底部導覽列（#m-nav，蓋在資料框上面）的上緣為準，不然靠下的格子資料框會被它擋住
+        let bottom = window.innerHeight;
+        let _nav = document.getElementById('m-nav');
+        if (_nav) { let _nr = _nav.getBoundingClientRect(); if (_nr.height > 0 && _nr.top > 0 && _nr.top < bottom) bottom = _nr.top; }
         if(x + w > window.innerWidth - 6) x = e.clientX - pad - w;
-        if(y + h > window.innerHeight - 6) y = e.clientY - pad - h;
+        if(y + h > bottom - 6) y = e.clientY - pad - h;
         el.style.left = Math.max(4, x) + 'px';
-        el.style.top = Math.max(4, y) + 'px';
+        el.style.top = Math.max(4, Math.min(y, bottom - h - 6)) + 'px';
     });
     document.addEventListener('mousedown', hideTip);
 })();
