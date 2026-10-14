@@ -168,7 +168,8 @@
       '#lmui-face img.logo{object-fit:contain;object-position:center;transform:none;padding:4px;}',
       '#lmui-face{position:relative;}',
       '#lmui-face .pic{cursor:pointer;}',
-      '#lmui-lv{font-size:14px;font-weight:700;color:#e8d9b0;}',   /* 等級跟在名字右邊 */
+      '#lmui-lv{font-size:14px;font-weight:700;color:#e8d9b0;flex-shrink:0;}',   /* 等級跟在名字右邊、正義值再接在等級後面 */
+      '#lmui-align{font-size:13px;flex-shrink:0;}',
       '#lmui-buffbtn{margin-top:3px;width:22px;height:14px;padding:0;font-size:12px;line-height:12px;color:#ddd;background:rgba(0,0,0,.55);border:1px solid var(--lmui-line);border-radius:2px;}',
       '#lmui-stats{display:flex;flex-direction:column;gap:2px;padding-top:2px;font-size:13px;}',
       '#lmui-stats .row{display:flex;gap:9px;align-items:baseline;white-space:nowrap;}',
@@ -177,7 +178,7 @@
       '#lmui-align .k,#lmui-align b{color:#d1d5db;}#lmui-align.justice .k,#lmui-align.justice b{color:#60a5fa;}#lmui-align.evil .k,#lmui-align.evil b{color:#f87171;}',
       '#lmui-gold b{color:#f5d77b;}',
       /* 角色名字(取了就不能改；沒名字的舊角色顯示灰色「（點此取名）」，點一下取名) */
-      '#lmui-name{all:unset;cursor:default;font-size:15px;font-weight:700;color:#fff;text-shadow:0 1px 2px #000;max-width:150px;overflow:hidden;text-overflow:ellipsis;}',
+      '#lmui-name{all:unset;cursor:default;min-width:0;flex-shrink:1;white-space:nowrap;font-size:15px;font-weight:700;color:#fff;text-shadow:0 1px 2px #000;max-width:150px;overflow:hidden;text-overflow:ellipsis;}',
       '#lmui-name.empty{color:#94a3b8;font-weight:400;cursor:pointer;}',
       '#lmui-name-input{width:96px;font-size:15px;padding:1px 4px;border-radius:3px;border:1px solid #d9bf86;background:#020617;color:#fff;}',
       '#lmui-name-ok{margin-left:4px;padding:0 6px;font-weight:700;color:#4ade80;background:rgba(0,0,0,.6);border:1px solid #4ade80;border-radius:3px;}',
@@ -616,8 +617,8 @@
       '<div id="lmui-tl">' +
         '<div id="lmui-face"><div class="pic lmui-hit" role="button" aria-label="裝備欄"><img alt=""></div><button type="button" id="lmui-buffbtn" class="lmui-hit" aria-label="狀態圖示">≫</button></div>' +
         '<div id="lmui-stats">' +
-          '<div class="row"><button type="button" id="lmui-name" class="lmui-hit"></button><span id="lmui-lv"></span></div>' +
-          '<div class="row"><span><span class="k">AC</span><b id="lmui-ac"></b></span><span><span class="k">MR</span><b id="lmui-mr"></b></span><span id="lmui-align"><span class="k"></span><b></b></span></div>' +
+          '<div class="row"><button type="button" id="lmui-name" class="lmui-hit"></button><span id="lmui-lv"></span><span id="lmui-align"><span class="k"></span><b></b></span></div>' +
+          '<div class="row"><span><span class="k">防禦</span><b id="lmui-ac"></b></span><span><span class="k">魔防</span><b id="lmui-mr"></b></span></div>' +
           '<div class="row"><span id="lmui-gold"><span class="k">💰</span><b></b></span></div>' +
         '</div>' +
       '</div>' +
@@ -1772,7 +1773,15 @@
 
   function updateStats() {
     updateName();
-    setTxt(el.lv, 'Lv.' + (txt('st-lv') || '--'));
+    setTxt(el.lv, '等級 ' + (txt('st-lv') || '--'));
+    // 名字＋等級＋正義值同一排：右邊不可壓到地圖名框（框寬隨地圖名變）→ 量出可用寬度，名字太長就省略號
+    try {
+      var row1 = el.lv.parentNode, tr = $('lmui-tr');
+      if (row1 && tr && tr.offsetWidth) {
+        var w = Math.floor(tr.getBoundingClientRect().left - row1.getBoundingClientRect().left - 6) + 'px';
+        if (row1.style.maxWidth !== w) row1.style.maxWidth = w;
+      }
+    } catch (e) {}
     setTxt(el.ac, txt('st-ac') || '--');
     setTxt(el.mr, txt('st-mr') || '--');
     setTxt(el.gold.querySelector('b'), txt('st-gold') || '--');
