@@ -1195,7 +1195,7 @@ function buildItemDescHTML(item) {
             desc += `<br><span class="c-cursed">詛咒的：${_ct}</span>`;
         } else {
             let _bt;
-            if(d.type === 'wpn') _bt = '額外傷害+1，額外魔法點數+2，額外命中+1';
+            if(d.type === 'wpn') _bt = '額外傷害+1，額外魔法點數+2，額外命中+1；打不死系、惡魔系再 +3～6 傷害';
             else { let _acc = (d.slot==='ring'||d.slot==='amulet'||d.slot==='belt'||d.slot==='ear'); _bt = _acc ? '防禦(AC)-1，魔防(MR)+1' : '防禦(AC)-1，傷害減免+1'; }
             desc += `<br><span class="text-yellow-400">祝福的：${_bt}</span>`;
         }
