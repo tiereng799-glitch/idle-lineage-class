@@ -1095,18 +1095,18 @@ body.view-town #col-center #log-row { flex: 1 1 0; }
 .login-logo .ll-main::after { content:attr(data-t); position:absolute; inset:0; padding-left:.08em; -webkit-text-stroke:0; text-shadow:none; color:transparent; background:linear-gradient(#fffbe8 0%,#f5d888 34%,#b47c22 54%,#f8df92 70%,#8c5c16 100%); -webkit-background-clip:text; background-clip:text; }
 /* 劍：遮罩只露出劍身（sword-mask.png 由背景圖描出來），裡面一道斜光由左往右掃過，掃完停一下 */
 .login-sword-fx { left:46.007%; top:13.574%; width:36.458%; height:16.309%; overflow:hidden; -webkit-mask:url(../public/assets/login/sword-mask.png) 0 0/100% 100% no-repeat; mask:url(../public/assets/login/sword-mask.png) 0 0/100% 100% no-repeat; }
-.login-sword-fx::before { content:""; position:absolute; top:-60%; bottom:-60%; left:-60%; width:50%; background:linear-gradient(90deg,rgba(255,248,225,0) 0%,rgba(255,248,225,.45) 30%,rgba(255,255,255,1) 50%,rgba(255,248,225,.45) 70%,rgba(255,248,225,0) 100%); transform:rotate(25deg); animation:loginSwordSheen 4.8s ease-in-out infinite; }
-@keyframes loginSwordSheen { 0% { left:-60%; } 50%, 100% { left:115%; } }
+.login-sword-fx::before { content:""; position:absolute; top:-60%; bottom:-60%; left:-60%; width:50%; background:linear-gradient(90deg,rgba(255,248,225,0) 0%,rgba(255,248,225,.45) 30%,rgba(255,255,255,1) 50%,rgba(255,248,225,.45) 70%,rgba(255,248,225,0) 100%); transform:rotate(25deg); animation:loginSwordSheen 3s ease-in-out infinite; }
+@keyframes loginSwordSheen { 0% { left:-60%; } 75%, 100% { left:115%; } }   /* 掃 2.25 秒、停 0.75 秒 */
 /* 護手上的紅寶石：慢慢亮暗 */
 .login-gem { left:62.79%; top:23.05%; width:11cqw; height:7cqw; margin:-3.5cqw 0 0 -5.5cqw; border-radius:50%; background:radial-gradient(closest-side,rgba(255,90,70,.75),rgba(255,40,30,.25) 55%,rgba(255,0,0,0)); animation:loginGem 3.2s ease-in-out infinite; }
 @keyframes loginGem { 0%, 100% { opacity:.25; } 50% { opacity:1; } }
 /* 刀刃與護手尖端的星芒：光掃過時閃一下 */
-.login-glint { width:9cqw; height:9cqw; margin:-4.5cqw 0 0 -4.5cqw; background:radial-gradient(closest-side,#fff,rgba(255,255,255,.6) 18%,rgba(255,255,255,0) 45%); opacity:0; transform:scale(0) rotate(20deg); animation:loginGlint 4.8s ease-out infinite; }
+.login-glint { width:9cqw; height:9cqw; margin:-4.5cqw 0 0 -4.5cqw; background:radial-gradient(closest-side,#fff,rgba(255,255,255,.6) 18%,rgba(255,255,255,0) 45%); opacity:0; transform:scale(0) rotate(20deg); animation:loginGlint 3s ease-out infinite; }
 .login-glint::before, .login-glint::after { content:""; position:absolute; background:radial-gradient(closest-side,#fff,rgba(255,255,255,0)); }
 .login-glint::before { left:0; right:0; top:46%; bottom:46%; }
 .login-glint::after { top:0; bottom:0; left:46%; right:46%; }
-.login-glint.lg1 { left:47.6%; top:19.6%; animation-delay:.35s; }
-.login-glint.lg2 { left:57.5%; top:27.2%; animation-delay:1.2s; }
+.login-glint.lg1 { left:47.6%; top:19.6%; animation-delay:.3s; }
+.login-glint.lg2 { left:57.5%; top:27.2%; animation-delay:1s; }
 @keyframes loginGlint { 0% { opacity:0; transform:scale(0) rotate(20deg); } 8% { opacity:1; transform:scale(1) rotate(65deg); } 18%, 100% { opacity:0; transform:scale(0) rotate(110deg); } }
 /* 圖上羊皮紙卷軸的空白處：寫公告（目前是測試指令說明） */
 .login-scroll-note { position:absolute; left:24%; width:52%; top:33%; height:29%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.6cqw; text-align:center; color:#3b2a17; font-family:"Noto Serif TC","PMingLiU",serif; font-size:4.2cqw; line-height:1.55; pointer-events:none; user-select:none; }
