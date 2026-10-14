@@ -205,7 +205,7 @@
             '#wh-inv-list .afk-wh-nolearn .whx-name::after,#wh-store-list .afk-wh-nolearn .whx-name::after{content:"[無法學習]";display:block;font-size:12px;font-weight:bold;color:#ef4444;}',
             '#wh-inv-list .afk-wh-learned.afk-wh-learned,#wh-store-list .afk-wh-learned.afk-wh-learned{background:rgba(15,23,42,.85) !important;border-color:#475569 !important;border-left-width:4px !important;}',
             '#wh-inv-list .afk-wh-learned.afk-wh-learned:hover,#wh-store-list .afk-wh-learned.afk-wh-learned:hover{background:rgba(30,41,59,.9) !important;}',
-            '#wh-inv-list .afk-wh-learned .whx-name::after,#wh-store-list .afk-wh-learned .whx-name::after{content:"[已學習]";display:block;font-size:12px;font-weight:bold;color:#94a3b8;}'
+            '#wh-inv-list .afk-wh-learned .whx-name::after,#wh-store-list .afk-wh-learned .whx-name::after{content:"[已學會]";display:block;font-size:12px;font-weight:bold;color:#94a3b8;}'
         ].join('\n');
         (document.head || document.documentElement).appendChild(s);
     }

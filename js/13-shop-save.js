@@ -260,9 +260,8 @@ function renderShopItems() {
         el.style.cssText = 'display:flex !important; justify-content:space-between !important; align-items:center !important; width:100% !important; box-sizing:border-box !important;';
         let imgUrl = getIconUrl(d);
         let glowClass = getGlowClass(null, d);
-        let learned = d.type === 'skillbk' && player.skills.includes(d.sk);
-        let cantLearn = d.type === 'skillbk' && !learned && DB.skills[d.sk] && skillReqLv(DB.skills[d.sk], d.sk) === undefined;   // 🔧 該職業無法學習（如黑暗妖精三階以上法師魔法）：以「已習得」相同暗色呈現
-        let dim = learned || cantLearn;
+        let skSt = d.type === 'skillbk' ? skillBookStatus(d.sk) : null;   // 📖 魔法書：學習／需 Lv.N／已學會／無法學習（js/08）
+        let dim = !!(skSt && (skSt.learned || skSt.label === '無法學習'));   // 已學會、職業學不了 → 整列變暗
 
         // 箭矢與肉的顯示判斷
         let nameDisp = id === 'wpn_5' ? '箭 (1000根)' : (id === 'wpn_22' ? '銀箭 (1000根)' : d.n);
@@ -275,7 +274,7 @@ function renderShopItems() {
                 </div>
                 <div class="flex flex-col items-start gap-1.5">
                     <span class="${getItemColor({ id })} font-bold text-lg leading-none truncate">
-                        ${nameDisp}${learned ? ' <span class="text-slate-500 text-xs font-normal">已習得</span>' : (cantLearn ? ' <span class="text-red-500 text-xs font-normal">無法學習</span>' : '')}
+                        ${nameDisp}
                     </span>
                     <div class="flex items-center gap-2">
                         <span class="text-yellow-400 font-bold text-base leading-none">${priceDisp} 金幣</span>
@@ -283,10 +282,10 @@ function renderShopItems() {
                     </div>
                 </div>
             </div>
-            ${ d.type === 'skillbk'
-                ? (cantLearn
-                    ? `<button class="btn bg-slate-700 border-slate-600 text-slate-500 py-2 px-6 font-bold shrink-0 cursor-not-allowed opacity-60" disabled>無法學習</button>`
-                    : `<button class="btn bg-blue-700 hover:bg-blue-600 border-blue-500 py-2 px-6 font-bold shrink-0 shadow" onclick="buyItem('${id}')">${learned ? '再買' : '購買'}</button>`)
+            ${ skSt
+                ? (skSt.can
+                    ? `<button class="btn bg-blue-700 hover:bg-blue-600 border-blue-500 py-2 px-6 font-bold shrink-0 shadow" onclick="buySkillBook('${id}')">學習</button>`
+                    : `<button class="btn bg-slate-700 border-slate-600 text-slate-400 py-2 px-6 font-bold shrink-0 cursor-not-allowed opacity-70" disabled>${skSt.label}</button>`)
                 : `<div class="flex items-center gap-2 shrink-0">
                        <input type="number" id="shop-qty-${id}" value="1" min="1" class="w-16 bg-slate-900 border border-slate-600 text-center text-white rounded py-1 outline-none">
                        <button class="btn bg-blue-700 hover:bg-blue-600 border-blue-500 py-2 px-5 font-bold shadow" onclick="buyItem('${id}', document.getElementById('shop-qty-${id}').value)">購買</button>
