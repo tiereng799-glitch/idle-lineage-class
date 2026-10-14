@@ -304,6 +304,12 @@
       'html body.lmui-battle.lmui-tall.lmui-ptabs #game-screen{padding-top:calc(var(--lmui-ptop) + var(--lmui-ptabs-h) + 6px) !important;}',
       'html body.lmui-battle.lmui-tall #col-center{clip-path:inset(0 0 calc(100% - var(--lmui-ptop) + var(--orig-bar-h,0px)) 0);z-index:3;}',
       'html body.lmui-battle.lmui-tall #col-right{position:relative;z-index:2;}',
+      /* 魔法頁：魔法書自己會捲、高度量到剛好貼底部選單 → 外層不捲（不然 iPhone 回彈時被拉動，整本書跟著往上跑、上框不見） */
+      'html body.lmui-battle.lmui-tall.lmui-sktab #game-screen{overflow-y:hidden !important;}',
+      /* 往上捲時頂端那條固定上框（樣式同 #tab-content-panel 的框）；上面 6px 用底色蓋住捲上來的內容 */
+      '#lmui-pcap{visibility:hidden;position:fixed;left:6px;right:6px;top:var(--lmui-ptop);height:14px;z-index:9550;pointer-events:none;}',
+      '#lmui-pcap::after{content:"";position:absolute;left:0;right:0;top:6px;bottom:0;box-sizing:border-box;border:2px solid #4a3c29;border-bottom:0;border-radius:6px 6px 0 0;background:#18120d;box-shadow:inset 0 1px 0 rgba(255,220,150,.06);}',
+      'body.lmui-battle.lmui-tall.lmui-pscroll:not(.lmui-ptabs):not(.lmui-sktab) #lmui-pcap{visibility:visible;}',
       'body.lmui-battle.lmui-tall #lmui-vit{display:none !important;}',
       /* 開著功能頁（上方只露出一條場景）時，iPhone 不會畫「被裁切的 fixed 容器裡、用 multiply 混色的背景圖」→ 狩獵場上方變成一片黑
          （村莊用的 town-view 沒有混色所以正常）。這時改成不混色、另蓋一層半透明黑來壓暗，看起來跟混色差不多。 */
@@ -1319,10 +1325,16 @@
   // 有沒有彈窗開在戰鬥畫面上（道具/倉庫/afk-banner 清單裡的各種窗/Tailwind 的 .fixed.inset-0 遮罩）
   var WIN_SEL = '#item-modal:not(.hidden),#warehouse-window-frame,.fixed.inset-0,.lmui-below,.lmui-below-c,' + MODAL_HOSTS;
   // 掛在 body 下、蓋到戰鬥場景的彈窗 → 推到下半。不碰：主畫面/我們自己的元件/橫幅(z 極大)/不吃點擊的特效層/提示框
-  var KEEP_IDS = { 'app-stage': 1, 'creation-screen': 1, 'lmui-hud': 1, 'm-nav': 1, 'lmui-bagtabs': 1, 'm-log-sheet': 1, 'm-logout-overlay': 1 };
+  var KEEP_IDS = { 'app-stage': 1, 'creation-screen': 1, 'lmui-hud': 1, 'm-nav': 1, 'lmui-bagtabs': 1, 'lmui-pcap': 1, 'm-log-sheet': 1, 'm-logout-overlay': 1 };
+  // 場景下緣：平常＝#game-screen 頂端；功能頁模式 #game-screen 從畫面頂端開始（見 CSS 註解）→ 改量 #lmui-pcap（固定釘在場景下緣）
+  function sceneBottom(gs) {
+    var b = document.body.classList, cap = $('lmui-pcap');
+    if (b.contains('lmui-battle') && b.contains('lmui-tall') && cap) return cap.getBoundingClientRect().top;
+    return gs.getBoundingClientRect().top;
+  }
   function pushWindowsBelow() {
     var gs = $('game-screen'); if (!gs) return;
-    var limit = gs.getBoundingClientRect().top;   // ＝場景下緣（#game-screen 已縮到下半）
+    var limit = sceneBottom(gs);
     var kids = document.body.children;
     for (var i = 0; i < kids.length; i++) {
       var e = kids[i];
@@ -1342,7 +1354,7 @@
   //   短的小視窗（例如信箱）整個落在場景裡，收掉 HUD 只會留下一片空白（站長回報）→ 不算。
   function anyWindowOpen() {
     var list = document.querySelectorAll(WIN_SEL);
-    var gs = $('game-screen'), limit = gs ? gs.getBoundingClientRect().top : 0;
+    var gs = $('game-screen'), limit = gs ? sceneBottom(gs) : 0;
     for (var i = 0; i < list.length; i++) {
       var e = list[i];
       if (e.id === 'game-screen' || e.closest('#lmui-hud') || e.closest('#lmui-ashost')) continue;
@@ -1942,6 +1954,23 @@
 
   // ── 主迴圈 ──────────────────────────────────────────────
   var enteredAt = 0;
+  // 狀態圖示列（核心放在 #battle-view 裡）：村莊時 #battle-view 整個藏起來 → 圖示跟著不見。
+  // 天堂M 版面下搬到 #map-view-panel（村莊/戰鬥共用的上層），離開天堂M 版面再搬回去；核心一律用 id 找它，搬家不影響更新。
+  function syncStatusHost(on) {
+    var bar = $('status-icon-bar'), host = on ? $('map-view-panel') : $('battle-view');
+    if (bar && host && bar.parentNode !== host) host.insertBefore(bar, host.firstChild);
+  }
+  // 功能頁（沒有上方分頁列的，如設定）往上捲時，面板的上框會捲進場景底下 → 頂端補一條固定的上框
+  var capBound = false;
+  function syncPageCap() {
+    var gs = $('game-screen'); if (!gs) return;
+    var cap = $('lmui-pcap');
+    if (!cap) { cap = document.createElement('div'); cap.id = 'lmui-pcap'; cap.setAttribute('aria-hidden', 'true'); document.body.appendChild(cap); }
+    if (!capBound) { capBound = true; gs.addEventListener('scroll', syncPageCap, { passive: true }); }
+    var on = gs.scrollTop > 6;
+    if (on) cap.style.background = getComputedStyle(document.body).backgroundColor;
+    toggleCls('lmui-pscroll', on);
+  }
   function tick() {
     if (document.hidden) return;
     var game = inGame() && isMobileGeom();
@@ -1969,6 +1998,8 @@
       try { decorateInteraction(); } catch (e) {}
     } else npcLayoutSig = '';
     toggleCls('lmui-battle', battle);
+    try { syncStatusHost(battle); } catch (e) {}
+    try { syncPageCap(); } catch (e) {}
     try { huntTick(town); } catch (e) {}
     if (!battle) { closeMap(); toggleCls('lmui-dead', false); toggleCls('lmui-deathx', false); toggleCls('lmui-win', false); toggleCls('lmui-chatbig', false); return; }
     // 戰鬥地圖裡不用完整日誌面板（被 CSS 藏起來了）；有人打開它（afk-mobile 登入時自動開）就直接收掉，免得 HUD 跟著被收
