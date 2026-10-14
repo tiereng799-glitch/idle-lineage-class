@@ -366,9 +366,10 @@ function castSkillInner(skId) {
         let _darkCritWpn = player.eq.wpn ? DB.items[player.eq.wpn.id] : null;
         if (_darkCritWpn && _darkCritWpn.darkCritMorph === 'flywing_double') return relicFlywingDouble(_t);
         if ((player.mp || 0) <= 0) return false;   // 🩸 v3.1.77 稽核中#11：MP=0 時倍率為 0 → 燒半血只打 1 點且不觸發 castLock 可反覆自殘·必須有 MP 才施放
-        if (player.hp <= player.mhp * 0.5) return false;   // HP 不足以負擔代價
-        let mult = (player.mmp > 0 ? player.mp / player.mmp : 0) * 10;   // 100%MP→×10、50%→×5
-        player.hp = Math.max(1, Math.floor(player.hp - player.mhp * 0.5));
+        let _dcx = SKILL_FX.sk_dark_crit;
+        if (player.hp <= player.mhp * _dcx.hpCost) return false;   // HP 不足以負擔代價
+        let mult = (player.mmp > 0 ? player.mp / player.mmp : 0) * _dcx.mpMult;   // 100%MP→×10、50%→×5
+        player.hp = Math.max(1, Math.floor(player.hp - player.mhp * _dcx.hpCost));
         player.mp = 0;
         let wpn = player.eq.wpn ? DB.items[player.eq.wpn.id] : null;
         let dice = wpn ? (_t.s === 'L' ? wpn.dmgL : wpn.dmgS) : 2;

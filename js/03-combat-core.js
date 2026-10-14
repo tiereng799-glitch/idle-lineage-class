@@ -2677,8 +2677,8 @@ function procCounter(t) {
     let dice = wpn ? (t.s === 'L' ? wpn.dmgL : wpn.dmgS) : 2;
     let res = getPhysicalDmg(dice, t, wpn, null, false, true, false, hasMastery('k_counter'));   // forceHeavy=false, forceHit=true；🏅 反擊精通：必定爆擊
     let dmg = Math.max(1, Math.floor(res.dmg * (hasMastery('k_counter') ? 0.65 : 0.50)));   // 傷害 50%（🏅 反擊精通：+30% → 65%）
-    if (player.buffs.sk_counter_barrier > 0 && player.eq.wpn && getWeaponTags(player.eq.wpn.id).includes('單手劍')) dmg = Math.max(1, Math.floor(dmg * 2));   // 🔧 反擊屏障：原生反擊(單手劍)武器最終傷害×2
-    if (player.buffs.sk_counter_barrier > 0 && wpn && wpn.counterBarrierX2) dmg = Math.max(1, Math.floor(dmg * 2));   // 🏺 資深殘兵的重型劍：反擊屏障觸發的反擊傷害×2（雙手劍靠此旗標·非單手劍原生）
+    if (player.buffs.sk_counter_barrier > 0 && player.eq.wpn && getWeaponTags(player.eq.wpn.id).includes('單手劍')) dmg = Math.max(1, Math.floor(dmg * SKILL_FX.sk_counter_barrier.mult));   // 🔧 反擊屏障：原生反擊(單手劍)武器最終傷害×2
+    if (player.buffs.sk_counter_barrier > 0 && wpn && wpn.counterBarrierX2) dmg = Math.max(1, Math.floor(dmg * SKILL_FX.sk_counter_barrier.mult));   // 🏺 資深殘兵的重型劍：反擊屏障觸發的反擊傷害×2（雙手劍靠此旗標·非單手劍原生）
     t.curHp -= dmg;
     t.justHit = getWpnEle(player.eq.wpn, wpn);
     mobWake(t);
@@ -2697,7 +2697,7 @@ function procIai(t) {
     let dice = wpn ? (t.s === 'L' ? wpn.dmgL : wpn.dmgS) : 2;
     let res = getPhysicalDmg(dice, t, wpn, null, false, false, true, hasMastery('k_counter') || !!(wpn && wpn.iaiCrit));   // forceLand=true：必定命中、可重擊；🏅 反擊精通／🌅 遺物 鐮鼬的尾刃 iaiCrit：必定爆擊
     if (hasMastery('k_counter')) res.dmg = Math.max(1, Math.floor(res.dmg * 1.3));   // 🏅 反擊精通：居合傷害 +30%
-    if (player.buffs.sk_counter_barrier > 0 && player.eq.wpn && getWeaponTags(player.eq.wpn.id).includes('武士刀')) res.dmg = Math.max(1, Math.floor(res.dmg * 2));   // 🔧 反擊屏障：原生居合(武士刀)武器最終傷害×2
+    if (player.buffs.sk_counter_barrier > 0 && player.eq.wpn && getWeaponTags(player.eq.wpn.id).includes('武士刀')) res.dmg = Math.max(1, Math.floor(res.dmg * SKILL_FX.sk_counter_barrier.mult));   // 🔧 反擊屏障：原生居合(武士刀)武器最終傷害×2
     t.curHp -= res.dmg;
     t.justHit = getWpnEle(player.eq.wpn, wpn);
     mobWake(t);
@@ -2732,11 +2732,11 @@ function procCombo(t, fullDmg) {
     if (res.crit && typeof grantCritFuryHaste === 'function') grantCritFuryHaste(player, wpn);   // 🏺 v3.7.52 邪惡利牙：雙擊爆擊亦觸發攻速 buff
     // 🔧 黑暗妖精：連擊亦獨立觸發燃燒鬥志(30%×1.5)、雙重破壞(雙刀/鋼爪 45級起10%×2，每5級+1%)，兩者可疊加；先套用於本擊傷害，再依連擊倍率（暗影5/5→100%，否則50%）結算
     let _cdmg = res.dmg;
-    if (player.buffs && player.buffs.sk_dark_burn > 0 && Math.random() < 0.30) _cdmg = Math.floor(_cdmg * 1.5);
+    if (player.buffs && player.buffs.sk_dark_burn > 0 && Math.random() < SKILL_FX.sk_dark_burn.rate) _cdmg = Math.floor(_cdmg * SKILL_FX.sk_dark_burn.mult);
     if (player.buffs && player.buffs.sk_dark_double > 0) {
         let _ct = getWeaponTags(player.eq.wpn ? player.eq.wpn.id : '');
         if (_ct.includes('雙刀') || _ct.includes('鋼爪')) {
-            let _cch = 10 + (player.lv >= 45 ? Math.floor((player.lv - 45) / 5) : 0);
+            let _cch = darkDoubleChance(player.lv);
             if (Math.random() * 100 < _cch) _cdmg *= 2;
         }
     }
@@ -2800,9 +2800,9 @@ function witchIceLance() {
 function waterVitalHeal(heal, target) {
     let t = target || (typeof player !== 'undefined' ? player : null);   // 省略 target→玩家（相容舊呼叫）
     if (heal > 0 && t && t.buffs && (t.buffs.sk_elf_watervital || 0) > 0 && (t._waterVitalCd || 0) <= 0) {   // 寵物/召喚無 buffs→不加倍（單體語意）
-        t._waterVitalCd = 7;   // 該實體 7 秒冷卻
+        t._waterVitalCd = SKILL_FX.sk_elf_watervital.cdSec;   // 該實體冷卻（秒）
         try { logCombat('💧 水之元氣發動：治療恢復量加倍！', 'heal'); } catch (e) {}
-        return heal * 2;
+        return heal * SKILL_FX.sk_elf_watervital.mult;
     }
     return heal;
 }

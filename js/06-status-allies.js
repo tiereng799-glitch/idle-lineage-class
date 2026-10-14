@@ -1407,13 +1407,13 @@ function _allyDamageMob(ally, t, dmg, ele, terrorKind) {
 //   燃燒鬥志/屬性之火 各 30%×1.5；雙重破壞(雙刀/鋼爪·45級起10%＋每5級1%)×2；狂暴(近戰5%×2·skills-based)；勇猛意志(10%·劍術精通20%)×1.5；燃燒擊砍(近戰+7·一次性消耗·傭兵版不轉火屬性)。回傳新 dmg。
 function _allyAtkBuffProcs(ally, dmg, isRanged) {
     let b = ally.buffs || {};
-    if (b.sk_dark_burn > 0 && Math.random() < 0.30) dmg = Math.floor(dmg * 1.5);            // 🔥 燃燒鬥志
-    if (b.sk_elf_attrfire > 0 && Math.random() < 0.30) dmg = Math.floor(dmg * 1.5);          // 🔥 屬性之火
+    if (b.sk_dark_burn > 0 && Math.random() < SKILL_FX.sk_dark_burn.rate) dmg = Math.floor(dmg * SKILL_FX.sk_dark_burn.mult);            // 🔥 燃燒鬥志
+    if (b.sk_elf_attrfire > 0 && Math.random() < SKILL_FX.sk_elf_attrfire.rate) dmg = Math.floor(dmg * SKILL_FX.sk_elf_attrfire.mult);          // 🔥 屬性之火
     if (b.sk_dark_double > 0) {                                                              // ⚔️ 雙重破壞（雙刀/鋼爪）
         let _t = getWeaponTags((ally.eq && ally.eq.wpn) ? ally.eq.wpn.id : '');
-        if (_t.includes('雙刀') || _t.includes('鋼爪')) { let _c = 10 + ((ally.lv || 1) >= 45 ? Math.floor(((ally.lv || 1) - 45) / 5) : 0); if (Math.random() * 100 < _c) dmg *= 2; }
+        if (_t.includes('雙刀') || _t.includes('鋼爪')) { let _c = darkDoubleChance(ally.lv || 1); if (Math.random() * 100 < _c) dmg *= 2; }
     }
-    if (b.sk_royal_bravewill > 0 && Math.random() < (allyHasMastery(ally, 'k_royal_sword') ? 0.2 : 0.1)) dmg = Math.floor(dmg * 1.5);   // 👑 勇猛意志
+    if (b.sk_royal_bravewill > 0 && Math.random() < (allyHasMastery(ally, 'k_royal_sword') ? SKILL_FX.sk_royal_bravewill.rateMastery : SKILL_FX.sk_royal_bravewill.rate)) dmg = Math.floor(dmg * SKILL_FX.sk_royal_bravewill.mult);   // 👑 勇猛意志
     return Math.max(1, Math.floor(dmg));
 }
 // 傭兵的一次物理打擊計算（沿用 allyAttackOnce 的簡化公式）
@@ -1971,8 +1971,8 @@ function allyReactCounter(mob, blocked) {
         let _ctr = allyHasMastery(ally, 'k_counter');   // 🔧 傭兵反擊精通：必定發動、傷害+30%
         if (!_ctr && Math.random() >= (blocked ? 1 : 0.50)) return;
         let res = _allyStrikeWithIllu(ally, mob, { forceHit: true, noHeavy: true, mult: _ctr ? 0.65 : 0.50, forceCrit: _ctr });   // 🔮 v2.6.7：反擊也吃幻覺全隊光環
-        if (ally.buffs && ally.buffs.sk_counter_barrier > 0 && getWeaponTags(ally.eq.wpn.id).includes('單手劍')) res.dmg = Math.max(1, Math.floor(res.dmg * 2));   // 🛡️ v2.6.22 反擊屏障：原生反擊(單手劍)武器最終傷害×2（鏡像玩家 js/03:1059）
-        if (ally.buffs && ally.buffs.sk_counter_barrier > 0 && DB.items[ally.eq.wpn.id] && DB.items[ally.eq.wpn.id].counterBarrierX2) res.dmg = Math.max(1, Math.floor(res.dmg * 2));   // 🏺 資深殘兵的重型劍：反擊屏障觸發的反擊傷害×2（傭兵鏡像玩家 js/03）
+        if (ally.buffs && ally.buffs.sk_counter_barrier > 0 && getWeaponTags(ally.eq.wpn.id).includes('單手劍')) res.dmg = Math.max(1, Math.floor(res.dmg * SKILL_FX.sk_counter_barrier.mult));   // 🛡️ v2.6.22 反擊屏障：原生反擊(單手劍)武器最終傷害×2（鏡像玩家 js/03:1059）
+        if (ally.buffs && ally.buffs.sk_counter_barrier > 0 && DB.items[ally.eq.wpn.id] && DB.items[ally.eq.wpn.id].counterBarrierX2) res.dmg = Math.max(1, Math.floor(res.dmg * SKILL_FX.sk_counter_barrier.mult));   // 🏺 資深殘兵的重型劍：反擊屏障觸發的反擊傷害×2（傭兵鏡像玩家 js/03）
         logCombat(`<span class="font-bold" style="color:#fbbf24;text-shadow:0 0 6px #f59e0b;">【協力·${ally._allyName}·反擊】</span>對 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 造成 ${res.dmg} 點傷害${res.crit?'（爆擊!）':''}。`, 'player');
         if (_ctr) wearHardSkin(mob, null, false, false, true);   // 🏅 傭兵反擊精通：反擊命中削減 1 硬皮值
         _allyDamageMob(ally, mob, res.dmg, getWpnEle(ally.eq.wpn, DB.items[ally.eq.wpn.id], ally));
@@ -1991,7 +1991,7 @@ function allyReactIai(mob) {
         let _wIaiCrit = !!(DB.items[ally.eq.wpn.id] && DB.items[ally.eq.wpn.id].iaiCrit);   // 🌅 遺物 鐮鼬的尾刃（傭兵鏡像）：居合必定爆擊
         let res = _allyStrikeWithIllu(ally, mob, { forceHit: true, forceCrit: _iai || _wIaiCrit });   // 🔮 v2.6.7：居合也吃幻覺全隊光環
         if (_iai) res.dmg = Math.max(1, Math.floor(res.dmg * 1.3));
-        if (ally.buffs && ally.buffs.sk_counter_barrier > 0 && getWeaponTags(ally.eq.wpn.id).includes('武士刀')) res.dmg = Math.max(1, Math.floor(res.dmg * 2));   // 🛡️ v2.6.22 反擊屏障：原生居合(武士刀)武器最終傷害×2（鏡像玩家 js/03:1079）
+        if (ally.buffs && ally.buffs.sk_counter_barrier > 0 && getWeaponTags(ally.eq.wpn.id).includes('武士刀')) res.dmg = Math.max(1, Math.floor(res.dmg * SKILL_FX.sk_counter_barrier.mult));   // 🛡️ v2.6.22 反擊屏障：原生居合(武士刀)武器最終傷害×2（鏡像玩家 js/03:1079）
         let mark = (res.heavy && res.crit) ? '會心一擊' : (res.crit ? '爆擊' : (res.heavy ? '重擊' : ''));
         logCombat(`<span class="font-bold" style="color:#a5f3fc;text-shadow:0 0 6px #06b6d4;">【協力·${ally._allyName}·居合】</span>對 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 造成 ${res.dmg} 點傷害${mark?'（'+mark+'!）':''}。`, 'player');
         wearHardSkin(mob, null, res.heavy, false, _iai);   // 🔧 傭兵居合重擊 -2；🏅 反擊精通：居合命中再削減 1 硬皮值（疊加）

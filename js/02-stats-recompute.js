@@ -530,10 +530,10 @@ d.mr += (baseMr + bonusMr);
     
     let spdMult = 1.0;
     let _mercPots = !!p._mercPermanentPotions;   // 🤝 傭兵預設常駐職業藥水效果（不消耗道具、不寫入一般 buff 計時）
-    if(p.buffs.haste > 0 || p._equipHaste || _mercPots) spdMult *= (1/1.33);   // 加速術／加速藥水／裝備加速：攻速+33%（🔧 v3.5.37 名實相符：1/1.33＝速度×1.33，取代舊 0.67＝實際+49%）；傭兵全職常駐
+    if(p.buffs.haste > 0 || p._equipHaste || _mercPots) spdMult *= (1/SKILL_FX.haste.spd);   // 加速術／加速藥水／裝備加速：攻速+33%（🔧 v3.5.37 名實相符：1/1.33＝速度×1.33，取代舊 0.67＝實際+49%）；傭兵全職常駐
     if(p.buffs.brave > 0 || (_mercPots && ['knight','royal'].includes(p.cls))) spdMult *= (1/1.33);   // 勇敢藥水：攻速+33%（🔧 v3.5.37 1/1.33）；可用職業傭兵常駐
     if(p.buffs.elfcookie > 0 || (_mercPots && p.cls === 'elf')) spdMult *= (1/1.15); // 精靈餅乾：攻速+15%（🔧 v3.5.37 1/1.15·取代舊 0.85＝實際+17.6%）；妖精傭兵常駐
-    if(p.buffs.sk_dark_walkhaste > 0) spdMult *= (1/1.15); // 🔧 行走加速：攻速+15%（v3.5.37 1/1.15）（與加速術等相乘疊加）
+    if(p.buffs.sk_dark_walkhaste > 0) spdMult *= (1/SKILL_FX.sk_dark_walkhaste.spd); // 🔧 行走加速：攻速+15%（v3.5.37 1/1.15）（與加速術等相乘疊加）
     { let _clvW = p.eq.wpn ? DB.items[p.eq.wpn.id] : null; let _clvOn = !p.classicMode && ((p.statuses && p.statuses.cleave > 0) || (p.mastery === 'k_cleave' && _clvW && _clvW.eff === 'cleave')); if(_clvOn) spdMult *= (p.mastery === 'k_cleave' ? (1/1.5) : (1/1.2)); }   // 切割：攻速+20%（🏅 切割精通：+50%・持切割武器常駐），與其他加速相乘疊加；🎮 經典模式停用
     if (typeof player !== 'undefined' && p === player && !p._allyName && (p._crushFuryUntil || 0) > state.ticks) spdMult *= (1/1.2);   // 🔨 v3.6.47 重裝戰士的粉碎鎚：即死觸發攻速+20%（8秒·js/04 授予·js/03 到期重算·經典亦生效比照即死本體；傭兵版走 _crushFuryTicks 於 js/06 攻擊間隔）
     { let _ffOn = typeof player !== 'undefined' && p === player && !p._allyName && (p._fangFuryUntil || 0) > state.ticks; let _ffw = p.eq.wpn && DB.items[p.eq.wpn.id]; spdMult *= critFurySpeedMultiplier(_ffOn, _ffw && _ffw.critFuryHaste && _ffw.critFuryHaste.pct); }   // 🏺 v3.7.52 邪惡利牙：爆擊觸發攻速+30%（5秒·js/04 授予·js/03 到期重算；傭兵版走 _fangFuryTicks 於 js/06 攻擊間隔）
@@ -550,7 +550,7 @@ d.mr += (baseMr + bonusMr);
     { let _mhw = p.eq.wpn ? DB.items[p.eq.wpn.id] : null; if(d.meleeHaste > 0 && _mhw && !_mhw.isBow && !_mhw.ranged) spdMult *= (1 / (1 + d.meleeHaste / 100)); }   // 🏺 遺物 狂野的鬃毛外套：裝備近距離武器時攻速 +meleeHaste%
     if(p.buffs.blue > 0) d.mpR += getWisBlueBonus(d.wis);          // 藍色藥水：依精神提升MP恢復
     if(p.buffs.cautious > 0 || (_mercPots && p.cls === 'mage')) { d.magicDmg += 2; d.mpR += 2; }      // 慎重藥水；法師傭兵常駐
-    if(p.buffs.sk_reduction_armor > 0) d.dr += Math.floor(p.lv/10);   // 增幅防禦：等同傷害減免 floor(等級/10)，併入 DR 顯示與計算
+    if(p.buffs.sk_reduction_armor > 0) d.dr += Math.floor(p.lv/SKILL_FX.sk_reduction_armor.lvDiv);   // 增幅防禦：等同傷害減免 floor(等級/10)，併入 DR 顯示與計算
     if(p.statuses && p.statuses.evilAura > 0) { d.ac += 10; d.er -= 10; }   // 🔧 邪靈之氣減益：AC+10、ER−10（持續6秒，由黑暗精靈使施放）
     
     // 技能buff（非屬性部分；STR/DEX/INT/CON/WIS 已於 Phase 1 計入）
@@ -579,10 +579,11 @@ d.mr += (baseMr + bonusMr);
 
     // 單屬性防禦：所選屬性抗性 +50
     if(p.buffs.sk_elf_singleres > 0 && p.elfEle) {
-        if(p.elfEle === 'fire')  d.resFire  += 50;
-        if(p.elfEle === 'water') d.resWater += 50;
-        if(p.elfEle === 'earth') d.resEarth += 50;
-        if(p.elfEle === 'wind')  d.resWind  += 50;
+        let _sr = SKILL_FX.sk_elf_singleres.res;
+        if(p.elfEle === 'fire')  d.resFire  += _sr;
+        if(p.elfEle === 'water') d.resWater += _sr;
+        if(p.elfEle === 'earth') d.resEarth += _sr;
+        if(p.elfEle === 'wind')  d.resWind  += _sr;
     }
 
     // 🏺 v3.5.27 黑騎士的精銳長槍＋鎧衛隊的漆黑塔盾 同時裝備：近距離傷害 +15（格檔100%／經典模式亦可格檔＝js/04 受擊路徑）
@@ -639,7 +640,7 @@ d.mr += (baseMr + bonusMr);
     }
     if (d.hitstunReduce > 0) d.hitstun = Math.max(0, (d.hitstun || 0) - d.hitstunReduce);   // 🏺 不動的鋼鐵堅壁：硬直減免統一套用點（置於變身速度覆蓋後→變身形態的 pf.stun 也吃減免·夾下限 0）
 
-    if(p.buffs.sk_soul_up > 0) { p.mhp = Math.floor(p.mhp * 1.2); p.mmp = Math.floor(p.mmp * 1.2); }
+    if(p.buffs.sk_soul_up > 0) { p.mhp = Math.floor(p.mhp * SKILL_FX.sk_soul_up.mult); p.mmp = Math.floor(p.mmp * SKILL_FX.sk_soul_up.mult); }
     if (_shN('狂怒') >= 3) p.mhp = Math.floor(p.mhp * 1.2);   // 😡 狂怒 3/5：最大HP +20%（於各 flat HP 加成後套用）
     // 血盟 Buff：由角色自行開啟，每小時消耗貢獻；能力依全模式共用血盟等級決定。
     if (typeof getClanBuffStats === 'function') {
@@ -715,7 +716,7 @@ d.mr += (baseMr + bonusMr);
             if (_ed.weightCap) _cap += _ed.weightCap;
             if (_ed.slot === 'belt') _cap += Math.min(_it.en || 0, 5) * 20;   // 🔧 腰帶強化：每+1 負重上限+20
         }
-        if (p.buffs && p.buffs.sk_load_up > 0) _cap += 50;   // 負重強化增益：負重上限 +50
+        if (p.buffs && p.buffs.sk_load_up > 0) _cap += SKILL_FX.sk_load_up.cap;   // 負重強化增益：負重上限 +50
         if (d._cardWeightBonus) _cap += d._cardWeightBonus;   // 🎴 卡片收集：風木/奇岩完成 → 負重上限加成
         if (d._equipWeightBonus) _cap += d._equipWeightBonus;   // 🗡️ 裝備收集冊：單手/雙手鈍器/臂甲/腰帶部位全收集 → 負重上限加成
         if (d._miscWeightBonus) _cap += d._miscWeightBonus;   // 🧰 道具收集冊：藥水/卷軸類全收集 → 負重上限加成
@@ -968,13 +969,13 @@ function playerMoveDelayMultiplier() {
     let _pfT = p._setPoly || ((buffs.poly > 0 && p.poly) ? p.poly : null);   // 🧝 v3.5.21 真夏納：走速依當前武器（單手劍96/分→wlk15·其餘90/分→wlk16）
     if (_pfT && _pfT.trueShanna && typeof trueShannaSpeedForActor === 'function') pfW = trueShannaSpeedForActor(p).wlk;
     let mult = pfW / 16;
-    if (buffs.haste > 0 || p._equipHaste) mult *= (1/1.33);   // 加速術／加速藥水／裝備加速：移速+33%（🔧 v3.5.37 名實相符 1/1.33＝速度×1.33·取代舊 0.67＝實際+49%→兩瓶疊加 223%→177%）
+    if (buffs.haste > 0 || p._equipHaste) mult *= (1/SKILL_FX.haste.spd);   // 加速術／加速藥水／裝備加速：移速+33%（🔧 v3.5.37 名實相符 1/1.33＝速度×1.33·取代舊 0.67＝實際+49%→兩瓶疊加 223%→177%）
     if (buffs.brave > 0) mult *= (1/1.33);                     // 勇敢藥水：移速+33%（🔧 v3.5.37 1/1.33）
     let windDashOn = (buffs.sk_elf_winddash || 0) > 0;
     let dashSid = windDashOn ? 'sk_elf_winddash' : (((buffs.sk_holy_dash || 0) > 0) ? 'sk_holy_dash' : null);
     if (dashSid) mult *= 1 / ((DB.skills[dashSid] && DB.skills[dashSid].moveSpeedMult) || 1.33);   // 神聖疾走／風之疾走：移速+33%（速度×1.33）；若舊存檔同時殘留，風之疾走優先且不疊加
     if (buffs.elfcookie > 0 && !windDashOn) mult *= (1/1.15);  // 精靈餅乾：移速+15%；風之疾走存在時只保留餅乾攻速，不疊加移速
-    if (buffs.sk_dark_walkhaste > 0) mult *= (1/1.15);         // 行走加速：移速+15%（🔧 v3.5.37 1/1.15）
+    if (buffs.sk_dark_walkhaste > 0) mult *= (1/SKILL_FX.sk_dark_walkhaste.spd);         // 行走加速：移速+15%（🔧 v3.5.37 1/1.15）
     let equipPct = !p._allyName && !_recomputingAlly && p.d && p.d.moveSpeedPct ? Math.max(-95, p.d.moveSpeedPct) : 0;
     if (equipPct) mult *= 1 / (1 + equipPct / 100);            // 裝備移動速度
     return Math.max(0.001, mult);
