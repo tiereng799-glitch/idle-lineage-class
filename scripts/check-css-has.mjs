@@ -38,7 +38,7 @@ function hasArgs(line) {
 
 const bad = [];
 for (const f of FILES) {
-  const lines = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n');
+  const lines = fs.readFileSync(path.join(ROOT, f), 'utf8').split(/\r?\n/);   // Windows 的 CRLF：行尾留著 \r 會讓下面「註解行不算」的 .*$ 對不上
   lines.forEach((line, n) => {
     const code = line.replace(/^\s*(\/\/|\*|\/\*).*$/, '');   // 註解行不算
     for (const arg of hasArgs(code)) if (/\.hidden\b/.test(arg)) bad.push(`${f}:${n + 1}  :has(${arg})`);
