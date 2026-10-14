@@ -495,9 +495,9 @@ function whGold(dir){
 }
 // 🏦 倉庫視窗（2026-10-14 依站長給的範本重排）：
 //   標題列（index.html：寶箱圖＋「倉庫」＋紅色 ✕）→ 一行資訊（共用・格數）→ 金幣列 → 「倉庫／背包」兩個分頁
-//   → 一排工具（分類・搜尋）→ 物品清單（分頁，每頁 WH_PAGE 列）。在倉庫分頁再點一次「倉庫」＝整理。
+//   → 分類頁籤（全部／武器／防具／道具，同背包）→ 搜尋 → 物品清單（分頁，每頁 WH_PAGE 列）。在倉庫分頁再點一次「倉庫」＝整理。
 //   每列：圖示｜名稱×數量｜數量框（可疊的才有，預設整疊）｜取出／存入。
-//   ⚠️ 外掛依賴（勿改名）：#wh-gold-amt、#wh-inv-list、#wh-store-list、select[onchange*=whSetFilter/whSetSubFilter]、
+//   ⚠️ 外掛依賴（勿改名）：#wh-gold-amt、#wh-inv-list、#wh-store-list、
 //      #wh-search-input、清單每列的 data-tip-uid / data-tip-src
 //      （afk-warehouse 長按看資料／只列可穿、afk-whbatch 批次勾選）。
 //      兩份清單都照樣畫出來，非作用分頁的那份只是藏起來（外掛照常找得到）。
@@ -557,7 +557,6 @@ function renderWarehouseNPC(div){
     let _pages = Math.max(1, Math.ceil(_cur.length / WH_PAGE)), _pi = _whPg[_whTab];
     let _oi = document.getElementById('wh-inv-list'), _os = document.getElementById('wh-store-list');
     let _whInvScroll = _oi ? _oi.scrollTop : 0, _whStoreScroll = _os ? _os.scrollTop : 0, _divScroll = div.scrollTop;
-    let subOpts = (_whFilter === 'all') ? [] : whSubCatOptions();
     div.innerHTML = `
     <div class="whx">
         <div class="whx-info">同帳號所有角色共用・倉庫 ${w.items.length.toLocaleString()} / ${WH_MAX.toLocaleString()} 格</div>
@@ -573,17 +572,10 @@ function renderWarehouseNPC(div){
             <button type="button" class="${onWh ? 'on' : ''}" onclick="whSetTab('wh')" title="再點一次整理倉庫">${_WHX_SVG.chest}<span>倉庫（${_whItems.length.toLocaleString()}）</span><span class="whx-tabicon" aria-hidden="true">⇅</span></button>
             <button type="button" class="${onWh ? '' : 'on'}" onclick="whSetTab('inv')">${_WHX_SVG.bag}<span>背包（${_invItems.length.toLocaleString()}）</span></button>
         </div>
+        <div class="whx-cats">
+            ${[['all','全部'],['weapon','武器'],['armor','防具'],['item','道具']].map(c => `<button type="button" class="${_whFilter===c[0]?'on':''}" onclick="whSetFilter('${c[0]}')">${c[1]}</button>`).join('')}
+        </div>
         <div class="whx-tools">
-            <select onchange="whSetFilter(this.value)" class="whx-input">
-                <option value="all" ${_whFilter==='all'?'selected':''}>全部</option>
-                <option value="weapon" ${_whFilter==='weapon'?'selected':''}>武器</option>
-                <option value="armor" ${_whFilter==='armor'?'selected':''}>防具</option>
-                <option value="item" ${_whFilter==='item'?'selected':''}>道具</option>
-            </select>
-            <select onchange="whSetSubFilter(this.value)" class="whx-input"${subOpts.length ? '' : ' style="display:none"'}>
-                <option value="">全部</option>
-                ${subOpts.map(o => `<option value="${o.key}" ${_whSubFilter===o.key?'selected':''}>${o.name}</option>`).join('')}
-            </select>
             <input id="wh-search-input" type="search" class="whx-input whx-search" placeholder="搜尋" value="${_whEscAttr(_whSearchInput)}" oninput="whSetSearch(this.value, this.selectionStart, event)">
         </div>
         <div class="whx-panel">
