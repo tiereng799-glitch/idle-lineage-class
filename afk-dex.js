@@ -698,7 +698,7 @@
     var stats = '<div class="m-dex-stats">' +
       st('等級', m.lv) + st('屬性', ELE[m.e] || m.e || '無') + st('種族', m.race || '-') + st('行為', m.beh || '-') +
       st('HP', fmt(m.hp)) + st('攻擊', dmg) + st('命中', m.hit != null ? m.hit : '-') +
-      st('AC', m.ac != null ? m.ac : '-') + st('魔防', m.mr != null ? m.mr : '-') +
+      st('防禦', m.ac != null ? m.ac : '-') + st('魔防', m.mr != null ? m.mr : '-') +
       st('經驗', fmt(m.exp)) + st('金幣', gold) + '</div>';
     var mapsHTML = h.maps.length
       ? h.maps.map(function (nm) {
