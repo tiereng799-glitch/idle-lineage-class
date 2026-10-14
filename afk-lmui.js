@@ -307,6 +307,10 @@
       'html body.lmui-battle.lmui-tall #col-center{clip-path:inset(0 0 calc(100% - var(--lmui-ptop) + var(--orig-bar-h,0px)) 0);}',
       'html body.lmui-battle.lmui-tall #col-right{position:relative;z-index:2;}',
       'body.lmui-battle.lmui-tall #lmui-vit{display:none !important;}',
+      /* 開著功能頁（上方只露出一條場景）時，iPhone 不會畫「被裁切的 fixed 容器裡、用 multiply 混色的背景圖」→ 狩獵場上方變成一片黑
+         （村莊用的 town-view 沒有混色所以正常）。這時改成不混色、另蓋一層半透明黑來壓暗，看起來跟混色差不多。 */
+      'html body.lmui-battle.lmui-tall #battle-view{background-blend-mode:normal !important;background-color:transparent !important;position:relative;}',
+      'html body.lmui-battle.lmui-tall #battle-view::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.62);pointer-events:none;z-index:0;}',
       /* 面板上方的分頁列（背包：全部/裝備/道具/自動賣出；能力：能力/裝備/…）：樣式＝狩獵場的分頁（.lm-tabs），釘在頭像列正下方 */
       '#lmui-bagtabs{display:none;position:fixed;left:6px;right:6px;top:var(--lmui-ptop);height:var(--lmui-ptabs-h);box-sizing:border-box;z-index:9550;padding:3px 2px;background:linear-gradient(#1a1612,#0b0907);border:1px solid #4a3f30;border-radius:3px 3px 0 0;}',
       'body.lmui-ptabs #lmui-bagtabs{display:flex;}',
