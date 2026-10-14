@@ -1901,6 +1901,7 @@ button.classic-skill-cell { cursor:pointer; }
 .whx-tabs button svg { width: 1.4em; height: 1.4em; color: #a8977c; }
 .whx-tabs button.on { border-color: #f0d08a; background: linear-gradient(#cfa24c, #94692a 60%, #7a5520); color: #fff; box-shadow: 0 0 10px rgba(230,180,90,.35); }
 .whx-tabs button.on svg { color: #fff1cc; }
+.whx-tabicon { margin-left: -4px; font-size: .9em; opacity: .8; }
 .whx-tools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .whx-tools select { flex: 0 1 auto; }
 .whx-tools .whx-search { flex: 1 1 90px; width: 90px; }
