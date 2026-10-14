@@ -166,18 +166,50 @@
     document.body.appendChild(ov);
     renderMailbox();
   }
+  // 🧩 2026-10-14 站長：信箱鈕改成「功能」鈕（四格＋號圖示），點了彈出選單：信箱／交易所／排行榜。
+  //   交易所、排行榜要等線上版，先顯示尚未開放。紅點數字仍是未領禮物數（掛在功能鈕上，選單裡的信箱也標一份）。
+  //   按鈕 id 沿用 my-mail-btn（樣式與其他程式都認這個 id）。
+  var FN_SVG = '<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="my-fn-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbe6a6"/><stop offset="1" stop-color="#b8862f"/></linearGradient></defs>' +
+    '<g fill="none" stroke="url(#my-fn-g)" stroke-width="2.4" stroke-linejoin="round"><rect x="4" y="4" width="10" height="10" rx="2"/><rect x="18" y="4" width="10" height="10" rx="2"/><rect x="4" y="18" width="10" height="10" rx="2"/></g>' +
+    '<path d="M23 17.5v11M17.5 23h11" stroke="url(#my-fn-g)" stroke-width="2.8" stroke-linecap="round"/></svg>';
+  var FN_ITEMS = [
+    { k: 'mail', name: '信箱', run: function () { openMailbox(); } },
+    { k: 'trade', name: '交易所', run: function () { logSys('交易所尚未開放。'); } },
+    { k: 'rank', name: '排行榜', run: function () { logSys('排行榜尚未開放。'); } }
+  ];
+  function closeFnMenu() { var m = document.getElementById('my-fn-menu'); if (m) m.remove(); }
+  function toggleFnMenu(btn) {
+    if (document.getElementById('my-fn-menu')) { closeFnMenu(); return; }
+    var m = document.createElement('div');
+    m.id = 'my-fn-menu'; m.className = 'lmui-hit';
+    var n = pendingGifts().length;
+    m.innerHTML = FN_ITEMS.map(function (it) {
+      return '<button type="button" data-k="' + it.k + '">' + it.name + (it.k === 'mail' && n ? '<i>' + n + '</i>' : '') + '</button>';
+    }).join('');
+    m.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-k]'); if (!b) return;
+      e.stopPropagation(); closeFnMenu();
+      var it = FN_ITEMS.filter(function (x) { return x.k === b.getAttribute('data-k'); })[0];
+      if (it) it.run();
+    });
+    btn.parentNode.appendChild(m);
+  }
+  document.addEventListener('click', function (e) {   // 點選單以外的地方就收起
+    if (!e.target.closest || e.target.closest('#my-fn-menu') || e.target.closest('#my-mail-btn')) return;
+    closeFnMenu();
+  }, true);
   function updateMailButton() {
     var btn = document.getElementById('my-mail-btn');
-    if (!loaded()) { if (btn) btn.style.display = 'none'; return; }
+    if (!loaded()) { if (btn) btn.style.display = 'none'; closeFnMenu(); return; }
     if (!btn) {
       btn = document.createElement('button');
-      btn.type = 'button'; btn.id = 'my-mail-btn'; btn.className = 'lmui-hit'; btn.setAttribute('aria-label', '信箱');
-      btn.innerHTML = MAIL_SVG + '<i></i>';
-      btn.addEventListener('click', function (e) { e.stopPropagation(); openMailbox(); });
+      btn.type = 'button'; btn.id = 'my-mail-btn'; btn.className = 'lmui-hit'; btn.setAttribute('aria-label', '功能');
+      btn.innerHTML = '<span class="my-fn-ico">' + FN_SVG + '</span><span class="my-fn-lb">功能</span><i></i>';
+      btn.addEventListener('click', function (e) { e.stopPropagation(); toggleFnMenu(btn); });
     }
     var vit = document.getElementById('lmui-vit');
     var host = vit || document.body;
-    if (btn.parentNode !== host) host.appendChild(btn);
+    if (btn.parentNode !== host) { closeFnMenu(); host.appendChild(btn); }
     btn.classList.toggle('my-mail-float', host === document.body);
     btn.style.display = '';   // 在 #lmui-vit 裡就跟著血條列一起顯示/隱藏(切到能力/背包等畫面時不會跑去擋別的東西)
     var n = pendingGifts().length, badge = btn.querySelector('i');
@@ -191,7 +223,7 @@
     try { if (loaded() && !player.name && typeof logSys === 'function') logSys('<span class="text-yellow-300">這個角色還沒有名字：點畫面上的「（點此取名）」取一個。</span>'); } catch (e) {}
     try {
       var n = pendingGifts().length;
-      if (n && _notifiedFor !== player && typeof logSys === 'function') logSys('<span class="text-yellow-300 font-bold">📬 你有 ' + n + ' 份禮物，點血條右上方的信箱領取。</span>');
+      if (n && _notifiedFor !== player && typeof logSys === 'function') logSys('<span class="text-yellow-300 font-bold">📬 你有 ' + n + ' 份禮物，點右下方的「功能」→「信箱」領取。</span>');
       _notifiedFor = player;
     } catch (e) {}
     updateMailButton();
@@ -215,13 +247,23 @@
     'background:rgba(0,0,0,.55);color:#fde68a;font-size:.875rem;line-height:1.6;text-align:center;white-space:normal}' +
     '.my-home-links{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem 1rem;margin-bottom:.5rem}' +
     '.my-home-links a{color:#93c5fd;text-decoration:underline;font-size:.875rem}' +
-    '#my-mail-btn{position:relative;display:flex;align-items:center;justify-content:center;width:38px;height:34px;padding:0;border:1px solid #8a6a3a;border-radius:6px;' +
-    'background:linear-gradient(#3a2e20,#1a140d);box-shadow:inset 0 1px 0 rgba(255,220,150,.15),0 1px 4px #000;cursor:pointer;pointer-events:auto}' +
-    '#my-mail-btn svg{width:70%;height:auto;filter:drop-shadow(0 1px 1px rgba(0,0,0,.7))}' +
-    '#my-mail-btn.has{border-color:#c9a25a}' +
+    /* 功能鈕：金框方塊圖示＋下方「功能」字（按鈕本身透明） */
+    '#my-mail-btn{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:0;border:0;background:none;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent}' +
+    '#my-mail-btn .my-fn-ico{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid #9c7a40;border-radius:6px;' +
+    'background:linear-gradient(#3a2e20,#140f09);box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,220,150,.18),0 1px 4px #000}' +
+    '#my-mail-btn svg{width:72%;height:auto;filter:drop-shadow(0 1px 1px rgba(0,0,0,.8))}' +
+    '#my-mail-btn .my-fn-lb{font-size:12px;font-weight:700;color:#efe2c2;text-shadow:0 1px 2px #000,0 0 2px #000;line-height:1}' +
+    '#my-mail-btn:active .my-fn-ico{filter:brightness(1.25)}' +
+    '#my-mail-btn.has .my-fn-ico{border-color:#d9b25e}' +
     '#my-mail-btn.my-mail-float{position:fixed;top:8px;right:8px;z-index:90}' +
-    '#lmui-vit>#my-mail-btn{position:absolute;right:10px;bottom:100%;margin-bottom:4px;width:34px;height:30px;z-index:5}' +
-    '#my-mail-btn i{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;border:1px solid #fff;background:#dc2626;color:#fff;font:bold 11px/16px sans-serif;font-style:normal;text-align:center;box-shadow:0 1px 2px #000}' +
+    '#lmui-vit>#my-mail-btn{position:absolute;right:8px;bottom:100%;margin-bottom:6px;z-index:5}' +
+    '#my-fn-menu{position:absolute;right:56px;bottom:100%;margin-bottom:8px;z-index:6;display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid #9c7a40;border-radius:8px;' +
+    'background:linear-gradient(rgba(36,28,19,.97),rgba(14,11,7,.98));box-shadow:0 4px 14px rgba(0,0,0,.7);pointer-events:auto}' +
+    'body>#my-fn-menu{position:fixed;top:52px;right:8px;bottom:auto;z-index:91}' +
+    '#my-fn-menu button{position:relative;min-width:92px;padding:8px 14px;border:1px solid #5a4630;border-radius:5px;background:linear-gradient(#2c2218,#18120c);color:#f0e2bf;font-size:15px;font-weight:700;text-align:center;cursor:pointer}' +
+    '#my-fn-menu button:active{filter:brightness(1.3)}' +
+    '#my-fn-menu i{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;border:1px solid #fff;background:#dc2626;color:#fff;font:bold 11px/16px sans-serif;font-style:normal}' +
+    '#my-mail-btn>i{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;border:1px solid #fff;background:#dc2626;color:#fff;font:bold 11px/16px sans-serif;font-style:normal;text-align:center;box-shadow:0 1px 2px #000}' +
     '#my-mail-btn i:empty{display:none}' +
     '#my-mailbox{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}' +
     '.my-mb-box{width:100%;max-width:360px;max-height:80vh;display:flex;flex-direction:column;gap:8px;padding:12px;background:#1a1612;border:1px solid #b7791f;border-radius:10px;color:#eee}' +
