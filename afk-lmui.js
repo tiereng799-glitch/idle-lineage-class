@@ -416,7 +416,7 @@
       'html body.lmui-town #afk-npclist .afk-npcl-title{display:block !important;margin:1px 0 0 !important;font-size:13px !important;color:#e8b04a !important;}',
       'html body.lmui-town #afk-npclist .afk-npcl-title[data-lmui-br]::before{content:"[";}',
       'html body.lmui-town #afk-npclist .afk-npcl-title[data-lmui-br]::after{content:"]";}',
-      'html body.lmui-town #afk-npclist .afk-npcl-desc{display:block !important;margin-top:2px;font-size:13px !important;color:#bfb3a0 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      'html body.lmui-town #afk-npclist .afk-npcl-desc{display:none !important;}',   /* 站長：卡片只留名字＋職稱，不顯示說明 */
       /* NPC 對話/商店：蓋在 NPC 卡片上、同一塊下半部 */
       /* 浮動大視窗：頭像列下方到工具列上方、左右留邊、圓角金框；外圍用超大陰影把其他畫面壓暗。
          村莊沒有戰鬥畫面要避開，可以蓋過上半部的村莊地圖。開著時 HUD（頭像列/狀態列）先收起來（它在 body 層會疊到視窗上）。 */
