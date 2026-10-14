@@ -551,7 +551,7 @@ function killMob(idx) {
     if (!_kbNoReward && AREA_BONUS_MAPS.includes(mapState.current)) {   // 🗝️ 軍王之室小怪零產出
         let hasWorldTree = player.skills.includes('sk_elf_worldtree');
         AREA_BONUS_ITEMS.forEach(itemId => {
-            let baseRate = (itemId === 'new_item_195') ? (hasWorldTree ? 0.30 : 0.20) : (hasWorldTree ? 0.03 : 0.02);
+            let _wt = SKILL_FX.sk_elf_worldtree, baseRate = (itemId === 'new_item_195') ? (hasWorldTree ? _wt.gemRateLearned : _wt.gemRate) : (hasWorldTree ? _wt.matRateLearned : _wt.matRate);
             let bonusRate = baseRate * _dropMult;   // 🔮 席琳的世界×3
             if(DB.items[itemId] && Math.random() < Math.min(1, bonusRate)) gainItem(itemId, 1);
         });

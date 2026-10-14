@@ -112,16 +112,16 @@ function playerAttack() {
             }
         }
         // 🔧 黑暗妖精：燃燒鬥志（30% 傷害×1.5）、雙重破壞（持雙刀/鋼爪時，45級起10%機率傷害×2，每5級+1%，可與燃燒鬥志疊加）
-        if (player.buffs && player.buffs.sk_dark_burn > 0 && Math.random() < 0.30) result.dmg = Math.floor(result.dmg * 1.5);
-        if (player.buffs && player.buffs.sk_elf_attrfire > 0 && Math.random() < 0.30) result.dmg = Math.floor(result.dmg * 1.5);   // 🔧 妖精：屬性之火（一般攻擊30%機率傷害×1.5；與燃燒鬥志同效，火屬性妖精專用）
+        if (player.buffs && player.buffs.sk_dark_burn > 0 && Math.random() < SKILL_FX.sk_dark_burn.rate) result.dmg = Math.floor(result.dmg * SKILL_FX.sk_dark_burn.mult);
+        if (player.buffs && player.buffs.sk_elf_attrfire > 0 && Math.random() < SKILL_FX.sk_elf_attrfire.rate) result.dmg = Math.floor(result.dmg * SKILL_FX.sk_elf_attrfire.mult);   // 🔧 妖精：屬性之火（一般攻擊30%機率傷害×1.5；與燃燒鬥志同效，火屬性妖精專用）
         if (player.buffs && player.buffs.sk_dark_double > 0) {
             let _dt = getWeaponTags(player.eq.wpn ? player.eq.wpn.id : '');
             if (_dt.includes('雙刀') || _dt.includes('鋼爪')) {
-                let _dch = 10 + (player.lv >= 45 ? Math.floor((player.lv - 45) / 5) : 0);   // 45級起10%，每5級+1%
+                let _dch = darkDoubleChance(player.lv);   // 45級起10%，每5級+1%（數值見 SKILL_FX.sk_dark_double）
                 if (Math.random() * 100 < _dch) result.dmg *= 2;
             }
         }
-        if (player.buffs.sk_royal_bravewill > 0 && Math.random() < (player.mastery === 'k_royal_sword' ? 0.2 : 0.1)) result.dmg = Math.max(1, Math.floor(result.dmg * 1.5));   // 👑 勇猛意志：10%(🏅劍術精通20%)機率一般攻擊傷害×1.5
+        if (player.buffs.sk_royal_bravewill > 0 && Math.random() < (player.mastery === 'k_royal_sword' ? SKILL_FX.sk_royal_bravewill.rateMastery : SKILL_FX.sk_royal_bravewill.rate)) result.dmg = Math.max(1, Math.floor(result.dmg * SKILL_FX.sk_royal_bravewill.mult));   // 👑 勇猛意志：10%(🏅劍術精通20%)機率一般攻擊傷害×1.5
         if (wpn && wpn.hardSkinMult && _mainHardSkin > 0) result.dmg = Math.max(1, Math.floor(result.dmg * wpn.hardSkinMult));   // 🦀 巨大鱷魚的狩獵牙：目標有硬皮值時一般攻擊傷害 ×1.5（貫穿故傷害未被硬皮扣減）
         if (wpn && wpn.softMult && _mainHardSkin <= 0) result.dmg = Math.max(1, Math.floor(result.dmg * wpn.softMult));   // 🏺 不死將軍的珍愛巨劍：一般攻擊對「沒有硬皮值」的敵人傷害 ×1.3
         if (wpn && wpn.fullHpMult && target.curHp === target.hp) result.dmg = Math.max(1, Math.floor(result.dmg * wpn.fullHpMult));   // 🏺 遺忘者的狙擊弓：一般攻擊對滿血敵人傷害 ×3（傷害尚未扣、target.curHp 仍為滿血）
@@ -917,7 +917,7 @@ function allyRlFuryMult(ally) { return (ally && ally._setRedLion5 ? 1.1 : 1.0) *
 function allyBuffDmgReduceMult(ally) {
     let m = 1;
     if (ally && ally.buffs) {
-        if (ally.buffs.sk_holy_barrier > 0) m *= 0.7;          // 聖結界：-30%
+        if (ally.buffs.sk_holy_barrier > 0) m *= SKILL_FX.sk_holy_barrier.taken;          // 聖結界：-30%
         if (ally.buffs.sk_set_dragonscion > 0) m *= 0.85;      // 🐉 龍血·龍裔：-15%
     }
     if (ally && ally._setFury5) m *= (1 - allyFuryRageRatio(ally));   // 😡 狂怒 5/5：依失血最多 -15%
@@ -1156,7 +1156,7 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
         // 🔧 百分比受傷「減免」統一乘算（多層疊加採乘算：例 鐵衛20%×聖結界30%＝1−0.8×0.7＝44%，非相加 50%）
         { let _drMult = 1.0;
           if (player._setIron3) _drMult *= 0.8;                          // 🔮 鐵衛 3/5：-20%
-          if (player.buffs.sk_holy_barrier > 0) _drMult *= 0.7;          // 聖結界：-30%
+          if (player.buffs.sk_holy_barrier > 0) _drMult *= SKILL_FX.sk_holy_barrier.taken;          // 聖結界：-30%
           if (player.buffs.sk_set_dragonscion > 0) _drMult *= 0.85;      // 🐉 龍血·龍裔：-15%
           if (player._setFury5) _drMult *= (1 - furyRageRatio());        // 😡 狂怒 5/5：依失血最多 -15%
           if (heavy && player.d.crushDr > 0) _drMult *= (1 - Math.min(80, player.d.crushDr) / 100);   // 🏺 遺物 妖魔的兜襠布：受到重擊(敵人骰20)時傷害 -crushDr%（上限 80%）
@@ -1880,7 +1880,7 @@ function _applyMobMagicToAllyInner(mob, sk, ally) {
     }
     if (sk.dmg) {
         let _asleepA = st.sleep > 0;   // 🆕 v2.6.13 #5b 魔法迴避層（比照玩家·作用於傷害魔法；睡眠中不可迴避）
-        if (!_asleepA && ally.buffs && ally.buffs.sk_dark_dodge > 0 && sk.alwaysHit && Math.random() < 0.5) { logCombat(`<span class="font-bold" style="color:#c4b5fd;">【暗影閃避】</span>協力·${ally._allyName} 看穿並閃過了 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 的 ${sk.skn || '魔法'}。`, 'evade', 'enemy'); return; }   // 🖤 暗影閃避：50% 閃「必中」傷害魔法
+        if (!_asleepA && ally.buffs && ally.buffs.sk_dark_dodge > 0 && sk.alwaysHit && Math.random() < SKILL_FX.sk_dark_dodge.rate) { logCombat(`<span class="font-bold" style="color:#c4b5fd;">【暗影閃避】</span>協力·${ally._allyName} 看穿並閃過了 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 的 ${sk.skn || '魔法'}。`, 'evade', 'enemy'); return; }   // 🖤 暗影閃避：50% 閃「必中」傷害魔法
         let baseM = roll(sk.dmg[0], sk.dmg[1]);
         let extra = (sk.db || 0) + (sk.dbLv ? (mob.lv || 0) * (sk.dbLvMult || 1) : 0);
         let resF = 1.0;
@@ -2283,13 +2283,13 @@ function _applyMobMagicInner(mob, sk) {
     if(sk.dmg) {
         let _asleepM = !!(player.statuses && player.statuses.sleep > 0);   // 🗼 沉睡：必定被命中、受擊即醒（無法迴避魔法）
         // 🔧 暗影閃避：50% 迴避「必定命中」的傷害魔法，成功後失效並冷卻 5 秒
-        if (!_asleepM && player.buffs && player.buffs.sk_dark_dodge > 0 && sk.alwaysHit && Math.random() < 0.5) {
+        if (!_asleepM && player.buffs && player.buffs.sk_dark_dodge > 0 && sk.alwaysHit && Math.random() < SKILL_FX.sk_dark_dodge.rate) {
             player.buffs.sk_dark_dodge = 0; player._darkDodgeCd = state.ticks + 50; calcStats();
             logCombat(`<span class="font-bold" style="color:#c4b5fd;">【暗影閃避】</span>你看穿並閃過了 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 的 ${sk.skn || '魔法'}。`, 'evade');
             return;
         }
         // 魔法屏障：僅吸收「會造成魔法傷害」的技能。衝擊之暈/三重矢(一般攻擊)與純異常狀態技能都在更早的分支已 return，不會進入此處，故無法被吸收。
-        if(player.buffs.sk_magic_shield > 0) { player.buffs.sk_magic_shield = 0; player.magicShieldCd = 3; logCombat(`魔法屏障吸收了攻擊！（3 秒內無法再次施展魔法屏障）`, 'magic'); return; }
+        if(player.buffs.sk_magic_shield > 0) { player.buffs.sk_magic_shield = 0; player.magicShieldCd = SKILL_FX.sk_magic_shield.cdSec; logCombat(`魔法屏障吸收了攻擊！（${SKILL_FX.sk_magic_shield.cdSec} 秒內無法再次施展魔法屏障）`, 'magic'); return; }
         let baseMagicDmg = roll(sk.dmg[0], sk.dmg[1]);
         let extraMagicDmg = (sk.db || 0) + (sk.dbLv ? (mob.lv || 0) * (sk.dbLvMult || 1) : 0);   // dbLv：傷害加值=怪物等級(=玩家等級)×dbLvMult(預設1)
         
@@ -2322,7 +2322,7 @@ function _applyMobMagicInner(mob, sk) {
         if (mob._grace) dmg = Math.floor(dmg * 2);              // 🔮 席琳的恩賜：再 ×2（增傷）
         // 🔧 百分比受傷「減免」統一乘算（多層疊加採乘算：例 鐵衛20%×聖結界30%＝1−0.8×0.7＝44%，非相加 50%）
         { let _drMult = 1.0;
-          if (player.buffs.sk_holy_barrier > 0) _drMult *= 0.7;                                                  // 聖結界：-30%
+          if (player.buffs.sk_holy_barrier > 0) _drMult *= SKILL_FX.sk_holy_barrier.taken;                                                  // 聖結界：-30%
           if (player._setIron3) _drMult *= 0.8;                                                                  // 🔮 鐵衛 3/5：-20%
           if (player.buffs.sk_set_dragonscion > 0) _drMult *= 0.85;                                              // 🐉 龍血·龍裔：-15%
           if (player._setFury5) _drMult *= (1 - furyRageRatio());                                                // 😡 狂怒 5/5：依失血最多 -15%

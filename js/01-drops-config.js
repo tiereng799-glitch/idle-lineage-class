@@ -1026,7 +1026,7 @@ function fragileMult(t) {
         if (player.buffs && player.buffs.sk_royal_precise > 0) _pp = player;
         else if (player.allies) { for (let _a of player.allies) { if (_a && !_a._downed && _a.buffs && _a.buffs.sk_royal_precise > 0) { _pp = _a; break; } } }
     }
-    if (_pp) { let _div = (_pp.mastery === 'k_royal_pledge') ? 10 : 15; m *= (1 + (1 + (_pp.lv || 1) / _div) / 100); }
+    if (_pp) { let _fx = SKILL_FX.sk_royal_precise, _div = (_pp.mastery === 'k_royal_pledge') ? _fx.lvDivMastery : _fx.lvDiv; m *= (1 + (_fx.base + (_pp.lv || 1) / _div) / 100); }
     return m;
 }   // 🔮 脆弱(白鳥5)+10%、🔧 破壞盔甲+58%；👑 精準目標（隊長或傭兵擇一）
 

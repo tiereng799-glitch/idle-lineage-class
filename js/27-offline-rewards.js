@@ -1253,7 +1253,7 @@
                 typeof AREA_BONUS_ITEMS !== 'undefined') {
                 let worldTree = Array.isArray(player.skills) && player.skills.includes('sk_elf_worldtree');
                 AREA_BONUS_ITEMS.forEach(id => {
-                    let baseRate = id === 'new_item_195' ? (worldTree ? 0.30 : 0.20) : (worldTree ? 0.03 : 0.02);
+                    let _wt = SKILL_FX.sk_elf_worldtree, baseRate = id === 'new_item_195' ? (worldTree ? _wt.gemRateLearned : _wt.gemRate) : (worldTree ? _wt.matRateLearned : _wt.matRate);
                     _offlineGainItem(id, _offlineBinomial(kills, Math.min(1, baseRate * dropMult)), mob, loot);
                 });
             }

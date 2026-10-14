@@ -1770,49 +1770,53 @@ window.onload = () => {
     const SK_ELE = { fire:'火', water:'水', earth:'地', wind:'風', none:'無' };
     const SK_STAT2 = { ac:'防禦', mr:'魔防', dr:'傷害減免', er:'迴避', str:'力量', dex:'敏捷', con:'體質', int:'智力', wis:'精神', cha:'魅力', extraDmg:'額外傷害', extraHit:'額外命中', magicDmg:'魔法傷害', extraMp:'額外魔力', mpR:'魔力恢復', hpR:'體力恢復', meleeHit:'近距命中', rangedHit:'遠距命中', meleeDmg:'近距傷害', rangedDmg:'遠距傷害', resFire:'火屬性抗性', resWater:'水屬性抗性', resEarth:'地屬性抗性', resWind:'風屬性抗性' };
     // 📜 2026-10-14 站長：說明框改顯示魔法的「實際功能」，不顯示施放台詞(sk.msg)。
-    //    下列是資料欄位組不出效果字的魔法，依各自實作手寫（數值改了這裡要跟著改）；持續時間、消耗已由上面 meta 列顯示，這裡不重複。
+    //    下列是資料欄位組不出效果字的魔法；數字一律讀 SKILL_FX（js/00-data 末尾·效果程式也讀同一張表）或技能資料欄位，
+    //    改數值只改那裡，說明自動跟著變。⚠️ 改的是「效果機制」（不只是數字）時，這裡的文字也要一起改。
+    //    持續時間、消耗已由上面 meta 列顯示，這裡不重複。值可以是字串或函式（函式在顯示當下才算）。
+    const _P = function(x){ return Math.round(x * 100); };   // 0.3 → 30
+    const _S = function(spd){ return Math.round((spd - 1) * 100); };   // 速度 ×1.33 → +33
     const SK_FUNC = {
-        sk_sunlight: '怪物重生時間 4 秒→3 秒（軍王之室無效）',
+        sk_sunlight: function(){ return '怪物重生時間 '+(MOB_RESPAWN_FIXED_TICKS/10)+' 秒→'+(MOB_RESPAWN_SUNLIGHT_TICKS/10)+' 秒（軍王之室無效）'; },
         sk_antidote: '解除一名隊員的中毒（自己優先）',
         sk_reveal: '滿血的史巴托不會行動',
-        sk_load_up: '負重上限+50',
-        sk_magic_shield: '抵擋一次怪物的傷害魔法，抵擋後 3 秒內不能再施放',
+        sk_load_up: function(){ return '負重上限+'+SKILL_FX.sk_load_up.cap; },
+        sk_magic_shield: function(){ return '抵擋一次怪物的傷害魔法，抵擋後 '+SKILL_FX.sk_magic_shield.cdSec+' 秒內不能再施放'; },
         sk_holy_light: '解除一名隊員的石化與麻痺（自己優先）',
         sk_mana_drain: '命中時吸取目標的魔力（最多為怪物等級的一半）',
-        sk_haste_spell: '攻擊速度與移動速度+33%',
+        sk_haste_spell: function(){ return '攻擊速度與移動速度+'+_S(SKILL_FX.haste.spd)+'%'; },
         sk_cancel: '解除一名隊員的冰凍、石化、中毒、麻痺、灼燒等異常狀態（自己優先）',
-        sk_greater_haste: '攻擊速度與移動速度+33%',
+        sk_greater_haste: function(){ return '攻擊速度與移動速度+'+_S(SKILL_FX.haste.spd)+'%'; },
         sk_invisible: '非頭目的滿血怪物不會攻擊你（受傷後恢復行動）',
         sk_resurrection: '死亡時消耗魔力原地復活；也能立即救起倒地的傭兵與寵物',
-        sk_holy_barrier: '受到的物理與魔法傷害-30%',
-        sk_soul_up: '最大體力與最大魔力各+20%',
-        sk_reduction_armor: '傷害減免+（等級÷10）',
-        sk_counter_barrier: '雙手武器也能反擊；單手劍反擊與武士刀居合傷害×2',
-        sk_elf_mind: '恢復魔力 2',
-        sk_elf_worldtree: '妖精森林與眠龍洞穴：米索莉塊、元素石掉率 2%→3%，精靈玉 20%→30%',
-        sk_elf_triple: '需要弓：連射 3 箭，每箭各自判定命中與傷害，只耗 1 支箭',
-        sk_elf_soul: '恢復魔力 15',
-        sk_elf_singleres: '已選屬性的抗性+50',
-        sk_elf_watervital: '需要水屬性：下次受到治療時回復量×2（觸發後 7 秒冷卻）',
+        sk_holy_barrier: function(){ return '受到的物理與魔法傷害-'+(100-_P(SKILL_FX.sk_holy_barrier.taken))+'%'; },
+        sk_soul_up: function(){ return '最大體力與最大魔力各+'+(_P(SKILL_FX.sk_soul_up.mult)-100)+'%'; },
+        sk_reduction_armor: function(){ return '傷害減免+（等級÷'+SKILL_FX.sk_reduction_armor.lvDiv+'）'; },
+        sk_counter_barrier: function(){ return '雙手武器也能反擊；單手劍反擊與武士刀居合傷害×'+SKILL_FX.sk_counter_barrier.mult; },
+        sk_elf_mind: function(sk){ return '恢復魔力 '+(sk.mpGain||0); },
+        sk_elf_worldtree: function(){ let w = SKILL_FX.sk_elf_worldtree; return '妖精森林與眠龍洞穴：米索莉塊、元素石掉率 '+_P(w.matRate)+'%→'+_P(w.matRateLearned)+'%，精靈玉 '+_P(w.gemRate)+'%→'+_P(w.gemRateLearned)+'%'; },
+        sk_elf_triple: function(sk){ return '需要弓：連射 '+(sk.hits||3)+' 箭，每箭各自判定命中與傷害，只耗 1 支箭'; },
+        sk_elf_soul: function(sk){ return '恢復魔力 '+(sk.mpGain||0); },
+        sk_elf_singleres: function(){ return '已選屬性的抗性+'+SKILL_FX.sk_elf_singleres.res; },
+        sk_elf_watervital: function(){ let w = SKILL_FX.sk_elf_watervital; return '需要水屬性：下次受到治療時回復量×'+w.mult+'（觸發後 '+w.cdSec+' 秒冷卻）'; },
         sk_elf_earthshield: '需要地屬性：完全擋下怪物的一般攻擊',
         sk_elf_flamesoul: '需要火屬性：近距離攻擊的武器傷害一律取最大值',
         sk_elf_preciseshot: '需要風屬性：命中判定擲出最低點也算命中',
-        sk_elf_attrfire: '需要火屬性：一般攻擊 30% 機率傷害×1.5',
+        sk_elf_attrfire: function(){ let f = SKILL_FX.sk_elf_attrfire; return '需要火屬性：一般攻擊 '+_P(f.rate)+'% 機率傷害×'+f.mult; },
         sk_elf_physboost: '需要地屬性：負重過重時仍會自然恢復體力與魔力',
         sk_elf_energyboost: '需要火屬性：負重過重時仍會自然恢復體力與魔力',
         sk_elf_mirror: '受到魔法傷害時，有（精神值）% 機率對施法者反彈等量傷害',
         sk_dark_stealth: '必定閃避一次物理攻擊，閃過後效果消失',
         sk_dark_refine: '沉默洞穴黑魔石掉率提高；其他野外與地監也會掉黑魔石',
         sk_dark_poisonres: '受到的中毒傷害減半',
-        sk_dark_burn: '一般攻擊 30% 機率傷害×1.5',
-        sk_dark_walkhaste: '攻擊速度與移動速度+15%（可與加速術疊加）',
-        sk_dark_dodge: '50% 機率閃避一次傷害魔法，閃過後效果消失',
-        sk_dark_crit: '消耗最大體力 50% 與全部魔力，打出必中且必爆擊的一擊；魔力越多傷害越高、無視硬皮',
-        sk_dark_double: '持雙刀或鋼爪時，一般攻擊 10% 機率傷害×2（45 級起每 5 級+1%）',
-        sk_royal_precise: '全場敵人受到的傷害+（1＋等級÷15）%',
+        sk_dark_burn: function(){ let f = SKILL_FX.sk_dark_burn; return '一般攻擊 '+_P(f.rate)+'% 機率傷害×'+f.mult; },
+        sk_dark_walkhaste: function(){ return '攻擊速度與移動速度+'+_S(SKILL_FX.sk_dark_walkhaste.spd)+'%（可與加速術疊加）'; },
+        sk_dark_dodge: function(){ return _P(SKILL_FX.sk_dark_dodge.rate)+'% 機率閃避一次傷害魔法，閃過後效果消失'; },
+        sk_dark_crit: function(){ return '消耗最大體力 '+_P(SKILL_FX.sk_dark_crit.hpCost)+'% 與全部魔力，打出必中且必爆擊的一擊；魔力越多傷害越高、無視硬皮'; },
+        sk_dark_double: function(){ let f = SKILL_FX.sk_dark_double; return '持雙刀或鋼爪時，一般攻擊 '+f.base+'% 機率傷害×2（'+f.fromLv+' 級起每 '+f.perLv+' 級+1%）'; },
+        sk_royal_precise: function(){ let f = SKILL_FX.sk_royal_precise; return '全場敵人受到的傷害+（'+f.base+'＋等級÷'+f.lvDiv+'）%'; },
         sk_royal_callally: '所有傭兵立刻各追加攻擊一次',
-        sk_royal_bravewill: '一般攻擊 10% 機率傷害×1.5（劍術精通 20%）',
-        sk_helm_dex2: '攻擊速度與移動速度+33%',
+        sk_royal_bravewill: function(){ let f = SKILL_FX.sk_royal_bravewill; return '一般攻擊 '+_P(f.rate)+'% 機率傷害×'+f.mult+'（劍術精通 '+_P(f.rateMastery)+'%）'; },
+        sk_helm_dex2: function(){ return '攻擊速度與移動速度+'+_S(SKILL_FX.haste.spd)+'%'; },
         sk_helm_str2: '滿血的史巴托不會行動',
     };
     const SK_MEFF = { teleport:'瞬間移動', sense:'能量感測', recall:'回村', charm:'迷魅', barrier:'隔絕無敵（無法攻擊/施法/用道具・不受任何傷害・不自然恢復）' };
@@ -1880,7 +1884,7 @@ window.onload = () => {
         }
         if(sk.desc) eff.push(sk.desc);   // 📜 v3.1.79 稽核修：被動效果說明（王者加護等寫在 desc·原 tooltip 不讀→玩家 hover 看不到效果）
         if(sk.d && typeof sk.d === 'string') eff.push(sk.d);
-        if(SK_FUNC[sid]) eff.push(SK_FUNC[sid]);   // 📜 v3.1.79 稽核修：字串型 d 說明（粉碎能量/心靈破壞·與物件型 d(數值加成) 同名不同型）
+        if(SK_FUNC[sid]) eff.push(typeof SK_FUNC[sid] === 'function' ? SK_FUNC[sid](sk) : SK_FUNC[sid]);   // 📜 v3.1.79 稽核修：字串型 d 說明（粉碎能量/心靈破壞·與物件型 d(數值加成) 同名不同型）
         // 🀄 2026-10-14 站長：說明不用英文縮寫（資料裡的 desc／字串 d 也一併轉）
         eff = eff.map(function(t){ return String(t).replace(/HP/g, '體力').replace(/MP/g, '魔力').replace(/\bAC\b/g, '防禦').replace(/Lv\.\s*/g, '等級 '); });
         if(eff.length) parts.push(`<div class="text-rose-300" style="font-size:12px;">${eff.join(' ／ ')}</div>`);

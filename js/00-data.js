@@ -3430,3 +3430,28 @@ try {
 
 // ⛔ 收藏系統關閉時：魔法娃娃商人(只做卡片合成/卡片換娃娃袋)從所有村莊下架
 if (DISABLE_COLLECTION) { try { for (const t of Object.values(DB.towns)) if (t && Array.isArray(t.npcs)) t.npcs = t.npcs.filter(n => n.id !== 'npc_doll_merchant'); } catch (_) {} }
+
+// 📐 2026-10-14 站長：技能數值單一來源——「效果」與「說明框」(js/14 SK_FUNC) 都讀這張表，改這裡兩邊一起變。
+//    只收原本寫死在戰鬥／數值程式裡、資料欄位沒有的數字；rate 是機率(0~1)、mult 是倍率、spd 是速度倍率(×1.33＝+33%)。
+const SKILL_FX = {
+    haste:              { spd: 1.33 },                                  // 加速術／強力加速術／敏盔：加速術／加速藥水／裝備加速（攻速與移速）
+    sk_load_up:         { cap: 50 },                                    // 負重上限 +50
+    sk_magic_shield:    { cdSec: 3 },                                   // 擋下一次後幾秒內不能再施放
+    sk_holy_barrier:    { taken: 0.7 },                                 // 受到傷害 ×0.7
+    sk_soul_up:         { mult: 1.2 },                                  // 最大 HP／MP ×1.2
+    sk_reduction_armor: { lvDiv: 10 },                                  // 傷害減免 +floor(等級 ÷ lvDiv)
+    sk_counter_barrier: { mult: 2 },                                    // 單手劍反擊／武士刀居合傷害 ×2
+    sk_elf_singleres:   { res: 50 },                                    // 所選屬性抗性 +50
+    sk_elf_watervital:  { mult: 2, cdSec: 7 },                          // 下次受治療 ×2、觸發後冷卻
+    sk_elf_attrfire:    { rate: 0.30, mult: 1.5 },                      // 一般攻擊機率傷害加成
+    sk_dark_burn:       { rate: 0.30, mult: 1.5 },
+    sk_royal_bravewill: { rate: 0.10, rateMastery: 0.20, mult: 1.5 },   // rateMastery＝劍術精通
+    sk_dark_walkhaste:  { spd: 1.15 },                                  // 攻速與移速（可與加速疊乘）
+    sk_dark_dodge:      { rate: 0.5 },                                  // 閃避一次必中傷害魔法的機率
+    sk_dark_double:     { base: 10, fromLv: 45, perLv: 5 },             // 機率(%)＝base，fromLv 級起每 perLv 級 +1
+    sk_dark_crit:       { hpCost: 0.5, mpMult: 10 },                    // 消耗最大 HP 比例；傷害倍率＝剩餘 MP 比例 × mpMult
+    sk_royal_precise:   { base: 1, lvDiv: 15, lvDivMastery: 10 },       // 全場敵人受傷 +(base + 等級÷lvDiv)%；lvDivMastery＝血盟精通
+    sk_elf_worldtree:   { matRate: 0.02, matRateLearned: 0.03, gemRate: 0.20, gemRateLearned: 0.30 },   // 妖精森林／眠龍洞穴額外掉落（材料／精靈玉）
+};
+// 雙重破壞的觸發機率(%)：玩家／傭兵／說明框共用
+function darkDoubleChance(lv) { let f = SKILL_FX.sk_dark_double; lv = lv || 1; return f.base + (lv >= f.fromLv ? Math.floor((lv - f.fromLv) / f.perLv) : 0); }
