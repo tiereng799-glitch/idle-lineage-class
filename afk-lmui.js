@@ -176,7 +176,7 @@
       '#lmui-stats .row{display:flex;gap:9px;align-items:baseline;white-space:nowrap;}',
       '#lmui-stats .k{color:#bdbdbd;margin-right:3px;}',
       '#lmui-stats b{color:#fff;font-weight:600;}',
-      '#lmui-align .k,#lmui-align b{color:#d1d5db;}#lmui-align.justice .k,#lmui-align.justice b{color:#60a5fa;}#lmui-align.evil .k,#lmui-align.evil b{color:#f87171;}',
+      '#lmui-align .k{display:none;}#lmui-align b{color:#fff;font-weight:700;}',
       '#lmui-gold b{color:#f5d77b;}',
       /* 角色名字(取了就不能改；沒名字的舊角色顯示灰色「（點此取名）」，點一下取名) */
       '#lmui-name{all:unset;cursor:default;min-width:0;flex-shrink:1;white-space:nowrap;font-size:15px;font-weight:700;color:#fff;text-shadow:0 1px 2px #000;max-width:150px;overflow:hidden;text-overflow:ellipsis;}',
@@ -525,22 +525,16 @@
       'html body.lmui.lmui-cmp #lmui-cmp-btn{background:#1e3a8a !important;color:#fff !important;}',
 
       /* ── 底部工具列（經典天堂暗色那排：黑底、銀色金屬圖示；手機遊戲畫面一律套） ── */
-      'body.lmui #m-nav{background:linear-gradient(#211b14,#0f0c08 45%,#080604) !important;border-top:1px solid #7a6038 !important;box-shadow:0 -2px 6px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08);position:fixed;}',
+      'body.lmui #m-nav{background:linear-gradient(#2b2b2b,#141414 45%,#0a0a0a) !important;border-top:1px solid #5a5a5a !important;box-shadow:0 -2px 6px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08);position:fixed;}',
       'body.lmui #m-nav>.m-nav-btn{display:none !important;}',
       /* 工具列＝純文字按鈕（玩家要求「直接顯示文字」）：選中的那格金底深字，其他淺色字；圖示保留在 DOM 但不顯示 */
       '#lmui-nav{display:flex;flex:1;align-items:stretch;gap:2px;padding:3px 2px 12px;}',
-      /* 底部選單（範例圖）：圖示在上、字在下，格與格之間細分隔線；目前所在那格＝金框＋底部暖光＋金色圖示 */
-      '.lmui-tool{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 0 5px;background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;font-family:inherit;}',
-      '.lmui-tool+.lmui-tool::before{content:"";position:absolute;left:-2px;top:16%;bottom:16%;width:1px;background:linear-gradient(transparent,#6b5533,transparent);}',
-      '.lmui-tool svg{display:block;width:27px;height:27px;}',
-      '.lmui-tool .o{stroke:#000;stroke-width:3.8;opacity:.85;}',
-      '.lmui-tool .f{stroke:url(#lmui-silver);stroke-width:1.7;}',
-      '.lmui-tool span{font-size:13px;font-weight:600;line-height:1;color:#d8cbb0;white-space:nowrap;letter-spacing:.5px;text-shadow:0 1px 1px #000;}',
+      '.lmui-tool{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:10px 0;background:transparent;border:1px solid transparent;border-radius:3px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;font-family:inherit;}',
+      '.lmui-tool svg{display:none;}',
+      '.lmui-tool span{font-size:16px;font-weight:600;color:#d8cbb0;white-space:nowrap;letter-spacing:.5px;text-shadow:0 1px 1px #000;}',
       '.lmui-tool:active{background:rgba(255,255,255,.08);}',
-      '.lmui-tool.on{background:radial-gradient(ellipse at 50% 100%,rgba(240,186,84,.55),rgba(130,86,30,.25) 55%,transparent 78%),linear-gradient(#3a2b18,#170f07);border-color:#c99b4a;box-shadow:inset 0 0 8px rgba(255,200,110,.3),0 0 8px rgba(231,180,90,.35);}',
-      '.lmui-tool.on+.lmui-tool::before,.lmui-tool.on::before{display:none;}',
-      '.lmui-tool.on .f{stroke:url(#lmui-goldgrad);}',
-      '.lmui-tool.on span{color:#f7d991;font-weight:700;text-shadow:0 0 6px rgba(240,186,84,.75),0 1px 1px #000;}',
+      '.lmui-tool.on{background:linear-gradient(#e7c56f,#a8822f);border-color:#f0d58c;box-shadow:inset 0 1px 0 rgba(255,250,220,.5),0 0 6px rgba(231,197,111,.35);}',
+      '.lmui-tool.on span{color:#1d1407;font-weight:700;text-shadow:none;}',
       /* 經驗 % 已移到狀態列的經驗條裡，這裡不再重複顯示 */
       'body.lmui-battle #lmui-navexp{display:none;}',
       '#lmui-navexp{position:absolute;left:0;right:0;bottom:1px;text-align:center;font-size:12px;font-weight:700;color:#bdbdbd;pointer-events:none;}'
@@ -1409,21 +1403,21 @@
     { id: 'exit', name: '離開', run: function () { buildDeathWin(); renderDeathStats(); document.body.classList.add('lmui-exitwin'); } }   // 天堂M：離開也是那個「重新開始/離開/取消＋狩獵紀錄」視窗
   ];
   // 線條圖示；畫兩次（黑色粗描邊＋銀色漸層細線）做出參考圖那種金屬浮雕感
-  var SVG = {   // 2026-10-14 站長範例圖：盾牌／對話泡泡／星芒羅盤／魔法書／背包／齒輪／門
-    battle: '<path d="M12 3l7 2.6v5.6c0 4.4-2.9 7.7-7 9.8-4.1-2.1-7-5.4-7-9.8V5.6z"/><path d="M12 7.5v9M8.5 10.5h7"/>',
-    chat: '<path d="M4 5h16v10.5H10.5L6.5 19v-3.5H4z"/><path d="M8.3 10.3h.2M11.9 10.3h.2M15.5 10.3h.2"/>',
-    stats: '<circle cx="12" cy="12" r="8.5"/><path d="M12 4.8l1.7 5.5 5.5 1.7-5.5 1.7L12 19.2l-1.7-5.5L4.8 12l5.5-1.7z"/>',
-    skill: '<path d="M5.5 4.5h11a1.5 1.5 0 0 1 1.5 1.5v14H7.5a2 2 0 0 1-2-2z"/><path d="M5.5 18a2 2 0 0 1 2-2H18"/><path d="M11.8 7.2l1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3z"/>',
-    items: '<path d="M6.5 9.5a5.5 5.5 0 0 1 11 0V20h-11z"/><path d="M9.5 6.3V5a2.5 2.5 0 0 1 5 0v1.3"/><path d="M9 13h6v4H9z"/>',
-    automation: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.3"/><path d="M12 3.2v2.5M12 18.3v2.5M3.2 12h2.5M18.3 12h2.5M5.8 5.8l1.7 1.7M16.5 16.5l1.7 1.7M5.8 18.2l1.7-1.7M16.5 7.5l1.7-1.7"/>',
-    exit: '<path d="M6.5 20.5V4.8L14 3.2v17.3"/><path d="M14 4.5h3.5v16"/><path d="M4 20.5h16"/><path d="M11.2 12.3h.2"/>'
+  var SVG = {
+    battle: '<path d="M4 4l11 11M20 4L9 15M4 20l3-3M20 20l-3-3M6 15l3 3M18 15l-3 3"/>',
+    chat: '<path d="M3 6h18v12H3z"/><path d="M3 6l9 7 9-7"/>',
+    stats: '<circle cx="12" cy="5.5" r="2.8"/><path d="M8 21l1-7-3-1 1.5-4.5h9L18 13l-3 1 1 7"/>',
+    skill: '<circle cx="12" cy="12" r="8.5"/><path d="M12 6l1.8 4 4.2.3-3.2 2.7 1 4.1L12 15l-3.8 2.1 1-4.1L6 10.3l4.2-.3z"/>',
+    items: '<path d="M9 4.5h6l-1.5 3h-3z"/><path d="M10.5 7.5C6 9 4.5 13 5 16.5 5.5 19.5 8 20.5 12 20.5s6.5-1 7-4c.5-3.5-1-7.5-5.5-9"/>',
+    automation: '<path d="M14.5 4.5a4 4 0 0 0-4.9 5.2L4 15.3 6.7 18l5.6-5.6a4 4 0 0 0 5.2-4.9l-2.4 2.4-2.3-.6-.6-2.3z"/>',
+    exit: '<path d="M14 4H6v16h8"/><path d="M11 12h9M17 9l3 3-3 3"/>'
   };
   function buildToolbar() {
     var n = $('m-nav'); if (!n || $('lmui-nav')) return;
     var bar = document.createElement('div');
     bar.id = 'lmui-nav';
     // 銀色漸層只定義一次，各圖示用 url(#lmui-silver) 共用
-    bar.innerHTML = '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="lmui-silver" gradientUnits="userSpaceOnUse" x1="0" y1="3" x2="0" y2="21"><stop offset="0" stop-color="#f4f4f4"/><stop offset=".5" stop-color="#b8b8b8"/><stop offset="1" stop-color="#6e6e6e"/></linearGradient><linearGradient id="lmui-goldgrad" gradientUnits="userSpaceOnUse" x1="0" y1="3" x2="0" y2="21"><stop offset="0" stop-color="#fff2c4"/><stop offset=".5" stop-color="#e8bd5c"/><stop offset="1" stop-color="#9a6b22"/></linearGradient></defs></svg>';
+    bar.innerHTML = '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="lmui-silver" gradientUnits="userSpaceOnUse" x1="0" y1="3" x2="0" y2="21"><stop offset="0" stop-color="#f4f4f4"/><stop offset=".5" stop-color="#b8b8b8"/><stop offset="1" stop-color="#6e6e6e"/></linearGradient></defs></svg>';
     TOOLS.forEach(function (t) {
       if (t.need && !t.need()) return;
       var b = document.createElement('button');
@@ -1775,6 +1769,7 @@
     ['mouseup', 'mouseleave'].forEach(function (ev) { bar.addEventListener(ev, function () { clearTimeout(pressT); }); });
   }
 
+  var lastAlignC = null, lastNameC = null;
   function updateStats() {
     updateName();
     // 名字那一排：右邊不可壓到地圖名框（框寬隨地圖名變）→ 量出可用寬度，名字太長就省略號
@@ -1802,10 +1797,15 @@
     setStyle(el.exp.querySelector('i'), 'width', pct('bar-exp'));
     if (hasP()) {
       var v = (typeof pvpClampAlignment === 'function') ? pvpClampAlignment(player.alignmentValue) : (Math.round(+player.alignmentValue || 0));
-      var label = (typeof pvpAlignmentLabel === 'function') ? pvpAlignmentLabel(v) : '';
-      setTxt(el.align.querySelector('.k'), label);
+      // 頭像下方只顯示性向數字（站長：「正義／邪惡」字拿掉）；數字與角色名字一起照性向變色（同核心狀態欄的 pvpAlignmentColor：正義越高越藍、邪惡越紅、中立白）
+      var c = (typeof pvpAlignmentColor === 'function') ? pvpAlignmentColor(v) : '';
       setTxt(el.align.querySelector('b'), (v > 0 ? '+' : '') + v);
-      el.align.className = label === '正義' ? 'justice' : (label === '邪惡' ? 'evil' : '');
+      var nc = (player.name && !renaming) ? c : '';
+      if (c !== lastAlignC || nc !== lastNameC) {   // 瀏覽器會把顏色正規化成 rgb()，直接比 style 值每次都不同 → 自己記上次的
+        lastAlignC = c; lastNameC = nc;
+        el.align.querySelector('b').style.color = c;
+        if (el.name) el.name.style.color = nc;
+      }
     }
     var ms = $('map-select'), mc = $('map-category');
     setTxt(el.mapname.querySelector('b'), ms && ms.selectedOptions[0] ? ms.selectedOptions[0].text : '');
