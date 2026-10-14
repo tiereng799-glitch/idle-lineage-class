@@ -24,6 +24,9 @@ let _wcRecentIdleLines = [];                 // 避免短時間重複抽到相�
 let _wcPrivateActiveId = null;               // 目前開啟私訊的 NPC
 let _wcPrivatePendingIds = Object.create(null); // 正在等待模型回覆的 NPC
 const WC_RECENT_CHAT_LIMIT = 60;
+// 🚫 2026-10-14 站長決定：世界頻道的虛擬玩家聊天整個關掉——每分鐘閒聊／兩人互嗆不再出現，發問輸入列藏起來（css/style.css、afk-lmui）、
+//    worldChannelAsk 不再回答。野外白目玩家遭遇與擊殺後密語屬於 PVP 玩法（js/03），不在此列。
+const WC_FAKE_CHAT_CLOSED = true;
 
 function _wcSpawnNpc() {
     let clsKeys = (typeof CLAN_CLASS_NAMES === 'object' && CLAN_CLASS_NAMES) ? Object.keys(CLAN_CLASS_NAMES) : ['knight'];
@@ -1831,6 +1834,7 @@ function _wcCanIdleChat() {
     return typeof logWorld === 'function';
 }
 function _wcPostIdleChat() {
+    if (WC_FAKE_CHAT_CLOSED) return;
     if (!_wcCanIdleChat()) return;
     if (Math.random() < 0.35) { _wcPostTrashTalk(); return; }   // 🔥 v3.6.74 三成機率改成兩人互嗆（其餘維持原本的日常閒聊）
     let count = 1 + Math.floor(Math.random() * 3);
@@ -2113,6 +2117,7 @@ function _wcTriggerMassTaunt() {
 
 // ================= 💬 發問主流程 =================
 function worldChannelAsk() {
+    if (WC_FAKE_CHAT_CLOSED) return;
     let input = document.getElementById('world-input');
     if (!input) return;
     let q = String(input.value || '').trim();
@@ -2916,7 +2921,7 @@ function _wcAddGrudge(npc, opts) {
             });
         }
         if (typeof initWorldLogLock === 'function') initWorldLogLock();
-        if (!_wcIdleTimer) _wcIdleTimer = setInterval(_wcPostIdleChat, 60 * 1000);
+        if (!_wcIdleTimer && !WC_FAKE_CHAT_CLOSED) _wcIdleTimer = setInterval(_wcPostIdleChat, 60 * 1000);
         if (typeof syncNpcLanguageSetting === 'function') syncNpcLanguageSetting();
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
