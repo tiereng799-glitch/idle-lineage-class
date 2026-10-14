@@ -1712,7 +1712,7 @@ function clanDonateDiamonds() {
     let result = _clanAdjustContribution(points);
     if (!result.ok) {
         let refund = window.pandoraAdjustSharedDiamonds(amount);   // 退鑽也可能失敗（共用桶寫入異常）：如實回報，勿讓鑽石默默蒸發
-        alert((result.error || '捐獻失敗。') + ((refund && refund.ok) ? '' : ' 且龍之鑽石退回失敗，請重新整理後於黑市確認鑽石數量。'));
+        alert((result.error || '捐獻失敗。') + ((refund && refund.ok) ? '' : ' 且龍之鑽石退回失敗，請重新整理後確認龍之鑽石數量。'));
         return;
     }
     if (typeof logSys === 'function') logSys(`<span class="text-cyan-300">捐獻 ${amount.toLocaleString()} 顆龍之鑽石，獲得 ${points.toLocaleString()} 貢獻與血盟經驗。</span>`);

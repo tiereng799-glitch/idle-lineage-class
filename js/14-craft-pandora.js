@@ -1202,6 +1202,9 @@ function getWeightedGachaResult(doubleNonRare, excludeCards) {
 //    以遊戲 tick 計時（存讀檔保留·離線經補跑自然推進）；離線超過一圈(240分鐘)直接全面換貨。
 //    出現機率＝原始 gachaWeight（v3.0.81 起 initGachaWeights 的 ≥50 ×2 加倍已移除）。
 // ==========================================
+// 🚫 2026-10-14 站長決定：潘朵拉黑市永久關閉。不再輪換上架（不寫存檔、不推進掉寶亂數 lootSeq、不出上架日誌），
+//   珍稀商品橫幅與「黑市最新上架」不顯示；入口由 afk-noblackmarket（已鎖定）擋。要恢復就改回 false（收購 NPC 見 js/24 WANDERERS_CLOSED）。
+const PANDORA_MARKET_CLOSED = true;
 const PANDORA_SLOT_COUNT = 24;
 const PANDORA_SLOT_TICKS = 6000;   // 10 分鐘 = 600 秒 × 10 tick/秒
 const PANDORA_LIFETIME_TICKS = PANDORA_SLOT_TICKS * PANDORA_SLOT_COUNT;   // 240 分鐘
@@ -1465,6 +1468,7 @@ function _pandoraLogBuyOrder(slot) {
 
 // 黑市輪換（js/03 每 10 秒呼叫一次；force＝全面換貨）。回傳本次是否有商品刷新。
 function refreshPandoraMarket(force) {
+    if (PANDORA_MARKET_CLOSED) return false;
     if (typeof player === 'undefined' || !player) return false;
     let nowT = (typeof state !== 'undefined' && state) ? (state.ticks || 0) : 0;
     let m = player.pandoraMarket2;
@@ -1526,6 +1530,7 @@ function refreshPandoraMarket(force) {
 // 稀有(權重1)商品上架時的常駐橫幅：持續到商品輪換/售出或玩家點擊潘朵拉
 function renderPandoraBanner() {
     let el = document.getElementById('pandora-banner');
+    if (PANDORA_MARKET_CLOSED) { if (el) el.remove(); return; }
     let annId = (typeof player !== 'undefined' && player) ? player.pandoraAnnounce : null;
     let annInst = annId ? { id: annId, bless: !!player.pandoraAnnounceBless } : null;
     if (annId && DB.items[annId]) {
@@ -1546,6 +1551,7 @@ function renderPandoraBanner() {
 function renderSyslogPandora() {
     let el = document.getElementById('syslog-pandora');
     if (!el) return;
+    if (PANDORA_MARKET_CLOSED) { if (el.innerHTML) el.innerHTML = ''; return; }
     let m = (typeof player !== 'undefined' && player) ? player.pandoraMarket2 : null;
     let s = (m && m.slots && m.slots.length) ? m.slots[(m.lastIdx !== undefined) ? m.lastIdx : m.slots.length - 1] : null;
     let d = s ? DB.items[s.id] : null;

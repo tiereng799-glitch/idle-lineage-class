@@ -17,6 +17,10 @@
     const WANDERER_CHANCE = 0.50;
     const GOLD_WANDERER_CHANCE = 0.30;
     const WANDERER_CARD_CHANCE = 0.10;
+    // 🚫 2026-10-14 站長決定：叫賣收購 NPC（龍鑽／金幣收購）與潘朵拉黑市一起永久關閉。
+    //   不再產生、不再叫賣、村莊與釘選列不顯示、對話與「馬上到」都打不開；共用資料（龍鑽餘額等）原樣保留。
+    //   要恢復就把這個改回 false（黑市那邊見 js/14 的 PANDORA_MARKET_CLOSED）。
+    const WANDERERS_CLOSED = true;
 
     // 🚫 v3.5.53 出沒排除（用戶拍板）：攻城三城（限持城者進入·NPC 形同碰不到）＋炎魔謁見所＋席琳神殿；
     //    其餘安全區皆可出沒（含 傲慢之塔入口/時空裂痕入口/沉默洞穴/長老會議廳）。
@@ -840,6 +844,7 @@
     }
 
     function _announceWanderer(w) {
+    if (WANDERERS_CLOSED) return;
         // ⚠️ 到期守衛放在這裡＝單一真相：tick 路徑（_normalizeState 已濾）與 storage 多開同步路徑共用。
         //    WANDERER_LIFE_MS(2h) 剛好是 BROADCAST_MS(5min) 的整數倍，cycle 邊界正好落在到期瞬間，
         //    去重必然放行 → 另一分頁寫入時會替「已到期但本頁還沒 tick 清掉」的叫賣者重播喊話。
@@ -871,6 +876,7 @@
     }
 
     function _pinnedWanderers(st) {
+    if (WANDERERS_CLOSED) return [];
         return _activeBroadcasters(st || _readState()).slice(0, BROADCAST_PIN_MAX);
     }
 
@@ -927,6 +933,7 @@
     }
 
     function wanderingBuyerSystemTick() {
+    if (WANDERERS_CLOSED) { renderWanderBroadcastPins(); return; }   // 只負責把舊的釘選列清掉
         if (typeof DB === 'undefined' || !DB.items || !DB.towns) return;
         let now = Date.now();
         let bucket = Math.floor(now / CHECK_MS);
@@ -969,6 +976,7 @@
     }
 
     function getWanderingBuyersForTown(townId) {
+    if (WANDERERS_CLOSED) return [];
         let st = _readState();
         let list = _findWanderersForTown(st, townId);
         return list.map((w, index) => Object.assign({
@@ -1154,6 +1162,7 @@
     }
 
     function openWanderingShoutMenu(wandererId, ev) {
+    if (WANDERERS_CLOSED) return;   // 日誌裡舊的叫賣訊息點了也不動作
         if (ev) {
             ev.preventDefault();
             ev.stopPropagation();
@@ -1183,6 +1192,7 @@
     }
 
     function openWanderingTauntMenu(wandererId, ev) {
+    if (WANDERERS_CLOSED) return;
         if (ev) {
             ev.preventDefault();
             ev.stopPropagation();
@@ -1322,6 +1332,7 @@
     }
 
     function hurryToWanderingBuyer(wandererId) {
+    if (WANDERERS_CLOSED) return;
         let st = _readState();
         let w = _findWanderer(st, wandererId);
         if (!_wandererPresent(w)) {
@@ -1384,6 +1395,7 @@
     }
 
     function openWanderingBuyerDialog(wandererId) {
+    if (WANDERERS_CLOSED) return;
         let st = _readState();
         let w = wandererId ? _findWanderer(st, wandererId) : _currentTownWanderer(st);
         if (!_wandererPresent(w)) {
