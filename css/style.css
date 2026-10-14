@@ -2824,7 +2824,6 @@ button.classic-skill-cell { cursor:pointer; }
    輸入列固定不縮，日誌區吸收剩餘空間。 */
 #syslog-panel #sys-log-pins { flex: 0 1 auto; min-height: 0; max-height: 40%; overflow-y: auto; }
 #world-input-row { flex: 0 0 auto; }
-#world-input-row { display: none !important; }   /* 🚫 2026-10-14 虛擬玩家聊天關閉：發問輸入列不顯示（js/26 WC_FAKE_CHAT_CLOSED） */
 
 /* 🏴 v3.6.52 血盟外交狀態四色（宣戰列表·全 NPC 血盟）：
    和平＝藍｜宣戰(我方單方)／對方宣戰(NPC 單方)＝淺紅｜互相宣戰＝深紅（最醒目）。
