@@ -626,12 +626,12 @@
         '<button type="button" id="lmui-mapname" class="lmui-hit"><b></b><small></small></button>' +
         '<button type="button" id="lmui-mini" class="lmui-hit" aria-label="地圖"><span class="moon">🌙</span><i class="me" style="left:50%;top:50%"></i></button>' +
       '</div>' +
-      /* 狀態列：血條/魔力條（AUTO 壓在中間圓章上）＋經驗條，釘在戰鬥畫面下緣，任何分頁都在 */
+      /* 狀態列：經驗條（等級）＋血條/魔力條（AUTO 壓在中間圓章上），釘在戰鬥畫面下緣，任何分頁都在 */
       '<div id="lmui-vit">' +
         '<div id="lmui-comp"></div><div id="lmui-comp-pop" class="hidden"></div>' +
+        '<div id="lmui-exp"><i></i><span class="lv"><em>等級</em><b></b></span><span class="pc"></span></div>' +
         '<div id="lmui-bars"><div id="lmui-hp" class="lmui-bar"><i></i><span></span></div><div id="lmui-mp" class="lmui-bar"><i></i><span></span></div>' +
           '<button type="button" id="lmui-auto" class="lmui-hit" aria-label="AUTO">' + AUTO_SVG + '</button></div>' +
-        '<div id="lmui-exp"><i></i><span class="lv"><em>等級</em><b></b></span><span class="pc"></span></div>' +
       '</div>' +
       '<div id="lmui-bottom">' +
         '<div id="lmui-hot" data-mode="0">' + hot + '</div>' +
