@@ -1238,11 +1238,14 @@ function _renderMobsImpl() {
     let _showMobEleFlag = (typeof _relicShowMobEle === 'function') && _relicShowMobEle();   // 🏺 巨大螞蟻的複眼：狀態直接顯示敵人屬性（一次計算·全格共用）
 
     let _back = backSlotsActive();                                   // 🆕 五格模式：原三格(前排)＋後排兩格
-    let _order = _back ? [0, 1, 2, 3, 4] : [0, 1, 2];                // 🆕 v2.7.47 前排(0,1,2)由左而右→再後排(3,4)由左而右；視覺左右序＝目標鎖定序一致(不再交錯)
+    // 🗺️ 2026-10-14 一般狩獵改 4 格（mobSlotCount）：前排 0,1、後排 2,3，排成右側 2×2（#mob-list.mob-grid4）；
+    //    四軍王房等 5 格照舊；第 5 格萬一有怪（別的系統塞的）也照畫，不讓牠隱形。
+    let _four = _back && mobSlotCount() === 4 && !mapState.mobs[4];
+    let _order = _back ? (_four ? [0, 1, 2, 3] : [0, 1, 2, 3, 4]) : [0, 1, 2];   // 🆕 v2.7.47 前排由左而右→再後排由左而右；視覺左右序＝目標鎖定序一致(不再交錯)
     for(let _k = 0; _k < _order.length; _k++) {
         let i = _order[_k];
         let m = mapState.mobs[i];
-        let _rowCls = (i >= 3) ? ' mob-back' : (_back ? ' mob-front' : '');   // 後排/前排版位 class（三格模式不加→沿用原版面）
+        let _rowCls = (i >= (_four ? 2 : 3)) ? ' mob-back' : (_back ? ' mob-front' : '');   // 後排/前排版位 class（三格模式不加→沿用原版面）
         if (m) {
             let act = (i === mapState.targetIdx) ? 'active' : '';
             let _mi = mobStillImg(m.n, m.img, true);   // 🎬 戰鬥初始幀：有動畫→優先 spawn_0（無 spawn 退 idle_0·再退舊靜態）；無動畫→舊靜態
@@ -1342,6 +1345,7 @@ function _renderMobsImpl() {
     // 🚀 差異更新提交：結構(格數/地圖/頭目大圖模式)不變時，只重建「字串有變」的格子；
     //    單體戰鬥下 5 格只重建 1 格（其餘 4 格 DOM/圖片不動）→ 大幅降低 layout/paint 與卡頓。
     let _ml = document.getElementById('mob-list');
+    if (_ml && _ml.classList.contains('mob-grid4') !== _four) _ml.classList.toggle('mob-grid4', _four);
     if (_ml) {
         let _structKey = _order.join(',') + '|' + mapState.current + '|' + (BOSS_BIG_MAPS.includes(mapState.current) ? 'B' : '');
         let _c = _mobRenderCache;
@@ -2342,6 +2346,9 @@ if (typeof manualCast === 'function' && !manualCast._pmWrapped) {
 //    改為「玩家＋傭兵依招募順序站固定位置」：玩家＋傭兵1~3 前排（bottom 2·z 28）·傭兵4~7 後排（bottom 26·z 4=站後面有景深）·永不跳位、zIndex 恆為正。
 function _partySpritePos() {
     let five = true; try { five = (typeof backSlotsActive !== 'function') || backSlotsActive(); } catch (e) {}
+    // 🗺️ 2026-10-14 一般狩獵（4 格·怪物 2×2 在右）：玩家與傭兵站左側（站長：人物在左、怪物在右）
+    let four = false; try { four = five && typeof mobSlotCount === 'function' && mobSlotCount() === 4 && !(mapState.mobs && mapState.mobs[4]); } catch (e) {}
+    if (four) return { P: { x: '20%', b: 2 }, A: [{ x: '34%', b: 2 }, { x: '7%', b: 2 }, { x: '27%', b: 26 }, { x: '13%', b: 26 }, { x: '40%', b: 26 }, { x: '3%', b: 26 }, { x: '20%', b: 40 }] };
     return five ? { P: { x: '45.5%', b: 2 }, A: [{ x: '23%', b: 2 }, { x: '66%', b: 2 }, { x: '83.5%', b: 2 }, { x: '28%', b: 26 }, { x: '51%', b: 26 }, { x: '70.5%', b: 26 }, { x: '7%', b: 26 }] }
                 : { P: { x: '39%', b: 2 },   A: [{ x: '28%', b: 2 }, { x: '62%', b: 2 }, { x: '72%', b: 2 }, { x: '33.5%', b: 26 }, { x: '57%', b: 26 }, { x: '77.5%', b: 26 }, { x: '23%', b: 26 }] };
 }

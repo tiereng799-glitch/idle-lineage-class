@@ -2045,7 +2045,7 @@ function wcMassTauntGroupBattleFill() {
     if (!wcMassTauntGroupBattleActive() || mapState._wcMassTauntBattleFilling) return;
     mapState._wcMassTauntBattleFilling = true;
     try {
-        let slots = typeof backSlotsActive === 'function' && backSlotsActive() ? 5 : 3;
+        let slots = typeof mobSlotCount === 'function' ? mobSlotCount() : 3;
         for (let i = 0; i < slots; i++) {
             if (!mapState.mobs[i] && mapState.wcMassTauntBattle.next < mapState.wcMassTauntBattle.roster.length) spawnMob(i);
         }
