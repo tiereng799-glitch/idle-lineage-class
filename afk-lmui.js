@@ -1783,8 +1783,8 @@
     setTxt(el.ac, txt('st-ac') || '--');
     setTxt(el.mr, txt('st-mr') || '--');
     setTxt(el.gold.querySelector('b'), txt('st-gold') || '--');
-    setTxt(el.hp.querySelector('span'), 'HP:' + txt('txt-hp'));   // 站長：百分比拿掉，只留數字
-    setTxt(el.mp.querySelector('span'), 'MP:' + txt('txt-mp'));
+    setTxt(el.hp.querySelector('span'), '體力 ' + txt('txt-hp'));   // 站長：百分比拿掉，只留數字；HP/MP 改中文
+    setTxt(el.mp.querySelector('span'), '魔力 ' + txt('txt-mp'));
     // 經驗條：「等級 N」＋經驗百分比（小數 4 位，同天堂M）；百分比直接用核心同一條公式算（js/08：exp ÷ getExpReq(lv)）
     if (hasP()) {
       var _req = (typeof getExpReq === 'function') ? getExpReq(player.lv) : 0;
