@@ -1723,8 +1723,8 @@
     setTxt(el.ac, txt('st-ac') || '--');
     setTxt(el.mr, txt('st-mr') || '--');
     setTxt(el.gold.querySelector('b'), txt('st-gold') || '--');
-    setTxt(el.hp.querySelector('span'), 'HP:' + txt('txt-hp') + ' (' + pctNum('bar-hp') + '%)');
-    setTxt(el.mp.querySelector('span'), 'MP:' + txt('txt-mp') + ' (' + pctNum('bar-mp') + '%)');
+    setTxt(el.hp.querySelector('span'), 'HP:' + txt('txt-hp'));   // 站長：百分比拿掉，只留數字
+    setTxt(el.mp.querySelector('span'), 'MP:' + txt('txt-mp'));
     setTxt(el.exp.querySelector('span'), 'EXP ' + (txt('txt-exp') || (pctNum('bar-exp') + '%')));
     setStyle(el.hp.querySelector('i'), 'width', pct('bar-hp'));
     setStyle(el.mp.querySelector('i'), 'width', pct('bar-mp'));
