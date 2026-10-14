@@ -21,10 +21,10 @@ const MAP_CATEGORIES = {
         {v:'zone_15',t:'眠龍洞穴1樓'},{v:'zone_16',t:'眠龍洞穴2樓'},{v:'zone_17',t:'眠龍洞穴3樓'},
         {v:'crystal_cave1',t:'水晶洞穴1樓'},{v:'crystal_cave2',t:'水晶洞穴2樓'},{v:'crystal_cave3',t:'水晶洞穴3樓'},
         {v:'zone_18',t:'奇岩地監1樓'},{v:'zone_19',t:'奇岩地監2樓'},{v:'zone_20',t:'奇岩地監3樓'},{v:'zone_21',t:'奇岩地監4樓'},
-        {v:'zone_22',t:'沙漠地監1樓'},{v:'zone_23',t:'沙漠地監2樓'},{v:'zone_24',t:'沙漠地監3樓'},{v:'zone_25',t:'沙漠地監4樓'},
+        {v:'zone_22',t:'騎士洞穴1樓'},{v:'zone_23',t:'騎士洞穴2樓'},{v:'zone_24',t:'騎士洞穴3樓'},{v:'zone_25',t:'騎士洞穴4樓'},
         {v:'zone_26',t:'龍之谷地監1樓'},{v:'zone_27',t:'龍之谷地監2樓'},{v:'zone_28',t:'龍之谷地監3樓'},{v:'zone_29',t:'龍之谷地監4樓'},{v:'zone_30',t:'龍之谷地監5樓'},{v:'zone_31',t:'龍之谷地監6樓'},
         {v:'zone_32',t:'螞蟻洞窟1樓'},{v:'zone_33',t:'螞蟻洞窟2樓'},
-        {v:'zone_34',t:'地下通道1樓'},{v:'zone_35',t:'地下通道2樓'},{v:'zone_36',t:'地下通道3樓'},
+        {v:'zone_34',t:'海音地監1樓'},{v:'zone_35',t:'海音地監2樓'},{v:'zone_36',t:'海音地監3樓'},
         {v:'eva_kingdom',t:'伊娃王國'},
         {v:'zone_37',t:'象牙塔4樓'},{v:'zone_38',t:'象牙塔5樓'},{v:'zone_39',t:'象牙塔6樓'},{v:'zone_40',t:'象牙塔7樓'},{v:'zone_41',t:'象牙塔8樓'},
         {v:'rastabad_cave1',t:'拉斯塔巴德地下洞穴1樓'},{v:'rastabad_cave2',t:'拉斯塔巴德地下洞穴2樓'},{v:'rastabad_cave3',t:'拉斯塔巴德地下洞穴3樓'},
@@ -111,12 +111,12 @@ const MAP_REGIONS = [
     ]},
     { key: 'windwood', label: '風木', castleCity: 'windwood', castleAt: 0, maps: [
         {v:'windwood', t:'風木周邊'}, {v:'desert', t:'沙漠'},
-        {v:'zone_22', t:'沙漠地監1樓'}, {v:'zone_23', t:'沙漠地監2樓'}, {v:'zone_24', t:'沙漠地監3樓'}, {v:'zone_25', t:'沙漠地監4樓'},
+        {v:'zone_22', t:'騎士洞穴1樓'}, {v:'zone_23', t:'騎士洞穴2樓'}, {v:'zone_24', t:'騎士洞穴3樓'}, {v:'zone_25', t:'騎士洞穴4樓'},
         {v:'zone_32', t:'螞蟻洞窟1樓'}, {v:'zone_33', t:'螞蟻洞窟2樓'}
     ]},
     { key: 'heine', label: '海音', castleCity: 'heine', castleAt: 1, maps: [
         {v:'town_heine', t:'海音城鎮'}, {v:'heine', t:'海音周邊'}, {v:'mirror_forest', t:'鏡子森林'},
-        {v:'zone_34', t:'地下通道1樓'}, {v:'zone_35', t:'地下通道2樓'}, {v:'zone_36', t:'地下通道3樓'},
+        {v:'zone_34', t:'海音地監1樓'}, {v:'zone_35', t:'海音地監2樓'}, {v:'zone_36', t:'海音地監3樓'},
         {v:'eva_kingdom', t:'伊娃王國'}, {v:'fafurion_lair', t:'法利昂洞穴'}
     ]},
     { key: 'giran', label: '奇岩', maps: [
