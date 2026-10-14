@@ -70,7 +70,7 @@
         { id: 'statpts', name: '能力值來源分解', desc: '能力值旁列出「初始／升級／藥水」各給了多少點', group: '遊戲介面' },
         { id: 'itemsearch', name: '背包名稱搜尋', desc: '背包分頁加搜尋框，打字就找得到東西', group: '遊戲介面' },
         { id: 'invlist', name: '背包條列式', desc: '背包改成一行一件，比格子好找', group: '遊戲介面' },
-        { id: 'warehouse', name: '倉庫擴充', desc: '倉庫可「只列可穿」，穿不了的標紅；手機長按看物品資料', group: '遊戲介面' },
+        { id: 'warehouse', name: '倉庫擴充', desc: '倉庫裡穿不了的裝備標紅；手機長按看物品資料', group: '遊戲介面' },
         { id: 'eqlist', name: '裝備條列式', desc: '裝備分頁改成部位條列，不用看 12 格圖', group: '遊戲介面' },
         { id: 'npclist', name: '村莊 NPC 條列式', desc: '村莊改成 NPC 清單，點名字就能互動', group: '遊戲介面' },
         { id: 'mapbar', name: '手機地圖列壓縮', desc: '冒險地圖的標題列壓成兩排，少佔畫面', group: '遊戲介面' },
