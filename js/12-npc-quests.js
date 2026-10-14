@@ -383,7 +383,7 @@ function _whStackAbsorb(stack, src, n){ stack.cnt += n; if(src && src.lock){ sta
 //    帶著早已過期 junkSince 的物品一回到背包就會被下一次 10 秒掃描直接賣掉＝零寬限期。
 //    取出時一併清，可順便治好既有存檔中已經帶著舊旗標躺在倉庫裡的物品。
 function _whClearJunkState(it){ if(it){ delete it.junk; delete it.junkSince; delete it._autoSellQty; delete it._ruleJunk; } return it; }
-// 物品完整簽章：名字(id)+強化值(en)+詞綴(祝福/遠古/屬性)；一鍵存入用來比對「完全相同」
+// 物品完整簽章：名字(id)+強化值(en)+詞綴(祝福/遠古/屬性)
 function whSig(it){ return itemSig(it); }   // 🔧 架構#3：委派給單一事實來源 itemSig
 // 倉庫與角色是兩個獨立儲存桶。每次轉移先保存角色，再保存倉庫；任一步失敗就還原記憶體中的背包/金幣，
 // 避免角色存檔失敗但倉庫成功寫入後，重新整理造成物品複製。
@@ -409,33 +409,7 @@ function whTxnCommit(w, snap){
     }
     return true;
 }
-// 一鍵存入：背包中「與倉庫現有物品 詞綴+名字+強化值 完全相同」者自動存入（鎖定物品保護、不可存物品略過）
-function whOneClickDeposit(){
-    // 🏦 縱深守衛：倉庫只能在安全區使用（浮動視窗曾可被帶進狩獵區；closeNpcInteraction 已補關閉，這裡再擋一層）
-    if (typeof mapState === 'undefined' || !mapState.current || !String(mapState.current).startsWith('town_')) { if (typeof logSys === 'function') logSys('<span class="text-red-400">離開安全區後無法使用倉庫。</span>'); return; }
-    let w = loadWarehouse();
-    let _txn = whTxnSnapshot();
-    let whSigs = new Set(w.items.map(whSig));   // 倉庫現有物品簽章集合
-    let deposited = 0, full = false;
-    for(let it of player.inv.slice()){          // 用副本走訪，過程會改動 player.inv
-        if(WH_NO_STORE.includes(it.id)) continue;   // 不可存入
-        if(it.lock) continue;                        // 鎖定物品保護，不自動存入
-        if(!whSigs.has(whSig(it))) continue;         // 倉庫沒有完全相同的 → 跳過
-        let idx = player.inv.findIndex(i => i.uid === it.uid);
-        if(idx < 0) continue;
-        let cur = player.inv[idx];
-        let stack = _whStackFind(w.items, cur);
-        if(!stack && w.items.length >= WH_MAX){ full = true; break; }
-        player.inv.splice(idx, 1);
-        if(stack){ _whStackAbsorb(stack, cur, cur.cnt); } else { w.items.push(_whClearJunkState(cur)); whSigs.add(whSig(cur)); }
-        deposited++;
-    }
-    if(!whTxnCommit(w, _txn)){ renderTabs(true); updateUI(); renderWarehouseNPC(document.getElementById('interaction-content')); return; }
-    renderTabs(true); updateUI();
-    renderWarehouseNPC(document.getElementById('interaction-content'));
-    if(deposited > 0) logSys(`<span class="text-cyan-300 font-bold">一鍵存入：已存入 ${deposited} 項與倉庫現有物品相同的物品${full ? '（倉庫已滿，部分未存入）' : ''}。</span>`);
-    else logSys(full ? `<span class="text-red-400">倉庫已滿，無法存入。</span>` : `背包中沒有與倉庫現有物品完全相同的可存入物品。`);
-}
+// 🗑️ 2026-10-14 站長決定拿掉「一鍵存入」（whOneClickDeposit 整支刪除）
 // 🔧 倉庫一鍵排列：規則與背包「一鍵排列」完全相同（共用 invSortCmp）
 function sortWarehouse(){
     let w = loadWarehouse();
@@ -521,10 +495,10 @@ function whGold(dir){
 }
 // 🏦 倉庫視窗（2026-10-14 依站長給的範本重排）：
 //   標題列（index.html：寶箱圖＋「倉庫」＋紅色 ✕）→ 一行資訊（共用・格數）→ 金幣列 → 「倉庫／背包」兩個分頁
-//   → 一排工具（分類・搜尋・整理／一鍵存入）→ 物品清單（分頁，每頁 WH_PAGE 列）。
+//   → 一排工具（分類・搜尋・倉庫分頁多一顆「整理」）→ 物品清單（分頁，每頁 WH_PAGE 列）。
 //   每列：圖示｜名稱×數量｜數量框（可疊的才有，預設整疊）｜取出／存入。
 //   ⚠️ 外掛依賴（勿改名）：#wh-gold-amt、#wh-inv-list、#wh-store-list、select[onchange*=whSetFilter/whSetSubFilter]、
-//      button[onclick*=sortWarehouse/whOneClickDeposit]、清單每列的 data-tip-uid / data-tip-src
+//      button[onclick*=sortWarehouse]、#wh-search-input、清單每列的 data-tip-uid / data-tip-src
 //      （afk-warehouse 長按看資料／只列可穿、afk-whbatch 批次勾選）。
 //      兩份清單都照樣畫出來，非作用分頁的那份只是藏起來（外掛照常找得到）。
 //   分頁：倉庫可到 5,000 格，整份畫出來手機會卡 → 一次只畫一頁；分類／搜尋一變就回第 1 頁。
@@ -606,7 +580,7 @@ function renderWarehouseNPC(div){
                 ${subOpts.map(o => `<option value="${o.key}" ${_whSubFilter===o.key?'selected':''}>${o.name}</option>`).join('')}
             </select>
             <input id="wh-search-input" type="search" class="whx-input whx-search" placeholder="搜尋" value="${_whEscAttr(_whSearchInput)}" oninput="whSetSearch(this.value, this.selectionStart, event)">
-            ${onWh ? '<button type="button" class="whx-btn whx-btn-sm" onclick="sortWarehouse()">整理</button>' : '<button type="button" class="whx-btn whx-btn-sm" onclick="whOneClickDeposit()">一鍵存入</button>'}
+            ${onWh ? '<button type="button" class="whx-btn whx-btn-sm" onclick="sortWarehouse()">整理</button>' : ''}
         </div>
         <div class="whx-panel">
             <div class="whx-list" id="wh-store-list"${onWh ? '' : ' style="display:none"'}>${whHtml}</div>
