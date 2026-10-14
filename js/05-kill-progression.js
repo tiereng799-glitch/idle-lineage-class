@@ -400,6 +400,8 @@ function killMob(idx) {
         g = Math.floor(g * (1 + dollFieldVal('goldBonus') / 100) * partyRewardMult() * ((typeof myRate === 'function') ? myRate('gold') : 1));   // 試算表「倍率」金幣   // 🪆 娃娃加成後再乘有效隊伍人數（最高 ×8）
         player.gold += g;
         // 🔧 金幣不再逐殺輸出於系統日誌；改由 gameLoop 累積、flushAwaySummary 以「掛機期間獲得總金幣」統一顯示。
+        //    天堂M介面（afk-lmui）的「掉落」分頁另外逐筆顯示：有掛 onMobGoldDrop 才呼叫（補跑期間由那邊自己略過）。
+        if (typeof window.onMobGoldDrop === 'function') window.onMobGoldDrop(mob, g);
 
     }
     // 🦴 v3.1.71 用戶要求：取消「怪物直接掉落席琳遺骸」——遺骸唯一取得管道＝席琳結晶（NPC 伊奧兌換）／菈克希絲拆分舊詞綴裝備。
