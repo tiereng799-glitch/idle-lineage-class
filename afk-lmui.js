@@ -943,7 +943,7 @@
     }
     box.innerHTML = '<div class="mi-hd"><span class="mi-name' + (d.boss ? ' boss' : '') + '">' + (d.boss ? '👑 ' : '') + esc(mob.n) + '</span><span class="mi-lv">Lv.' + (mob.lv || d.lv) + '</span><button type="button" class="mi-x" aria-label="關閉">✕</button></div>' +
       '<div class="mi-tags">' + tags + (d.e && ELE_NAME[d.e] ? '<span class="mi-tag ele-' + d.e + '">' + ELE_NAME[d.e] + '屬性</span>' : '') + '</div>' +
-      '<div class="mi-stats">' + stat('HP', hp) + stat('AC', d.ac) + stat('MR', d.mr) + stat('經驗', d.exp) + stat('金幣', (d.goldMin || 0) + '~' + (d.goldMax || 0)) + '</div>' +
+      '<div class="mi-stats">' + stat('HP', hp) + stat('防禦', d.ac) + stat('魔防', d.mr) + stat('經驗', d.exp) + stat('金幣', (d.goldMin || 0) + '~' + (d.goldMax || 0)) + '</div>' +
       (basic ? '' : '<div class="mi-sub">掉落物' + (mult > 1 ? '<em>（已含 ×' + mult + '）</em>' : '') + '</div>' +
       '<div class="mi-list">' + rows + '</div>');
     document.body.classList.add('lmui-mobinfo');
@@ -966,7 +966,7 @@
         return '<div class="mi-drop tip-host" data-tip-id="' + x.id + '" data-tip-craft="1"><img src="' + icon + '" alt="" onerror="this.style.visibility=\'hidden\'"><span class="nm ' + cls + '">' + esc(it.n) + '</span><span class="rt">' + fmtRate(x.rate * sher) + '</span></div>';
       }).join('') : '<div class="mi-none">沒有專屬掉落物</div>';
       return '<div class="md-mob"><div class="mi-hd"><span class="mi-name' + (d.boss ? ' boss' : '') + '">' + (d.boss ? '👑 ' : '') + esc(d.n) + '</span><span class="mi-lv">Lv.' + d.lv + '</span></div>' +
-        '<div class="mi-stats">' + stat('HP', d.hp) + stat('AC', d.ac) + stat('MR', d.mr) + stat('經驗', d.exp) + stat('金幣', (d.goldMin || 0) + '~' + (d.goldMax || 0)) + '</div>' + rows + '</div>';
+        '<div class="mi-stats">' + stat('HP', d.hp) + stat('防禦', d.ac) + stat('魔防', d.mr) + stat('經驗', d.exp) + stat('金幣', (d.goldMin || 0) + '~' + (d.goldMax || 0)) + '</div>' + rows + '</div>';
     }).join('');
     var mapName = (typeof mapDisplayName === 'function' ? mapDisplayName(mapState.current) : '') || (($('lmui-mapname') || {}).textContent || '').trim() || '這張地圖';
     var ov = document.createElement('div');
