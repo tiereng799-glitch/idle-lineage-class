@@ -64,6 +64,7 @@
     //      判準：外掛裡的 `AFK_TOGGLES.register` 若排在早退之後，它的 id 就必須出現在這張表。
     //      有 scripts/check-toggle-deadend.mjs 靜態擋。
     [
+        { id: 'tapclose', name: '點空白處關閉視窗', desc: '點視窗外面的地方就關掉視窗', group: '遊戲介面' },
         { id: 'mobile', name: '手機版面', desc: '手機專用版面：底部分頁切換、浮動日誌、避開頂端橫幅', group: '遊戲介面' },
         { id: 'npclabel', name: '村莊名牌不出界', desc: '村莊裡站得靠邊的 NPC，名字不會被畫面邊緣切掉', group: '遊戲介面' },
         { id: 'mobname', name: '怪物名稱顯示', desc: '怪物名字要一直顯示、只在鎖定時顯示，還是滑過才顯示', group: '遊戲介面' },

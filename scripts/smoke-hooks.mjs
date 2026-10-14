@@ -53,7 +53,7 @@ const watch = (pg) => {
 //   故它單獨在「手機模擬」那一輪驗,桌機那輪不列入(否則桌機永遠等不到它、smoke 假性失敗)。
 // afk-battlehud 桌機也會 init(只是 CSS 讓它不顯示)→ 放 need 即可;它取代的是核心手機版 #mobile-vitals。
 // afk-touchtip 只在觸控裝置 init(桌機有 hover,本來就不該掛)→ 桌機那輪永遠等不到,必須放手機輪。
-const needMobileOnly = ['[AFK-touchtip]'];
+const needMobileOnly = ['[AFK-touchtip]', '[AFK-tapclose]'];
 const need = ['[AFK]', '[AFK-banner]','[AFK-lzcache]', '[AFK-synccompress]', '[AFK-clanroster]', '[AFK-allyslim]', '[AFK-dollcursor]', '[AFK-mobile]', '[AFK-backnav]', '[AFK-battlehud]', '[AFK-mapbar]', '[AFK-nozoom]', '[AFK-statusicon]', '[AFK-petui]', '[AFK-trackinfo]', '[AFK-trackmaps]', '[AFK-relicguard]', '[AFK-wpnfix]', '[AFK-enhtarget]', '[AFK-retrial]', '[AFK-attrbatch]', '[AFK-cursebatch]', '[AFK-battlebuffs]', '[AFK-skillbar]', '[AFK-syncinfo]', '[AFK-statpts]', '[AFK-statlist]', '[AFK-pwa]', '[AFK-storage]', '[AFK-fullsave]', '[AFK-quotawarn]', '[AFK-notice]', '[AFK-history]', '[AFK-reissueid]', '[AFK-diag]', '[AFK-mobname]', '[AFK-npclabel]', '[AFK-training]', '[AFK-junkmgr]', '[AFK-bossavoid]', '[AFK-mercguard]', '[AFK-squadsync]', '[AFK-itemsearch]', '[AFK-eqlist]', '[AFK-npclist]', '[AFK-whbatch]', '[AFK-anyclass]', '[AFK-sellguard]', '[AFK-skin]'];
 const seen = (list) => list.every((n) => logs.some((l) => l.includes(n) && l.includes('hooks OK')));
 
