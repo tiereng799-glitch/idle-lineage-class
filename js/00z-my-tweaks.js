@@ -112,7 +112,7 @@
     var sheet = (T.gifts || []).filter(function (g) {
       return claimed.indexOf(g.id) < 0 && (g.to === '全部' || g.to === player.name) && (g.kind === 'gold' || (g.kind === 'item' && DB.items[g.item]));
     });
-    return sheet.concat(testMails().filter(function (g) { return DB.items[g.item]; }));
+    return sheet.concat(testMails().filter(function (g) { return g.kind === 'gold' || DB.items[g.item]; }));
   }
   // ── 🧪 測試用寄信（站長 2026-10-14）：聊天框輸入「.道具名稱 數量」→ 那個道具寄到自己的信箱 ──
   //   信件存在 player.testMail（跟著存檔走）；領取時從清單移除，不記進 giftsClaimed（編號是臨時產生的，記了只會越堆越多）。
@@ -133,11 +133,21 @@
     var t = String(text || '').trim();
     if (t.charAt(0) !== '.' && t.charAt(0) !== '．') return false;
     if (!loaded()) return true;
-    var body = t.slice(1).trim(), m = body.match(/^(.*?)\s+(\d+)$/);
-    var name = (m ? m[1] : body).trim(), cnt = m ? Math.min(99999, parseInt(m[2], 10)) : 1;
+    var body = t.slice(1).trim(), m = body.match(/^(.*?)\s+([\d,]+)$/);
+    var name = (m ? m[1] : body).trim(), n = m ? parseInt(m[2].replace(/,/g, ''), 10) : 1;
+    var gold = /^(金幣|金錢|錢|gold|adena)$/i.test(name);   // 金幣不是道具：寄一封「金幣」信（信箱本來就支援 kind:'gold'）
+    var cnt = Math.min(gold ? 2000000000 : 99999, n);
     var say = function (h) { if (typeof logSys === 'function') logSys(h); };
     if (!name) { say('<span class="text-slate-300">用法：.道具名稱 數量（例：.對武器施法的卷軸 5）</span>'); return true; }
     if (!(cnt > 0)) { say('<span class="text-red-300">數量要大於 0。</span>'); return true; }
+    if (gold) {
+      if (!Array.isArray(player.testMail)) player.testMail = [];
+      player.testMail.push({ id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'gold', cnt: cnt, _test: true });
+      say('<span class="text-yellow-300 font-bold">📬 金幣 ' + cnt.toLocaleString() + ' 已寄到信箱。</span>');
+      updateMailButton(); renderMailbox();
+      if (typeof saveGame === 'function') saveGame();
+      return true;
+    }
     var r = findItemByName(name);
     if (typeof r !== 'string') {
       say('<span class="text-red-300">找不到「' + esc(name) + '」。' + (r.near.length ? '你是不是要找：' + r.near.map(esc).join('、') : '') + '</span>');
