@@ -252,7 +252,7 @@
       '.lmui-slot.is-cd .cd{display:flex;}',
       '#lmui-chat{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:rgba(0,0,0,.5);overflow:hidden;}',
       '#lmui-tabs{display:flex;gap:2px;padding:2px 2px 0;flex:none;align-items:stretch;}',
-      '#lmui-tabs button{flex:1;padding:1px 0;font-size:12px;color:#c9b88f;background:linear-gradient(#3b3022,#1c160e);border:1px solid #4d3e29;border-radius:2px;}',
+      '#lmui-tabs button{flex:1;padding:3px 0;font-size:15px;color:#c9b88f;background:linear-gradient(#3b3022,#1c160e);border:1px solid #4d3e29;border-radius:2px;}',
       '#lmui-tabs button.on{color:#fff6dc;background:linear-gradient(#7a5f35,#3f2f18);border-color:#b8955a;}',
       '#lmui-tabs .more{flex:0 0 22px;}',
       '#lmui-tabs .flt{flex:0 0 38px;}',
@@ -281,7 +281,7 @@
       /* ── 右欄面板（能力/魔法/背包/設定）拉高：從頭像列下方一路到工具列，蓋住戰鬥畫面下半與血條 ──
          #game-screen（捲動區）上緣改到頭像列下方；#col-center（戰鬥）照跑，只用 clip-path 裁成頭像列那一條當底圖（不動版面，切回狩獵場不會重排）。
          #col-right 抬到 #col-center（z:1）之上；血條（#lmui-hud 裡、z 比整個 #game-screen 高）直接收起。 */
-      ':root{--lmui-ptop:calc(var(--orig-bar-h,0px) + 90px);--lmui-ptabs-h:32px;}',
+      ':root{--lmui-ptop:calc(var(--orig-bar-h,0px) + 90px);--lmui-ptabs-h:40px;}',
       'html body.lmui-battle.lmui-tall #game-screen{top:var(--lmui-ptop) !important;padding:6px 6px calc(var(--m-nav-h,0px) + 6px) !important;}',
       'html body.lmui-battle.lmui-tall.lmui-ptabs #game-screen{padding-top:calc(var(--lmui-ptabs-h) + 6px) !important;}',
       'html body.lmui-battle.lmui-tall #col-center{clip-path:inset(0 0 calc(100% - var(--lmui-ptop) + var(--orig-bar-h,0px)) 0);}',
@@ -360,7 +360,7 @@
       'body.lmui-battle.lmui-maps #lmui-maps{display:flex;}',
       'body.lmui-battle.lmui-maps #lmui-bottom{display:none !important;}',
       '.lm-tabs{display:flex;gap:2px;padding:2px 2px 0;flex:none;}',
-      '.lm-tabs button{flex:1;padding:3px 0;font-size:13px;font-family:inherit;color:#c9b88f;background:linear-gradient(#3b3022,#1c160e);border:1px solid #4d3e29;border-radius:2px;}',
+      '.lm-tabs button{flex:1 1 auto;min-width:0;padding:3px 4px;font-size:16px;white-space:nowrap;font-family:inherit;color:#c9b88f;background:linear-gradient(#3b3022,#1c160e);border:1px solid #4d3e29;border-radius:2px;}',
       '.lm-tabs button.on{color:#fff6dc;background:linear-gradient(#7a5f35,#3f2f18);border-color:#b8955a;}',
       '.lm-list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;margin-top:3px;padding:0 4px;background:rgba(0,0,0,.5);}',
       '.lm-row{display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 6px;text-align:left;font-family:inherit;background:transparent;border:0;border-bottom:1px solid rgba(90,70,48,.45);color:#eee;cursor:pointer;text-shadow:0 1px 1px #000;}',
