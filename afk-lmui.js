@@ -459,8 +459,8 @@
       /* ── 技能分頁（魔法書）：上方書籤（全體魔法／職業／裝備）、左側階數鈕、4 欄圖示、底部魔攻／魔法防禦 ── */
       '.lsk2{display:flex;flex-direction:column;gap:6px;padding:6px;background:linear-gradient(#2a2622,#1c1916);border:1px solid #4d443b;border-radius:6px;color:#d8cfc2;box-sizing:border-box;}',
       /* 高度由 fitSkillBook() 量畫面剩下的空間填滿（格子在框裡捲，書籤／階數鈕／底部數值固定看得到）；量不到時的保底 */
-      '#tab-skill .lsk2{min-height:320px;width:84%;max-width:330px;margin:0 auto;}',   /* 左右收窄成視窗大小、置中（站長：滿版太寬） */
-      /* 魔法書收窄後，外層分頁面板的黑底與框會露在左右兩側 → 開魔法分頁時拿掉（lmui-sktab 由 tick 依目前分頁切） */
+      '#tab-skill .lsk2{min-height:320px;}',
+      /* 魔法書自己有框 → 開魔法分頁時拿掉外層分頁面板的黑底與框，免得框外又一圈黑邊（lmui-sktab 由 tick 依目前分頁切） */
       'body.lmui-sktab #tab-content-panel{background:none !important;border-color:transparent !important;box-shadow:none !important;}',
       'body.lmui-sktab #tab-skill{background:transparent !important;}',
       '.lsk2-tabs{display:flex;gap:4px;padding-left:44px;}',
