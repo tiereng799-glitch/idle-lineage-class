@@ -456,24 +456,29 @@
       '.ld-tabs button svg{width:18px;height:18px;}',
       '.ld-tabs button.on{color:#f2f2f2;background:linear-gradient(#5e5e5e,#2a2a2a);border-color:#8a8a8a;}',
 
-      /* ── 技能分頁（攤開清單）：金色分區標題、每階一列（左標籤＋右 4 格銅框） ── */
-      '.lsk{padding:6px 4px 10px;background:#110e0b;color:#e8d9b0;}',
-      '.lsk-sec{margin:8px 0 6px;padding-left:8px;border-left:3px solid #d4a24a;color:#f0c35a;font-size:16px;font-weight:700;}',
-      '.lsk-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}',
-      '.lsk-lb{flex:0 0 52px;display:flex;flex-direction:column;align-items:center;line-height:1.25;}',
-      '.lsk-lb b{color:#f0c35a;font-size:15px;}',
-      '.lsk-lb small{color:#c9a96a;font-size:12px;}',
-      '.lsk-grid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}',
-      '.lsk-cell{position:relative;aspect-ratio:1;border:1px solid #6b5636;border-radius:4px;background:linear-gradient(#2a241c,#14110d);box-shadow:inset 0 0 0 1px rgba(0,0,0,.8),0 1px 2px #000;display:flex;align-items:center;justify-content:center;padding:4px;cursor:pointer;}',
-      '.lsk-cell img{width:100%;height:100%;object-fit:contain;border-radius:2px;}',
-      '.lsk-cell.is-empty{border-color:#2e271e;background:#0d0b09;box-shadow:inset 0 0 6px #000;cursor:default;}',
+      /* ── 技能分頁（魔法書）：上方書籤（全體魔法／職業／裝備）、左側階數鈕、4 欄圖示、底部魔攻／魔法防禦 ── */
+      '.lsk2{display:flex;flex-direction:column;gap:6px;padding:6px;background:linear-gradient(#2a2622,#1c1916);border:1px solid #4d443b;border-radius:6px;color:#d8cfc2;box-sizing:border-box;}',
+      /* 高度由 fitSkillBook() 量畫面剩下的空間填滿（格子在框裡捲，書籤／階數鈕／底部數值固定看得到）；量不到時的保底 */
+      '#tab-skill .lsk2{min-height:320px;}',
+      '.lsk2-tabs{display:flex;gap:4px;padding-left:44px;}',
+      '.lsk2-tabs button{flex:1;height:38px;border:1px solid #4d443b;border-bottom:0;border-radius:6px 6px 0 0;background:linear-gradient(#2c2824,#1a1715);color:#8f857a;font-size:17px;letter-spacing:.08em;}',
+      '.lsk2-tabs button.on{background:linear-gradient(#5a5047,#2f2a25);color:#f1e8da;border-color:#8a7b6a;text-shadow:0 1px 2px #000;}',
+      '.lsk2-body{flex:1 1 auto;min-height:0;display:flex;gap:6px;}',
+      '.lsk2-side{flex:0 0 38px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;}',
+      '.lsk2-side .gap{flex:0 0 8px;}',
+      '.lsk2-side button{flex:0 0 40px;border:1px solid #4d443b;border-radius:4px;background:linear-gradient(#3d3732,#211e1b);color:#a59a8c;font:700 19px/1 Georgia,serif;text-shadow:0 1px 2px #000;}',
+      '.lsk2-side button.on{border-color:#b8955a;color:#fff6dc;background:linear-gradient(#5a5047,#2f2a25);}',
+      '.lsk2-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border:1px solid #3a332d;border-radius:3px;background:#0e0c0a;padding:3px;}',
+      '.lsk2-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;}',
+      '.lsk-cell{position:relative;aspect-ratio:1;border:1px solid #3d3630;border-radius:2px;background:#15120f;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;}',
+      '.lsk-cell img{width:100%;height:100%;object-fit:contain;}',
+      '.lsk-cell.is-empty{background:#0b0908;cursor:default;}',
       /* 沒學過＝暗色：圖片去色壓暗，再蓋一層黑（別處有通用的 img 濾鏡規則會蓋掉單純的 filter，故帶 #tab-skill + !important） */
       '#tab-skill .lsk-cell.is-unlearned img{filter:grayscale(1) brightness(.35) !important;}',
-      '#tab-skill .lsk-cell.is-unlearned::after{content:"";position:absolute;inset:0;border-radius:3px;background:rgba(0,0,0,.45);pointer-events:none;}',
-      '#tab-skill .lsk-cell.is-unlearned{border-color:#3a3023;}',
+      '#tab-skill .lsk-cell.is-unlearned::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.45);pointer-events:none;}',
       '#tab-skill .lsk-cell.is-off img{filter:brightness(.6) !important;}',
-      '.lsk-foot{display:flex;justify-content:space-around;margin-top:10px;padding-top:8px;border-top:1px solid #3a3024;font-size:14px;color:#c9a96a;}',
-      '.lsk-foot b{color:#fff;margin-left:4px;}',
+      '.lsk2-foot{flex:none;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:4px 2px 0;font-size:16px;color:#c9bfb0;}',
+      '.lsk2-foot b{min-width:52px;padding:2px 6px;border:1px solid #4d443b;background:#0b0908;color:#fff;font-weight:400;text-align:right;}',
 
       /* ── 道具視窗：小卡片（寬 ~300、高度跟內容、按鈕兩欄），不再整頁蓋住 ──
          上緣沿用 afk-mobile 的 top:calc(8px + var(--orig-bar-h))（戰鬥時 --orig-bar-h 已換成場景下緣）；
@@ -1822,6 +1827,7 @@
     }
     if (game) { try { syncToolbar(); } catch (e) {} }
     try { syncBag(); } catch (e) {}
+    try { fitSkillBook(); } catch (e) {}
     var town = game && !inBattleMap() && inTownView();
     var battle = game && (inBattleMap() || town);   // 不看 mview-*：戰鬥畫面（村莊時＝村莊地圖）在任何分頁都留在上半
     toggleCls('lmui-town', town);
@@ -1855,8 +1861,8 @@
     if (chatDirty && document.body.classList.contains('mview-center')) { chatDirty = false; try { renderChat(); } catch (e) {} }
   }
 
-  // ── 技能分頁：分區（通用魔法書／職業魔法／裝備授予）、每階一列（左標籤＋右 4 格），全部攤開 ──
-  //   取代上游 1.8 皮膚技能視窗（一次一階、要選階數/切模式）。名單與「學會/可用/點了施放」規則照抄上游
+  // ── 技能分頁（魔法書）：上方書籤（全體魔法／職業／裝備）、左側階數鈕（點了捲到那一階）、4 欄圖示、底部魔攻／魔法防禦 ──
+  //   取代上游 1.8 皮膚技能視窗。名單與「學會/可用/點了施放」規則照抄上游
   //   renderClassicSkillBook（js/10），只換版面；用到的判斷全走上游全域（skillReqLv / classicSkillIsClassSkill…）。
   function skillCell(id, granted) {
     var sk = DB.skills[id];
@@ -1871,39 +1877,76 @@
     var cast = (learned && usable && sk.type === 'manual') ? ' onclick="manualCast(\'' + id + '\')"' : '';
     return '<div class="' + cls + '" data-tip-skill="' + id + '" title="' + (sk.n || '') + '"' + cast + '>' + img + '</div>';
   }
-  function skillRows(ids, label, sub, granted) {
-    var cells = ids.map(function (id) { return skillCell(id, granted); });
-    while (cells.length % 4 || cells.length < 4) cells.push('<div class="lsk-cell is-empty"></div>');
-    return '<div class="lsk-row"><div class="lsk-lb"><b>' + label + '</b><small>' + sub + '</small></div><div class="lsk-grid">' + cells.join('') + '</div></div>';
-  }
   function byTier(ids) {
     var g = {}, order = [];
     ids.forEach(function (id) { var t = +DB.skills[id].tier || 0; if (!g[t]) { g[t] = []; order.push(t); } g[t].push(id); });
     order.sort(function (a, b) { return a - b; });
     return order.map(function (t) { return { tier: t, ids: g[t] }; });
   }
+  // 書籤：all＝全體魔法（通用＋職業＋裝備授予）、cls＝職業魔法、eq＝裝備授予；左側數字＝各書的階數，點了捲到那一階
+  var skBook = 'all', skScroll = {};
+  var CLS_TAB = { elf: '妖精', knight: '騎士', mage: '法師', dark: '黑暗妖精', royal: '王族' };
+  window.__lmuiSkBook = function (b) { skBook = b; var d = $('tab-skill'); if (d) renderSkillList(d); };
+  window.__lmuiSkJump = function (key) {
+    var box = document.querySelector('#tab-skill .lsk2-scroll'), c = box && box.querySelector('.lsk-cell[data-grp="' + key + '"]');
+    if (box && c) box.scrollTop = Math.max(0, c.offsetTop - box.firstElementChild.offsetTop);
+    skSyncSide(box);
+  };
+  function skSyncSide(box) {
+    if (!box) return;
+    var cells = box.querySelectorAll('.lsk-cell[data-grp]'), top = box.scrollTop + 4, cur = null;
+    var base = box.firstElementChild ? box.firstElementChild.offsetTop : 0;
+    // 捲到底時最後幾階的開頭到不了框頂 → 改看「開頭有出現在框裡」的最後一階（不然點了最後一階卻亮前一階）
+    if (box.scrollHeight > box.clientHeight + 2 && box.scrollTop + box.clientHeight >= box.scrollHeight - 2) top = box.scrollTop + box.clientHeight - 8;
+    for (var i = 0; i < cells.length; i++) { if (cells[i].offsetTop - base <= top) cur = cells[i].getAttribute('data-grp'); else break; }
+    if (!cur && cells.length) cur = cells[0].getAttribute('data-grp');
+    var btns = document.querySelectorAll('#tab-skill .lsk2-side button');
+    for (var j = 0; j < btns.length; j++) btns[j].classList.toggle('on', btns[j].getAttribute('data-grp') === cur);
+  }
+  // 魔法書高度＝從自己頂端到底部導覽列上緣（分頁藏著時量不到 → 由 tick 在顯示時補量）
+  function fitSkillBook() {
+    var root = document.querySelector('#tab-skill .lsk2');
+    if (!root || !root.getClientRects().length) return;
+    var nav = $('m-nav'), bottom = nav && nav.getClientRects().length ? nav.getBoundingClientRect().top : window.innerHeight;
+    var h = Math.floor(bottom - root.getBoundingClientRect().top - 8);
+    if (h >= 320 && Math.abs((parseFloat(root.style.height) || 0) - h) > 2) { root.style.height = h + 'px'; skSyncSide(root.querySelector('.lsk2-scroll')); }
+  }
   function renderSkillList(div) {
     var all = Object.keys(DB.skills).filter(function (id) { return DB.skills[id] && !DB.skills[id].procOnly && id.indexOf('sk_helm_') !== 0; });
     var general = all.filter(function (id) { var sk = DB.skills[id]; return sk.reqM !== undefined && typeof skillReqLv === 'function' && skillReqLv(sk, id) !== undefined; });
     var cls = typeof classicSkillIsClassSkill === 'function' ? all.filter(function (id) { return classicSkillIsClassSkill(DB.skills[id]); }) : [];
     var granted = (player.grantedSkills || []).filter(function (id) { return DB.skills[id]; });
-    var classLabel = typeof classicSkillClassLabel === 'function' ? classicSkillClassLabel() : '職業技能';
-    var html = '<div class="lsk">';
-    if (general.length) {
-      html += '<div class="lsk-sec">通用魔法書</div>';
-      byTier(general).forEach(function (g) { html += skillRows(g.ids, g.tier + '階', '魔法書', granted); });
-    }
-    if (cls.length) {
-      html += '<div class="lsk-sec">' + classLabel + '</div>';
-      byTier(cls).forEach(function (g) { html += skillRows(g.ids, g.tier ? g.tier + '階' : '', classLabel, granted); });
-    }
-    if (granted.length) {
-      html += '<div class="lsk-sec">裝備授予魔法</div>' + skillRows(granted, '裝備', '授予', granted);
-    }
+    var books = [{ k: 'all', n: '全體魔法' }];
+    if (cls.length) books.push({ k: 'cls', n: CLS_TAB[player.cls] || '職業' });
+    if (granted.length) books.push({ k: 'eq', n: '裝備' });
+    if (!books.some(function (b) { return b.k === skBook; })) skBook = 'all';
+    // 分組：每組＝左側一顆數字鈕＋格子裡連續的一段
+    var groups = [];
+    if (skBook === 'all' || skBook === 'gen') byTier(general).forEach(function (g) { groups.push({ key: 'g' + g.tier, label: g.tier, ids: g.ids, set: 'g' }); });
+    if (skBook === 'all' || skBook === 'cls') byTier(cls).forEach(function (g, i) { groups.push({ key: 'c' + (g.tier || i), label: g.tier || (i + 1), ids: g.ids, set: 'c' }); });
+    if (skBook === 'all' || skBook === 'eq') if (granted.length) groups.push({ key: 'e', label: '裝', ids: granted, set: 'e' });
+    var side = '', cells = [], lastSet = null;
+    groups.forEach(function (g) {
+      if (lastSet && lastSet !== g.set) side += '<span class="gap"></span>';
+      lastSet = g.set;
+      side += '<button type="button" data-grp="' + g.key + '" onclick="__lmuiSkJump(\'' + g.key + '\')">' + g.label + '</button>';
+      g.ids.forEach(function (id, i) { var h = skillCell(id, granted); cells.push(i ? h : h.replace('<div class="', '<div data-grp="' + g.key + '" class="')); });
+    });
+    while (cells.length % 4 || cells.length < 24) cells.push('<div class="lsk-cell is-empty"></div>');
     var sp = (player.d && player.d.magicDmg != null) ? Math.round(player.d.magicDmg) : 0;
     var mr = (player.d && player.d.mr != null) ? Math.round(player.d.mr) : 0;
-    html += '<div class="lsk-foot"><span>魔法傷害 <b>' + sp + '</b></span><span>魔防 <b>' + mr + '%</b></span></div></div>';
-    div.innerHTML = html;
+    var old = div.querySelector('.lsk2-scroll');
+    if (old) skScroll[old.getAttribute('data-book')] = old.scrollTop;
+    div.innerHTML = '<div class="lsk2">' +
+      '<div class="lsk2-tabs">' + books.map(function (b) { return '<button type="button" class="' + (b.k === skBook ? 'on' : '') + '" onclick="__lmuiSkBook(\'' + b.k + '\')">' + b.n + '</button>'; }).join('') + '</div>' +
+      '<div class="lsk2-body"><div class="lsk2-side">' + side + '</div>' +
+      '<div class="lsk2-scroll" data-book="' + skBook + '"><div class="lsk2-grid">' + cells.join('') + '</div></div></div>' +
+      '<div class="lsk2-foot">魔攻<b>' + sp + '</b>魔法防禦<b>' + mr + '</b>%</div></div>';
+    var box = div.querySelector('.lsk2-scroll');
+    fitSkillBook();
+    box.scrollTop = skScroll[skBook] || 0;
+    box.addEventListener('scroll', function () { skScroll[skBook] = box.scrollTop; skSyncSide(box); }, { passive: true });
+    skSyncSide(box);
   }
 
   // ── 怪物血條貼在頭頂：動畫圖四周有大片透明邊，怪物只畫在圖的下半部 → 單靠排版順序血條會浮在半空 ──
