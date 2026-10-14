@@ -720,22 +720,10 @@ function useItem(u, silent = false, keepModal = false) {   // 🔌 加掛版補�
     //    就被攔截處理，而真正的強化卷軸（js/00-data.js）根本沒有 type 欄位 → 此分支不可達。
     //    現行強化唯一入口＝ showEnhanceOptions / doEnhance。
     } else if (d.type === 'skillbk') {
-        let sd = DB.skills[d.sk];
-        let reqLv = skillReqLv(sd, d.sk);   // 🏅 集中化：含魔導精通特例（妖精可學四項法師法術）
-        if(reqLv === undefined) { logSys(`你的職業無法學習「${sd.n}」。`); return; }
-        if(player.lv < reqLv) { logSys(`等級不足，需要等級 ${reqLv} 才能學習「${sd.n}」。`); return; }
-        
-        // 👇 補上這兩行：確保屬性相符才能吃水晶！
-        if(sd.reqEle && player.elfEle !== sd.reqEle) { logSys(`屬性不符，無法學習「${sd.n}」。`); return; }
-        if(sd.reqEleAny && !player.elfEle) { logSys(`尚未選擇屬性，無法學習「${sd.n}」。`); return; }
-
-        if(!player.skills.includes(d.sk)) {
-            player.skills.push(d.sk);
-            logSys(`學習了技能: <span class="text-cyan-300">${DB.skills[d.sk].n}</span>`);
-            consume(item);
-            renderTabs();
-            renderSkillSelects();
-        } else logSys(`你已經學過這個技能了。`);
+        let st = skillBookStatus(d.sk);   // 職業／等級／屬性／已學會 判定與商店共用
+        if (!st.can) { logSys(st.why); return; }
+        consume(item);
+        learnSkillNow(d.sk);
     }
     updateUI();
     if(!silent && !keepModal && document.getElementById('item-modal').classList.contains('hidden') === false && (d.type !== 'scroll' || d.eff === 'poly' || d.eff === 'magicbarrier' || d.eff === 'teleport_scroll')) {
@@ -1007,6 +995,40 @@ function consume(item) {
     item.cnt--;
     if (item.cnt <= 0) player.inv = player.inv.filter(i => i.uid !== item.uid);
     renderTabs();
+}
+
+// 📖 魔法書（type:'skillbk'）能不能學：背包「學習」鈕、商店「學習」鈕、useItem 共用同一套判定。
+//   label＝按鈕上的字；why＝按下去學不了時的提示。
+function skillBookStatus(skId) {
+    let sd = DB.skills[skId];
+    if (!sd) return { can: false, label: '無法學習', why: '找不到這個魔法。' };
+    if (player.skills.includes(skId)) return { can: false, learned: true, label: '已學會', why: '你已經學過這個技能了。' };
+    let reqLv = skillReqLv(sd, skId);   // 🏅 集中化：含魔導精通特例（妖精可學四項法師法術）
+    if (reqLv === undefined) return { can: false, label: '無法學習', why: `你的職業無法學習「${sd.n}」。` };
+    if (player.lv < reqLv) return { can: false, label: `需 Lv.${reqLv}`, why: `等級不足，需要等級 ${reqLv} 才能學習「${sd.n}」。` };
+    if (sd.reqEle && player.elfEle !== sd.reqEle) return { can: false, label: '屬性不符', why: `屬性不符，無法學習「${sd.n}」。` };   // 確保屬性相符才能吃水晶
+    if (sd.reqEleAny && !player.elfEle) return { can: false, label: '需先選屬性', why: `尚未選擇屬性，無法學習「${sd.n}」。` };
+    return { can: true, label: '學習', why: '' };
+}
+function learnSkillNow(skId) {
+    player.skills.push(skId);
+    logSys(`學習了技能: <span class="text-cyan-300">${DB.skills[skId].n}</span>`);
+    renderTabs();
+    renderSkillSelects();
+}
+// 🛒 2026-10-14 站長：商店的魔法書不再進背包，付錢當下直接學會（學不了就不收錢）
+function buySkillBook(id) {
+    let d = DB.items[id];
+    if (!d || d.type !== 'skillbk') return;
+    let st = skillBookStatus(d.sk);
+    if (!st.can) { logSys(st.why); return; }
+    let cost = shopPrice(d.p || 0);
+    if (player.gold < cost) { logSys(`金幣不足。`); return; }
+    player.gold -= cost;
+    learnSkillNow(d.sk);
+    updateUI();
+    try { if (typeof renderShopItems === 'function') renderShopItems(); } catch (e) {}
+    saveGame();
 }
 
 function buyItem(id, qty) {

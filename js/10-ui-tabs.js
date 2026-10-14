@@ -285,7 +285,7 @@ player.inv.forEach(i => {
         let isClsPossible = skillReqLv(sk, d.sk) !== undefined;   // 🏅 集中化：含魔導精通特例
         
         if (player.skills.includes(d.sk)) {
-            statusTag = '<span class="text-slate-500 text-[10px] font-bold">[已學習]</span>';
+            statusTag = '<span class="text-slate-500 text-[10px] font-bold">[已學會]</span>';
             itemBg = 'bg-slate-900 opacity-70'; // 已學習變暗
         } else if (!isClsPossible) {
             statusTag = '<span class="text-red-500 text-[10px] font-bold">[無法學習]</span>';
@@ -1307,7 +1307,11 @@ function openModal(item, isEq, slot) {
             act += `<button class="col-span-2 w-full btn border-red-700 bg-red-900 hover:bg-red-800 text-red-200 py-3 text-lg font-bold" onclick="unequipItem('${slot}')">卸除</button>`;
         }
     } else {
-        if(d.type === 'pot' || d.type === 'skillbk' || ((d.type === 'misc' || d.type === 'etc') && d.eff && !d.noUse)) {   // 🔧 misc/etc 且有效果(萬能藥/回憶蠟燭/靈魂之球/🥚頑皮幼龍蛋等)亦顯示使用按鈕；noUse 除外
+        if(d.type === 'skillbk') {   // 📖 魔法書：學習／需 Lv.N／已學會（判定同商店·js/08 skillBookStatus）
+            let _sks = skillBookStatus(d.sk);
+            if (_sks.can) act += `<button class="col-span-2 w-full btn border-green-700 bg-emerald-800 hover:bg-emerald-700 text-green-100 py-3 text-lg font-bold" onclick="useItem('${item.uid}')">學習</button>`;
+            else act += `<button class="col-span-2 w-full btn border-slate-600 bg-slate-700 text-slate-400 py-3 text-lg font-bold cursor-not-allowed" disabled>${_sks.label}</button>`;
+        } else if(d.type === 'pot' || ((d.type === 'misc' || d.type === 'etc') && d.eff && !d.noUse)) {   // 🔧 misc/etc 且有效果(萬能藥/回憶蠟燭/靈魂之球/🥚頑皮幼龍蛋等)亦顯示使用按鈕；noUse 除外
             act += `<button class="col-span-2 w-full btn border-green-700 bg-emerald-800 hover:bg-emerald-700 text-green-100 py-3 text-lg font-bold" onclick="useItem('${item.uid}')">使用</button>`;
             if (d.batchUse && item.cnt > 1) act += `<button class="col-span-2 w-full btn border-sky-700 bg-sky-900 hover:bg-sky-800 text-sky-100 py-3 text-lg font-bold" onclick="batchUseItem('${item.uid}')">批量使用（可輸入數量）</button>`;   // 🌅 巨大骷髏的妖魂：批量使用
         }
