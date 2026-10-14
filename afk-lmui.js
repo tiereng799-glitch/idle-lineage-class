@@ -168,7 +168,7 @@
       '#lmui-face img.logo{object-fit:contain;object-position:center;transform:none;padding:4px;}',
       '#lmui-face{position:relative;}',
       '#lmui-face .pic{cursor:pointer;}',
-      '#lmui-lv{font-size:14px;font-weight:700;color:#e8d9b0;flex-shrink:0;}',   /* 等級跟在名字右邊、正義值再接在等級後面 */
+      /* 名字右邊接正義值（等級移到下方經驗條） */
       '#lmui-align{font-size:13px;flex-shrink:0;}',
       '#lmui-buffbtn{margin-top:3px;width:22px;height:14px;padding:0;font-size:12px;line-height:12px;color:#ddd;background:rgba(0,0,0,.55);border:1px solid var(--lmui-line);border-radius:2px;}',
       '#lmui-stats{display:flex;flex-direction:column;gap:2px;padding-top:2px;font-size:13px;}',
@@ -288,9 +288,11 @@
       /* 戰鬥地圖裡不用 afk-mobile 的完整日誌面板（聊天框已取代）；村莊沒有聊天框，照舊用面板 */
       'body.lmui-battle #m-log-sheet{display:none !important;}',
       /* 經驗：導覽列正上方一條細線＋百分比 */
-      '#lmui-exp{position:relative;flex:none;height:13px;margin:0 6px;background:#0b0805;border:1px solid #3d3121;border-radius:2px;overflow:hidden;}',
-      '#lmui-exp span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 11px/1 Consolas,"Courier New",monospace;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000;}',
-      '#lmui-exp i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#a16207,#facc15);}',
+      /* 經驗條：天堂M樣式——深色膠囊＋銀色外框，左半「等級 N」、右半百分比 */
+      '#lmui-exp{position:relative;flex:none;height:14px;border-width:1px;margin:0 6px;border-radius:7px;background:linear-gradient(#1b1611,#050403);border:1px solid #9b958a;box-shadow:inset 0 0 0 1px #2c261e,inset 0 2px 4px rgba(0,0,0,.9),0 0 0 1px #1d1812,0 1px 3px #000;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;align-items:center;}',
+      '#lmui-exp i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:7px;background:linear-gradient(90deg,rgba(146,96,20,.55),rgba(214,170,60,.55));}',
+      '#lmui-exp span{position:relative;display:flex;align-items:baseline;justify-content:center;gap:8px;font-weight:700;font-size:12px;line-height:1;color:#f3f0ea;text-shadow:1px 1px 0 #000,-1px -1px 0 #000;letter-spacing:.5px;}',
+      '#lmui-exp em{font-style:normal;font-weight:700;color:#8f8a82;text-shadow:0 1px 0 rgba(255,255,255,.15),0 -1px 0 #000;letter-spacing:2px;}',
 
       /* ── 右欄面板（能力/魔法/背包/設定）拉高：從頭像列下方一路到工具列，蓋住戰鬥畫面下半與血條 ──
          #game-screen（捲動區）上緣改到頭像列下方；#col-center（戰鬥）照跑，只用 clip-path 裁成頭像列那一條當底圖（不動版面，切回狩獵場不會重排）。
@@ -617,7 +619,7 @@
       '<div id="lmui-tl">' +
         '<div id="lmui-face"><div class="pic lmui-hit" role="button" aria-label="裝備欄"><img alt=""></div><button type="button" id="lmui-buffbtn" class="lmui-hit" aria-label="狀態圖示">≫</button></div>' +
         '<div id="lmui-stats">' +
-          '<div class="row"><button type="button" id="lmui-name" class="lmui-hit"></button><span id="lmui-lv"></span><span id="lmui-align"><span class="k"></span><b></b></span></div>' +
+          '<div class="row"><button type="button" id="lmui-name" class="lmui-hit"></button><span id="lmui-align"><span class="k"></span><b></b></span></div>' +
           '<div class="row"><span><span class="k">防禦</span><b id="lmui-ac"></b></span><span><span class="k">魔防</span><b id="lmui-mr"></b></span></div>' +
           '<div class="row"><span id="lmui-gold"><span class="k">💰</span><b></b></span></div>' +
         '</div>' +
@@ -631,7 +633,7 @@
         '<div id="lmui-comp"></div><div id="lmui-comp-pop" class="hidden"></div>' +
         '<div id="lmui-bars"><div id="lmui-hp" class="lmui-bar"><i></i><span></span></div><div id="lmui-mp" class="lmui-bar"><i></i><span></span></div>' +
           '<button type="button" id="lmui-auto" class="lmui-hit" aria-label="AUTO">' + AUTO_SVG + '</button></div>' +
-        '<div id="lmui-exp"><i></i><span></span></div>' +
+        '<div id="lmui-exp"><i></i><span class="lv"><em>等級</em><b></b></span><span class="pc"></span></div>' +
       '</div>' +
       '<div id="lmui-bottom">' +
         '<div id="lmui-hot" data-mode="0">' + hot + '</div>' +
@@ -648,7 +650,7 @@
       '</div>';
     document.body.appendChild(hud);
 
-    ['ac', 'mr', 'lv', 'hp', 'mp', 'exp', 'align', 'gold', 'mapname', 'mini', 'lines', 'tabs', 'name'].forEach(function (k) { el[k] = $('lmui-' + k); });
+    ['ac', 'mr', 'hp', 'mp', 'exp', 'align', 'gold', 'mapname', 'mini', 'lines', 'tabs', 'name'].forEach(function (k) { el[k] = $('lmui-' + k); });
     if (el.name) el.name.addEventListener('click', function (e) { e.stopPropagation(); startLmuiRename(); });
     bindCompanions();
     el.face = hud.querySelector('#lmui-face img');
@@ -1773,10 +1775,9 @@
 
   function updateStats() {
     updateName();
-    setTxt(el.lv, '等級 ' + (txt('st-lv') || '--'));
-    // 名字＋等級＋正義值同一排：右邊不可壓到地圖名框（框寬隨地圖名變）→ 量出可用寬度，名字太長就省略號
+    // 名字＋正義值同一排：右邊不可壓到地圖名框（框寬隨地圖名變）→ 量出可用寬度，名字太長就省略號
     try {
-      var row1 = el.lv.parentNode, tr = $('lmui-tr');
+      var row1 = el.name.parentNode, tr = $('lmui-tr');
       if (row1 && tr && tr.offsetWidth) {
         var w = Math.floor(tr.getBoundingClientRect().left - row1.getBoundingClientRect().left - 6) + 'px';
         if (row1.style.maxWidth !== w) row1.style.maxWidth = w;
@@ -1787,7 +1788,13 @@
     setTxt(el.gold.querySelector('b'), txt('st-gold') || '--');
     setTxt(el.hp.querySelector('span'), 'HP:' + txt('txt-hp'));   // 站長：百分比拿掉，只留數字
     setTxt(el.mp.querySelector('span'), 'MP:' + txt('txt-mp'));
-    setTxt(el.exp.querySelector('span'), 'EXP ' + (txt('txt-exp') || (pctNum('bar-exp') + '%')));
+    // 經驗條：「等級 N」＋經驗百分比（小數 4 位，同天堂M）；百分比直接用核心同一條公式算（js/08：exp ÷ getExpReq(lv)）
+    if (hasP()) {
+      var _req = (typeof getExpReq === 'function') ? getExpReq(player.lv) : 0;
+      var _pct = player.lv >= 100 ? 100 : (_req > 0 && isFinite(_req) ? (player.exp / _req) * 100 : 0);
+      setTxt(el.exp.querySelector('.lv b'), String(player.lv));
+      setTxt(el.exp.querySelector('.pc'), Math.min(100, Math.max(0, _pct)).toFixed(4) + '%');
+    }
     setStyle(el.hp.querySelector('i'), 'width', pct('bar-hp'));
     setStyle(el.mp.querySelector('i'), 'width', pct('bar-mp'));
     setStyle(el.exp.querySelector('i'), 'width', pct('bar-exp'));
