@@ -460,6 +460,9 @@
       '.lsk2{display:flex;flex-direction:column;gap:6px;padding:6px;background:linear-gradient(#2a2622,#1c1916);border:1px solid #4d443b;border-radius:6px;color:#d8cfc2;box-sizing:border-box;}',
       /* 高度由 fitSkillBook() 量畫面剩下的空間填滿（格子在框裡捲，書籤／階數鈕／底部數值固定看得到）；量不到時的保底 */
       '#tab-skill .lsk2{min-height:320px;width:84%;max-width:330px;margin:0 auto;}',   /* 左右收窄成視窗大小、置中（站長：滿版太寬） */
+      /* 魔法書收窄後，外層分頁面板的黑底與框會露在左右兩側 → 開魔法分頁時拿掉（lmui-sktab 由 tick 依目前分頁切） */
+      'body.lmui-sktab #tab-content-panel{background:none !important;border-color:transparent !important;box-shadow:none !important;}',
+      'body.lmui-sktab #tab-skill{background:transparent !important;}',
       '.lsk2-tabs{display:flex;gap:4px;padding-left:44px;}',
       '.lsk2-tabs button{flex:1;height:38px;border:1px solid #4d443b;border-bottom:0;border-radius:6px 6px 0 0;background:linear-gradient(#2c2824,#1a1715);color:#8f857a;font-size:17px;letter-spacing:.08em;}',
       '.lsk2-tabs button.on{background:linear-gradient(#5a5047,#2f2a25);color:#f1e8da;border-color:#8a7b6a;text-shadow:0 1px 2px #000;}',
@@ -1828,6 +1831,7 @@
     if (game) { try { syncToolbar(); } catch (e) {} }
     try { syncBag(); } catch (e) {}
     try { fitSkillBook(); } catch (e) {}
+    try { toggleCls('lmui-sktab', game && activeRightTab() === 'skill' && document.body.classList.contains('mview-right')); } catch (e) {}
     var town = game && !inBattleMap() && inTownView();
     var battle = game && (inBattleMap() || town);   // 不看 mview-*：戰鬥畫面（村莊時＝村莊地圖）在任何分頁都留在上半
     toggleCls('lmui-town', town);
