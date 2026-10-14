@@ -303,12 +303,36 @@
     });
     setInterval(updateMailButton, 1000);   // 改名、回主選單、天堂M介面重建時跟著更新
   }
-  // 登入畫面「記住帳號密碼」勾選框：目前還沒有帳號系統，只記住勾選狀態本身（之後接帳號登入時由它決定要不要記）
-  var REMEMBER_KEY = 'lineage_login_remember';
+  // 登入畫面「記住帳號密碼」：勾著＝帳密存在本機、下次自動填回；取消勾＝連同存起來的帳密一起刪掉。
+  //   ⚠️ 目前沒有帳號系統，帳密只是先存著；之後接上真正的登入（伺服器）時，改成存「登入憑證」而不是明文密碼，
+  //      而且 github.io 同一個帳號底下的網站共用 localStorage，明文密碼不能留到那時候。
+  var REMEMBER_KEY = 'lineage_login_remember', CRED_KEY = 'lineage_login_saved';
+  // 走遊戲自己的儲存函式（打包桌面版存在檔案、網頁版存 localStorage）；沒有就直接用 localStorage
+  function lsGet(k) { return typeof _lsGet === 'function' ? _lsGet(k) : localStorage.getItem(k); }
+  function lsSet(k, v) { if (typeof _lsSet === 'function') _lsSet(k, v); else localStorage.setItem(k, v); }
+  function lsRm(k) { if (typeof _lsRemove === 'function') _lsRemove(k); else localStorage.removeItem(k); }
   function bindRemember() {
-    var cb = document.getElementById('login-remember-cb'); if (!cb) return;
-    try { cb.checked = localStorage.getItem(REMEMBER_KEY) === '1'; } catch (e) {}
-    cb.addEventListener('change', function () { try { localStorage.setItem(REMEMBER_KEY, cb.checked ? '1' : '0'); } catch (e) {} });
+    var cb = document.getElementById('login-remember-cb'), acc = document.getElementById('login-account'), pw = document.getElementById('login-password');
+    if (!cb || !acc || !pw) return;
+    try {
+      cb.checked = lsGet(REMEMBER_KEY) === '1';
+      var saved = cb.checked ? JSON.parse(lsGet(CRED_KEY) || 'null') : null;
+      if (saved) { acc.value = saved.a || ''; pw.value = saved.p || ''; }
+    } catch (e) {}
+    function store() {
+      try {
+        if (cb.checked) { lsSet(REMEMBER_KEY, '1'); lsSet(CRED_KEY, JSON.stringify({ a: acc.value, p: pw.value })); }
+        else { lsSet(REMEMBER_KEY, '0'); lsRm(CRED_KEY); }
+      } catch (e) {}
+    }
+    cb.addEventListener('change', store);
+    acc.addEventListener('input', function () { if (cb.checked) store(); });
+    pw.addEventListener('input', function () { if (cb.checked) store(); });
+    var go = document.getElementById('btn-start-menu');
+    if (go) go.addEventListener('click', store);
+    [acc, pw].forEach(function (el) {   // 在輸入框按 Enter＝按登錄
+      el.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing && go) { e.preventDefault(); el.blur(); go.click(); } });
+    });
   }
   function onReady() { copyWeaponTags(); applyHome(); hookGifts(); bindRemember(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
