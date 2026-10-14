@@ -156,6 +156,10 @@
             'body.m-mobile.mview-left #col-left{display:flex !important;}',
             'body.m-mobile.mview-center #col-center{display:flex !important;}',
             'body.m-mobile.mview-right #col-right{display:flex !important;}',
+            // 戰鬥特效圖層(#vfx-layer:傷害數字、命中/死亡特效)是 position:fixed 掛在 #app-stage,不跟著 #col-center 藏
+            //   → 打怪時切到背包/能力等畫面,特效會浮在那些畫面上。不在戰鬥那一欄就藏起來;用 visibility 不用 display,
+            //   特效動畫照跑、animationend 照觸發,元素照常自己清掉,切回戰鬥不會一次冒出一堆舊特效。
+            'body.m-mobile:not(.mview-center) #vfx-layer{visibility:hidden !important;}',
             // 底部讓位：--m-nav-h=導覽實測高度(含 iPhone safe-area 的 env padding；量測見 applyNavH)。
             //   寫死 60px 在實機 iPhone 會不夠(導覽 ~59px + home 條 safe-area ~34px)→ 清單最後一兩列被蓋。
             'body.m-mobile #game-screen{padding-bottom:calc(8px + var(--m-nav-h,0px)) !important;}',
