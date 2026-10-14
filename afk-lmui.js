@@ -266,14 +266,8 @@
       'body.lmui-chatbig #lmui-tabs .more{color:#fff6dc;border-color:#b8955a;}',
       '#lmui-lines{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:2px 5px;}',
       '#lmui-lines>*{margin:0 !important;padding:0 !important;font-size:13px !important;line-height:1.4 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none !important;border:0 !important;}',
-      '#lmui-input{display:flex;gap:4px;align-items:center;padding:2px 3px 3px;flex:none;}',
-      '#lmui-say{flex:1;min-width:0;padding:4px 8px;border:1px solid #3d3326;background:rgba(0,0,0,.6);color:#eee;font-size:17px;line-height:1.1;font-family:inherit;outline:none;}',   /* 16px：iOS 小於 16px 的輸入框一聚焦就整頁放大 */
-      '#lmui-say::placeholder{color:#7d7058;font-size:14px;}',
-      '#lmui-say,#lmui-send{display:none !important;}#lmui-input{justify-content:flex-end;}',   /* 世界頻道虛擬玩家聊天已關（js/26 WC_FAKE_CHAT_CLOSED）：只留回村 */
-      '#lmui-send{flex:none;padding:3px 10px;border:1px solid #2563eb;background:linear-gradient(#1e3a8a,#172554);color:#dbeafe;font-size:13px;}',
       /* 戰鬥地圖裡不用 afk-mobile 的完整日誌面板（聊天框已取代）；村莊沒有聊天框，照舊用面板 */
       'body.lmui-battle #m-log-sheet{display:none !important;}',
-      '#lmui-town{flex:none;padding:3px 10px;border:1px solid #7a6440;background:linear-gradient(#5a4528,#2a1f10);color:#f0e2bf;font-size:13px;}',
       /* 經驗：導覽列正上方一條細線＋百分比 */
       '#lmui-exp{position:relative;flex:none;height:13px;margin:0 6px;background:#0b0805;border:1px solid #3d3121;border-radius:2px;overflow:hidden;}',
       '#lmui-exp span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 11px/1 Consolas,"Courier New",monospace;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000;}',
@@ -613,7 +607,6 @@
           '<div id="lmui-tabs"><button type="button" class="more" data-t="big" aria-label="放大聊天框">▲</button><button type="button" data-t="sys">一般</button><button type="button" data-t="world">世界</button><button type="button" data-t="combat">戰鬥</button><button type="button" data-t="drop">掉落</button><button type="button" class="flt" data-t="filter">篩選</button></div>' +
           '<div id="lmui-flt"></div>' +
           '<div id="lmui-lines"></div>' +
-          '<div id="lmui-input"><input id="lmui-say" type="text" maxlength="60" autocomplete="off" enterkeyhint="send" placeholder="向世界頻道發問"><button type="button" id="lmui-send">發送</button><button type="button" id="lmui-town">回村</button></div>' +
         '</div>' +
       '</div>';
     document.body.appendChild(hud);
@@ -634,7 +627,6 @@
       var p = !isPaused(); setPaused(p);
       try { logSys(p ? '⏸ 已暫停，再按一次 AUTO 繼續' : '▶ 自動戰鬥繼續'); } catch (e) {}
     });
-    $('lmui-town').addEventListener('click', function (e) { e.stopPropagation(); try { returnToTown(); } catch (err) { console.warn('[AFK-lmui] 回村失敗', err); } });
     el.tabs.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-t]'); if (!b) return;
       e.stopPropagation();
@@ -643,8 +635,6 @@
       if (t === 'filter') { toggleFilter(); return; }
       chatTab = t; lastChatSig = ''; renderChat(true);
     });
-    $('lmui-send').addEventListener('click', sendWorld);
-    $('lmui-say').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); sendWorld(); } });
     // 捲回最底時，把捲上去那段期間累積的新訊息補上
     el.lines.addEventListener('scroll', function () { if (chatDirty && linesAtBottom()) { chatDirty = false; renderChat(); } }, { passive: true });
     bindHot();
@@ -957,21 +947,11 @@
       if (x) { try { x.click(); } catch (e) {} }
     }
   }
-  // 聊天框取代完整日誌面板：篩選（搬入核心那排篩選鈕）、世界頻道發問、工具列「聊天」
+  // 聊天框取代完整日誌面板：篩選（搬入核心那排篩選鈕）、工具列「聊天」（世界頻道發問與回村鈕已拿掉，打開聊天不再叫出鍵盤）
   function toggleFilter() {
     var box = $('lmui-flt'), pills = $('combat-filter-pills');
     if (box && pills && pills.parentNode !== box) box.appendChild(pills);   // 只搬一次；id 不變，核心的 toggleCombatFilter 等照舊找得到
     document.body.classList.toggle('lmui-flt');
-  }
-  function sendWorld() {
-    var say = $('lmui-say'), src = $('world-input');
-    var v = say ? say.value.trim() : '';
-    if (!v || !src || typeof worldChannelAsk !== 'function') return;
-    src.value = v;
-    try { worldChannelAsk(); } catch (e) { console.warn('[AFK-lmui] 世界頻道發問失敗', e); return; }
-    say.value = '';
-    chatTab = 'world'; lastChatSig = ''; chatDirty = true;
-    try { renderChat(true); } catch (e) {}
   }
   function openChat() {
     if (!document.body.classList.contains('lmui-battle')) { chatTab = 'world'; openFullLog(); return; }   // 村莊沒有聊天框 → 照舊開日誌面板
