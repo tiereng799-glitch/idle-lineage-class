@@ -2037,9 +2037,9 @@ function _asEquipType(d) {
     if (d.type === 'acc') return 'acc';
     return null;
 }
-// 自動賣出清單只賣「白板」：同款但祝福過／強化過／有屬性／遠古／套裝效果的留著（站長：祝福的被一起賣掉 → 強化、屬性也一起保留）
+// 自動賣出清單只賣「白板」：同款但祝福／詛咒／強化過／有屬性／遠古／套裝效果的留著（站長：祝福的被一起賣掉 → 強化、屬性、詛咒也一起保留）
 function _asListKeeps(i) {
-    return i.bless === true || (Number(i.en) || 0) > 0 || !!i.attr || !!(i.anc && !DISABLE_ANC) || !!i.seteff;
+    return !!i.bless || (Number(i.en) || 0) > 0 || !!i.attr || !!(i.anc && !DISABLE_ANC) || !!i.seteff;
 }
 function _autoSellDecision(i, ruleSnapshot, craftRemain) {   // 🔧 v2.6.77 ruleSnapshot：預覽用「快照複本」判定，不讀（也不寫）live 規則；v2.6.91 craftRemain：製作素材保留額度（逐件扣）
     let r = ruleSnapshot || getAutoSellRules(), d = DB.items[i.id];
