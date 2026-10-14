@@ -1628,7 +1628,7 @@ button.classic-skill-cell { cursor:pointer; }
     #battle-view.area-fit #mob-list:has(.boss-slot),
     #battle-view.area-fit #mob-list:has(.mob-back) { height: clamp(118px, 42vw, 185px); gap: 4px !important; }
     #battle-view.area-fit .mob-target { padding: 3px; min-width: 0; }
-    #battle-view .mob-name { font-size: 11px; line-height: 1.1; }
+    #battle-view .mob-name { font-size: 13px; line-height: 1.1; }   /* 手機看得清楚(原 11px) */
     #town-npc-map { width: 100%; height: 100%; }
 
     #log-row { flex: 0 0 auto !important; min-height: 0; flex-direction: column; gap: 8px !important; }

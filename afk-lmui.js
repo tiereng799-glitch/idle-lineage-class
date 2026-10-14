@@ -125,30 +125,30 @@
       B + '#m-status,' + B + '#mobile-vitals,' + B + '#m-skillbar,' + B + '#m-battle-buffs{display:none !important;}',
       /* 死亡視窗（天堂M）：重新開始／離開／取消＋狩獵紀錄，蓋在戰鬥畫面中央；按「取消」收起後只留頭頂那顆「重新開始」 */
       'body.lmui-popover #lmui-vit{visibility:hidden !important;}',
-      '#lmui-death{display:none;position:fixed;left:50%;top:calc(var(--orig-bar-h,0px) + 48px);max-height:calc(100dvh - var(--orig-bar-h,0px) - 48px - var(--m-nav-h,0px) - 4px);overflow:auto;transform:translateX(-50%);z-index:60;width:min(250px,78vw);padding:8px;background:linear-gradient(#24211d,#121110);border:1px solid #57514a;border-radius:3px;box-shadow:0 0 0 1px #000,0 10px 30px rgba(0,0,0,.85);color:#e9e2d4;font-size:13px;text-shadow:0 1px 1px #000;}',
+      '#lmui-death{display:none;position:fixed;left:50%;top:calc(var(--orig-bar-h,0px) + 48px);max-height:calc(100dvh - var(--orig-bar-h,0px) - 48px - var(--m-nav-h,0px) - 4px);overflow:auto;transform:translateX(-50%);z-index:60;width:min(250px,78vw);padding:8px;background:linear-gradient(#24211d,#121110);border:1px solid #57514a;border-radius:3px;box-shadow:0 0 0 1px #000,0 10px 30px rgba(0,0,0,.85);color:#e9e2d4;font-size:15px;text-shadow:0 1px 1px #000;}',
       'body.lmui-battle.lmui-dead:not(.lmui-deathx) #lmui-death,body.lmui-exitwin #lmui-death{display:block;}',
       'html body.lmui-battle.lmui-dead:not(.lmui-deathx) #map-view-panel>.panel-header{display:none !important;}',
       '#lmui-death button{font-family:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}',
       '.ld-btns{display:flex;flex-direction:column;gap:5px;}',
-      '.ld-btns button{height:32px;font-size:14px;font-weight:700;letter-spacing:2px;color:#f1ead9;background:linear-gradient(#4a4741,#2b2925 55%,#22201d);border:1px solid #6b665d;border-radius:2px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 1px 2px #000;}',
+      '.ld-btns button{height:32px;font-size:16px;font-weight:700;letter-spacing:2px;color:#f1ead9;background:linear-gradient(#4a4741,#2b2925 55%,#22201d);border:1px solid #6b665d;border-radius:2px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 1px 2px #000;}',
       '.ld-btns button:active{filter:brightness(1.3);}',
       '.ld-stats{margin-top:8px;padding:7px 8px 6px;background:rgba(0,0,0,.35);border:1px solid #3d3933;border-radius:2px;}',
       '.ld-row{display:flex;align-items:center;gap:6px;height:21px;}',
       '.ld-row span{flex:1;color:#cfc6b4;}',
-      '.ld-row span::before{content:"◆";margin-right:4px;font-size:9px;color:#6fa8dc;vertical-align:1px;}',
+      '.ld-row span::before{content:"◆";margin-right:4px;font-size:12px;color:#6fa8dc;vertical-align:1px;}',
       '.ld-row b{font-weight:600;color:#fff;font-variant-numeric:tabular-nums;}',
-      '.ld-look{width:20px;height:18px;padding:0;font-size:11px;line-height:16px;background:#2e2b27;border:1px solid #5a554c;border-radius:2px;}',
-      '.ld-items{max-height:90px;overflow:auto;margin:3px 0 2px;padding:3px 6px;background:rgba(0,0,0,.4);border:1px solid #33302b;font-size:12px;}',
+      '.ld-look{width:20px;height:18px;padding:0;font-size:13px;line-height:16px;background:#2e2b27;border:1px solid #5a554c;border-radius:2px;}',
+      '.ld-items{max-height:90px;overflow:auto;margin:3px 0 2px;padding:3px 6px;background:rgba(0,0,0,.4);border:1px solid #33302b;font-size:14px;}',
       '.ld-items div{display:flex;justify-content:space-between;gap:8px;line-height:18px;}',
       '.ld-items b{font-weight:600;}',
       '.ld-items .ld-none{color:#8d8577;justify-content:center;}',
-      '.ld-reset{display:block;margin:6px 0 0;width:64px;height:24px;font-size:12px;font-weight:700;color:#e9e2d4;background:linear-gradient(#45423c,#26241f);border:1px solid #6b665d;border-radius:2px;}',
+      '.ld-reset{display:block;margin:6px 0 0;width:64px;height:24px;font-size:14px;font-weight:700;color:#e9e2d4;background:linear-gradient(#45423c,#26241f);border:1px solid #6b665d;border-radius:2px;}',
       /* 取消後：標題列只留「祈求復活」一顆，改名「重新開始」，浮在角色身上（位置由 placeDeadBtn 量） */
       'html body.lmui-battle.lmui-dead.lmui-deathx #map-view-panel>.panel-header{display:block !important;position:fixed !important;left:var(--lmui-dead-x,50%) !important;top:var(--lmui-dead-y,30%) !important;right:auto !important;bottom:auto !important;width:auto !important;height:auto !important;min-height:0 !important;transform:translate(-50%,-100%) !important;z-index:60 !important;padding:0 !important;margin:0 !important;background:none !important;border:0 !important;box-shadow:none !important;}',
       'html body.lmui-battle.lmui-dead.lmui-deathx #map-view-panel>.panel-header>:not(:has(#btn-revive)),html body.lmui-battle.lmui-dead.lmui-deathx #map-view-panel>.panel-header>div>:not(#btn-revive){display:none !important;}',
       'html body.lmui-battle.lmui-dead.lmui-deathx #map-view-panel>.panel-header>div{display:block !important;width:auto !important;}',
       'html body.lmui-battle.lmui-dead.lmui-deathx #btn-revive{display:block !important;flex:none !important;width:auto !important;margin:0 !important;padding:10px 28px !important;font-size:0 !important;line-height:0 !important;white-space:nowrap !important;background:linear-gradient(#e7c56f,#a8822f) !important;border:1px solid #f0d58c !important;border-radius:6px !important;box-shadow:0 0 14px rgba(240,213,140,.55),0 3px 10px rgba(0,0,0,.8) !important;}',
-      'html body.lmui-battle.lmui-dead.lmui-deathx #btn-revive::after{content:"重新開始";font-size:16px;line-height:20px;font-weight:700;color:#1d1407;letter-spacing:1px;}',
+      'html body.lmui-battle.lmui-dead.lmui-deathx #btn-revive::after{content:"重新開始";font-size:17px;line-height:20px;font-weight:700;color:#1d1407;letter-spacing:1px;}',
       /* 地圖面板（上游標題列：回村/瞬移/黑市/地圖選單/復活鈕），點地圖名稱才出現 */
       'body.lmui-battle.lmui-map:not(.lmui-dead) #map-view-panel>.panel-header{display:flex !important;position:fixed !important;top:calc(var(--lmui-mtop) + 8px) !important;left:10px !important;right:10px !important;z-index:60 !important;flex-wrap:wrap !important;gap:8px !important;padding:10px !important;background:rgba(14,12,10,.92) !important;border:1px solid var(--lmui-line) !important;border-radius:6px !important;box-shadow:0 8px 30px rgba(0,0,0,.7) !important;height:auto !important;}',
 
@@ -166,36 +166,36 @@
       '#lmui-face img.logo{object-fit:contain;object-position:center;transform:none;padding:4px;}',
       '#lmui-face{position:relative;}',
       '#lmui-face .pic{cursor:pointer;}',
-      '#lmui-lv{font-size:12px;font-weight:700;color:#e8d9b0;}',   /* 等級跟在名字右邊 */
-      '#lmui-buffbtn{margin-top:3px;width:22px;height:14px;padding:0;font-size:10px;line-height:12px;color:#ddd;background:rgba(0,0,0,.55);border:1px solid var(--lmui-line);border-radius:2px;}',
-      '#lmui-stats{display:flex;flex-direction:column;gap:2px;padding-top:2px;font-size:11px;}',
+      '#lmui-lv{font-size:14px;font-weight:700;color:#e8d9b0;}',   /* 等級跟在名字右邊 */
+      '#lmui-buffbtn{margin-top:3px;width:22px;height:14px;padding:0;font-size:12px;line-height:12px;color:#ddd;background:rgba(0,0,0,.55);border:1px solid var(--lmui-line);border-radius:2px;}',
+      '#lmui-stats{display:flex;flex-direction:column;gap:2px;padding-top:2px;font-size:13px;}',
       '#lmui-stats .row{display:flex;gap:9px;align-items:baseline;white-space:nowrap;}',
       '#lmui-stats .k{color:#bdbdbd;margin-right:3px;}',
       '#lmui-stats b{color:#fff;font-weight:600;}',
       '#lmui-align .k,#lmui-align b{color:#d1d5db;}#lmui-align.justice .k,#lmui-align.justice b{color:#60a5fa;}#lmui-align.evil .k,#lmui-align.evil b{color:#f87171;}',
       '#lmui-gold b{color:#f5d77b;}',
       /* 角色名字(點一下改名；沒名字的舊角色顯示灰色「（點此取名）」) */
-      '#lmui-name{all:unset;cursor:pointer;font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 2px #000;max-width:150px;overflow:hidden;text-overflow:ellipsis;}',
+      '#lmui-name{all:unset;cursor:pointer;font-size:15px;font-weight:700;color:#fff;text-shadow:0 1px 2px #000;max-width:150px;overflow:hidden;text-overflow:ellipsis;}',
       '#lmui-name.empty{color:#94a3b8;font-weight:400;}',
-      '#lmui-name-input{width:96px;font-size:13px;padding:1px 4px;border-radius:3px;border:1px solid #d9bf86;background:#020617;color:#fff;}',
+      '#lmui-name-input{width:96px;font-size:15px;padding:1px 4px;border-radius:3px;border:1px solid #d9bf86;background:#020617;color:#fff;}',
       '#lmui-name-ok{margin-left:4px;padding:0 6px;font-weight:700;color:#4ade80;background:rgba(0,0,0,.6);border:1px solid #4ade80;border-radius:3px;}',
 
       /* 右上：地圖名稱框＋小地圖 */
       '#lmui-tr{position:absolute;top:6px;right:6px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;}',
       '#lmui-mapname{min-width:104px;max-width:160px;padding:3px 10px 3px;border:1px solid #7a6440;border-radius:3px;background:linear-gradient(#4a3c2a,#211910);color:#f0e2bf;text-align:center;box-shadow:inset 0 1px 0 rgba(255,235,190,.2),0 1px 4px #000;}',
-      '#lmui-mapname b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-      '#lmui-mapname small{display:block;font-size:9px;color:#bfae86;line-height:1.2;}',
+      '#lmui-mapname b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '#lmui-mapname small{display:block;font-size:12px;color:#bfae86;line-height:1.2;}',
       '#lmui-mini{display:none !important;position:relative;width:92px;height:92px;border-radius:50%;padding:0;border:1px solid rgba(255,255,255,.22);background:radial-gradient(circle,rgba(30,30,30,.35),rgba(0,0,0,.6));box-shadow:0 0 0 1px rgba(0,0,0,.6),inset 0 0 14px rgba(0,0,0,.7);overflow:hidden;}',
       '#lmui-mini i{position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#ef4444;box-shadow:0 0 4px #ef4444;}',
       '#lmui-mini i.me{width:7px;height:7px;margin:-3.5px 0 0 -3.5px;background:#fef3c7;box-shadow:0 0 5px #fde68a;}',
       '#lmui-mini i.boss{width:8px;height:8px;margin:-4px 0 0 -4px;background:#f97316;box-shadow:0 0 6px #f97316;}',
-      '#lmui-mini .moon{position:absolute;right:10px;top:6px;font-size:10px;opacity:.8;}',
+      '#lmui-mini .moon{position:absolute;right:10px;top:6px;font-size:12px;opacity:.8;}',
 
       /* 半透明圓鈕（天堂M那種玻璃感） */
       '.lmui-round{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:radial-gradient(circle at 50% 40%,rgba(60,60,60,.35),rgba(0,0,0,.45) 75%);color:rgba(255,255,255,.85);box-shadow:inset 0 0 14px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:0;font-weight:600;}',
       '.lmui-round:active{background:radial-gradient(circle at 50% 40%,rgba(120,110,90,.45),rgba(0,0,0,.45) 75%);}',
       /* AUTO：小紅球，壓在血條上緣正中 */
-      '#lmui-auto{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;width:40px;height:40px;padding:0;border-radius:50%;font:700 10px/1 inherit;letter-spacing:.3px;border:1px solid rgba(255,200,150,.7);background:radial-gradient(circle at 40% 35%,#f87171,#991b1b 55%,#3b0a0a);color:#fff;text-shadow:0 1px 1px #000;box-shadow:0 0 10px rgba(239,68,68,.55),0 1px 4px #000;cursor:pointer;}',
+      '#lmui-auto{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;width:40px;height:40px;padding:0;border-radius:50%;font:700 12px/1 inherit;letter-spacing:.3px;border:1px solid rgba(255,200,150,.7);background:radial-gradient(circle at 40% 35%,#f87171,#991b1b 55%,#3b0a0a);color:#fff;text-shadow:0 1px 1px #000;box-shadow:0 0 10px rgba(239,68,68,.55),0 1px 4px #000;cursor:pointer;}',
       '#lmui-auto:active{filter:brightness(1.3);}',
       /* AUTO 暫停中：灰掉、不發光 */
       '#lmui-auto.off{border-color:rgba(255,255,255,.35);background:radial-gradient(circle at 40% 35%,#9ca3af,#4b5563 55%,#1f2937);box-shadow:0 1px 4px #000;color:#e5e7eb;}',
@@ -214,7 +214,7 @@
       '.lmui-cp i b{display:block;height:100%;background:#ef4444;}',
       '.lmui-cp.down{filter:grayscale(1);opacity:.55;}',
       '.lmui-cp.on{border-color:#fde68a;box-shadow:0 0 6px #fde68a;}',
-      '#lmui-comp-pop{position:absolute;left:4px;bottom:calc(100% + 36px);min-width:150px;padding:6px 9px;background:rgba(12,9,6,.94);border:1px solid var(--lmui-line);border-radius:6px;font-size:12px;line-height:1.6;color:#eee;z-index:6;white-space:nowrap;}',
+      '#lmui-comp-pop{position:absolute;left:4px;bottom:calc(100% + 36px);min-width:150px;padding:6px 9px;background:rgba(12,9,6,.94);border:1px solid var(--lmui-line);border-radius:6px;font-size:14px;line-height:1.6;color:#eee;z-index:6;white-space:nowrap;}',
       '#lmui-comp-pop.hidden{display:none;}',
       '#lmui-comp-pop .t{color:#fde68a;font-weight:700;}',
       '#lmui-bars::before{content:"";position:absolute;inset:0;background:url("assets/character/血條底圖.png") center/100% 100% no-repeat;filter:sepia(1) saturate(1.6) hue-rotate(-12deg) brightness(.72) contrast(1.15);z-index:0;pointer-events:none;}',
@@ -223,36 +223,36 @@
       '.lmui-bar i{position:absolute;left:0;top:0;bottom:0;width:0;transition:width .25s;}',
       '#lmui-hp i{background:linear-gradient(#ff7a6a,#c81e1e 35%,#7a0b0b 75%,#4a0505);}',
       '#lmui-mp i{background:linear-gradient(#7aa8ff,#2453c8 35%,#10307a 75%,#081a4a);}',
-      '.lmui-bar span{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;font:700 10px/1 Consolas,"Courier New",monospace;letter-spacing:.5px;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;}',
+      '.lmui-bar span{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;font:700 12px/1 Consolas,"Courier New",monospace;letter-spacing:.5px;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;}',
       '#lmui-hot{display:grid;grid-template-columns:repeat(' + HOT_ROW + ',1fr) 24px;gap:3px;flex:none;}',
       '#lmui-hot[data-mode="0"] .lmui-slot.r2,#lmui-hot[data-mode="1"] .lmui-slot.r1{display:none;}',
       '#lmui-hot[data-mode="2"] .lmui-slot{max-height:40px;}',   /* 兩排時矮一點，聊天框才不會被擠光 */
       '#lmui-hot[data-mode="2"] #lmui-hotmode{grid-row:1 / span 2;max-height:none;}',
-      '#lmui-hotmode{grid-column:' + (HOT_ROW + 1) + ';grid-row:1;padding:0;border:1px solid #5d4c33;border-radius:4px;background:linear-gradient(#2a2119,#0f0c09);color:#f0e2bf;font-size:11px;line-height:1.1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;max-height:54px;}',
-      '#lmui-hotmode b{font-size:13px;}',
+      '#lmui-hotmode{grid-column:' + (HOT_ROW + 1) + ';grid-row:1;padding:0;border:1px solid #5d4c33;border-radius:4px;background:linear-gradient(#2a2119,#0f0c09);color:#f0e2bf;font-size:13px;line-height:1.1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;max-height:54px;}',
+      '#lmui-hotmode b{font-size:15px;}',
       '#lmui-hotpick{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:12px;}',
       '#lmui-hotpick .box{width:100%;max-width:380px;max-height:80vh;display:flex;flex-direction:column;background:#0f0c09;border:1px solid #b7791f;border-radius:10px;overflow:hidden;color:#eee;}',
-      '#lmui-hotpick .hd{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #4a3f30;color:#fbbf24;font-weight:700;font-size:16px;}',
-      '#lmui-hotpick .hd button{background:none;border:0;color:#aaa;font-size:18px;cursor:pointer;}',
+      '#lmui-hotpick .hd{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #4a3f30;color:#fbbf24;font-weight:700;font-size:17px;}',
+      '#lmui-hotpick .hd button{background:none;border:0;color:#aaa;font-size:19px;cursor:pointer;}',
       '#lmui-hotpick .bd{overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;}',
-      '#lmui-hotpick .sec{color:#d9bf86;font-size:12px;margin-top:4px;}',
+      '#lmui-hotpick .sec{color:#d9bf86;font-size:14px;margin-top:4px;}',
       '#lmui-hotpick .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px;}',
-      '#lmui-hotpick .opt{display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid #4a3f30;border-radius:6px;background:#1a1612;color:#eee;font-size:13px;text-align:left;cursor:pointer;min-width:0;}',
+      '#lmui-hotpick .opt{display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid #4a3f30;border-radius:6px;background:#1a1612;color:#eee;font-size:15px;text-align:left;cursor:pointer;min-width:0;}',
       '#lmui-hotpick .opt.on{border-color:#fde68a;box-shadow:0 0 6px rgba(253,230,138,.6);}',
       '#lmui-hotpick .opt img{width:26px;height:26px;object-fit:contain;flex:none;}',
       '#lmui-hotpick .opt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
       '#lmui-hotpick .ft{display:flex;gap:6px;padding:8px;border-top:1px solid #4a3f30;}',
       '#lmui-hotpick .ft button{flex:1;padding:8px;border:1px solid #6b5636;border-radius:6px;background:#1a1612;color:#f0e2bf;font-weight:700;cursor:pointer;}',
       '.lmui-slot{position:relative;aspect-ratio:1;max-height:54px;border:1px solid #5d4c33;background:linear-gradient(#1d1813,#0a0806);box-shadow:inset 0 0 6px #000;padding:0;display:flex;align-items:center;justify-content:center;}',
-      '.lmui-slot .fk{position:absolute;left:1px;top:1px;padding:0 3px;font-size:8px;line-height:11px;color:#f0e2bf;background:rgba(0,0,0,.7);border:1px solid #6b5636;border-radius:6px;z-index:2;}',
+      '.lmui-slot .fk{position:absolute;left:1px;top:1px;padding:0 3px;font-size:11px;line-height:11px;color:#f0e2bf;background:rgba(0,0,0,.7);border:1px solid #6b5636;border-radius:6px;z-index:2;}',
       '.lmui-slot img{width:86%;height:86%;object-fit:contain;}',
-      '.lmui-slot .n{position:absolute;right:2px;bottom:0;font-size:10px;font-weight:700;color:#fff;z-index:2;}',
+      '.lmui-slot .n{position:absolute;right:2px;bottom:0;font-size:12px;font-weight:700;color:#fff;z-index:2;}',
       '.lmui-slot.is-off img{opacity:.4;}',
-      '.lmui-slot .cd{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.65);color:#fca5a5;font-size:13px;font-weight:700;}',
+      '.lmui-slot .cd{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.65);color:#fca5a5;font-size:15px;font-weight:700;}',
       '.lmui-slot.is-cd .cd{display:flex;}',
       '#lmui-chat{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:rgba(0,0,0,.5);overflow:hidden;}',
       '#lmui-tabs{display:flex;gap:2px;padding:2px 2px 0;flex:none;align-items:stretch;}',
-      '#lmui-tabs button{flex:1;padding:1px 0;font-size:10px;color:#c9b88f;background:linear-gradient(#3b3022,#1c160e);border:1px solid #4d3e29;border-radius:2px;}',
+      '#lmui-tabs button{flex:1;padding:1px 0;font-size:12px;color:#c9b88f;background:linear-gradient(#3b3022,#1c160e);border:1px solid #4d3e29;border-radius:2px;}',
       '#lmui-tabs button.on{color:#fff6dc;background:linear-gradient(#7a5f35,#3f2f18);border-color:#b8955a;}',
       '#lmui-tabs .more{flex:0 0 22px;}',
       '#lmui-tabs .flt{flex:0 0 38px;}',
@@ -265,17 +265,17 @@
       'body.lmui-chatbig #lmui-hot{display:none !important;}',   /* 血條在固定狀態列裡，放大聊天框時不收 */
       'body.lmui-chatbig #lmui-tabs .more{color:#fff6dc;border-color:#b8955a;}',
       '#lmui-lines{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:2px 5px;}',
-      '#lmui-lines>*{margin:0 !important;padding:0 !important;font-size:11px !important;line-height:1.4 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none !important;border:0 !important;}',
+      '#lmui-lines>*{margin:0 !important;padding:0 !important;font-size:13px !important;line-height:1.4 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none !important;border:0 !important;}',
       '#lmui-input{display:flex;gap:4px;align-items:center;padding:2px 3px 3px;flex:none;}',
-      '#lmui-say{flex:1;min-width:0;padding:4px 8px;border:1px solid #3d3326;background:rgba(0,0,0,.6);color:#eee;font-size:16px;line-height:1.1;font-family:inherit;outline:none;}',   /* 16px：iOS 小於 16px 的輸入框一聚焦就整頁放大 */
-      '#lmui-say::placeholder{color:#7d7058;font-size:12px;}',
-      '#lmui-send{flex:none;padding:3px 10px;border:1px solid #2563eb;background:linear-gradient(#1e3a8a,#172554);color:#dbeafe;font-size:11px;}',
+      '#lmui-say{flex:1;min-width:0;padding:4px 8px;border:1px solid #3d3326;background:rgba(0,0,0,.6);color:#eee;font-size:17px;line-height:1.1;font-family:inherit;outline:none;}',   /* 16px：iOS 小於 16px 的輸入框一聚焦就整頁放大 */
+      '#lmui-say::placeholder{color:#7d7058;font-size:14px;}',
+      '#lmui-send{flex:none;padding:3px 10px;border:1px solid #2563eb;background:linear-gradient(#1e3a8a,#172554);color:#dbeafe;font-size:13px;}',
       /* 戰鬥地圖裡不用 afk-mobile 的完整日誌面板（聊天框已取代）；村莊沒有聊天框，照舊用面板 */
       'body.lmui-battle #m-log-sheet{display:none !important;}',
-      '#lmui-town{flex:none;padding:3px 10px;border:1px solid #7a6440;background:linear-gradient(#5a4528,#2a1f10);color:#f0e2bf;font-size:11px;}',
+      '#lmui-town{flex:none;padding:3px 10px;border:1px solid #7a6440;background:linear-gradient(#5a4528,#2a1f10);color:#f0e2bf;font-size:13px;}',
       /* 經驗：導覽列正上方一條細線＋百分比 */
-      '#lmui-exp{position:relative;flex:none;height:9px;margin:0 6px;background:#0b0805;border:1px solid #3d3121;border-radius:2px;overflow:hidden;}',
-      '#lmui-exp span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 8px/1 Consolas,"Courier New",monospace;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000;}',
+      '#lmui-exp{position:relative;flex:none;height:13px;margin:0 6px;background:#0b0805;border:1px solid #3d3121;border-radius:2px;overflow:hidden;}',
+      '#lmui-exp span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 11px/1 Consolas,"Courier New",monospace;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000;}',
       '#lmui-exp i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#a16207,#facc15);}',
 
       /* ── 右欄面板（能力/魔法/背包/設定）拉高：從頭像列下方一路到工具列，蓋住戰鬥畫面下半與血條 ──
@@ -316,7 +316,7 @@
       'html body.lmui-bag #tab-content-panel .classic-icon-box{position:static !important;width:66% !important;height:66% !important;flex:0 0 auto !important;}',
       'html body.lmui-bag #tab-content-panel .classic-icon-box img{width:100% !important;height:100% !important;object-fit:contain;filter:drop-shadow(0 1px 1px #000);}',
       /* 角落數字（數量金色/強化藍色，上游配色）：afk-invlist 條列式把它藏了（數量寫在名稱裡），方格只剩圖示，要叫回來 */
-      'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item .classic-icon-corner-value{display:block !important;position:absolute !important;right:3px !important;bottom:2px !important;left:auto !important;top:auto !important;font-size:12px !important;background:none !important;}',
+      'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item .classic-icon-corner-value{display:block !important;position:absolute !important;right:3px !important;bottom:2px !important;left:auto !important;top:auto !important;font-size:14px !important;background:none !important;}',
       /* 勾選框等其他子元素（快速強化/廢品模式）縮到右上角 */
       'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item>:not(.classic-item-main){position:absolute !important;top:2px;right:2px;transform:scale(.85);transform-origin:top right;}',
       /* ── 背包「自動賣出」分類：核心的自動販賣規則視窗（#autosell-rule-modal）搬進面板裡就地顯示 ──
@@ -335,37 +335,37 @@
       '#lmui-mobinfo{display:none;position:absolute;left:var(--lmui-pop-side);right:var(--lmui-pop-side);top:calc(var(--lmui-pop-top) - var(--lmui-bar));bottom:auto;max-height:calc(100dvh - var(--lmui-pop-top) - var(--lmui-pop-bot));z-index:8;flex-direction:column;padding:12px 12px 8px;background:linear-gradient(#211a12,#0f0b08);border:1px solid #8a6a3a;border-radius:10px;box-shadow:0 0 0 100vmax rgba(0,0,0,.55),0 10px 40px rgba(0,0,0,.9);color:#eee;text-shadow:none;}',
       'body.lmui-battle.lmui-mobinfo #lmui-mobinfo{display:flex;}',
       '.mi-hd{display:flex;align-items:baseline;gap:8px;padding-bottom:6px;border-bottom:1px solid #3d3121;}',
-      '.mi-name{font-size:16px;font-weight:700;color:#fff;}',
+      '.mi-name{font-size:17px;font-weight:700;color:#fff;}',
       '.mi-name.boss{color:#f87171;}',
-      '.mi-lv{font-size:12px;color:#e8b04a;}',
-      '.mi-x{margin-left:auto;width:26px;height:26px;border:1px solid #5a4630;border-radius:4px;background:#1c150e;color:#d6c7a5;font-size:13px;line-height:1;cursor:pointer;}',
+      '.mi-lv{font-size:14px;color:#e8b04a;}',
+      '.mi-x{margin-left:auto;width:26px;height:26px;border:1px solid #5a4630;border-radius:4px;background:#1c150e;color:#d6c7a5;font-size:15px;line-height:1;cursor:pointer;}',
       '.mi-tags{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 4px;}',
-      '.mi-tag{padding:1px 6px;font-size:10px;border:1px solid #4d3f2b;border-radius:3px;color:#c9b88f;background:#17120c;}',
+      '.mi-tag{padding:1px 6px;font-size:12px;border:1px solid #4d3f2b;border-radius:3px;color:#c9b88f;background:#17120c;}',
       '.mi-tag.ele-fire{color:#fca5a5;border-color:#7f1d1d;}.mi-tag.ele-water{color:#93c5fd;border-color:#1e3a8a;}.mi-tag.ele-earth{color:#d6b98a;border-color:#5a4630;}.mi-tag.ele-wind{color:#86efac;border-color:#14532d;}',
-      '.mi-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:3px 8px;font-size:11px;margin-bottom:6px;}',
+      '.mi-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:3px 8px;font-size:13px;margin-bottom:6px;}',
       '.mi-stats span{display:flex;justify-content:space-between;gap:4px;white-space:nowrap;}',
       '.mi-stats i{font-style:normal;color:#9c8f78;}',
       '.mi-stats b{color:#fff;font-weight:600;}',
-      '.mi-sub{font-size:12px;font-weight:700;color:#f0c35a;padding:4px 0;border-top:1px solid #3d3121;}',
-      '.mi-sub em{font-style:normal;font-weight:400;color:#a78bfa;margin-left:4px;font-size:11px;}',
+      '.mi-sub{font-size:14px;font-weight:700;color:#f0c35a;padding:4px 0;border-top:1px solid #3d3121;}',
+      '.mi-sub em{font-style:normal;font-weight:400;color:#a78bfa;margin-left:4px;font-size:13px;}',
       '.mi-list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}',
-      '.mi-drop{display:flex;align-items:center;gap:6px;padding:4px 2px;border-bottom:1px solid rgba(90,70,48,.35);font-size:12px;}',
+      '.mi-drop{display:flex;align-items:center;gap:6px;padding:4px 2px;border-bottom:1px solid rgba(90,70,48,.35);font-size:14px;}',
       '.mi-drop img{width:24px;height:24px;object-fit:contain;flex:none;}',
       '.mi-drop .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
-      '.mi-drop .rt{flex:none;color:#d6c7a5;font-family:Consolas,monospace;font-size:11px;}',
-      '.mi-none{font-size:12px;color:#8d7c5c;padding:6px 0;}',
+      '.mi-drop .rt{flex:none;color:#d6c7a5;font-family:Consolas,monospace;font-size:13px;}',
+      '.mi-none{font-size:14px;color:#8d7c5c;padding:6px 0;}',
 
       /* ── 狩獵場（選地圖）：下半部、分頁＋清單；外觀跟戰鬥畫面的聊天框同一套（小分頁、半透明黑底、細分隔線） ── */
       '#lmui-maps{display:none;position:absolute;left:0;right:0;top:calc(var(--lmui-mtop) - var(--orig-bar-h,0px));bottom:0;z-index:6;flex-direction:column;padding:4px 4px 2px;background:linear-gradient(#1a1612,#0b0907);border-top:1px solid #4a3f30;}',
       'body.lmui-battle.lmui-maps #lmui-maps{display:flex;}',
       'body.lmui-battle.lmui-maps #lmui-bottom{display:none !important;}',
       '.lm-tabs{display:flex;gap:2px;padding:2px 2px 0;flex:none;}',
-      '.lm-tabs button{flex:1;padding:3px 0;font-size:11px;font-family:inherit;color:#c9b88f;background:linear-gradient(#3b3022,#1c160e);border:1px solid #4d3e29;border-radius:2px;}',
+      '.lm-tabs button{flex:1;padding:3px 0;font-size:13px;font-family:inherit;color:#c9b88f;background:linear-gradient(#3b3022,#1c160e);border:1px solid #4d3e29;border-radius:2px;}',
       '.lm-tabs button.on{color:#fff6dc;background:linear-gradient(#7a5f35,#3f2f18);border-color:#b8955a;}',
       '.lm-list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;margin-top:3px;padding:0 4px;background:rgba(0,0,0,.5);}',
       '.lm-row{display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 6px;text-align:left;font-family:inherit;background:transparent;border:0;border-bottom:1px solid rgba(90,70,48,.45);color:#eee;cursor:pointer;text-shadow:0 1px 1px #000;}',
-      '.lm-row .nm{font-size:13px;}',
-      '.lm-row .rt{font-size:11px;color:#9c8f78;}',
+      '.lm-row .nm{font-size:15px;}',
+      '.lm-row .rt{font-size:13px;color:#9c8f78;}',
       '.lm-row.cur{background:linear-gradient(90deg,rgba(122,95,53,.55),rgba(63,47,24,.15));}',
       '.lm-row.cur .nm{color:#fff6dc;font-weight:700;}',
       '.lm-row.off{opacity:.4;cursor:not-allowed;}',
@@ -386,12 +386,12 @@
       'html body.lmui-town #afk-npclist .afk-npcl-ico{display:none !important;}',
       'html body.lmui-town #afk-npclist .afk-npcl-main{display:block !important;min-width:0;}',
       'html body.lmui-town #afk-npclist .afk-npcl-main>span:first-child{display:block;}',
-      'html body.lmui-town #afk-npclist .afk-npcl-name{display:inline !important;font-size:14px !important;font-weight:700 !important;color:#fff !important;}',
-      'html body.lmui-town #afk-npclist .lmui-npc-emo{margin-right:4px;font-size:13px;}',
-      'html body.lmui-town #afk-npclist .afk-npcl-title{display:block !important;margin:1px 0 0 !important;font-size:11px !important;color:#e8b04a !important;}',
+      'html body.lmui-town #afk-npclist .afk-npcl-name{display:inline !important;font-size:16px !important;font-weight:700 !important;color:#fff !important;}',
+      'html body.lmui-town #afk-npclist .lmui-npc-emo{margin-right:4px;font-size:15px;}',
+      'html body.lmui-town #afk-npclist .afk-npcl-title{display:block !important;margin:1px 0 0 !important;font-size:13px !important;color:#e8b04a !important;}',
       'html body.lmui-town #afk-npclist .afk-npcl-title[data-lmui-br]::before{content:"[";}',
       'html body.lmui-town #afk-npclist .afk-npcl-title[data-lmui-br]::after{content:"]";}',
-      'html body.lmui-town #afk-npclist .afk-npcl-desc{display:block !important;margin-top:2px;font-size:11px !important;color:#bfb3a0 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      'html body.lmui-town #afk-npclist .afk-npcl-desc{display:block !important;margin-top:2px;font-size:13px !important;color:#bfb3a0 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       /* NPC 對話/商店：蓋在 NPC 卡片上、同一塊下半部 */
       /* 浮動大視窗：頭像列下方到工具列上方、左右留邊、圓角金框；外圍用超大陰影把其他畫面壓暗。
          村莊沒有戰鬥畫面要避開，可以蓋過上半部的村莊地圖。開著時 HUD（頭像列/狀態列）先收起來（它在 body 層會疊到視窗上）。 */
@@ -401,18 +401,18 @@
       /* 不顯示的 NPC（龍鑽收購、傭兵公會）：卡片與地圖都藏 */
       'html body.lmui-town .lmui-npc-off,html body.lmui-town #afk-npclist .afk-npcl-row.lmui-npc-off{display:none !important;}',
       /* NPC 對話標題：金色「名字（職稱）」＋右邊金幣 */
-      'html body.lmui-town #interaction-npc-name{color:#e8b04a !important;font-size:18px !important;}',
-      'html body.lmui-town #interaction-npc-title{color:#e8b04a !important;font-size:16px !important;font-weight:700;margin-left:2px;}',
-      '#lmui-ihead-gold{margin-left:auto;margin-right:10px;color:#f5d77b;font-weight:700;font-size:16px;white-space:nowrap;}',
+      'html body.lmui-town #interaction-npc-name{color:#e8b04a !important;font-size:19px !important;}',
+      'html body.lmui-town #interaction-npc-title{color:#e8b04a !important;font-size:17px !important;font-weight:700;margin-left:2px;}',
+      '#lmui-ihead-gold{margin-left:auto;margin-right:10px;color:#f5d77b;font-weight:700;font-size:17px;white-space:nowrap;}',
       /* 製作清單（一列＝圖示＋名稱＋材料接成一行＋數量＋按鈕） */
       /* 一列拆兩行：上＝圖示/名稱/材料，下＝數量＋按鈕靠右（視窗窄時材料字才不會被按鈕蓋住） */
       'html body.lmui-town #interaction-content .list-item{flex-wrap:wrap !important;row-gap:6px !important;padding:8px !important;margin-bottom:6px !important;gap:8px;background:rgba(26,20,14,.92) !important;border:1px solid #4a3c29 !important;border-radius:6px !important;}',
       'html body.lmui-town #interaction-content .list-item>div:first-child{gap:10px !important;}',
       'html body.lmui-town #interaction-content .list-item .w-12.h-12{width:44px !important;height:44px !important;background:#0f0b08 !important;border-color:#4a3c29 !important;}',
       'html body.lmui-town #interaction-content .list-item .w-12.h-12 img{width:38px !important;height:38px !important;}',
-      'html body.lmui-town #interaction-content .list-item .text-lg{font-size:15px !important;}',
-      'html body.lmui-town #interaction-content .list-item .flex-wrap{display:block !important;font-size:12px !important;line-height:1.5 !important;color:#c9bfae;}',
-      'html body.lmui-town #interaction-content .list-item .flex-wrap>span{display:inline !important;font-size:12px !important;font-weight:400 !important;margin:0 !important;line-height:1.5 !important;}',
+      'html body.lmui-town #interaction-content .list-item .text-lg{font-size:17px !important;}',
+      'html body.lmui-town #interaction-content .list-item .flex-wrap{display:block !important;font-size:14px !important;line-height:1.5 !important;color:#c9bfae;}',
+      'html body.lmui-town #interaction-content .list-item .flex-wrap>span{display:inline !important;font-size:14px !important;font-weight:400 !important;margin:0 !important;line-height:1.5 !important;}',
       'html body.lmui-town #interaction-content .list-item .flex-wrap>span.text-slate-400:first-child{display:none !important;}',
       'html body.lmui-town #interaction-content .list-item .flex-wrap>span.text-slate-500{margin:0 4px !important;color:#7d8f5a !important;}',
       'html body.lmui-town #interaction-content .list-item .flex-wrap .text-red-400{color:#f87171 !important;font-weight:700;}',
@@ -424,7 +424,7 @@
       'html body.lmui-town #town-interaction-header{flex-wrap:nowrap !important;gap:6px;}',
       'html body.lmui-town #town-interaction-heading{min-width:0;overflow:hidden;white-space:nowrap;}',
       'html body.lmui-town #town-interaction-close{flex:none;padding:4px 10px !important;}',
-      'html body.lmui-town #interaction-content .list-item .btn{padding:8px 10px !important;font-size:13px !important;white-space:nowrap;}',
+      'html body.lmui-town #interaction-content .list-item .btn{padding:8px 10px !important;font-size:15px !important;white-space:nowrap;}',
       'html body.lmui-town #interaction-content .list-item .btn.lmui-nomat{background:#2b2b31 !important;border-color:#45454d !important;color:#8b8b94 !important;cursor:not-allowed;box-shadow:none !important;}',
       /* 村莊的下半部給 NPC 卡片；按「聊天」才把聊天框叫出來（lmui-townchat） */
       'body.lmui-town:not(.lmui-townchat) #lmui-bottom{display:none !important;}',
@@ -434,7 +434,7 @@
       '#lmui-doll{display:none;}',
       'html body.lmui-equip #lmui-doll{display:block;padding:6px 8px 8px;background:radial-gradient(ellipse at 50% 40%,#2a2a2a,#121212 75%);border:1px solid #4a4a4a;border-radius:4px;box-shadow:inset 0 0 18px #000;}',
       'html body.lmui-equip #tab-equip,html body.lmui-equip #equipment-window{display:none !important;}',
-      '.ld-weight{font-size:12px;color:#cfcfcf;}',
+      '.ld-weight{font-size:14px;color:#cfcfcf;}',
       /* 格子邊長跟著面板可用高度走（5 排＋底排＝6 列，扣掉上方分頁列/負重字/間距約 150px），上限 64px，盡量一屏放完不用捲 */
       '#lmui-doll{--ld-c:clamp(36px,calc((100dvh - var(--lmui-ptop) - var(--m-nav-h,0px) - var(--lmui-ptabs-h) - 120px) / 6),64px);}',
       '.ld-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}',
@@ -445,8 +445,8 @@
       '.ld-cell img{width:78%;height:78%;object-fit:contain;filter:drop-shadow(0 1px 2px #000);}',
       '.ld-cell.is-empty{cursor:default;color:rgba(255,255,255,.16);}',
       '.ld-cell.is-empty svg{width:62%;height:62%;}',
-      '.ld-en{position:absolute;right:2px;bottom:1px;font:800 11px/1 Arial,sans-serif;color:#39a9ff;text-shadow:0 0 3px #0b4f99,1px 1px 1px #000;}',
-      '.ld-cnt{position:absolute;right:2px;bottom:1px;font:800 11px/1 Arial,sans-serif;color:#d5a94f;text-shadow:1px 1px 1px #000;}',
+      '.ld-en{position:absolute;right:2px;bottom:1px;font:800 13px/1 Arial,sans-serif;color:#39a9ff;text-shadow:0 0 3px #0b4f99,1px 1px 1px #000;}',
+      '.ld-cnt{position:absolute;right:2px;bottom:1px;font:800 13px/1 Arial,sans-serif;color:#d5a94f;text-shadow:1px 1px 1px #000;}',
       '.ld-tabs{display:flex;gap:3px;}',
       '.ld-tabs button{flex:0 0 44px;height:26px;display:flex;align-items:center;justify-content:center;border:1px solid #4a4a4a;border-radius:3px;background:linear-gradient(#3a3a3a,#1a1a1a);color:#8f8f8f;}',
       '.ld-tabs button svg{width:18px;height:18px;}',
@@ -454,11 +454,11 @@
 
       /* ── 技能分頁（攤開清單）：金色分區標題、每階一列（左標籤＋右 4 格銅框） ── */
       '.lsk{padding:6px 4px 10px;background:#110e0b;color:#e8d9b0;}',
-      '.lsk-sec{margin:8px 0 6px;padding-left:8px;border-left:3px solid #d4a24a;color:#f0c35a;font-size:14px;font-weight:700;}',
+      '.lsk-sec{margin:8px 0 6px;padding-left:8px;border-left:3px solid #d4a24a;color:#f0c35a;font-size:16px;font-weight:700;}',
       '.lsk-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}',
       '.lsk-lb{flex:0 0 52px;display:flex;flex-direction:column;align-items:center;line-height:1.25;}',
-      '.lsk-lb b{color:#f0c35a;font-size:13px;}',
-      '.lsk-lb small{color:#c9a96a;font-size:10px;}',
+      '.lsk-lb b{color:#f0c35a;font-size:15px;}',
+      '.lsk-lb small{color:#c9a96a;font-size:12px;}',
       '.lsk-grid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}',
       '.lsk-cell{position:relative;aspect-ratio:1;border:1px solid #6b5636;border-radius:4px;background:linear-gradient(#2a241c,#14110d);box-shadow:inset 0 0 0 1px rgba(0,0,0,.8),0 1px 2px #000;display:flex;align-items:center;justify-content:center;padding:4px;cursor:pointer;}',
       '.lsk-cell img{width:100%;height:100%;object-fit:contain;border-radius:2px;}',
@@ -468,7 +468,7 @@
       '#tab-skill .lsk-cell.is-unlearned::after{content:"";position:absolute;inset:0;border-radius:3px;background:rgba(0,0,0,.45);pointer-events:none;}',
       '#tab-skill .lsk-cell.is-unlearned{border-color:#3a3023;}',
       '#tab-skill .lsk-cell.is-off img{filter:brightness(.6) !important;}',
-      '.lsk-foot{display:flex;justify-content:space-around;margin-top:10px;padding-top:8px;border-top:1px solid #3a3024;font-size:12px;color:#c9a96a;}',
+      '.lsk-foot{display:flex;justify-content:space-around;margin-top:10px;padding-top:8px;border-top:1px solid #3a3024;font-size:14px;color:#c9a96a;}',
       '.lsk-foot b{color:#fff;margin-left:4px;}',
 
       /* ── 道具視窗：小卡片（寬 ~300、高度跟內容、按鈕兩欄），不再整頁蓋住 ──
@@ -476,16 +476,16 @@
          這裡只改寬度/高度/置中與內部密度。#modal-compare（裝備比對）照樣排在卡片上方，一起在卡片裡捲。 */
       'html body.lmui #item-modal:not(.hidden){top:var(--lmui-pop-top) !important;bottom:auto !important;left:var(--lmui-pop-side) !important;right:var(--lmui-pop-side) !important;width:auto !important;transform:none !important;height:auto !important;max-height:calc(100dvh - var(--lmui-pop-top) - var(--lmui-pop-bot)) !important;overflow-y:auto !important;flex-direction:column !important;align-items:stretch !important;gap:6px !important;padding:8px !important;background:linear-gradient(#1f1912,#0e0b08) !important;border:1px solid #8a6a3a !important;border-radius:10px !important;box-shadow:0 0 0 100vmax rgba(0,0,0,.55),0 10px 40px rgba(0,0,0,.9) !important;}',
       'html body.lmui #item-modal>.panel{min-width:0 !important;max-width:none !important;width:100% !important;max-height:none !important;padding:12px !important;margin:0 !important;box-shadow:none !important;}',
-      'html body.lmui #modal-item-name{font-size:17px !important;margin-bottom:8px !important;padding-bottom:8px !important;}',
+      'html body.lmui #modal-item-name{font-size:18px !important;margin-bottom:8px !important;padding-bottom:8px !important;}',
       'html body.lmui #modal-item-name img{width:28px !important;height:28px !important;}',
-      'html body.lmui #modal-item-desc{font-size:13px !important;line-height:1.55 !important;min-height:0 !important;margin-bottom:10px !important;}',
+      'html body.lmui #modal-item-desc{font-size:15px !important;line-height:1.55 !important;min-height:0 !important;margin-bottom:10px !important;}',
       'html body.lmui #modal-item-desc .class-eq-icon{width:16px !important;height:16px !important;}',
       'html body.lmui #modal-actions{grid-template-columns:1fr 1fr !important;gap:6px !important;}',
-      'html body.lmui #modal-actions>*{grid-column:auto !important;width:auto !important;min-height:0 !important;padding:7px 4px !important;font-size:13px !important;line-height:1.3 !important;}',
-      'html body.lmui #item-modal .panel>button.mt-5{margin-top:8px !important;padding:7px !important;font-size:14px !important;}',
+      'html body.lmui #modal-actions>*{grid-column:auto !important;width:auto !important;min-height:0 !important;padding:7px 4px !important;font-size:15px !important;line-height:1.3 !important;}',
+      'html body.lmui #item-modal .panel>button.mt-5{margin-top:8px !important;padding:7px !important;font-size:16px !important;}',
       'html body.lmui #item-modal>.panel{overflow:visible !important;height:auto !important;}',   // 整張卡片一起捲，不要卡片裡面各自再一條捲軸
-      'html body.lmui #modal-compare{font-size:12px !important;}',
-      'html body.lmui #modal-compare>*{font-size:12px !important;}',
+      'html body.lmui #modal-compare{font-size:14px !important;}',
+      'html body.lmui #modal-compare>*{font-size:14px !important;}',
       /* 裝備比對預設收起，按「與身上比較」才展開（參考圖的做法；上游手機是一律攤開在卡片上方，佔掉半張） */
       'html body.lmui:not(.lmui-cmp) #modal-compare{display:none !important;}',
       'html body.lmui #lmui-cmp-btn{grid-column:1 / -1 !important;border:1px solid #3b82f6 !important;background:rgba(30,41,59,.85) !important;color:#bfdbfe !important;border-radius:6px;font-weight:700;}',
@@ -498,13 +498,13 @@
       '#lmui-nav{display:flex;flex:1;align-items:stretch;gap:2px;padding:3px 2px 12px;}',
       '.lmui-tool{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:10px 0;background:transparent;border:1px solid transparent;border-radius:3px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;font-family:inherit;}',
       '.lmui-tool svg{display:none;}',
-      '.lmui-tool span{font-size:14px;font-weight:600;color:#d8cbb0;white-space:nowrap;letter-spacing:.5px;text-shadow:0 1px 1px #000;}',
+      '.lmui-tool span{font-size:16px;font-weight:600;color:#d8cbb0;white-space:nowrap;letter-spacing:.5px;text-shadow:0 1px 1px #000;}',
       '.lmui-tool:active{background:rgba(255,255,255,.08);}',
       '.lmui-tool.on{background:linear-gradient(#e7c56f,#a8822f);border-color:#f0d58c;box-shadow:inset 0 1px 0 rgba(255,250,220,.5),0 0 6px rgba(231,197,111,.35);}',
       '.lmui-tool.on span{color:#1d1407;font-weight:700;text-shadow:none;}',
       /* 經驗 % 已移到狀態列的經驗條裡，這裡不再重複顯示 */
       'body.lmui-battle #lmui-navexp{display:none;}',
-      '#lmui-navexp{position:absolute;left:0;right:0;bottom:1px;text-align:center;font-size:9px;font-weight:700;color:#bdbdbd;pointer-events:none;}'
+      '#lmui-navexp{position:absolute;left:0;right:0;bottom:1px;text-align:center;font-size:12px;font-weight:700;color:#bdbdbd;pointer-events:none;}'
     ].join('\n');
     css += '\n' + themeCSS();
     var s = document.createElement('style');
@@ -771,8 +771,8 @@
     var ov = document.createElement('div');
     ov.id = 'lmui-hotpick';
     ov.innerHTML = '<div class="box"><div class="hd">F' + (i + 1) + ' 要放什麼？<button type="button" data-x="1" aria-label="關閉">✕</button></div><div class="bd">' +
-      '<div class="sec">技能</div><div class="grid">' + (sk.map(function (id) { return opt('skill', id, DB.skills[id]); }).join('') || '<span style="color:#94a3b8;font-size:12px;">還沒學會技能</span>') + '</div>' +
-      '<div class="sec">道具（背包裡有的）</div><div class="grid">' + (items.map(function (id) { return opt('item', id, DB.items[id], ' ×' + hotItemCount(id)); }).join('') || '<span style="color:#94a3b8;font-size:12px;">背包沒有可用的道具</span>') + '</div>' +
+      '<div class="sec">技能</div><div class="grid">' + (sk.map(function (id) { return opt('skill', id, DB.skills[id]); }).join('') || '<span style="color:#94a3b8;font-size:14px;">還沒學會技能</span>') + '</div>' +
+      '<div class="sec">道具（背包裡有的）</div><div class="grid">' + (items.map(function (id) { return opt('item', id, DB.items[id], ' ×' + hotItemCount(id)); }).join('') || '<span style="color:#94a3b8;font-size:14px;">背包沒有可用的道具</span>') + '</div>' +
       '</div><div class="ft"><button type="button" data-clear="1">清空這格</button><button type="button" data-auto="1">全部改回自動排列</button></div></div>';
     ov.addEventListener('click', function (e) {
       if (e.target === ov || e.target.closest('[data-x]')) { closeHotPick(); return; }
