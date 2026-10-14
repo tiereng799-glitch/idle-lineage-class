@@ -9,7 +9,7 @@
  * 作法(不改核心·全部走核心自己的交易保護):
  *   進「批次模式」後點清單=勾選(不搬移),按執行才一次搬完:
  *     whTxnSnapshot() → 迴圈搬 N 件 → whTxnCommit() 一次 → 重繪一次。
- *   這正是核心 whOneClickDeposit(js/12:393) 的既有模式,只是改由玩家勾選要搬哪些。
+ *   (原本照的是核心 whOneClickDeposit 的模式;那支已隨「一鍵存入」拿掉)
  *   ⚠️ 合併/uid 換發/廢品旗標/收集冊登錄/倉庫上限 全部逐條比照核心 whDeposit/whWithdraw,
  *      不自己另立規則(唯一差別:批次一律「整疊」搬,不看「數量」欄)。
  *
@@ -318,8 +318,8 @@
     }
 
     function injectToggle() {
-        // 倉庫分頁旁是「整理」、背包分頁旁是「一鍵存入」,兩個分頁都要有入口
-        var anchor = document.querySelector('button[onclick*="sortWarehouse"], button[onclick*="whOneClickDeposit"]');
+        // 倉庫分頁排在「整理」後面;背包分頁沒有整理鈕 → 排在搜尋框後面(兩個分頁都要有入口)
+        var anchor = document.querySelector('button[onclick*="sortWarehouse"]') || document.getElementById('wh-search-input');
         if (!anchor || document.getElementById('afk-whb-toggle')) return;
         var b = document.createElement('button');
         b.id = 'afk-whb-toggle';
