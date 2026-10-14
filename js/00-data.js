@@ -1474,7 +1474,7 @@ const DB = {
         "clk_royal_majesty": { n: "君主的威嚴", type: "arm", slot: "cloak", ac: 2, str: 1, dex: 1, con: 1, int: 1, wis: 1, cha: 1, req: "royal", safe: 4, p: 6000, gachaWeight: 50, d: "👑 凝聚一身君主威嚴的華服，舉手投足皆是王者風範。" },
         "acc_royal_guard": { n: "守護者的戒指", type: "acc", slot: "ring", ac: 0, mhp: 30, mmp: 20, req: "royal", safe: 0, p: 5000, gachaWeight: 70, d: "👑 賜予近身守護者的戒指，注入守護王室的堅毅之力。" },
         "bk_royal_precise":    { type: "skillbk", n: "魔法書(精準目標)", p: 4800,  sk: "sk_royal_precise",    gachaWeight: 30, d: "場上所有敵人受到的傷害增加 [1+(玩家等級/15)]%，持續 16 秒（結束才再施放）。可學等級 15。" },
-        "bk_royal_callally":   { type: "skillbk", n: "魔法書(呼喚盟友)", p: 12400, sk: "sk_royal_callally",   gachaWeight: 30, d: "所有傭兵立即發動一次額外攻擊。可學等級 30。" },
+        "bk_royal_callally":   { type: "skillbk", n: "魔法書(呼喚盟友)", p: 12400, sk: "sk_royal_callally",   gachaWeight: 30, d: "將一名在線的血盟成員傳送到你身邊（尚未開放）。可學等級 30。" },
         "bk_royal_burnweapon": { type: "skillbk", n: "魔法書(灼熱武器)", p: 12400, sk: "sk_royal_burnweapon", gachaWeight: 0,  d: "可學等級 40。" },
         "bk_royal_bravewill":  { type: "skillbk", n: "魔法書(勇猛意志)", p: 12400, sk: "sk_royal_bravewill",  gachaWeight: 0,  d: "可學等級 50。" },
         "bk_royal_shield":     { type: "skillbk", n: "魔法書(閃亮之盾)", p: 12400, sk: "sk_royal_shield",     gachaWeight: 0,  d: "可學等級 50。" },
@@ -2813,7 +2813,7 @@ const DB = {
         "sk_dark_armorbreak":{ n: "破壞盔甲", type: "atk", tier: 3, reqD: 45, mp: 32, dmgType: "magic", status: { kind: "armorbreak", dur: 8 }, msg: "你撕裂了目標的防護，使其受到的傷害提高。" },
         // 👑 王族魔法（reqRoy；cat:'royal' → 技能欄「王族魔法」分區）
         "sk_royal_precise":    { n: "精準目標", type: "buff", label: "增益", cat: "royal", reqRoy: 15, mp: 2, dur: 16, noRefresh: true, msg: "你鎖定全場敵人，使其露出破綻。" },
-        "sk_royal_callally":   { n: "呼喚盟友", type: "atk", label: "攻擊", cat: "royal", reqRoy: 30, mp: 30, callAllies: true },
+        "sk_royal_callally":   { n: "呼喚盟友", type: "manual", label: "功能", cat: "royal", reqRoy: 30, mp: 30, mEff: "callclan" },   // 🏰 2026-10-14 站長：改成天堂官方效果（把在線血盟成員傳送到身邊）·CALLCLAN_OPEN 開放前不能用
         "sk_royal_burnweapon": { n: "灼熱武器", type: "buff", label: "增益", cat: "royal", reqRoy: 40, mp: 25, dur: 640, noRefresh: true, d: { extraDmg: 5, extraHit: 5 }, msg: "灼熱之炎籠罩全隊武器，所有隊員的額外傷害與命中提升。" },
         "sk_royal_bravewill":  { n: "勇猛意志", type: "buff", label: "增益", cat: "royal", reqRoy: 50, mp: 25, dur: 640, noRefresh: true, msg: "勇猛的意志充盈你的全身。" },
         "sk_royal_shield":     { n: "閃亮之盾", type: "buff", label: "增益", cat: "royal", reqRoy: 50, mp: 25, dur: 640, noRefresh: true, d: { ac: 8 }, msg: "閃亮的護盾環繞全隊，使所有隊員的防禦提升。" },
@@ -3460,3 +3460,6 @@ function darkDoubleChance(lv) { let f = SKILL_FX.sk_dark_double; lv = lv || 1; r
 //    關閉後：各村傭兵公會下架、不能招募／指派助戰者；舊存檔帶著的傭兵在載入時自動解散（累積經驗照常記入待領帳本還給原角色）。
 const MERC_CLOSED = true;
 if (MERC_CLOSED) { try { for (const t of Object.values(DB.towns)) if (t && Array.isArray(t.npcs)) t.npcs = t.npcs.filter(n => n.type !== 'ally'); } catch (_) {} }
+// 🏰 呼喚盟友（天堂官方效果：王族把一名在線的血盟成員傳送到自己身邊）——要等線上版才有「在線的血盟成員」，先寫好不開放。
+//    開放時改 true，並由線上版提供 onlineClanMembers()（在線成員清單）與 onlineSendCallClan(成員, 地圖)（送出召喚）。
+const CALLCLAN_OPEN = false;

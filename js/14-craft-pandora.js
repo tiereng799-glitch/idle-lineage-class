@@ -1814,12 +1814,11 @@ window.onload = () => {
         sk_dark_crit: function(){ return '消耗最大體力 '+_P(SKILL_FX.sk_dark_crit.hpCost)+'% 與全部魔力，打出必中且必爆擊的一擊；魔力越多傷害越高、無視硬皮'; },
         sk_dark_double: function(){ let f = SKILL_FX.sk_dark_double; return '持雙刀或鋼爪時，一般攻擊 '+f.base+'% 機率傷害×2（'+f.fromLv+' 級起每 '+f.perLv+' 級+1%）'; },
         sk_royal_precise: function(){ let f = SKILL_FX.sk_royal_precise; return '全場敵人受到的傷害+（'+f.base+'＋等級÷'+f.lvDiv+'）%'; },
-        sk_royal_callally: '所有傭兵立刻各追加攻擊一次',
         sk_royal_bravewill: function(){ let f = SKILL_FX.sk_royal_bravewill; return '一般攻擊 '+_P(f.rate)+'% 機率傷害×'+f.mult+'（劍術精通 '+_P(f.rateMastery)+'%）'; },
         sk_helm_dex2: function(){ return '攻擊速度與移動速度+'+_S(SKILL_FX.haste.spd)+'%'; },
         sk_helm_str2: '滿血的史巴托不會行動',
     };
-    const SK_MEFF = { teleport:'瞬間移動', sense:'能量感測', recall:'回村', charm:'迷魅', barrier:'隔絕無敵（無法攻擊/施法/用道具・不受任何傷害・不自然恢復）' };
+    const SK_MEFF = { teleport:'瞬間移動', sense:'能量感測', recall:'回村', charm:'迷魅', barrier:'隔絕無敵（無法攻擊/施法/用道具・不受任何傷害・不自然恢復）', callclan:'將一名在線的血盟成員傳送到你身邊' + (CALLCLAN_OPEN ? '' : '（尚未開放）') };
     function buildSkillTipHTML(sid){
         let sk = DB.skills[sid]; if(!sk) return '';
         let tc = sk.type==='atk'?'text-cyan-300':(sk.type==='heal'?'text-green-300':(sk.type==='manual'?'text-amber-300':'text-purple-300'));

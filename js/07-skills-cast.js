@@ -162,6 +162,7 @@ function manualCast(skId) {
     if(inAbsBarrier()) { logSys('絕對屏障期間與世界隔絕，無法行動。'); return; }   // 🛡️ 屏障中不得手動施放任何技能（含本技能再施放）
     if(player.statuses && (player.statuses.silence > 0 || player.statuses.magicseal > 0)) { logSys('你被沉默／魔法封印，無法施放魔法。'); return; }   // 🤐 v3.1.77 稽核中#10：手動施放補沉默/魔法封印閘（castSkillInner 有、原手動沒有→沉默中可傳送逃脫）
     if(sk.reqJustice && typeof pvpIsJustice === 'function' && !pvpIsJustice()) { logSys(`<span class="text-sky-300">${sk.n} 需要正義性向（性向值 ≥ 1000）才能施放。</span>`); return; }   // 💙 v3.5.75 究極光裂術：限正義性向
+    if(sk.mEff === 'callclan' && !CALLCLAN_OPEN) { logSys(`${sk.n}尚未開放。`); return; }   // 🏰 呼喚盟友：線上版開放前不能用（不扣魔力）
     // 傳送術：行動限制狀態（石化／麻痺／冰凍／暈眩）無法手動施放
     if(sk.mEff === 'teleport' && player.statuses &&
        (player.statuses.stone > 0 || player.statuses.paralyze > 0 || player.statuses.freeze > 0 || player.statuses.stun > 0 || player.statuses.sleep > 0)) {
@@ -225,6 +226,8 @@ function manualCast(skId) {
             if(typeof playSpellFx === 'function') { try { playSpellFx(sk.n, t); } catch(e){} }   // 🔮 迷魅術特效疊在目標身上（於移除前·否則卡片消失無法錨定）
             if(idx !== -1) { mapState.mobs[idx] = null; renderMobs(); }
         } else logCombat('迷魅術失敗了。', 'miss');
+    } else if(sk.mEff === 'callclan') {
+        if (!royalCallClan(sk)) return;   // 沒有可呼喚的成員／所在地禁止傳送 → 不扣魔力
     } else if(sk.mEff === 'barrier') {
         // 🛡️ 絕對屏障：施放後進入隔絕狀態（持續 sk.dur 秒；無敵且無法行動）
         player.buffs.sk_abs_barrier = sk.dur;
@@ -234,6 +237,31 @@ function manualCast(skId) {
     player.mp -= cost;
     player.manualCd[skId] = (sk.mEff === 'barrier') ? (sk.dur * 10 + 120) : getAutoCastInterval(player, isSupportSkill(sk), player.manualCd[skId]);   // 🛡️ 絕對屏障保留專屬長冷卻；其餘手動施法套用攻擊／輔助施法速度
     calcStats(); updateUI();
+}
+
+// 🏰 呼喚盟友（天堂官方）：王族把一名「在線」的血盟成員傳送到自己所在的地圖。
+//   條件：自己有血盟、對方在線且是同血盟、自己不在禁止傳送的地方。回傳 true＝成功（呼叫端才扣魔力、進冷卻）。
+//   在線成員與傳送請求由線上版提供：onlineClanMembers() → [{ id, name, lv }]、onlineSendCallClan(member, mapId)。
+function royalCallClan(sk) {
+    if (!CALLCLAN_OPEN) { logSys(`${sk.n}尚未開放。`); return false; }
+    let clan = (typeof clanNameForPlayer === 'function') ? clanNameForPlayer(player) : '';
+    if (!clan) { logSys('你沒有加入血盟，無法使用呼喚盟友。'); return false; }
+    if (KING_ROOMS[mapState.current] || state.antharas || state.oblivion || (typeof prideTeleportBlocked === 'function' && prideTeleportBlocked())) {
+        logSys('<span class="text-red-400">此處無法呼喚盟友。</span>'); return false;
+    }
+    let members = (typeof onlineClanMembers === 'function') ? (onlineClanMembers() || []) : [];
+    if (!members.length) { logSys('目前沒有在線的血盟成員。'); return false; }
+    let pick = members[0];
+    if (members.length > 1) {   // 多人在線：讓王族選要叫誰
+        let list = members.map((m, i) => `${i + 1}. ${m.name}（等級 ${m.lv}）`).join('\n');
+        let n = parseInt(prompt(`要呼喚哪一位血盟成員？\n${list}`, '1'), 10);
+        if (!(n >= 1 && n <= members.length)) return false;
+        pick = members[n - 1];
+    }
+    if (typeof onlineSendCallClan !== 'function') { logSys('目前無法呼喚盟友。'); return false; }
+    onlineSendCallClan(pick, mapState.current);
+    logCombat(`<span class="text-amber-300 font-bold">${sk.n}！</span>你呼喚了血盟成員 ${pick.name}。`, 'magic');
+    return true;
 }
 
 function rollDice(count, sides) { let s = 0; for(let i = 0; i < count; i++) s += roll(1, sides); return s; }
