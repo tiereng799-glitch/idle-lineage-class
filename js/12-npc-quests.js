@@ -18,7 +18,7 @@ const WH_NO_STORE = ['item_dk_insignia','item_mastery_proof',   // 🚫 v3.2.17 
     'new_item_197','new_item_211','item_lost_soul','mat_flame_sword','mat_flame_eye','mat_flame_claw','mat_flame_heart'];   // 🚫 禁止存入倉庫（現行陣列內容）：死亡騎士之印記、精通之證、傲慢之塔傳送符(11~91F)、各村莊搜索狀/信件等劇情道具、沙哈之箭、🔥50級試煉任務道具＋全部試煉道具。
     //    （🗑️ 已不在此列：四種項圈＝v3.2.17 隨項圈系統移除、🎴卡片/裝備收集冊＝v3.5.87 移除 DB 定義、潘朵拉抽獎卷＝v3.5.49 隨舊抽獎機移除）
 // 倉庫分類過濾（武器 / 防具 / 道具）：存入、取出共用同一個下拉清單
-let _whFilter = 'weapon';
+let _whFilter = 'all';
 let _whQtyInput = '';   // 🔧 倉庫存取「數量」共用輸入（取代 prompt()；空字串或 0 ＝整疊全部）。以模組變數保存→面板每次重繪後數值不流失
 let _whSearchInput = '';   // 🔎 倉庫搜尋暫態：2 字以上啟用跨分類模糊篩選，不寫入存檔
 function _whQtyVal(){ let v = parseInt(_whQtyInput, 10); return (v > 0) ? v : 0; }   // 0 ＝全部
@@ -120,6 +120,7 @@ function whSubCatOptions(){
 }
 // 倉庫物品是否符合「主分類＋子分類」：子分類空＝只看主分類
 function whMatchFilter(id){
+    if(_whFilter === 'all') return true;   // 🏦 預設「全部」（倉庫視窗依範本改版：打開先看到全部）
     if(whCategory(id) !== _whFilter) return false;
     if(!_whSubFilter) return true;
     if(_whFilter === 'item') return whItemSubCat(id) === _whSubFilter;
@@ -517,64 +518,74 @@ function whGold(dir){
     updateUI();
     renderWarehouseNPC(document.getElementById('interaction-content'));
 }
+// 🏦 倉庫視窗（2026-10-14 依站長給的範本重排）：
+//   標題列 → 一行資訊（共用・格數）→ 金幣列 → 「倉庫／背包」兩個分頁 → 一排工具（分類・搜尋・一鍵存入／排列）→ 物品清單。
+//   每列：圖示｜名稱×數量｜數量框（可疊的才有，預設整疊）｜取出／存入。
+//   ⚠️ 外掛依賴（勿改名）：#wh-gold-amt、#wh-inv-list、#wh-store-list、select[onchange*=whSetFilter/whSetSubFilter]、
+//      清單每列的 data-tip-uid / data-tip-src（afk-warehouse 長按看資料／只列可穿、afk-whbatch 批次勾選）。
+//      兩份清單都照樣畫出來，非作用分頁的那份只是藏起來（外掛照常找得到）。
+let _whTab = 'wh';   // 'wh' 倉庫 ／ 'inv' 背包
+function whSetTab(t){ _whTab = (t === 'inv') ? 'inv' : 'wh'; renderWarehouseNPC(document.getElementById('interaction-content')); }
+// 列上的數量框 → 帶進核心的「存取數量」再存取（留空或超過＝整疊），做完歸零，下次預設又是整疊
+function whRowAct(side, uid, btn){
+    let row = btn && btn.closest ? btn.closest('.whx-row') : null;
+    let inp = row ? row.querySelector('.whx-qty') : null;
+    whSetQty(inp ? inp.value : '');
+    try { if (side === 'wh') whWithdraw(uid); else whDeposit(uid); } finally { whSetQty(''); }
+}
 function renderWarehouseNPC(div){
     if (typeof warehouseWindowIsOpen === 'function' && warehouseWindowIsOpen()) { let floating = document.getElementById('warehouse-window-content'); if (floating) div = floating; }
     if (!div) return;
     _activePanel = null;   // 倉庫不需自動刷新
     let w = loadWarehouse();
-    let mkBtn = (it, act) => `<button onclick="${act}('${it.uid}')" data-tip-uid="${it.uid}" data-tip-src="${act === 'whWithdraw' ? 'wh' : 'inv'}" class="tip-host btn w-full text-left py-1.5 px-2 text-sm bg-slate-800 hover:bg-slate-700 border-slate-600">${getItemFullName(it)}</button>`;
     let _searching = _whSearchActive();
     let _invItems = player.inv.filter(it => !it.lock && (_searching ? whMatchSearch(it) : whMatchFilter(it.id)));   // 🔒 鎖定物品不顯示於倉庫存放清單（用戶要求：鎖定物品存放時不顯示）
     let _whItems  = w.items.filter(it => _searching ? whMatchSearch(it) : whMatchFilter(it.id));
-    let invHtml = _invItems.length ? _invItems.map(it => WH_NO_STORE.includes(it.id)
-        ? `<div data-tip-uid="${it.uid}" data-tip-src="inv" class="tip-host w-full text-left py-1.5 px-2 text-sm bg-slate-900/60 border border-slate-700 rounded opacity-50 cursor-not-allowed">${getItemFullName(it)} <span class="text-xs text-red-400">（不可存）</span></div>`
-        : mkBtn(it, 'whDeposit')).join('') : `<div class="text-slate-500 text-sm text-center py-4">${_searching ? '背包沒有符合搜尋的物品' : '此分類背包沒有物品'}</div>`;
-    let whHtml  = _whItems.length ? _whItems.map(it => mkBtn(it, 'whWithdraw')).join('') : `<div class="text-slate-500 text-sm text-center py-4">${_searching ? '倉庫沒有符合搜尋的物品' : '此分類倉庫是空的'}</div>`;
+    let _icon = it => { let d = DB.items[it.id]; let src = (d && typeof getIconUrl === 'function') ? getIconUrl(d) : ''; return `<div class="whx-icon">${src ? `<img src="${src}" alt="" onerror="this.style.opacity='0'">` : ''}</div>`; };
+    let _row = (it, side) => {
+        let cnt = it.cnt || 1, noStore = side === 'inv' && WH_NO_STORE.includes(it.id);
+        let qty = (cnt > 1 && !noStore) ? `<input class="whx-qty" type="number" min="1" max="${cnt}" value="${cnt}" inputmode="numeric" aria-label="數量">` : '';
+        let act = noStore ? '<span class="whx-nostore">不可存放</span>'
+            : `<button type="button" class="whx-act" onclick="whRowAct('${side}','${it.uid}',this)">${side === 'wh' ? '取出' : '存入'}</button>`;
+        return `<div class="whx-row tip-host${noStore ? ' whx-dim' : ''}" data-tip-uid="${it.uid}" data-tip-src="${side}">${_icon(it)}`
+            + `<div class="whx-name"><span class="${getItemColor(it)}">${getItemFullName(cnt > 1 ? { ...it, cnt: 1 } : it)}</span>${cnt > 1 ? `<span class="whx-cnt">×${cnt.toLocaleString()}</span>` : ''}</div>${qty}${act}</div>`;
+    };
+    let _empty = (side) => `<div class="whx-empty">${_searching ? (side === 'wh' ? '倉庫沒有符合搜尋的物品' : '背包沒有符合搜尋的物品') : (side === 'wh' ? '這個分類倉庫是空的' : '這個分類背包沒有物品')}</div>`;
+    let invHtml = _invItems.length ? _invItems.map(it => _row(it, 'inv')).join('') : _empty('inv');
+    let whHtml  = _whItems.length ? _whItems.map(it => _row(it, 'wh')).join('') : _empty('wh');
     let _oi = document.getElementById('wh-inv-list'), _os = document.getElementById('wh-store-list');
     let _whInvScroll = _oi ? _oi.scrollTop : 0, _whStoreScroll = _os ? _os.scrollTop : 0, _divScroll = div.scrollTop;
+    let subOpts = (_whFilter === 'all') ? [] : whSubCatOptions();
+    let onWh = _whTab === 'wh';
     div.innerHTML = `
-    <div class="flex flex-col gap-3 p-1">
-        <div class="text-slate-300 text-sm leading-relaxed">將物品或金幣存入倉庫，<b class="text-amber-300">四個存檔角色共用</b>。點背包物品＝存入；點倉庫物品＝取出（依下方<b class="text-amber-300">數量</b>欄取出／存入；留空＝整疊全部）。已裝備或鎖定中的物品無法存入（需先解鎖）。</div>
-        <div class="flex items-center gap-2 bg-slate-800/60 border border-slate-600 rounded p-3 text-sm flex-wrap">
-            <span>金幣　背包：<span class="text-yellow-400 font-bold">${player.gold}</span>　倉庫：<span class="text-yellow-400 font-bold">${w.gold||0}</span></span>
-            <input id="wh-gold-amt" type="number" min="1" value="1000" class="w-24 bg-slate-900 border border-slate-600 text-center text-white rounded h-8 ms-auto">
-            <button onclick="whGold('in')" class="btn px-4 text-sm font-bold h-8 inline-flex items-center justify-center" style="background: linear-gradient(135deg, #0c4a5e 0%, #0e7490 28%, #0a3d4d 52%, #11657e 76%, #093440 100%); color: #a5f3fc; border-color: #0891b2;">存入 ▶</button>
-            <button onclick="whGold('out')" class="btn px-4 text-sm font-bold h-8 inline-flex items-center justify-center" style="background: linear-gradient(135deg, #6b2a10 0%, #b3490e 28%, #5a230e 52%, #9a3e0c 76%, #4a1d0c 100%); color: #fed7aa; border-color: #c2410c;">◀ 取出</button>
+    <div class="whx">
+        <div class="whx-info">同帳號所有角色共用・倉庫 ${w.items.length.toLocaleString()} / ${WH_MAX.toLocaleString()} 格</div>
+        <div class="whx-gold">
+            <div class="whx-gold-sum"><div>倉庫金幣 <b>${(w.gold||0).toLocaleString()}</b></div><div>身上金幣 <b>${player.gold.toLocaleString()}</b></div></div>
+            <input id="wh-gold-amt" type="number" min="1" placeholder="數量" inputmode="numeric" class="whx-input">
+            <button type="button" class="whx-btn" onclick="whGold('in')">存入</button>
+            <button type="button" class="whx-btn" onclick="whGold('out')">取出</button>
         </div>
-        <div class="flex items-center gap-2 text-sm flex-wrap">
-            <span class="text-slate-300 font-bold">物品分類：</span>
-            <select onchange="whSetFilter(this.value)" class="bg-slate-900 border border-slate-600 text-white rounded py-1 px-2 text-sm">
+        <div class="whx-tabs">
+            <button type="button" class="${onWh ? 'on' : ''}" onclick="whSetTab('wh')">倉庫（${_whItems.length}）</button>
+            <button type="button" class="${onWh ? '' : 'on'}" onclick="whSetTab('inv')">背包（${_invItems.length}）</button>
+        </div>
+        <div class="whx-tools">
+            <select onchange="whSetFilter(this.value)" class="whx-input">
+                <option value="all" ${_whFilter==='all'?'selected':''}>全部</option>
                 <option value="weapon" ${_whFilter==='weapon'?'selected':''}>武器</option>
                 <option value="armor" ${_whFilter==='armor'?'selected':''}>防具</option>
                 <option value="item" ${_whFilter==='item'?'selected':''}>道具</option>
             </select>
-            <select onchange="whSetSubFilter(this.value)" class="bg-slate-900 border border-slate-600 text-white rounded py-1 px-2 text-sm" title="細分類：武器/防具依圖鑑類型，道具分卡片/技能/製作/任務/卷軸/其他">
+            <select onchange="whSetSubFilter(this.value)" class="whx-input"${subOpts.length ? '' : ' style="display:none"'}>
                 <option value="">全部</option>
-                ${whSubCatOptions().map(o => `<option value="${o.key}" ${_whSubFilter===o.key?'selected':''}>${o.name}</option>`).join('')}
+                ${subOpts.map(o => `<option value="${o.key}" ${_whSubFilter===o.key?'selected':''}>${o.name}</option>`).join('')}
             </select>
-            <span class="text-slate-500 text-xs">（存入／取出共用此分類）</span>
-            <span class="text-slate-300 font-bold ms-2">搜尋：</span>
-            <input id="wh-search-input" type="search" placeholder="輸入 2 字以上" value="${_whEscAttr(_whSearchInput)}" oninput="whSetSearch(this.value, this.selectionStart, event)" title="輸入 2 字以上時，跨分類模糊搜尋背包與倉庫物品（支援注音等中文輸入法）" class="w-44 bg-slate-900 border border-slate-600 text-white rounded h-8 px-2">
-            ${_whSearchInput ? '<button onclick="whClearSearch()" class="btn px-3 text-xs font-bold h-8 inline-flex items-center justify-center" title="清除搜尋">清除</button>' : ''}
-            <button onclick="whOneClickDeposit()" class="btn px-4 text-sm font-bold h-8 inline-flex items-center justify-center ms-auto" style="background: linear-gradient(135deg, #0c4a5e 0%, #0e7490 28%, #0a3d4d 52%, #11657e 76%, #093440 100%); color: #a5f3fc; border-color: #0891b2;" title="把背包中與倉庫現有物品（詞綴+名字+強化值完全相同）的物品自動存入；鎖定物品不動">一鍵存入</button>
-            <button onclick="sortWarehouse()" class="btn px-4 text-sm font-bold h-8 inline-flex items-center justify-center" style="background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 28%, #16294a 52%, #1d4ed8 76%, #101f38 100%); color: #bfdbfe; border-color: #3b82f6;" title="依背包一鍵排列的相同規則整理倉庫物品">一鍵排列</button>
+            <input id="wh-search-input" type="search" class="whx-input whx-search" placeholder="搜尋" value="${_whEscAttr(_whSearchInput)}" oninput="whSetSearch(this.value, this.selectionStart, event)">
+            ${onWh ? '<button type="button" class="whx-btn" onclick="sortWarehouse()">整理</button>' : '<button type="button" class="whx-btn" onclick="whOneClickDeposit()">一鍵存入</button>'}
         </div>
-        <div class="flex items-center gap-2 mb-2" style="flex-wrap:wrap;padding:6px 8px;border:1px solid #b7791f;border-radius:8px;background:rgba(120,80,10,.18)">
-            <span class="font-bold text-yellow-300">存取數量</span>
-            <input id="wh-qty-amt" type="number" min="1" placeholder="全部" value="${_whQtyInput}" oninput="whSetQty(this.value)" class="w-20 bg-slate-900 border border-slate-600 text-center text-white rounded h-8">
-            ${['1','10','100',''].map(v => `<button type="button" onclick="whSetQty('${v}');var e=document.getElementById('wh-qty-amt');if(e)e.value='${v}'" class="btn px-3 text-sm font-bold h-8">${v || '全部'}</button>`).join('')}
-            <span class="text-slate-400 text-xs">點物品就存入／取出這個數量；全部＝整疊</span>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-            <div class="flex flex-col min-h-0">
-                <div class="font-bold text-cyan-300 mb-1 text-sm">背包（點擊存入 ▶）</div>
-                <div class="flex flex-col gap-1 overflow-y-auto pr-1" id="wh-inv-list" style="max-height:340px">${invHtml}</div>
-            </div>
-            <div class="flex flex-col min-h-0">
-                <div class="font-bold text-amber-300 mb-1 text-sm flex justify-between">倉庫（點擊取出 ◀）<span class="text-slate-400 font-normal">${w.items.length}/${WH_MAX}</span></div>
-                <div class="flex flex-col gap-1 overflow-y-auto pr-1" id="wh-store-list" style="max-height:340px">${whHtml}</div>
-            </div>
-        </div>
+        <div class="whx-list" id="wh-store-list"${onWh ? '' : ' style="display:none"'}>${whHtml}</div>
+        <div class="whx-list" id="wh-inv-list"${onWh ? ' style="display:none"' : ''}>${invHtml}</div>
     </div>`;
     div.scrollTop = _divScroll;
     let _ni = document.getElementById('wh-inv-list'); if(_ni) _ni.scrollTop = _whInvScroll;

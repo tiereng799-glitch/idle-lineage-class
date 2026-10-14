@@ -1858,6 +1858,40 @@ button.classic-skill-cell { cursor:pointer; }
     background: linear-gradient(180deg,#443731,#262124 58%,#17161a) !important;
 }
 #warehouse-window-content { color: #ddd8d2 !important; background: #27262f !important; }
+/* 🏦 倉庫視窗（2026-10-14 依站長給的範本改版；內容由 js/12 renderWarehouseNPC 產生，class 前綴 whx-） */
+#warehouse-window-drag { position: relative; justify-content: center !important; }
+#warehouse-window-drag > div { flex: 1 1 auto; text-align: center; }
+#warehouse-window-drag h2 { font-size: 22px; letter-spacing: .3em; color: #f1e3c2; }
+#warehouse-window-close { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); min-width: 44px !important; width: 44px; height: 40px !important;
+    padding: 0 !important; font-size: 22px; line-height: 1; color: #fff !important; border: 1px solid #d14b4b !important; border-radius: 6px !important;
+    background: linear-gradient(#a32323, #6e1414) !important; }
+#warehouse-window-content .whx { display: flex; flex-direction: column; gap: 10px; }
+.whx-info { text-align: center; font-size: 14px; color: #cfc6b8; }
+.whx-gold { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 10px; border: 1px solid #4a3f30; border-radius: 8px; background: #1c1915; }
+.whx-gold-sum { flex: 1 1 100%; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 4px 12px; font-size: 15px; color: #e8dcc0; }
+.whx-gold-sum b { color: #facc15; }
+.whx-input { height: 40px; min-width: 0; padding: 0 10px; border: 1px solid #5a4a36; border-radius: 6px; background: #0f0d0b; color: #f5ecd8; font-size: 15px; }
+#warehouse-window-content #wh-gold-amt { flex: 1 1 50px; width: 50px; }
+.whx-btn, .whx-act { flex: none; height: 40px; padding: 0 14px; border: 1px solid #d9b25c; border-radius: 6px; background: linear-gradient(#b38a35, #6e511b);
+    color: #fff6dc; font-size: 15px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.whx-act { height: 38px; }
+.whx-btn-icon { padding: 0 8px; font-size: 18px; }
+.whx-tabs { display: flex; gap: 8px; }
+.whx-tabs button { flex: 1 1 0; height: 44px; border: 1px solid #5a4a36; border-radius: 6px; background: linear-gradient(#2e2822, #1c1814); color: #e8dcc0; font-size: 16px; font-weight: 700; cursor: pointer; }
+.whx-tabs button.on { border-color: #d9b25c; background: linear-gradient(#b98a2e, #7a5718); color: #fff; }
+.whx-tools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.whx-tools select { flex: 0 1 auto; }
+.whx-tools .whx-search { flex: 1 1 90px; width: 90px; }
+.whx-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+.whx-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #4a3f30; border-radius: 8px; background: linear-gradient(#26211c, #1a1713); }
+.whx-icon { flex: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid #4a3f30; border-radius: 4px; background: #0f0d0b; }
+.whx-icon img { max-width: 36px; max-height: 36px; object-fit: contain; pointer-events: none; }
+.whx-name { flex: 1 1 auto; min-width: 0; font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.whx-cnt { margin-left: 6px; color: #e8dcc0; }
+.whx-qty { flex: none; width: 70px; height: 38px; padding: 0 8px; border: 1px solid #5a4a36; border-radius: 6px; background: #0f0d0b; color: #f5ecd8; font-size: 15px; }
+.whx-dim { opacity: .55; }
+.whx-nostore { flex: none; font-size: 13px; color: #94a3b8; }
+.whx-empty { padding: 24px 0; text-align: center; color: #8a8070; }
 #warehouse-window-content :is(.bg-slate-900, .bg-slate-800, .bg-slate-700),
 #town-interaction-container :is(.bg-slate-900, .bg-slate-800, .bg-slate-700),
 #tab-audit :is(.bg-slate-900, .bg-slate-800, .bg-slate-700),
@@ -2622,8 +2656,6 @@ button.classic-skill-cell { cursor:pointer; }
     }
     #warehouse-window-drag { flex-basis: 62px; padding: 7px 9px !important; cursor: default; }
     #warehouse-window-drag h2 { font-size: 18px; }
-    #warehouse-window-drag span { font-size: 11px; }
-    #warehouse-window-close { min-width: 62px; height: 40px; }
     #warehouse-window-content { padding: 9px !important; }
     #warehouse-window-content #wh-inv-list,
     #warehouse-window-content #wh-store-list { max-height: none !important; }

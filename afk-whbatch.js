@@ -264,7 +264,8 @@
             var d = defs[i];
             var list = document.getElementById(d.id); if (!list) continue;
             var bar = document.getElementById('afk-whb-bar-' + d.side);
-            if (!_batch) { if (bar) bar.remove(); continue; }
+            // 倉庫面板一次只顯示一個分頁(倉庫/背包),另一份清單 display:none → 它的工具列也不放
+            if (!_batch || list.style.display === 'none') { if (bar) bar.remove(); continue; }
             if (!bar) {
                 bar = document.createElement('div');
                 bar.id = 'afk-whb-bar-' + d.side;
@@ -317,15 +318,15 @@
     }
 
     function injectToggle() {
-        var anchor = document.querySelector('button[onclick*="sortWarehouse"]');
+        // 倉庫分頁旁是「整理」、背包分頁旁是「一鍵存入」,兩個分頁都要有入口
+        var anchor = document.querySelector('button[onclick*="sortWarehouse"], button[onclick*="whOneClickDeposit"]');
         if (!anchor || document.getElementById('afk-whb-toggle')) return;
         var b = document.createElement('button');
         b.id = 'afk-whb-toggle';
         b.type = 'button';
         b.textContent = '🗂️ 批次';
-        b.className = 'btn px-4 text-sm font-bold h-8 inline-flex items-center justify-center';
+        b.className = 'whx-btn';
         b.title = '批次模式：點清單只勾選不搬移，勾完按「批次存入／取出」一次搬完（整疊）。搬幾百格也只存檔一次，比一件一件點快得多。';
-        b.setAttribute('style', 'background: linear-gradient(135deg, #164e63 0%, #0e7490 28%, #0c3f52 52%, #0891b2 76%, #082f3d 100%); color: #cffafe; border-color: #06b6d4;');
         if (_batch) b.classList.add('on');
         b.addEventListener('click', function () {
             _batch = !_batch;
