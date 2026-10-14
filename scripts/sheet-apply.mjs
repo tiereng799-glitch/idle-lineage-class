@@ -136,6 +136,7 @@ for (const def of RECORD_SHEETS) {
   const edit = def.cols.filter(c => c.type !== 'show' && c.type !== 'tpl');
   const colOf = columnsOf(ws, def.sheet, [ID_HEAD, ...edit.filter(c => c.type !== 'img' && !c.opt).map(c => c.zh)]);   // 圖檔欄是後來加的,舊表沒有也照樣能用
   if (!colOf[ID_HEAD]) continue;
+  for (const c of edit) if (c.was && !colOf[c.zh] && colOf[c.was]) colOf[c.zh] = colOf[c.was];   // 改過名的欄：舊表照舊名讀
   const valid = new Map(def.rows(G).map(([rowKey, recId, prefix]) => [rowKey, [recId, prefix]]));
   const base = { items: G.DB.items, mobs: G.DB.mobs, skills: G.DB.skills }[def.store];
   const seen = new Map();

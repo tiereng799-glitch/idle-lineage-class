@@ -1119,7 +1119,7 @@ function polyFormDesc(f) {
     if (f.rh)  p.push(`遠距離命中+${f.rh}`);
     if (f.ed)  p.push(`額外傷害+${f.ed}`);
     if (f.eh)  p.push(`額外命中+${f.eh}`);
-    if (f.mgd) p.push(`魔法傷害+${f.mgd}`);
+    if (f.mgd) p.push(`魔攻+${f.mgd}`);
     if (f.sp)  p.push(`額外魔法點數+${f.sp}`);
     if (f.mpr) p.push(`MP恢復+${f.mpr}`);
     if (f.ac)  p.push(`AC${f.ac}`);

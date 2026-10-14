@@ -1855,7 +1855,7 @@ function _clanRoleDisplayName(p) {
 
 function _clanBuffText(buff) {
     if (!buff) return '';
-    return `HP +${buff.hp}、MP +${buff.mp}、額外傷害 +${buff.extraDmg}、額外命中 +${buff.extraHit}、魔法防禦 +${buff.mr}、魔法傷害 +${buff.magicDmg}、HP/MP 自然恢復 +${buff.hpR}、防禦 ${buff.ac}`;
+    return `HP +${buff.hp}、MP +${buff.mp}、額外傷害 +${buff.extraDmg}、額外命中 +${buff.extraHit}、魔法防禦 +${buff.mr}、魔攻 +${buff.magicDmg}、HP/MP 自然恢復 +${buff.hpR}、防禦 ${buff.ac}`;
 }
 
 function setClanPanelView(view) {

@@ -933,7 +933,7 @@ const ANT_HELPER_DESC = {
     guard: '主玩家額外獲得指定傭兵 10% MR 的傷害減免（最高 20%）',
     resist: '主玩家額外獲得指定傭兵 100% 的地屬性抗性（最高 +30）',
     precision: '主玩家額外獲得指定傭兵 5% 等級的額外命中（最高 +20）',
-    destroy: '主玩家額外獲得指定傭兵 5% 的近距離傷害、遠距離傷害、魔法傷害、額外魔法點數（每項最高 +20）'
+    destroy: '主玩家額外獲得指定傭兵 5% 的近距離傷害、遠距離傷害、魔攻、額外魔法點數（每項最高 +20）'
 };
 function antharasHelperSlots() { let h = player.antharasHelpers || {}; return Object.keys(h).map(k => h[k] && String(h[k].slot)).filter(Boolean); }
 function _antReadSlotStats(slotN) {   // 輕量讀取存檔位角色能力快照（不建 ally 物件·不動存檔·同模式限定）
