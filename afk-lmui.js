@@ -220,8 +220,9 @@
       /* ── 下方堆疊：血條 → 快捷列 → 聊天框 ── */
       '#lmui-vit{position:absolute;left:0;right:0;top:calc(var(--lmui-mtop) - var(--lmui-vit) - var(--orig-bar-h,0px));height:var(--lmui-vit);padding:3px 4px 0;display:flex;flex-direction:column;justify-content:center;gap:2px;background:linear-gradient(#1d1711,#0e0b08);border-top:1px solid #4a3f30;box-shadow:0 -3px 8px rgba(0,0,0,.6);pointer-events:auto;z-index:3;}',
       '#lmui-bottom{position:absolute;left:0;right:0;bottom:0;height:var(--lmui-stack);display:flex;flex-direction:column;gap:4px;padding:6px 4px 4px;background:linear-gradient(#1a1612,#0b0907);border-top:1px solid #4a3f30;box-shadow:0 -6px 14px rgba(0,0,0,.65);}',
-      /* HP/MP：左右兩條＋中間 AUTO 圓章（第二批起不再借上游血條底圖，改成自己畫的金框斜角條） */
-      '#lmui-bars{position:relative;flex:none;width:100%;height:38px;}',
+      /* HP/MP：經典天堂那種「左右兩條＋中間圓章」的框。框借上游的 assets/character/血條底圖.png（334×34，桌機狀態面板同一張），
+         調成銅色（只濾 ::before 那層，血條本身不受影響）；血條位置照上游 .status-vitals-row 的比例（左 3.3%／右 55.5%、寬 41.2%）。 */
+      '#lmui-bars{position:relative;flex:none;width:100%;aspect-ratio:334/34;max-height:40px;}',
       /* 夥伴列：寵物(項圈圖)／召喚(召喚術圖)／迷魅(迷魅術圖)，一隻一格，壓在血條上緣；點一下看狀態 */
       '#lmui-comp{position:absolute;left:4px;bottom:100%;margin-bottom:3px;display:flex;gap:4px;z-index:5;}',
       '.lmui-cp{position:relative;width:28px;height:28px;padding:0;border:1px solid var(--lmui-line);border-radius:4px;background:rgba(0,0,0,.6);box-shadow:0 1px 3px #000;cursor:pointer;}',
@@ -233,19 +234,13 @@
       '#lmui-comp-pop{position:absolute;left:4px;bottom:calc(100% + 36px);min-width:150px;padding:6px 9px;background:rgba(12,9,6,.94);border:1px solid var(--lmui-line);border-radius:6px;font-size:14px;line-height:1.6;color:#eee;z-index:6;white-space:nowrap;}',
       '#lmui-comp-pop.hidden{display:none;}',
       '#lmui-comp-pop .t{color:#fde68a;font-weight:700;}',
-      /* 第二批（範例圖）：兩條金框斜角血條（體力左尖、魔力右尖）＋左側愛心／水晶圖示，中間壓 AUTO 圓章 */
-      '.lmui-bar{position:absolute;top:50%;height:66%;width:calc(50% - 30px);transform:translateY(-50%);z-index:1;filter:drop-shadow(0 1px 2px #000);}',
-      '#lmui-hp{left:6px;}#lmui-mp{right:6px;}',
-      '.lmui-bar .fr{position:absolute;inset:0;background:linear-gradient(#f3d58a,#a77a2c 45%,#6b4a17 55%,#d6ac57);}',
-      '.lmui-bar .sl{position:absolute;inset:2px;background:linear-gradient(#0a0404,#1c0c0c);overflow:hidden;}',
-      '#lmui-hp .fr,#lmui-hp .sl{clip-path:polygon(12px 0,100% 0,100% 100%,12px 100%,0 50%);}',
-      '#lmui-mp .fr,#lmui-mp .sl{clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%);}',
+      '#lmui-bars::before{content:"";position:absolute;inset:0;background:url("assets/character/血條底圖.png") center/100% 100% no-repeat;filter:sepia(1) saturate(1.6) hue-rotate(-12deg) brightness(.72) contrast(1.15);z-index:0;pointer-events:none;}',
+      '.lmui-bar{position:absolute;top:50%;width:41.2%;height:46%;transform:translateY(-50%);background:#100606;border-radius:2px;overflow:hidden;box-shadow:inset 0 1px 3px #000;z-index:1;}',
+      '#lmui-hp{left:3.3%;}#lmui-mp{left:55.5%;}',
       '.lmui-bar i{position:absolute;left:0;top:0;bottom:0;width:0;transition:width .25s;}',
-      '#lmui-hp i{background:linear-gradient(#ff8a78,#d42222 38%,#8a0c0c 78%,#4a0505);}',
-      '#lmui-mp i{background:linear-gradient(#8ab4ff,#2a5ed6 38%,#123488 78%,#081a4a);}',
-      '.lmui-bar .ic{position:absolute;top:50%;width:22px;height:22px;transform:translateY(-50%);z-index:3;filter:drop-shadow(0 1px 1px #000);}',
-      '#lmui-hp .ic{left:13px;}#lmui-mp .ic{left:7px;}',
-      '.lmui-bar span{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;padding-left:24px;font:700 12px/1 Consolas,"Courier New",monospace;letter-spacing:.5px;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;}',
+      '#lmui-hp i{background:linear-gradient(#ff7a6a,#c81e1e 35%,#7a0b0b 75%,#4a0505);}',
+      '#lmui-mp i{background:linear-gradient(#7aa8ff,#2453c8 35%,#10307a 75%,#081a4a);}',
+      '.lmui-bar span{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;font:700 12px/1 Consolas,"Courier New",monospace;letter-spacing:.5px;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;}',
       '#lmui-hot{display:grid;grid-template-columns:repeat(' + HOT_ROW + ',1fr) 24px;gap:3px;flex:none;}',
       '#lmui-hot[data-mode="0"] .lmui-slot.r2,#lmui-hot[data-mode="1"] .lmui-slot.r1{display:none;}',
       '#lmui-hot[data-mode="2"] .lmui-slot{max-height:40px;}',   /* 兩排時矮一點，聊天框才不會被擠光 */
@@ -647,7 +642,7 @@
       '<div id="lmui-vit">' +
         '<div id="lmui-comp"></div><div id="lmui-comp-pop" class="hidden"></div>' +
         '<div id="lmui-exp"><i></i><span class="lv"><em>等級</em><b></b></span><span class="pc"></span></div>' +
-        '<div id="lmui-bars"><div id="lmui-hp" class="lmui-bar"><b class="fr"></b><b class="sl"><i></i></b><svg class="ic" viewBox="0 0 24 24"><defs><linearGradient id="lmui-hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a8a"/><stop offset=".55" stop-color="#e01b24"/><stop offset="1" stop-color="#7a0610"/></linearGradient></defs><path d="M12 20.5S3.5 15 3.5 9.2A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8.5 2.2C20.5 15 12 20.5 12 20.5z" fill="url(#lmui-hg)" stroke="#2a0306" stroke-width="1.2"/><path d="M7.2 8.6a2.2 2.2 0 0 1 2.4-1.4" stroke="#ffd7cf" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg><span></span></div><div id="lmui-mp" class="lmui-bar"><b class="fr"></b><b class="sl"><i></i></b><svg class="ic" viewBox="0 0 24 24"><defs><linearGradient id="lmui-mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d6f0ff"/><stop offset=".5" stop-color="#3b8cff"/><stop offset="1" stop-color="#173c9e"/></linearGradient></defs><path d="M12 2.5l6 6.5-6 12.5L6 9z" fill="url(#lmui-mg)" stroke="#06143a" stroke-width="1.1" stroke-linejoin="round"/><path d="M6 9h12M12 2.5v19M9 9l3-6.5L15 9" stroke="#e6f6ff" stroke-width=".7" fill="none" opacity=".75"/></svg><span></span></div>' +
+        '<div id="lmui-bars"><div id="lmui-hp" class="lmui-bar"><i></i><span></span></div><div id="lmui-mp" class="lmui-bar"><i></i><span></span></div>' +
           '<button type="button" id="lmui-auto" class="lmui-hit" aria-label="AUTO">' + AUTO_SVG + '</button></div>' +
       '</div>' +
       '<div id="lmui-bottom">' +
