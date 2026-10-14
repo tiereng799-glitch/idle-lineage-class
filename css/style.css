@@ -737,11 +737,11 @@
         
         /* 🚫 v2.7.49 移除「屬性受擊動畫系統」（CSS 晃動/亮起 hitNormal/Magic/Fire/Water/Wind/Earth + .anim-hit-* 類別）——怪物受擊改只靠 hurt 序列幀 anim 表現 */
 		
-		/* 祝福物品：不要外擴光暈（站長 2026-10-14）→ 貼著圖案輪廓一圈細金邊，亮暗呼吸。
+		/* 祝福物品：不要外擴光暈（站長 2026-10-14）→ 貼著圖案輪廓一圈細金邊；金邊固定全亮（亮暗呼吸看起來像圖在縮小），只讓圖本身亮暗呼吸。
 		   四個方向各一層 0 模糊的 drop-shadow 疊出 1px 描邊（後一層會連前一層的影子一起描，轉角自然補滿）。 */
         @keyframes blessGlow {
-            0%, 100% { filter: drop-shadow(1px 0 0 rgba(255, 228, 140, .25)) drop-shadow(-1px 0 0 rgba(255, 228, 140, .25)) drop-shadow(0 1px 0 rgba(255, 228, 140, .25)) drop-shadow(0 -1px 0 rgba(255, 228, 140, .25)); }
-            50% { filter: drop-shadow(1px 0 0 rgba(255, 236, 170, .95)) drop-shadow(-1px 0 0 rgba(255, 236, 170, .95)) drop-shadow(0 1px 0 rgba(255, 236, 170, .95)) drop-shadow(0 -1px 0 rgba(255, 236, 170, .95)); }
+            0%, 100% { filter: brightness(1.12) drop-shadow(1px 0 0 rgba(255, 236, 170, .95)) drop-shadow(-1px 0 0 rgba(255, 236, 170, .95)) drop-shadow(0 1px 0 rgba(255, 236, 170, .95)) drop-shadow(0 -1px 0 rgba(255, 236, 170, .95)); }
+            50% { filter: brightness(1.4) drop-shadow(1px 0 0 rgba(255, 236, 170, .95)) drop-shadow(-1px 0 0 rgba(255, 236, 170, .95)) drop-shadow(0 1px 0 rgba(255, 236, 170, .95)) drop-shadow(0 -1px 0 rgba(255, 236, 170, .95)); }
         }
         .bless-glow { animation: blessGlow 2s infinite ease-in-out; }
 
@@ -793,10 +793,10 @@
         }
         .ancient-glow-strong { animation: ancientGlowStrong 1.3s infinite ease-in-out; }
 
-        /* 屬性+祝福：同單祝福的輪廓金邊，不外擴光暈；顯眼度＝雙詞綴 → 暗相也保留較亮、呼吸較快 */
+        /* 屬性+祝福：同單祝福（固定金邊＋圖本身亮暗呼吸）；顯眼度＝雙詞綴 → 邊更亮、呼吸更亮更快 */
         @keyframes blessGlowStrong {
-            0%, 100% { filter: drop-shadow(1px 0 0 rgba(255, 228, 140, .5)) drop-shadow(-1px 0 0 rgba(255, 228, 140, .5)) drop-shadow(0 1px 0 rgba(255, 228, 140, .5)) drop-shadow(0 -1px 0 rgba(255, 228, 140, .5)); }
-            50% { filter: drop-shadow(1px 0 0 rgba(255, 246, 200, 1)) drop-shadow(-1px 0 0 rgba(255, 246, 200, 1)) drop-shadow(0 1px 0 rgba(255, 246, 200, 1)) drop-shadow(0 -1px 0 rgba(255, 246, 200, 1)); }
+            0%, 100% { filter: brightness(1.2) drop-shadow(1px 0 0 rgba(255, 246, 200, 1)) drop-shadow(-1px 0 0 rgba(255, 246, 200, 1)) drop-shadow(0 1px 0 rgba(255, 246, 200, 1)) drop-shadow(0 -1px 0 rgba(255, 246, 200, 1)); }
+            50% { filter: brightness(1.55) drop-shadow(1px 0 0 rgba(255, 246, 200, 1)) drop-shadow(-1px 0 0 rgba(255, 246, 200, 1)) drop-shadow(0 1px 0 rgba(255, 246, 200, 1)) drop-shadow(0 -1px 0 rgba(255, 246, 200, 1)); }
         }
         .bless-glow-strong { animation: blessGlowStrong 1.3s infinite ease-in-out; }
 
