@@ -2043,7 +2043,7 @@ function _autoSellDecision(i, ruleSnapshot, craftRemain) {   // 🔧 v2.6.77 rul
     if (i._userKeep) return { sell:false };   // 🛡️ v2.6.69 審計#10：玩家曾手動取消規則標記→豁免自動販賣（重新儲存規則時清除）
     let ov = r.overrides[i.id];
     if (ov === 'keep') return { sell:false };
-    if (ov === 'sell') return { sell:true, qty:i.cnt };
+    if (ov === 'sell') return i.bless === true ? { sell:false } : { sell:true, qty:i.cnt };   // 清單照道具種類比對，祝福的同款不算（站長回報：祝福的被一起賣掉）
     if (AUTOSELL_LIST_ONLY) return { sell:false };   // 🗑️ 2026-10-14 只賣「自動賣出清單」裡的道具（下面那套整批規則停用）
     // 🏛️ v2.7.56 解除封印後的「古老的○○」是普通武器／防具，沒有詞綴且多數無法強化，會立即符合一般裝備販賣規則；整系列優先保護（個別「永遠販賣」例外仍優先，故置於 overrides 之後）。
     if (r.protectOldSeries && (String(i.id).startsWith('wpn_old_') || String(i.id).startsWith('amr_old_'))) return { sell:false };

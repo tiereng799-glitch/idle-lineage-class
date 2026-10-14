@@ -1606,7 +1606,7 @@
     var html = '<div class="lmas"><div class="lmas-add"><select id="lmas-sel" aria-label="要自動賣出的道具">' +
       (opts.length ? opts.map(function (id) { return '<option value="' + id + '">' + esc(DB.items[id].n || id) + '</option>'; }).join('') : '<option value="">背包裡沒有可以加的道具</option>') +
       '</select><button type="button" onclick="__lmuiAsAdd()"' + (opts.length ? '' : ' disabled') + '>新增</button></div>';
-    if (!listed.length) html += '<div class="lmas-empty">選背包裡的道具按「新增」，之後撿到的這種道具都會自動賣掉。</div>';
+    if (!listed.length) html += '<div class="lmas-empty">選背包裡的道具按「新增」，之後撿到的這種道具都會自動賣掉（祝福的不會）。</div>';
     listed.forEach(function (id) {
       var d = DB.items[id], src = typeof getIconUrl === 'function' ? getIconUrl(d) : '';
       html += '<div class="lmas-row"><span class="lmas-ico">' + (src ? '<img src="' + src + '" alt="" onerror="this.style.opacity=0">' : '') + '</span>' +
