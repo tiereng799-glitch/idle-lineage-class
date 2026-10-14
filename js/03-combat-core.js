@@ -548,8 +548,8 @@ function maybeSpawnMobs() {
                 } else if(mapState.current === 'antharas_lair') {
                     delay = 50;                                                 // 🐉 v3.7.57 侵蝕的安塔瑞斯棲息地（BOSS房）：固定 5 秒重生
                 } else if (MOB_RESPAWN_FIXED_TICKS) {
-                    delay = MOB_RESPAWN_FIXED_TICKS;                            // ⏱ 2026-10-14 站長：怪死後固定 4 秒才出下一隻（不再受加速縮短）
-                    if (player.buffs && (player.buffs.sk_sunlight > 0 || player.buffs.sk_holy_dash > 0)) delay = MOB_RESPAWN_SUNLIGHT_TICKS;   // ☀️ 日光術／🏃 神聖疾走(2026-10-15 站長)：縮短為 3 秒（兩個一起開也是 3 秒）
+                    delay = MOB_RESPAWN_FIXED_TICKS;                            // ⏱ 2026-10-15 站長：怪死後固定 5 秒才出下一隻
+                    delay -= mobRespawnCutTicks();                               // ☀️ 日光術 −0.5 秒；🏃 移速類狀態 −0.5 秒（兩類都有 −1 秒＝4 秒）
                     if (isSiegeArea(mapState.current) && typeof npcClanSiegeRespawnMultiplier === 'function') {
                         delay = Math.max(1, Math.round(delay * npcClanSiegeRespawnMultiplier()));
                     }
@@ -745,7 +745,10 @@ function tick() {
         }
         state._pAtkIntervalTicks = aspdTicks;
         state.pDmgTick = attackProgress + 1;
-        if(state.pDmgTick >= aspdTicks) {
+        if ((state._killPause || 0) > 0) {   // ⏸ 剛打死目標：停格中不出手（進度最多存滿一刀，停完馬上打）
+            state._killPause--;
+            if (state.pDmgTick > aspdTicks) state.pDmgTick = aspdTicks;
+        } else if(state.pDmgTick >= aspdTicks) {
             if (!bindSelfBlocked(player)) playerAttack();   // 🕸️ v3.7.75 束縛：非遠距離武器時打不出一般攻擊（攻擊節奏照跑·施法/技能不受影響）
             state.pDmgTick = Math.max(0, state.pDmgTick - aspdTicks);   // 保留小數餘額，長期平均攻速才正確
             state._pStunCycle = false;   // ⚔️ 硬直：每次攻擊後重置「本週期已硬直」旗標（下週期被擊可再延遲一次）
@@ -978,8 +981,17 @@ const BOSS_BIG_MAPS = ['antaras_lair', 'fafurion_lair', 'valakas_lair'];   // �
 // 🆕 後排雙格：一般狩獵、攻城、時空裂痕與四個軍王之室追加兩格「後排」→場上最多同時 5 隻。
 //    單體純BOSS房與雙BOSS祭壇維持三格；攻城建築出現時也不會壓縮為三格。
 // ⏱ 一般狩獵的重生延遲（tick，10 tick＝1 秒）：0＝走舊制（5 秒 × 移動速度倍率、日光術 ×0.8）
-const MOB_RESPAWN_FIXED_TICKS = 40;
-const MOB_RESPAWN_SUNLIGHT_TICKS = 30;   // ☀️ 日光術期間（2026-10-14 站長：4 秒→3 秒）
+const MOB_RESPAWN_FIXED_TICKS = 50;     // 2026-10-15 站長：4 秒→5 秒
+const MOB_RESPAWN_CUT_TICKS = 5;       // 每一類縮短 0.5 秒：日光術一類、移速狀態（神聖疾走／風之疾走／行走加速／勇敢藥水）一類，同類不重複算
+const MOB_RESPAWN_SPEED_BUFFS = ['sk_holy_dash', 'sk_elf_winddash', 'sk_dark_walkhaste', 'brave'];
+function mobRespawnCutTicks() {
+    let b = (player && player.buffs) || {}, cut = 0;
+    if (b.sk_sunlight > 0) cut += MOB_RESPAWN_CUT_TICKS;
+    if (MOB_RESPAWN_SPEED_BUFFS.some(k => (b[k] || 0) > 0)) cut += MOB_RESPAWN_CUT_TICKS;
+    return cut;
+}
+// 打死目前的目標後，下一刀要停一下才出手：近戰 0.6 秒、遠程（弓）0.3 秒（state._killPause·killMob 設定）
+const KILL_PAUSE_MELEE_TICKS = 6, KILL_PAUSE_RANGED_TICKS = 3;
 // 🗺️ 一張圖同時最多幾隻怪：一般狩獵 3（2026-10-14 站長：5→4→3·畫面是人物在左、怪物在右）；
 //    四軍王房維持 5 格（軍王＋兩側＋後排的站位寫死在 kbRoomRespawn）；純 BOSS 房 3 格。
 const HUNT_MOB_SLOTS = 3;

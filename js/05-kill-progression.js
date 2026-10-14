@@ -328,6 +328,10 @@ function killMob(idx) {
     if (!mob || mob._dead) return;        // 冪等保護：同一隻怪只結算一次獎勵
     if (mob._justTransformedTick != null && state.ticks - mob._justTransformedTick <= 5 && mob.curHp > 0) return;   // 🌅 審查修：同一擊內的過時二次 killMob（on-hit 特效先殺→主判定又用舊 target.curHp 呼叫同槽位）→剛變身的滿血新階段不吃這種幽靈擊殺（真死亡 curHp<=0 不受影響）
     if (mob.transformTo && DB.mobs[mob.transformTo]) { doMobTransform(idx); return; }   // 🌅 三段變身：即使 HP=0 也不會死亡而是強制變身（先於 _dead/特效/獎勵）
+    if (idx === mapState.targetIdx && typeof KILL_PAUSE_MELEE_TICKS !== 'undefined') {   // ⏸ 站長規則：打死目前目標後停格（近戰 0.6 秒、拿弓 0.3 秒）再打下一隻
+        let _kw = player.eq && player.eq.wpn && DB.items[player.eq.wpn.id];
+        state._killPause = (_kw && (_kw.isBow || _kw.ranged)) ? KILL_PAUSE_RANGED_TICKS : KILL_PAUSE_MELEE_TICKS;
+    }
     if (state.antharas && mapState.current === 'antharas_lair' && mob.n === '被侵蝕的瘋狂安塔瑞斯' &&
         typeof antharasClaimDailyClear === 'function') {
         let _antClaim = antharasClaimDailyClear();

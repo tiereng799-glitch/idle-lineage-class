@@ -1776,7 +1776,7 @@ window.onload = () => {
     const _P = function(x){ return Math.round(x * 100); };   // 0.3 → 30
     const _S = function(spd){ return Math.round((spd - 1) * 100); };   // 速度 ×1.33 → +33
     const SK_FUNC = {
-        sk_sunlight: function(){ return '怪物重生時間 '+(MOB_RESPAWN_FIXED_TICKS/10)+' 秒→'+(MOB_RESPAWN_SUNLIGHT_TICKS/10)+' 秒（軍王之室無效）'; },
+        sk_sunlight: function(){ return '怪物重生時間 '+(MOB_RESPAWN_FIXED_TICKS/10)+' 秒→'+((MOB_RESPAWN_FIXED_TICKS-MOB_RESPAWN_CUT_TICKS)/10)+' 秒（可再跟移速類狀態各縮 0.5 秒·軍王之室無效）'; },
         sk_antidote: '解除一名隊員的中毒（自己優先）',
         sk_reveal: '滿血的史巴托不會行動',
         sk_load_up: function(){ return '負重上限+'+SKILL_FX.sk_load_up.cap; },
@@ -1866,8 +1866,8 @@ window.onload = () => {
         if(sk.darkPoison) eff.push('一般攻擊命中 50% 機率使目標中毒：每秒該次攻擊 60% 傷害、持續 5 秒、最多 1 層（取較高傷害並刷新；劇毒精通→100%、每秒 200%）');
         if(sk.moveSpeedMult){
             let moveSpeedText = '移動速度+'+Math.round((sk.moveSpeedMult - 1) * 100)+'%（速度×'+sk.moveSpeedMult;
-            if(sid === 'sk_holy_dash') { moveSpeedText += '，與風之疾走互斥'; eff.push('怪物重生等待 4 秒→3 秒（與日光術不疊加）'); }
-            else if(sid === 'sk_elf_winddash') moveSpeedText += '，與神聖疾走互斥，取代精靈餅乾移速';
+            if(sid === 'sk_holy_dash') { moveSpeedText += '，與風之疾走互斥'; eff.push('怪物重生等待 −0.5 秒（可跟日光術疊加）'); }
+            else if(sid === 'sk_elf_winddash') { moveSpeedText += '，與神聖疾走互斥，取代精靈餅乾移速'; eff.push('怪物重生等待 −0.5 秒（可跟日光術疊加）'); }
             moveSpeedText += '）';
             eff.push(moveSpeedText);
         } else if(sk.moveSpeedReplacesCookie) eff.push('取代精靈餅乾的移動速度提升');
