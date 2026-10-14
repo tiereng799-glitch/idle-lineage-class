@@ -1769,6 +1769,52 @@ window.onload = () => {
     const SK_TYPE = { atk:'攻擊', heal:'治癒', buff:'增益', manual:'手動', convert:'轉換', summon:'召喚' };
     const SK_ELE = { fire:'火', water:'水', earth:'地', wind:'風', none:'無' };
     const SK_STAT2 = { ac:'AC', mr:'魔防', dr:'傷害減免', er:'迴避', str:'力量', dex:'敏捷', con:'體質', int:'智力', wis:'精神', cha:'魅力', extraDmg:'額外傷害', extraHit:'額外命中', magicDmg:'魔法傷害', extraMp:'額外MP', mpR:'MP恢復', hpR:'HP恢復', meleeHit:'近距命中', rangedHit:'遠距命中', meleeDmg:'近距傷害', rangedDmg:'遠距傷害', resFire:'火屬性抗性', resWater:'水屬性抗性', resEarth:'地屬性抗性', resWind:'風屬性抗性' };
+    // 📜 2026-10-14 站長：說明框改顯示魔法的「實際功能」，不顯示施放台詞(sk.msg)。
+    //    下列是資料欄位組不出效果字的魔法，依各自實作手寫（數值改了這裡要跟著改）；持續時間、消耗已由上面 meta 列顯示，這裡不重複。
+    const SK_FUNC = {
+        sk_sunlight: '目前沒有作用（狩獵區怪物固定 4 秒重生）',
+        sk_antidote: '解除一名隊員的中毒（自己優先）',
+        sk_reveal: '滿血的史巴托不會行動',
+        sk_load_up: '負重上限+50',
+        sk_magic_shield: '抵擋一次怪物的傷害魔法，抵擋後 3 秒內不能再施放',
+        sk_holy_light: '解除一名隊員的石化與麻痺（自己優先）',
+        sk_mana_drain: '命中時吸取目標的 MP（最多為怪物等級的一半）',
+        sk_haste_spell: '攻擊速度與移動速度+33%',
+        sk_cancel: '解除一名隊員的冰凍、石化、中毒、麻痺、灼燒等異常狀態（自己優先）',
+        sk_greater_haste: '攻擊速度與移動速度+33%',
+        sk_invisible: '非頭目的滿血怪物不會攻擊你（受傷後恢復行動）',
+        sk_resurrection: '死亡時消耗 MP 原地復活；也能立即救起倒地的傭兵與寵物',
+        sk_holy_barrier: '受到的物理與魔法傷害-30%',
+        sk_soul_up: '最大HP與最大MP各+20%',
+        sk_reduction_armor: '傷害減免+（等級÷10）',
+        sk_counter_barrier: '雙手武器也能反擊；單手劍反擊與武士刀居合傷害×2',
+        sk_elf_mind: '恢復 MP 2',
+        sk_elf_worldtree: '妖精森林與眠龍洞穴：米索莉塊、元素石掉率 2%→3%，精靈玉 20%→30%',
+        sk_elf_triple: '需要弓：連射 3 箭，每箭各自判定命中與傷害，只耗 1 支箭',
+        sk_elf_soul: '恢復 MP 15',
+        sk_elf_singleres: '已選屬性的抗性+50',
+        sk_elf_watervital: '需要水屬性：下次受到治療時回復量×2（觸發後 7 秒冷卻）',
+        sk_elf_earthshield: '需要地屬性：完全擋下怪物的一般攻擊',
+        sk_elf_flamesoul: '需要火屬性：近距離攻擊的武器傷害一律取最大值',
+        sk_elf_preciseshot: '需要風屬性：命中判定擲出最低點也算命中',
+        sk_elf_attrfire: '需要火屬性：一般攻擊 30% 機率傷害×1.5',
+        sk_elf_physboost: '需要地屬性：負重過重時仍會自然恢復 HP 與 MP',
+        sk_elf_energyboost: '需要火屬性：負重過重時仍會自然恢復 HP 與 MP',
+        sk_elf_mirror: '受到魔法傷害時，有（精神值）% 機率對施法者反彈等量傷害',
+        sk_dark_stealth: '必定閃避一次物理攻擊，閃過後效果消失',
+        sk_dark_refine: '沉默洞穴黑魔石掉率提高；其他野外與地監也會掉黑魔石',
+        sk_dark_poisonres: '受到的中毒傷害減半',
+        sk_dark_burn: '一般攻擊 30% 機率傷害×1.5',
+        sk_dark_walkhaste: '攻擊速度與移動速度+15%（可與加速術疊加）',
+        sk_dark_dodge: '50% 機率閃避一次傷害魔法，閃過後效果消失',
+        sk_dark_crit: '消耗最大HP 50% 與全部 MP，打出必中且必爆擊的一擊；MP 越多傷害越高、無視硬皮',
+        sk_dark_double: '持雙刀或鋼爪時，一般攻擊 10% 機率傷害×2（45 級起每 5 級+1%）',
+        sk_royal_precise: '全場敵人受到的傷害+（1＋等級÷15）%',
+        sk_royal_callally: '所有傭兵立刻各追加攻擊一次',
+        sk_royal_bravewill: '一般攻擊 10% 機率傷害×1.5（劍術精通 20%）',
+        sk_helm_dex2: '攻擊速度與移動速度+33%',
+        sk_helm_str2: '滿血的史巴托不會行動',
+    };
     const SK_MEFF = { teleport:'瞬間移動', sense:'能量感測', recall:'回村', charm:'迷魅', barrier:'隔絕無敵（無法攻擊/施法/用道具・不受任何傷害・不自然恢復）' };
     function buildSkillTipHTML(sid){
         let sk = DB.skills[sid]; if(!sk) return '';
@@ -1821,9 +1867,9 @@ window.onload = () => {
             if(s.length) eff.push(s.join('、'));
         }
         if(sk.desc) eff.push(sk.desc);   // 📜 v3.1.79 稽核修：被動效果說明（王者加護等寫在 desc·原 tooltip 不讀→玩家 hover 看不到效果）
-        if(sk.d && typeof sk.d === 'string') eff.push(sk.d);   // 📜 v3.1.79 稽核修：字串型 d 說明（粉碎能量/心靈破壞·與物件型 d(數值加成) 同名不同型）
+        if(sk.d && typeof sk.d === 'string') eff.push(sk.d);
+        if(SK_FUNC[sid]) eff.push(SK_FUNC[sid]);   // 📜 v3.1.79 稽核修：字串型 d 說明（粉碎能量/心靈破壞·與物件型 d(數值加成) 同名不同型）
         if(eff.length) parts.push(`<div class="text-rose-300" style="font-size:12px;">${eff.join(' ／ ')}</div>`);
-        if(sk.msg) parts.push(`<div class="text-slate-400" style="font-size:11px;margin-top:4px;">${sk.msg}</div>`);
         return parts.join('');
     }
     function buildItemTipHTML(id, hidePrice){
