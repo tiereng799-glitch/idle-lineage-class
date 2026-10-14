@@ -509,8 +509,9 @@ function whGold(dir){
     // 🏦 縱深守衛：倉庫只能在安全區使用（浮動視窗曾可被帶進狩獵區；closeNpcInteraction 已補關閉，這裡再擋一層）
     if (typeof mapState === 'undefined' || !mapState.current || !String(mapState.current).startsWith('town_')) { if (typeof logSys === 'function') logSys('<span class="text-red-400">離開安全區後無法使用倉庫。</span>'); return; }
     let amt = parseInt(document.getElementById('wh-gold-amt').value) || 0;
-    if(amt <= 0) return;
     let w = loadWarehouse();
+    if(amt <= 0) amt = (dir === 'in') ? player.gold : (w.gold || 0);   // 數量留空＝全部（跟物品列同一個規則）
+    if(amt <= 0) return;
     let _txn = whTxnSnapshot();
     if(dir === 'in'){ amt = Math.min(amt, player.gold); player.gold -= amt; w.gold = (w.gold||0) + amt; }
     else { amt = Math.min(amt, w.gold||0); w.gold -= amt; player.gold += amt; }
@@ -519,13 +520,23 @@ function whGold(dir){
     renderWarehouseNPC(document.getElementById('interaction-content'));
 }
 // 🏦 倉庫視窗（2026-10-14 依站長給的範本重排）：
-//   標題列 → 一行資訊（共用・格數）→ 金幣列 → 「倉庫／背包」兩個分頁 → 一排工具（分類・搜尋・一鍵存入／排列）→ 物品清單。
+//   標題列（index.html：寶箱圖＋「倉庫」＋紅色 ✕）→ 一行資訊（共用・格數）→ 金幣列 → 「倉庫／背包」兩個分頁
+//   → 一排工具（分類・搜尋・整理／一鍵存入）→ 物品清單（分頁，每頁 WH_PAGE 列）。
 //   每列：圖示｜名稱×數量｜數量框（可疊的才有，預設整疊）｜取出／存入。
 //   ⚠️ 外掛依賴（勿改名）：#wh-gold-amt、#wh-inv-list、#wh-store-list、select[onchange*=whSetFilter/whSetSubFilter]、
-//      清單每列的 data-tip-uid / data-tip-src（afk-warehouse 長按看資料／只列可穿、afk-whbatch 批次勾選）。
+//      button[onclick*=sortWarehouse/whOneClickDeposit]、清單每列的 data-tip-uid / data-tip-src
+//      （afk-warehouse 長按看資料／只列可穿、afk-whbatch 批次勾選）。
 //      兩份清單都照樣畫出來，非作用分頁的那份只是藏起來（外掛照常找得到）。
+//   分頁：倉庫可到 5,000 格，整份畫出來手機會卡 → 一次只畫一頁；分類／搜尋一變就回第 1 頁。
+const WH_PAGE = 50;
 let _whTab = 'wh';   // 'wh' 倉庫 ／ 'inv' 背包
+let _whPg = { wh: 0, inv: 0 }, _whPgKey = '';
 function whSetTab(t){ _whTab = (t === 'inv') ? 'inv' : 'wh'; renderWarehouseNPC(document.getElementById('interaction-content')); }
+function whSetPage(d){
+    _whPg[_whTab] = Math.max(0, (_whPg[_whTab] || 0) + d);
+    renderWarehouseNPC(document.getElementById('interaction-content'));
+    let c = document.getElementById('warehouse-window-content'); if (c) c.scrollTop = 0;
+}
 // 列上的數量框 → 帶進核心的「存取數量」再存取（留空或超過＝整疊），做完歸零，下次預設又是整疊
 function whRowAct(side, uid, btn){
     let row = btn && btn.closest ? btn.closest('.whx-row') : null;
@@ -533,6 +544,13 @@ function whRowAct(side, uid, btn){
     whSetQty(inp ? inp.value : '');
     try { if (side === 'wh') whWithdraw(uid); else whDeposit(uid); } finally { whSetQty(''); }
 }
+const _WHX_SVG = {
+    chest: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v1H3z"/><path d="M3 12.5h7v2.5h4v-2.5h7V20H3z"/></svg>',
+    bag:   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5a3 3 0 0 1 6 0V6h-1.6V4.5a1.4 1.4 0 0 0-2.8 0V6H9z"/><path d="M5 11a4.5 4.5 0 0 1 4.5-4.5h5A4.5 4.5 0 0 1 19 11v9a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 20zm3 3.5v3h8v-3z"/></svg>',
+    down:  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3h3v7.5h3.5L12 16l-5-5.5h3.5z"/><path d="M3 14h3v4h12v-4h3v7H3z"/></svg>',
+    up:    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l5 5.5h-3.5V15h-3V7.5H7z"/><path d="M3 14h3v4h12v-4h3v7H3z"/></svg>',
+    box:   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l9 4.5-9 4.5-9-4.5z"/><path d="M3 8.2l8 4v9.6l-8-4zM21 8.2l-8 4v9.6l8-4z"/></svg>'
+};
 function renderWarehouseNPC(div){
     if (typeof warehouseWindowIsOpen === 'function' && warehouseWindowIsOpen()) { let floating = document.getElementById('warehouse-window-content'); if (floating) div = floating; }
     if (!div) return;
@@ -541,34 +559,40 @@ function renderWarehouseNPC(div){
     let _searching = _whSearchActive();
     let _invItems = player.inv.filter(it => !it.lock && (_searching ? whMatchSearch(it) : whMatchFilter(it.id)));   // 🔒 鎖定物品不顯示於倉庫存放清單（用戶要求：鎖定物品存放時不顯示）
     let _whItems  = w.items.filter(it => _searching ? whMatchSearch(it) : whMatchFilter(it.id));
+    let _key = _whFilter + '|' + _whSubFilter + '|' + (_searching ? _whSearchInput : '');
+    if (_key !== _whPgKey) { _whPgKey = _key; _whPg = { wh: 0, inv: 0 }; }
+    let _page = (arr, side) => { let n = Math.max(1, Math.ceil(arr.length / WH_PAGE)); _whPg[side] = Math.min(_whPg[side] || 0, n - 1); return { rows: arr.slice(_whPg[side] * WH_PAGE, (_whPg[side] + 1) * WH_PAGE), n }; };
     let _icon = it => { let d = DB.items[it.id]; let src = (d && typeof getIconUrl === 'function') ? getIconUrl(d) : ''; return `<div class="whx-icon">${src ? `<img src="${src}" alt="" onerror="this.style.opacity='0'">` : ''}</div>`; };
     let _row = (it, side) => {
         let cnt = it.cnt || 1, noStore = side === 'inv' && WH_NO_STORE.includes(it.id);
         let qty = (cnt > 1 && !noStore) ? `<input class="whx-qty" type="number" min="1" max="${cnt}" value="${cnt}" inputmode="numeric" aria-label="數量">` : '';
         let act = noStore ? '<span class="whx-nostore">不可存放</span>'
-            : `<button type="button" class="whx-act" onclick="whRowAct('${side}','${it.uid}',this)">${side === 'wh' ? '取出' : '存入'}</button>`;
+            : `<button type="button" class="whx-act" onclick="whRowAct('${side}','${it.uid}',this)">${_WHX_SVG.box}<span>${side === 'wh' ? '取出' : '存入'}</span></button>`;
         return `<div class="whx-row tip-host${noStore ? ' whx-dim' : ''}" data-tip-uid="${it.uid}" data-tip-src="${side}">${_icon(it)}`
             + `<div class="whx-name"><span class="${getItemColor(it)}">${getItemFullName(cnt > 1 ? { ...it, cnt: 1 } : it)}</span>${cnt > 1 ? `<span class="whx-cnt">×${cnt.toLocaleString()}</span>` : ''}</div>${qty}${act}</div>`;
     };
     let _empty = (side) => `<div class="whx-empty">${_searching ? (side === 'wh' ? '倉庫沒有符合搜尋的物品' : '背包沒有符合搜尋的物品') : (side === 'wh' ? '這個分類倉庫是空的' : '這個分類背包沒有物品')}</div>`;
-    let invHtml = _invItems.length ? _invItems.map(it => _row(it, 'inv')).join('') : _empty('inv');
-    let whHtml  = _whItems.length ? _whItems.map(it => _row(it, 'wh')).join('') : _empty('wh');
+    let _list = (arr, side) => { let pg = _page(arr, side); return arr.length ? pg.rows.map(it => _row(it, side)).join('') : _empty(side); };
+    let whHtml = _list(_whItems, 'wh'), invHtml = _list(_invItems, 'inv');
+    let onWh = _whTab === 'wh', _cur = onWh ? _whItems : _invItems;
+    let _pages = Math.max(1, Math.ceil(_cur.length / WH_PAGE)), _pi = _whPg[_whTab];
     let _oi = document.getElementById('wh-inv-list'), _os = document.getElementById('wh-store-list');
     let _whInvScroll = _oi ? _oi.scrollTop : 0, _whStoreScroll = _os ? _os.scrollTop : 0, _divScroll = div.scrollTop;
     let subOpts = (_whFilter === 'all') ? [] : whSubCatOptions();
-    let onWh = _whTab === 'wh';
     div.innerHTML = `
     <div class="whx">
         <div class="whx-info">同帳號所有角色共用・倉庫 ${w.items.length.toLocaleString()} / ${WH_MAX.toLocaleString()} 格</div>
         <div class="whx-gold">
-            <div class="whx-gold-sum"><div>倉庫金幣 <b>${(w.gold||0).toLocaleString()}</b></div><div>身上金幣 <b>${player.gold.toLocaleString()}</b></div></div>
-            <input id="wh-gold-amt" type="number" min="1" placeholder="數量" inputmode="numeric" class="whx-input">
-            <button type="button" class="whx-btn" onclick="whGold('in')">存入</button>
-            <button type="button" class="whx-btn" onclick="whGold('out')">取出</button>
+            <div class="whx-gold-sum"><img src="assets/ui/wh-coins.webp" alt="" class="whx-coins"><div><div>倉庫金幣 <b>${(w.gold||0).toLocaleString()}</b></div><div>身上金幣 <b>${player.gold.toLocaleString()}</b></div></div></div>
+            <div class="whx-gold-ctl">
+                <input id="wh-gold-amt" type="number" min="1" placeholder="全部" inputmode="numeric" class="whx-input" aria-label="金幣數量">
+                <button type="button" class="whx-btn" onclick="whGold('in')">${_WHX_SVG.down}<span>存入</span></button>
+                <button type="button" class="whx-btn" onclick="whGold('out')">${_WHX_SVG.up}<span>取出</span></button>
+            </div>
         </div>
         <div class="whx-tabs">
-            <button type="button" class="${onWh ? 'on' : ''}" onclick="whSetTab('wh')">倉庫（${_whItems.length}）</button>
-            <button type="button" class="${onWh ? '' : 'on'}" onclick="whSetTab('inv')">背包（${_invItems.length}）</button>
+            <button type="button" class="${onWh ? 'on' : ''}" onclick="whSetTab('wh')">${_WHX_SVG.chest}<span>倉庫（${_whItems.length.toLocaleString()}）</span></button>
+            <button type="button" class="${onWh ? '' : 'on'}" onclick="whSetTab('inv')">${_WHX_SVG.bag}<span>背包（${_invItems.length.toLocaleString()}）</span></button>
         </div>
         <div class="whx-tools">
             <select onchange="whSetFilter(this.value)" class="whx-input">
@@ -582,10 +606,17 @@ function renderWarehouseNPC(div){
                 ${subOpts.map(o => `<option value="${o.key}" ${_whSubFilter===o.key?'selected':''}>${o.name}</option>`).join('')}
             </select>
             <input id="wh-search-input" type="search" class="whx-input whx-search" placeholder="搜尋" value="${_whEscAttr(_whSearchInput)}" oninput="whSetSearch(this.value, this.selectionStart, event)">
-            ${onWh ? '<button type="button" class="whx-btn" onclick="sortWarehouse()">整理</button>' : '<button type="button" class="whx-btn" onclick="whOneClickDeposit()">一鍵存入</button>'}
+            ${onWh ? '<button type="button" class="whx-btn whx-btn-sm" onclick="sortWarehouse()">整理</button>' : '<button type="button" class="whx-btn whx-btn-sm" onclick="whOneClickDeposit()">一鍵存入</button>'}
         </div>
-        <div class="whx-list" id="wh-store-list"${onWh ? '' : ' style="display:none"'}>${whHtml}</div>
-        <div class="whx-list" id="wh-inv-list"${onWh ? ' style="display:none"' : ''}>${invHtml}</div>
+        <div class="whx-panel">
+            <div class="whx-list" id="wh-store-list"${onWh ? '' : ' style="display:none"'}>${whHtml}</div>
+            <div class="whx-list" id="wh-inv-list"${onWh ? ' style="display:none"' : ''}>${invHtml}</div>
+            <div class="whx-pager">
+                <button type="button" onclick="whSetPage(-1)" aria-label="上一頁"${_pi > 0 ? '' : ' disabled'}>‹</button>
+                <span>${_pi + 1} / ${_pages}</span>
+                <button type="button" onclick="whSetPage(1)" aria-label="下一頁"${_pi < _pages - 1 ? '' : ' disabled'}>›</button>
+            </div>
+        </div>
     </div>`;
     div.scrollTop = _divScroll;
     let _ni = document.getElementById('wh-inv-list'); if(_ni) _ni.scrollTop = _whInvScroll;
