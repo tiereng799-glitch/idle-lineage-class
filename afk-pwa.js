@@ -5,6 +5,8 @@
  *   ● 還沒安裝 → 設定選單出現「📥 安裝成 APP」。
  *       - Android/桌機 Chromium：點了叫出系統安裝視窗（beforeinstallprompt）。
  *       - iOS / 抓不到安裝事件：點了跳文字引導（分享→加入主畫面）。
+ *   ● 手機／平板在登入畫面右上角另有一顆「📲 安裝到桌面」(同一個流程;Android 叫出系統安裝,iPhone 跳加入主畫面教學)。
+ *     桌機不顯示(桌機用設定選單那項就好)。已安裝(從桌面圖示開的)或 file:// 都不顯示。
  *   ● 安裝後從桌面/主畫面像 App 一樣開啟;圖片一律「用到才抓」(SW cache-first 圖桶,
  *     玩過的會留著、離線也能看),不預先下載整包圖。
  *
@@ -121,6 +123,38 @@
       onClick: onInstallClick
     });
   }
+  // 登入畫面右上角的「📲 安裝到桌面」：只給手機／平板。
+  //   判斷手機：觸控為主(pointer:coarse)且 UA 是 Android／iPhone／iPad(iPadOS 會冒充 Mac → 再看有沒有觸控點)。
+  //   只在登入畫面(#main-menu 看得到、還沒進遊戲)顯示；掛在 body 上(#login-art-stage 會把不認得的子元素藏掉)。
+  function isMobileDevice() {
+    var ua = navigator.userAgent || '';
+    var touchMac = /Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1;   // iPadOS
+    var coarse = !window.matchMedia || window.matchMedia('(pointer: coarse)').matches;
+    return coarse && (/Android|iPhone|iPad|iPod|Mobile/i.test(ua) || touchMac);
+  }
+  function mountInstallFab() {
+    if (!pwaCapable() || isStandalone() || !isMobileDevice()) return;
+    if (!document.getElementById('afk-pwa-fab-style')) {
+      var st = document.createElement('style');
+      st.id = 'afk-pwa-fab-style';
+      st.textContent = '#afk-pwa-fab{position:fixed;top:calc(var(--orig-bar-h,0px) + 12px);right:12px;z-index:60;display:none;align-items:center;gap:6px;padding:8px 16px;border-radius:999px;' +
+        'border:1px solid #b08a4a;background:linear-gradient(#3a2d1c,#1b140c);color:#f3dfae;font-size:15px;font-weight:700;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,230,170,.25);cursor:pointer;-webkit-tap-highlight-color:transparent;}' +
+        '#afk-pwa-fab.on{display:flex;}#afk-pwa-fab:active{filter:brightness(1.2);}';
+      document.head.appendChild(st);
+    }
+    var b = document.createElement('button');
+    b.type = 'button'; b.id = 'afk-pwa-fab'; b.textContent = '📲 安裝到桌面';
+    b.addEventListener('click', onInstallClick);
+    document.body.appendChild(b);
+    function sync() {
+      var mm = document.getElementById('main-menu'), gs = document.getElementById('game-screen');
+      var onLogin = !!(mm && mm.getClientRects().length) && !(gs && !gs.classList.contains('hidden'));
+      var show = onLogin && !isStandalone();
+      if (b.classList.contains('on') !== show) b.classList.toggle('on', show);
+    }
+    sync();
+    setInterval(sync, 1000);
+  }
   function bindInstallEvents() {
     window.addEventListener('beforeinstallprompt', function (e) {
       e.preventDefault();
@@ -201,6 +235,7 @@
     injectHead();
     registerInstallSetting();
     bindInstallEvents();
+    mountInstallFab();
     if (pwaCapable()) {
       watchUpdates();
     }
