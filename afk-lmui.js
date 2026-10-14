@@ -85,7 +85,6 @@
       /* 狀態（魔法）圖示放大：上游手機只有 ~12px，看不出是哪個魔法 */
       B + '#status-icon-bar .status-icon{width:28px !important;height:28px !important;min-width:28px;border:1px solid rgba(0,0,0,.8);box-shadow:0 1px 3px #000;}',
       B + '#status-icon-bar .status-icon img{width:100% !important;height:100% !important;object-fit:cover;}',
-      'body.lmui-battle.lmui-nobuff #status-icon-bar{display:none !important;}',
       /* 點狀態圖示看名稱與剩餘時間（內容取自核心寫在圖示上的 title，每秒更新） */
       '#lmui-stip{position:fixed;z-index:2147483000;display:none;max-width:70vw;padding:6px 10px;border:1px solid #6b5636;border-radius:6px;background:rgba(20,16,12,.96);color:#f1e6cf;font-size:15px;line-height:1.4;box-shadow:0 4px 12px rgba(0,0,0,.6);pointer-events:none;white-space:nowrap;}',
       /* 戰鬥畫面不被視窗遮住：彈窗一律改放在「場景下緣以下」（蓋住按鈕/快捷列/聊天框，不蓋場景）。
@@ -168,9 +167,8 @@
       '#lmui-face img.logo{object-fit:contain;object-position:center;transform:none;padding:4px;}',
       '#lmui-face{position:relative;}',
       '#lmui-face .pic{cursor:pointer;}',
-      /* 名字右邊接正義值（等級移到下方經驗條） */
-      '#lmui-align{font-size:13px;flex-shrink:0;}',
-      '#lmui-buffbtn{margin-top:3px;width:22px;height:14px;padding:0;font-size:12px;line-height:12px;color:#ddd;background:rgba(0,0,0,.55);border:1px solid var(--lmui-line);border-radius:2px;}',
+      /* 頭像下方：性向（正義／中立／邪惡）兩行——頭像只有 44px 寬，「正義 +32767」一行放不下 */
+      '#lmui-face #lmui-align{margin-top:3px;display:flex;flex-direction:column;align-items:center;font-size:11px;line-height:1.15;white-space:nowrap;}',
       '#lmui-stats{display:flex;flex-direction:column;gap:2px;padding-top:2px;font-size:13px;}',
       '#lmui-stats .row{display:flex;gap:9px;align-items:baseline;white-space:nowrap;}',
       '#lmui-stats .k{color:#bdbdbd;margin-right:3px;}',
@@ -617,9 +615,9 @@
     hot += '<button type="button" id="lmui-hotmode" class="lmui-hit" aria-label="切換快捷列"></button>';
     hud.innerHTML =
       '<div id="lmui-tl">' +
-        '<div id="lmui-face"><div class="pic lmui-hit" role="button" aria-label="裝備欄"><img alt=""></div><button type="button" id="lmui-buffbtn" class="lmui-hit" aria-label="狀態圖示">≫</button></div>' +
+        '<div id="lmui-face"><div class="pic lmui-hit" role="button" aria-label="裝備欄"><img alt=""></div><span id="lmui-align"><span class="k"></span><b></b></span></div>' +
         '<div id="lmui-stats">' +
-          '<div class="row"><button type="button" id="lmui-name" class="lmui-hit"></button><span id="lmui-align"><span class="k"></span><b></b></span></div>' +
+          '<div class="row"><button type="button" id="lmui-name" class="lmui-hit"></button></div>' +
           '<div class="row"><span><span class="k">防禦</span><b id="lmui-ac"></b></span><span><span class="k">魔防</span><b id="lmui-mr"></b></span></div>' +
           '<div class="row"><span id="lmui-gold"><span class="k">💰</span><b></b></span></div>' +
         '</div>' +
@@ -661,7 +659,6 @@
 
     el.mapname.addEventListener('click', function () { closeAllWindows(); toggleMaps(); });
     el.mini.addEventListener('click', toggleMap);
-    $('lmui-buffbtn').addEventListener('click', function () { document.body.classList.toggle('lmui-nobuff'); });
     $('lmui-auto').addEventListener('click', function () {
       var p = !isPaused(); setPaused(p);
       try { logSys(p ? '⏸ 已暫停，再按一次 AUTO 繼續' : '▶ 自動戰鬥繼續'); } catch (e) {}
@@ -1775,7 +1772,7 @@
 
   function updateStats() {
     updateName();
-    // 名字＋正義值同一排：右邊不可壓到地圖名框（框寬隨地圖名變）→ 量出可用寬度，名字太長就省略號
+    // 名字那一排：右邊不可壓到地圖名框（框寬隨地圖名變）→ 量出可用寬度，名字太長就省略號
     try {
       var row1 = el.name.parentNode, tr = $('lmui-tr');
       if (row1 && tr && tr.offsetWidth) {
