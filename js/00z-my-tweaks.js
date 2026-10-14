@@ -109,10 +109,47 @@
   function pendingGifts() {
     if (!loaded()) return [];
     var claimed = Array.isArray(player.giftsClaimed) ? player.giftsClaimed : [];
-    return (T.gifts || []).filter(function (g) {
+    var sheet = (T.gifts || []).filter(function (g) {
       return claimed.indexOf(g.id) < 0 && (g.to === '全部' || g.to === player.name) && (g.kind === 'gold' || (g.kind === 'item' && DB.items[g.item]));
     });
+    return sheet.concat(testMails().filter(function (g) { return DB.items[g.item]; }));
   }
+  // ── 🧪 測試用寄信（站長 2026-10-14）：聊天框輸入「.道具名稱 數量」→ 那個道具寄到自己的信箱 ──
+  //   信件存在 player.testMail（跟著存檔走）；領取時從清單移除，不記進 giftsClaimed（編號是臨時產生的，記了只會越堆越多）。
+  function testMails() { return (loaded() && Array.isArray(player.testMail)) ? player.testMail : []; }
+  function findItemByName(name) {
+    var flat = name.replace(/\s+/g, ''), hit = null, near = [];
+    for (var id in DB.items) {
+      var d = DB.items[id]; if (!d || !d.n) continue;
+      if (d.n === name || id === name) return id;
+      var dn = String(d.n).replace(/\s+/g, '');
+      if (!hit && dn === flat) hit = id;
+      else if (near.length < 5 && dn.indexOf(flat) >= 0) near.push(d.n);
+    }
+    return hit || { near: near };
+  }
+  // 回傳 true＝這句是指令（已處理，不要當聊天送出）
+  window.myChatCommand = function (text) {
+    var t = String(text || '').trim();
+    if (t.charAt(0) !== '.' && t.charAt(0) !== '．') return false;
+    if (!loaded()) return true;
+    var body = t.slice(1).trim(), m = body.match(/^(.*?)\s+(\d+)$/);
+    var name = (m ? m[1] : body).trim(), cnt = m ? Math.min(99999, parseInt(m[2], 10)) : 1;
+    var say = function (h) { if (typeof logSys === 'function') logSys(h); };
+    if (!name) { say('<span class="text-slate-300">用法：.道具名稱 數量（例：.對武器施法的卷軸 5）</span>'); return true; }
+    if (!(cnt > 0)) { say('<span class="text-red-300">數量要大於 0。</span>'); return true; }
+    var r = findItemByName(name);
+    if (typeof r !== 'string') {
+      say('<span class="text-red-300">找不到「' + esc(name) + '」。' + (r.near.length ? '你是不是要找：' + r.near.map(esc).join('、') : '') + '</span>');
+      return true;
+    }
+    if (!Array.isArray(player.testMail)) player.testMail = [];
+    player.testMail.push({ id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'item', item: r, cnt: cnt, en: 0, _test: true });
+    say('<span class="text-yellow-300 font-bold">📬 ' + esc(DB.items[r].n) + ' ×' + cnt + ' 已寄到信箱。</span>');
+    updateMailButton(); renderMailbox();
+    if (typeof saveGame === 'function') saveGame();
+    return true;
+  };
   function claimGifts(ids) {
     try {
       if (!loaded()) return;
@@ -123,7 +160,8 @@
         if (g.kind === 'gold') player.gold = (player.gold || 0) + g.cnt;
         else if (typeof gainItem === 'function') giveItem(g.item, g.cnt, g.en | 0);
         else return;
-        claimed.push(g.id);
+        if (g._test) { var tm = testMails(), k = tm.indexOf(g); if (k >= 0) tm.splice(k, 1); }
+        else claimed.push(g.id);
         got.push(giftLabel(g));
       });
       if (!got.length) return;
