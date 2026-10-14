@@ -269,6 +269,7 @@
       '#lmui-input{display:flex;gap:4px;align-items:center;padding:2px 3px 3px;flex:none;}',
       '#lmui-say{flex:1;min-width:0;padding:4px 8px;border:1px solid #3d3326;background:rgba(0,0,0,.6);color:#eee;font-size:17px;line-height:1.1;font-family:inherit;outline:none;}',   /* 16px：iOS 小於 16px 的輸入框一聚焦就整頁放大 */
       '#lmui-say::placeholder{color:#7d7058;font-size:14px;}',
+      '#lmui-say,#lmui-send{display:none !important;}#lmui-input{justify-content:flex-end;}',   /* 世界頻道虛擬玩家聊天已關（js/26 WC_FAKE_CHAT_CLOSED）：只留回村 */
       '#lmui-send{flex:none;padding:3px 10px;border:1px solid #2563eb;background:linear-gradient(#1e3a8a,#172554);color:#dbeafe;font-size:13px;}',
       /* 戰鬥地圖裡不用 afk-mobile 的完整日誌面板（聊天框已取代）；村莊沒有聊天框，照舊用面板 */
       'body.lmui-battle #m-log-sheet{display:none !important;}',
@@ -979,7 +980,6 @@
     document.body.classList.add('lmui-chatbig');
     if (document.body.classList.contains('lmui-town')) document.body.classList.add('lmui-townchat');   // 村莊：聊天框蓋在 NPC 卡片上，按其他工具就收回
     try { renderChat(true); } catch (e) {}
-    var say = $('lmui-say'); if (say) try { say.focus(); } catch (e) {}
   }
   // 完整日誌面板（afk-mobile 的 #m-log-sheet；⇆ 在「戰鬥/系統」與「世界頻道」間切）——只剩村莊用
   function openFullLog() {
