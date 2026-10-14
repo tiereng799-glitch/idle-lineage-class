@@ -1288,12 +1288,22 @@
       e.classList.add(cs.transform && cs.transform !== 'none' && r.height < window.innerHeight * 0.9 ? 'lmui-below-c' : 'lmui-below');
     }
   }
+  // 有沒有彈窗「蓋到下方 HUD 那一帶」：只有那種才需要把快捷列／聊天框收起來；
+  //   短的小視窗（例如信箱）整個落在場景裡，收掉 HUD 只會留下一片空白（站長回報）→ 不算。
   function anyWindowOpen() {
     var list = document.querySelectorAll(WIN_SEL);
+    var gs = $('game-screen'), limit = gs ? gs.getBoundingClientRect().top : 0;
     for (var i = 0; i < list.length; i++) {
       var e = list[i];
       if (e.id === 'game-screen' || e.closest('#lmui-hud') || e.closest('#lmui-ashost')) continue;
-      if (e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden') return true;
+      if (!e.getClientRects().length || getComputedStyle(e).visibility === 'hidden') continue;
+      if (!limit) return true;
+      var r = e.getBoundingClientRect(), bot = r.bottom;
+      if (r.height > window.innerHeight * 0.85) {   // 遮罩型：看裡面那張卡
+        bot = 0;
+        for (var c = e.firstElementChild; c; c = c.nextElementSibling) { var cr = c.getBoundingClientRect(); if (cr.height) bot = Math.max(bot, cr.bottom); }
+      }
+      if (bot > limit + 2) return true;
     }
     return false;
   }

@@ -145,12 +145,18 @@
     ov.querySelector('.my-mb-all').style.display = list.length > 1 ? '' : 'none';
     updateMailButton();
   }
+  // 金色信封(內嵌 SVG,不依賴 emoji 字型——各家手機的 📬 長得都不一樣);按鈕與信箱標題共用
+  var MAIL_SVG = '<svg viewBox="0 0 32 24" aria-hidden="true"><defs><linearGradient id="my-mail-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dd8f"/><stop offset="1" stop-color="#c08a2e"/></linearGradient></defs>' +
+    '<rect x="1.5" y="2" width="29" height="20" rx="2" fill="url(#my-mail-g)" stroke="#5b3d12" stroke-width="1.4"/>' +
+    '<path d="M2.5 3.5 16 14 29.5 3.5" fill="none" stroke="#5b3d12" stroke-width="1.6" stroke-linejoin="round"/>' +
+    '<path d="M2.5 20.5 12.5 11.5M29.5 20.5 19.5 11.5" fill="none" stroke="#7a5418" stroke-width="1.2"/></svg>';
   function openMailbox() {
     if (!loaded()) return;
     closeMailbox();
     var ov = document.createElement('div');
     ov.id = 'my-mailbox';
-    ov.innerHTML = '<div class="my-mb-box"><div class="my-mb-head">📬 信箱<button type="button" class="my-mb-x" aria-label="關閉">✕</button></div>' +
+    ov.className = 'fixed inset-0';   // 跟其他遮罩型視窗同一套擺位(天堂M介面會把它放到場景下方、不留空白)
+    ov.innerHTML = '<div class="my-mb-box"><div class="my-mb-head"><span class="my-mb-title">' + MAIL_SVG + '信箱</span><button type="button" class="my-mb-x" aria-label="關閉">✕</button></div>' +
       '<div class="my-mb-list"></div><button type="button" class="my-mb-btn my-mb-all">全部領取</button></div>';
     ov.addEventListener('click', function (e) {
       if (e.target === ov || e.target.closest('.my-mb-x')) { closeMailbox(); return; }
@@ -166,11 +172,7 @@
     if (!btn) {
       btn = document.createElement('button');
       btn.type = 'button'; btn.id = 'my-mail-btn'; btn.className = 'lmui-hit'; btn.setAttribute('aria-label', '信箱');
-      // 金色信封(內嵌 SVG,不依賴 emoji 字型——各家手機的 📬 長得都不一樣)
-      btn.innerHTML = '<svg viewBox="0 0 32 24" aria-hidden="true"><defs><linearGradient id="my-mail-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dd8f"/><stop offset="1" stop-color="#c08a2e"/></linearGradient></defs>' +
-        '<rect x="1.5" y="2" width="29" height="20" rx="2" fill="url(#my-mail-g)" stroke="#5b3d12" stroke-width="1.4"/>' +
-        '<path d="M2.5 3.5 16 14 29.5 3.5" fill="none" stroke="#5b3d12" stroke-width="1.6" stroke-linejoin="round"/>' +
-        '<path d="M2.5 20.5 12.5 11.5M29.5 20.5 19.5 11.5" fill="none" stroke="#7a5418" stroke-width="1.2"/></svg><i></i>';
+      btn.innerHTML = MAIL_SVG + '<i></i>';
       btn.addEventListener('click', function (e) { e.stopPropagation(); openMailbox(); });
     }
     var vit = document.getElementById('lmui-vit');
@@ -225,6 +227,7 @@
     '.my-mb-box{width:100%;max-width:360px;max-height:80vh;display:flex;flex-direction:column;gap:8px;padding:12px;background:#1a1612;border:1px solid #b7791f;border-radius:10px;color:#eee}' +
     '.my-mb-head{display:flex;justify-content:space-between;align-items:center;color:#fbbf24;font-weight:bold;font-size:17px}' +
     '.my-mb-x{background:none;border:0;color:#aaa;font-size:18px;cursor:pointer}' +
+    '.my-mb-title{display:inline-flex;align-items:center;gap:8px}.my-mb-title svg{width:26px;height:auto}' +
     '.my-mb-list{overflow:auto;display:flex;flex-direction:column;gap:6px}' +
     '.my-mb-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#0e0b08;border:1px solid #4a3f30;border-radius:6px}' +
     '.my-mb-txt{flex:1;min-width:0;display:flex;flex-direction:column}.my-mb-txt small{color:#94a3b8}' +
