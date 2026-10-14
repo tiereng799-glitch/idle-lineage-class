@@ -172,6 +172,12 @@
   var FN_SVG = '<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="my-fn-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbe6a6"/><stop offset="1" stop-color="#b8862f"/></linearGradient></defs>' +
     '<g fill="none" stroke="url(#my-fn-g)" stroke-width="2.4" stroke-linejoin="round"><rect x="4" y="4" width="10" height="10" rx="2"/><rect x="18" y="4" width="10" height="10" rx="2"/><rect x="4" y="18" width="10" height="10" rx="2"/></g>' +
     '<path d="M23 17.5v11M17.5 23h11" stroke="url(#my-fn-g)" stroke-width="2.8" stroke-linecap="round"/></svg>';
+  // 選單圖示：金色線條（stroke 用 currentColor，顏色由 CSS 給）
+  var FN_ICO = {
+    mail: '<svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="1.5"/><path d="M3 6l9 7 9-7"/></svg>',
+    trade: '<svg viewBox="0 0 24 24"><path d="M4 8h15l-4-4M20 16H5l4 4"/></svg>',
+    rank: '<svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1.5A3.5 3.5 0 0 0 7.5 11M17 6h3v1.5A3.5 3.5 0 0 1 16.5 11"/><path d="M12 14v3.5M8.5 20.5h7M9.5 17.5h5v3h-5z"/></svg>'
+  };
   var FN_ITEMS = [
     { k: 'mail', name: '信箱', run: function () { openMailbox(); } },
     { k: 'trade', name: '交易所', run: function () { logSys('交易所尚未開放。'); } },
@@ -184,7 +190,7 @@
     m.id = 'my-fn-menu'; m.className = 'lmui-hit';
     var n = pendingGifts().length;
     m.innerHTML = FN_ITEMS.map(function (it) {
-      return '<button type="button" data-k="' + it.k + '">' + it.name + (it.k === 'mail' && n ? '<i>' + n + '</i>' : '') + '</button>';
+      return '<button type="button" data-k="' + it.k + '">' + (FN_ICO[it.k] || '') + '<span>' + it.name + '</span>' + (it.k === 'mail' && n ? '<i>' + n + '</i>' : '') + '</button>';
     }).join('');
     m.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-k]'); if (!b) return;
@@ -260,7 +266,8 @@
     '#my-fn-menu{position:absolute;right:56px;bottom:100%;margin-bottom:8px;z-index:6;display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid #9c7a40;border-radius:8px;' +
     'background:linear-gradient(rgba(36,28,19,.97),rgba(14,11,7,.98));box-shadow:0 4px 14px rgba(0,0,0,.7);pointer-events:auto}' +
     'body>#my-fn-menu{position:fixed;top:52px;right:8px;bottom:auto;z-index:91}' +
-    '#my-fn-menu button{position:relative;min-width:92px;padding:8px 14px;border:1px solid #5a4630;border-radius:5px;background:linear-gradient(#2c2218,#18120c);color:#f0e2bf;font-size:15px;font-weight:700;text-align:center;cursor:pointer}' +
+    '#my-fn-menu button{position:relative;display:flex;align-items:center;gap:8px;min-width:112px;padding:8px 14px 8px 10px;border:1px solid #5a4630;border-radius:5px;background:linear-gradient(#2c2218,#18120c);color:#f0e2bf;font-size:15px;font-weight:700;text-align:left;cursor:pointer}' +
+    '#my-fn-menu button svg{flex:none;width:20px;height:20px;fill:none;stroke:#e2bd6b;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 1px #000)}' +
     '#my-fn-menu button:active{filter:brightness(1.3)}' +
     '#my-fn-menu i{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;border:1px solid #fff;background:#dc2626;color:#fff;font:bold 11px/16px sans-serif;font-style:normal}' +
     '#my-mail-btn>i{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;border:1px solid #fff;background:#dc2626;color:#fff;font:bold 11px/16px sans-serif;font-style:normal;text-align:center;box-shadow:0 1px 2px #000}' +
