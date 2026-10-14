@@ -65,7 +65,7 @@
     var STAND = '0px';   // 戰鬥框已縮在上半（#col-center 釘住），怪物/角色直接站在框底
     var css = [
       /* 戰鬥場景只佔上半（玩家要求「縮到一半、下方留空間」）：下方 HUD 面板＝可用高度的一半扣掉 AUTO 那條 */
-      ':root{--lmui-btns:0px;--lmui-vit:58px;--lmui-stack:calc((100dvh - var(--orig-bar-h,0px) - var(--m-nav-h,0px)) / 2 - var(--lmui-vit));--lmui-gold:#d9bf86;--lmui-line:rgba(214,190,140,.45);--lmui-glass:rgba(8,8,10,.42);}',
+      ':root{--lmui-btns:0px;--lmui-vit:64px;--lmui-stack:calc((100dvh - var(--orig-bar-h,0px) - var(--m-nav-h,0px)) / 2 - var(--lmui-vit));--lmui-gold:#d9bf86;--lmui-line:rgba(214,190,140,.45);--lmui-glass:rgba(8,8,10,.42);}',
 
       /* ── 上下兩塊：上半永遠是戰鬥（不管切到哪個分頁），下半放 HUD 或分頁內容 ──
          #col-center 釘在上半（fixed，不受 afk-mobile「一次只顯示一欄」影響）；#game-screen 本身縮到下半當捲動區——
@@ -196,7 +196,7 @@
       '.lmui-round{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:radial-gradient(circle at 50% 40%,rgba(60,60,60,.35),rgba(0,0,0,.45) 75%);color:rgba(255,255,255,.85);box-shadow:inset 0 0 14px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:0;font-weight:600;}',
       '.lmui-round:active{background:radial-gradient(circle at 50% 40%,rgba(120,110,90,.45),rgba(0,0,0,.45) 75%);}',
       /* AUTO：圓鈕壓在血條正中；開著＝紅球＋外圈光環，關著＝暗灰鈕 */
-      '#lmui-auto{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;width:44px;height:44px;padding:0;border-radius:50%;border:2px solid #d9c9a8;background:radial-gradient(circle at 45% 35%,#ff6b5b,#c81e1e 50%,#5a0606 85%);color:#fff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),inset 0 -4px 8px rgba(0,0,0,.45),0 1px 4px #000;cursor:pointer;display:flex;align-items:center;justify-content:center;}',
+      '#lmui-auto{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;width:44px;height:44px;padding:0;border-radius:50%;border:2px solid #f0cd7a;background:radial-gradient(circle at 45% 35%,#ff6b5b,#c81e1e 50%,#5a0606 85%);color:#fff3d6;box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),inset 0 -4px 8px rgba(0,0,0,.45),0 0 0 2px #4a3110,0 0 0 3px #b8893a,0 1px 5px #000;cursor:pointer;display:flex;align-items:center;justify-content:center;}',
       '#lmui-auto svg{width:100%;height:100%;display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.8));pointer-events:none;}',
       /* 光環只動 opacity（合成層就能做，不重算版面）；省電「關動畫」時停在全亮 */
       '#lmui-auto::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(255,190,120,.95);box-shadow:0 0 8px 3px rgba(255,70,40,.85),inset 0 0 6px rgba(255,90,50,.7);pointer-events:none;animation:lmuiAutoGlow 1.4s ease-in-out infinite alternate;}',
@@ -211,9 +211,8 @@
       /* ── 下方堆疊：血條 → 快捷列 → 聊天框 ── */
       '#lmui-vit{position:absolute;left:0;right:0;top:calc(var(--lmui-mtop) - var(--lmui-vit) - var(--orig-bar-h,0px));height:var(--lmui-vit);padding:3px 4px 0;display:flex;flex-direction:column;justify-content:center;gap:2px;background:linear-gradient(#1d1711,#0e0b08);border-top:1px solid #4a3f30;box-shadow:0 -3px 8px rgba(0,0,0,.6);pointer-events:auto;z-index:3;}',
       '#lmui-bottom{position:absolute;left:0;right:0;bottom:0;height:var(--lmui-stack);display:flex;flex-direction:column;gap:4px;padding:6px 4px 4px;background:linear-gradient(#1a1612,#0b0907);border-top:1px solid #4a3f30;box-shadow:0 -6px 14px rgba(0,0,0,.65);}',
-      /* HP/MP：經典天堂那種「左右兩條＋中間圓章」的框。框借上游的 assets/character/血條底圖.png（334×34，桌機狀態面板同一張），
-         調成銅色（只濾 ::before 那層，血條本身不受影響）；血條位置照上游 .status-vitals-row 的比例（左 3.3%／右 55.5%、寬 41.2%）。 */
-      '#lmui-bars{position:relative;flex:none;width:100%;aspect-ratio:334/34;max-height:40px;}',
+      /* HP/MP：左右兩條＋中間 AUTO 圓章（第二批起不再借上游血條底圖，改成自己畫的金框斜角條） */
+      '#lmui-bars{position:relative;flex:none;width:100%;height:38px;}',
       /* 夥伴列：寵物(項圈圖)／召喚(召喚術圖)／迷魅(迷魅術圖)，一隻一格，壓在血條上緣；點一下看狀態 */
       '#lmui-comp{position:absolute;left:4px;bottom:100%;margin-bottom:3px;display:flex;gap:4px;z-index:5;}',
       '.lmui-cp{position:relative;width:28px;height:28px;padding:0;border:1px solid var(--lmui-line);border-radius:4px;background:rgba(0,0,0,.6);box-shadow:0 1px 3px #000;cursor:pointer;}',
@@ -225,13 +224,19 @@
       '#lmui-comp-pop{position:absolute;left:4px;bottom:calc(100% + 36px);min-width:150px;padding:6px 9px;background:rgba(12,9,6,.94);border:1px solid var(--lmui-line);border-radius:6px;font-size:14px;line-height:1.6;color:#eee;z-index:6;white-space:nowrap;}',
       '#lmui-comp-pop.hidden{display:none;}',
       '#lmui-comp-pop .t{color:#fde68a;font-weight:700;}',
-      '#lmui-bars::before{content:"";position:absolute;inset:0;background:url("assets/character/血條底圖.png") center/100% 100% no-repeat;filter:sepia(1) saturate(1.6) hue-rotate(-12deg) brightness(.72) contrast(1.15);z-index:0;pointer-events:none;}',
-      '.lmui-bar{position:absolute;top:50%;width:41.2%;height:46%;transform:translateY(-50%);background:#100606;border-radius:2px;overflow:hidden;box-shadow:inset 0 1px 3px #000;z-index:1;}',
-      '#lmui-hp{left:3.3%;}#lmui-mp{left:55.5%;}',
+      /* 第二批（範例圖）：兩條金框斜角血條（體力左尖、魔力右尖）＋左側愛心／水晶圖示，中間壓 AUTO 圓章 */
+      '.lmui-bar{position:absolute;top:50%;height:66%;width:calc(50% - 30px);transform:translateY(-50%);z-index:1;filter:drop-shadow(0 1px 2px #000);}',
+      '#lmui-hp{left:6px;}#lmui-mp{right:6px;}',
+      '.lmui-bar .fr{position:absolute;inset:0;background:linear-gradient(#f3d58a,#a77a2c 45%,#6b4a17 55%,#d6ac57);}',
+      '.lmui-bar .sl{position:absolute;inset:2px;background:linear-gradient(#0a0404,#1c0c0c);overflow:hidden;}',
+      '#lmui-hp .fr,#lmui-hp .sl{clip-path:polygon(12px 0,100% 0,100% 100%,12px 100%,0 50%);}',
+      '#lmui-mp .fr,#lmui-mp .sl{clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%);}',
       '.lmui-bar i{position:absolute;left:0;top:0;bottom:0;width:0;transition:width .25s;}',
-      '#lmui-hp i{background:linear-gradient(#ff7a6a,#c81e1e 35%,#7a0b0b 75%,#4a0505);}',
-      '#lmui-mp i{background:linear-gradient(#7aa8ff,#2453c8 35%,#10307a 75%,#081a4a);}',
-      '.lmui-bar span{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;font:700 12px/1 Consolas,"Courier New",monospace;letter-spacing:.5px;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;}',
+      '#lmui-hp i{background:linear-gradient(#ff8a78,#d42222 38%,#8a0c0c 78%,#4a0505);}',
+      '#lmui-mp i{background:linear-gradient(#8ab4ff,#2a5ed6 38%,#123488 78%,#081a4a);}',
+      '.lmui-bar .ic{position:absolute;top:50%;width:22px;height:22px;transform:translateY(-50%);z-index:3;filter:drop-shadow(0 1px 1px #000);}',
+      '#lmui-hp .ic{left:13px;}#lmui-mp .ic{left:7px;}',
+      '.lmui-bar span{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;padding-left:24px;font:700 12px/1 Consolas,"Courier New",monospace;letter-spacing:.5px;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;}',
       '#lmui-hot{display:grid;grid-template-columns:repeat(' + HOT_ROW + ',1fr) 24px;gap:3px;flex:none;}',
       '#lmui-hot[data-mode="0"] .lmui-slot.r2,#lmui-hot[data-mode="1"] .lmui-slot.r1{display:none;}',
       '#lmui-hot[data-mode="2"] .lmui-slot{max-height:40px;}',   /* 兩排時矮一點，聊天框才不會被擠光 */
@@ -281,9 +286,12 @@
       'body.lmui-battle #m-log-sheet{display:none !important;}',
       /* 經驗：導覽列正上方一條細線＋百分比 */
       /* 經驗條：天堂M樣式——深色膠囊＋銀色外框，左半「等級 N」、右半百分比 */
-      '#lmui-exp{position:relative;flex:none;height:14px;border-width:1px;margin:0 6px;border-radius:7px;background:linear-gradient(#1b1611,#050403);border:1px solid #9b958a;box-shadow:inset 0 0 0 1px #2c261e,inset 0 2px 4px rgba(0,0,0,.9),0 0 0 1px #1d1812,0 1px 3px #000;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;align-items:center;}',
-      '#lmui-exp i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:7px;background:linear-gradient(90deg,rgba(146,96,20,.55),rgba(214,170,60,.55));}',
-      '#lmui-exp span{position:relative;display:flex;align-items:baseline;justify-content:center;gap:8px;font-weight:700;font-size:12px;line-height:1;color:#f3f0ea;text-shadow:1px 1px 0 #000,-1px -1px 0 #000;letter-spacing:.5px;}',
+      /* 經驗條（範例圖）：金框、兩端箭頭；底下金色進度 */
+      '#lmui-exp{position:relative;flex:none;height:17px;margin:0 2px;display:grid;grid-template-columns:1fr 1fr;align-items:center;filter:drop-shadow(0 1px 2px #000);}',
+      '#lmui-exp::before{content:"";position:absolute;inset:0;background:linear-gradient(#f3d58a,#a77a2c 45%,#6b4a17 55%,#d6ac57);clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,10px 100%,0 50%);}',
+      '#lmui-exp::after{content:"";position:absolute;inset:2px 3px;background:linear-gradient(#120d07,#24190d);clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 50%,calc(100% - 8px) 100%,8px 100%,0 50%);}',
+      '#lmui-exp i{position:absolute;left:11px;top:3px;bottom:3px;width:0;max-width:calc(100% - 22px);z-index:1;background:linear-gradient(#f9e39a,#d9a640 50%,#a0731f);box-shadow:0 0 6px rgba(240,190,90,.6);}',
+      '#lmui-exp span{position:relative;z-index:2;display:flex;align-items:baseline;justify-content:center;gap:8px;font-weight:700;font-size:12px;line-height:1;color:#f3f0ea;text-shadow:1px 1px 0 #000,-1px -1px 0 #000;letter-spacing:.5px;}',
       '#lmui-exp em{font-style:normal;font-weight:inherit;color:inherit;text-shadow:inherit;letter-spacing:inherit;}',   /* 「等級」字與數字同色同樣式 */
 
       /* ── 右欄面板（能力/魔法/背包/設定）拉高：從頭像列下方一路到工具列，蓋住戰鬥畫面下半與血條 ──
@@ -630,7 +638,7 @@
       '<div id="lmui-vit">' +
         '<div id="lmui-comp"></div><div id="lmui-comp-pop" class="hidden"></div>' +
         '<div id="lmui-exp"><i></i><span class="lv"><em>等級</em><b></b></span><span class="pc"></span></div>' +
-        '<div id="lmui-bars"><div id="lmui-hp" class="lmui-bar"><i></i><span></span></div><div id="lmui-mp" class="lmui-bar"><i></i><span></span></div>' +
+        '<div id="lmui-bars"><div id="lmui-hp" class="lmui-bar"><b class="fr"></b><b class="sl"><i></i></b><svg class="ic" viewBox="0 0 24 24"><defs><linearGradient id="lmui-hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a8a"/><stop offset=".55" stop-color="#e01b24"/><stop offset="1" stop-color="#7a0610"/></linearGradient></defs><path d="M12 20.5S3.5 15 3.5 9.2A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8.5 2.2C20.5 15 12 20.5 12 20.5z" fill="url(#lmui-hg)" stroke="#2a0306" stroke-width="1.2"/><path d="M7.2 8.6a2.2 2.2 0 0 1 2.4-1.4" stroke="#ffd7cf" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg><span></span></div><div id="lmui-mp" class="lmui-bar"><b class="fr"></b><b class="sl"><i></i></b><svg class="ic" viewBox="0 0 24 24"><defs><linearGradient id="lmui-mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d6f0ff"/><stop offset=".5" stop-color="#3b8cff"/><stop offset="1" stop-color="#173c9e"/></linearGradient></defs><path d="M12 2.5l6 6.5-6 12.5L6 9z" fill="url(#lmui-mg)" stroke="#06143a" stroke-width="1.1" stroke-linejoin="round"/><path d="M6 9h12M12 2.5v19M9 9l3-6.5L15 9" stroke="#e6f6ff" stroke-width=".7" fill="none" opacity=".75"/></svg><span></span></div>' +
           '<button type="button" id="lmui-auto" class="lmui-hit" aria-label="AUTO">' + AUTO_SVG + '</button></div>' +
       '</div>' +
       '<div id="lmui-bottom">' +
@@ -683,10 +691,10 @@
   //   afk-offline 讀同一個鍵（且本外掛開著）時不結算離線收益——暫停中關掉瀏覽器不該還在掛機賺。
   //   本外掛被關掉時 wrapper 透明放行，暫停自然失效（按鈕也不在了，不能留一個解不開的暫停）。
   // AUTO 鈕圖示：上下兩道順時針箭頭夾著 AUTO 字（顏色跟 currentColor）
-  var AUTO_SVG = '<svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">' +
-    '<path d="M9.9 18.9A15 15 0 0 1 37 16.5"/><path d="M38.1 29.1A15 15 0 0 1 11 31.5"/>' +
-    '<path d="M30.6 13.8L37 16.5L37.9 9.6M17.4 34.2L11 31.5L10.1 38.4" stroke-linejoin="round"/>' +
-    '<text x="24" y="28.2" text-anchor="middle" fill="currentColor" stroke="none" font-size="11.5" font-weight="800" font-family="Arial,Helvetica,sans-serif" letter-spacing=".3">AUTO</text></svg>';
+  var AUTO_SVG = '<svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">' +
+    '<g stroke-width="2.3"><path d="M14 9l14 14M34 9L20 23"/><path d="M11 6.5l3.5 1 .9 3.2M37 6.5l-3.5 1-.9 3.2"/></g>' +   // 交叉雙劍（劍身＋劍尖）
+    '<g stroke-width="2.6"><path d="M25 20.5l4.5 4.5M23 20.5L18.5 25"/><path d="M29.5 27l2.5 2.5M18.5 27L16 29.5"/></g>' +   // 護手＋劍柄
+    '<text x="24" y="40" text-anchor="middle" fill="currentColor" stroke="none" font-size="10.5" font-weight="800" font-family="Arial,Helvetica,sans-serif" letter-spacing=".3">AUTO</text></svg>';
   function pauseKey() { return 'my_autopause_' + (typeof currentSlot !== 'undefined' ? currentSlot : ''); }
   function isPaused() { try { return localStorage.getItem(pauseKey()) === '1'; } catch (e) { return false; } }
   function setPaused(v) {
