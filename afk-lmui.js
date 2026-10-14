@@ -187,7 +187,7 @@
       /* 右上：地圖名稱框＋小地圖 */
       '#lmui-tr{position:absolute;top:6px;right:6px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;}',
       /* 地圖名：金色切角框＋左側地點圖示（圖示依地圖名判斷：森林／村莊／城堡／塔／洞穴／島／山谷，其餘交叉劍） */
-      '#lmui-mapname{position:relative;display:flex;align-items:center;gap:6px;min-width:120px;max-width:190px;padding:5px 12px 5px 9px;border:0;background:none;color:#f0e2bf;filter:drop-shadow(0 2px 3px #000);}',
+      '#lmui-mapname{position:relative;display:flex;align-items:center;gap:6px;min-width:120px;max-width:190px;padding:5px 12px 5px 9px;border:0;background:none;color:#f0e2bf;}',   /* 不加 filter（同經驗條：iPhone 上字會糊） */
       '#lmui-mapname::before{content:"";position:absolute;inset:0;background:linear-gradient(#f3d58a,#a77a2c 45%,#6b4a17 55%,#d6ac57);clip-path:polygon(9px 0,calc(100% - 9px) 0,100% 9px,100% calc(100% - 9px),calc(100% - 9px) 100%,9px 100%,0 calc(100% - 9px),0 9px);}',
       '#lmui-mapname::after{content:"";position:absolute;inset:2px;background:linear-gradient(#3a2d1c,#140f09);clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px);}',
       '#lmui-mapname .mi{position:relative;z-index:1;flex:none;width:26px;height:26px;}',
@@ -291,11 +291,11 @@
       /* 經驗：導覽列正上方一條細線＋百分比 */
       /* 經驗條：天堂M樣式——深色膠囊＋銀色外框，左半「等級 N」、右半百分比 */
       /* 經驗條（範例圖）：金框、兩端箭頭；底下金色進度 */
-      '#lmui-exp{position:relative;flex:none;height:17px;margin:0 2px;display:grid;grid-template-columns:1fr 1fr;align-items:center;filter:drop-shadow(0 1px 2px #000);}',
+      '#lmui-exp{position:relative;flex:none;height:17px;margin:0 2px;display:grid;grid-template-columns:1fr 1fr;align-items:center;}',   /* ⚠️ 不能加 filter：iPhone 會把整條（含文字）先畫成點陣圖再套濾鏡，字就糊了 */
       '#lmui-exp::before{content:"";position:absolute;inset:0;background:linear-gradient(#f3d58a,#a77a2c 45%,#6b4a17 55%,#d6ac57);clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,10px 100%,0 50%);}',
       '#lmui-exp::after{content:"";position:absolute;inset:2px 3px;background:linear-gradient(#120d07,#24190d);clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 50%,calc(100% - 8px) 100%,8px 100%,0 50%);}',
-      '#lmui-exp i{position:absolute;left:11px;top:3px;bottom:3px;width:0;max-width:calc(100% - 22px);z-index:1;background:linear-gradient(#f9e39a,#d9a640 50%,#a0731f);box-shadow:0 0 6px rgba(240,190,90,.6);}',
-      '#lmui-exp span{position:relative;z-index:2;display:flex;align-items:baseline;justify-content:center;gap:8px;font-weight:700;font-size:12px;line-height:1;color:#f3f0ea;text-shadow:1px 1px 0 #000,-1px -1px 0 #000;letter-spacing:.5px;}',
+      '#lmui-exp i{position:absolute;left:11px;top:3px;bottom:3px;width:0;max-width:calc(100% - 22px);z-index:1;background:linear-gradient(#d9b45a,#a37624 50%,#6e4a12);}',   /* 進度色壓暗一點，白字才看得清楚 */
+      '#lmui-exp span{position:relative;z-index:2;display:flex;align-items:baseline;justify-content:center;gap:8px;font-weight:700;font-size:12px;line-height:1;color:#fff;text-shadow:1px 0 0 #000,-1px 0 0 #000,0 1px 0 #000,0 -1px 0 #000,1px 1px 0 #000,-1px -1px 0 #000;letter-spacing:.5px;}',
       '#lmui-exp em{font-style:normal;font-weight:inherit;color:inherit;text-shadow:inherit;letter-spacing:inherit;}',   /* 「等級」字與數字同色同樣式 */
 
       /* ── 右欄面板（能力/魔法/背包/設定）拉高：從頭像列下方一路到工具列，蓋住戰鬥畫面下半與血條 ──
