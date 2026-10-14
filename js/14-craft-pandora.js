@@ -1708,9 +1708,11 @@ function buyPandoraItem(i) {
 }
 
 
-/* ===== 玩家自訂名稱：點擊左上狀態欄名稱 → 輸入框 → 確認 ===== */
+/* ===== 玩家自訂名稱：點擊左上狀態欄名稱 → 輸入框 → 確認 =====
+   🪪 2026-10-14 站長：名字取了就不能改（線上遊戲規則；之後要開放改名會另做「變更名稱」道具）。
+      只剩「改版前建的舊角色還沒有名字」可以在這裡取一次名。 */
 function startEditName() {
-    if (window._editingName || !player.cls) return;
+    if (window._editingName || !player.cls || player.name) return;
     window._editingName = true;
     let el = document.getElementById('st-class');
     let cur = (player.name || '').replace(/"/g, '&quot;');
@@ -1725,7 +1727,7 @@ function startEditName() {
 function confirmEditName() {
     let input = document.getElementById('name-edit-input');
     let v = input ? input.value.trim() : '';
-    if (v === (player.name || '')) { cancelEditName(); return; }   // 沒改
+    if (player.name || !v) { cancelEditName(); return; }   // 已經有名字（不能改）或沒填
     // 與創角同一套規則(js/13 characterNameProblem)：2~12 字中英數、不可與其他角色重複(排除自己這格)。
     //   不合格就提示原因、留在輸入狀態；規則本身只允許中英數，HTML 特殊字元自然進不來。
     if (typeof characterNameProblem === 'function') {

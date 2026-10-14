@@ -1384,7 +1384,7 @@ function startGame() {
     player.cls = curCreate.cls;
     player.bloodPledge = null;   // 血盟改由同模式王族花費金幣創立，不再於創角時自動加入。
     player.classicMode = false;   // 🎮 創角畫面已拿掉經典模式勾選：新角色一律一般模式（舊的經典模式角色不受影響）
-    player.name = createName;     // 創角時必填名字（2~12 字）；之後仍可在狀態欄改名
+    player.name = createName;     // 創角時必填名字（2~12 字）；取了就不能改（js/14 startEditName 只給沒名字的舊角色取一次）
     player.enSeed = 'es' + uid() + uid();   // 🎲 強化決定論種子（創角產生一次、存進存檔永久固定）：讓強化成敗由種子決定、不可用 save/load 刷
     player._roleEpoch = _roleEpoch();        // 🛡️ 角色世代：刪除後舊分頁不得把同欄位的舊角色寫回
     if (typeof clanSyncCurrentPlayer === 'function') clanSyncCurrentPlayer();   // 同模式已有血盟時，新角色自動成為成員。
