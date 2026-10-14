@@ -946,11 +946,18 @@ function renderLoadSelect(){
 }
 // 點卡片：空格＝直接進創角；有角色＝選取它，下方顯示素質＋「進入遊戲／刪除角色」
 //   (已停用職業的舊角色也能選取，只是不給進入、只能刪除——不然 3 格全被佔住就再也建不了新角色)
+// 雙擊（手機＝連點兩下）同一隻角色＝直接進入遊戲。不用 dblclick 事件：iPhone 不一定送，而且每次點都會重畫卡片
+//   (第二下點到的是新的元素)→ 自己記「上次點哪一格、什麼時候」。
+const LOAD_DOUBLE_TAP_MS = 400;
 function loadPickSlot(n){
     if(!(n >= 1 && n <= LOAD_SLOT_COUNT)) return;
     const sum = slotSummary(n);
+    const now = Date.now();
+    const isDouble = _loadLastClickSlot === n && now - _loadLastClickAt <= LOAD_DOUBLE_TAP_MS;
+    _loadLastClickSlot = n; _loadLastClickAt = now;
     _loadSelectedSlot = n;
     if(!sum){ loadCreateSelected(); return; }
+    if(isDouble && !sum.removed){ loadEnterSelected(); return; }
     renderLoadSelect();
 }
 // 選取中角色的素質面板(拱門下方)＋進入遊戲／刪除角色；沒選到角色就整塊藏起來
