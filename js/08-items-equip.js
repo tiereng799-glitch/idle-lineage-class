@@ -1210,6 +1210,15 @@ function renderStatusIconBar() {
     } else {
         rows.forEach((x,i)=>{let icon=bar.querySelector(`[data-status-index="${i}"]`);if(!icon)return;icon.title=x.label+(x.ticks>0?'｜剩餘 '+x.sec+' 秒':'');});
     }
+    // ⏳ 2026-10-14 站長要求：剩 10 秒以內→圖示閃爍＋圖上倒數（只動 class 與一個小 span，不重建 img，不會像舊版那樣狂閃）
+    rows.forEach((x,i)=>{
+        let icon=bar.querySelector(`[data-status-index="${i}"]`);if(!icon)return;
+        let ending=x.ticks>0&&x.sec<=10;
+        if(icon.classList.contains('status-icon--ending')!==ending)icon.classList.toggle('status-icon--ending',ending);
+        let cd=icon.querySelector('.status-icon-cd');
+        if(ending){ if(!cd){cd=document.createElement('span');cd.className='status-icon-cd';icon.appendChild(cd);} let t=String(x.sec); if(cd.textContent!==t)cd.textContent=t; }
+        else if(cd)cd.remove();
+    });
 }
 
 // 統一渲染「狀態」欄：魔法/藥水增益(buff) + 受到的減益(debuff)
