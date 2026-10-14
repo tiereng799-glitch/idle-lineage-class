@@ -1830,11 +1830,23 @@ window.onload = () => {
         if(sk.cd) meta.push('冷卻 '+(sk.cd/10)+' 秒');
         if(meta.length) parts.push(`<div class="text-slate-300">${meta.join(' ・ ')}</div>`);
         let eff = [];
-        if(sk.dmgDice) eff.push((sk.target==='all'?'範圍':'')+'傷害 '+sk.dmgDice[0]+'d'+sk.dmgDice[1]+(sk.ele&&sk.ele!=='none'?'（'+SK_ELE[sk.ele]+'屬）':''));
-        if(sk.multiDmg) eff.push('多段傷害 '+sk.multiDmg.map(function(x){return x[0]+'d'+x[1];}).join('＋')+(sk.ele&&sk.ele!=='none'?'（'+SK_ELE[sk.ele]+'屬）':''));
+        // 🎲 2026-10-14 站長：說明不寫骰子式（3d8、INT…玩家看不懂）→ 一律換算成「最小～最大」的數字範圍
+        let _rng = function(n, sides){ n = Math.max(0, Math.floor(Number(n)||0)); sides = Math.max(1, Math.floor(Number(sides)||1)); return [n, n * sides]; };
+        let _eleTxt = (sk.ele&&sk.ele!=='none'?'（'+SK_ELE[sk.ele]+'屬）':'');
+        // 傷害＝骰子＋dmgBase(多段只加在最後一擊)＋魔攻（js/03 magicBaseDamage）；魔攻因人而異，另外註明
+        let _base = Math.max(0, Number(sk.dmgBase) || 0), _magTxt = (sk.dmgType === 'magic' ? '（另加魔攻）' : '');
+        if(sk.dmgDice) { let r = _rng(sk.dmgDice[0], sk.dmgDice[1]); eff.push((sk.target==='all'?'範圍':'')+'傷害 '+(_base+r[0])+'～'+(_base+r[1])+_eleTxt+_magTxt); }
+        if(sk.multiDmg) { let lo = _base, hi = _base; sk.multiDmg.forEach(function(x){ let r = _rng(x[0], x[1]); lo += r[0]; hi += r[1]; }); eff.push('多段傷害 共 '+lo+'～'+hi+_eleTxt+_magTxt); }
         if(sk.fullRestore) eff.push('單體治療：立即恢復全部已損失HP');
-        else if(sk.classicHeal) { let ch=sk.classicHeal; eff.push((sk.groupHeal?'全隊':'單體')+'治療 ('+ch.baseDice+'＋INT治癒加成)d'+ch.sides+' ×2'+(ch.mult&&ch.mult!==1?(' ×'+ch.mult):'')); }
-        else if(sk.healBase || sk.healDice) eff.push('治療 '+(sk.healBase||0)+(sk.healDice?('＋'+sk.healDice[0]+'d'+sk.healDice[1]):''));
+        else if(sk.classicHeal) {
+            // 同 js/03 rollHealingSpell：(基本骰數＋智力治癒加成) 顆 sides 面骰 ×2 ×mult；以目前角色的智力換算
+            let ch = sk.classicHeal;
+            let _hb = (typeof classicHealMagicBonus === 'function' && typeof player !== 'undefined' && player && player.d) ? classicHealMagicBonus(player.d) : 0;
+            let _cnt = Math.max(1, Math.floor(Number(ch.baseDice)||0) + _hb), _m = 2 * (Number(ch.mult) || 1);
+            let r = _rng(_cnt, ch.sides);
+            eff.push((sk.groupHeal?'全隊':'單體')+'治療 '+Math.floor(r[0]*_m)+'～'+Math.floor(r[1]*_m)+'（智力越高越多）');
+        }
+        else if(sk.healBase || sk.healDice) { let b = sk.healBase||0, r = sk.healDice ? _rng(sk.healDice[0], sk.healDice[1]) : [0,0]; eff.push('治療 '+(b+r[0])+(r[1]>r[0]?'～'+(b+r[1]):'')); }
         if(sk.healCooldownTicks) eff.push('冷卻 '+(sk.healCooldownTicks/10)+' 秒');
         if(sk.justiceHeal) eff.push('受施法者性向影響：正義值越高恢復量越高（滿正義 +20%・中立/邪惡無提升）');   // 💙 v3.5.75 正義治癒加成
         if(sk.reqJustice) eff.push('限正義性向施放（性向值 ≥ 1000）');   // 💙 v3.5.75 究極光裂術門檻
@@ -1899,10 +1911,10 @@ window.onload = () => {
         }
         if(d.type === 'wpn' || d.type === 'arm' || d.type === 'acc'){
             let _eff = [];
-            if(d.unBonus) _eff.push('不死／狼人加成（額外造成1D20傷害）');   // 🗑️ v3.5.87 刪恆假死運算元 unDice / sp==='elf'（DB.items 全表零定義·sp 只存在於變身型態物件且為數字）
+            if(d.unBonus) _eff.push('不死／狼人加成（額外造成 1～20 傷害）');   // 🗑️ v3.5.87 刪恆假死運算元 unDice / sp==='elf'（DB.items 全表零定義·sp 只存在於變身型態物件且為數字）
             if(d.eff === 'pierce')     _eff.push('穿透 ' + (d.pierceChance !== undefined ? d.pierceChance : 100) + '%（命中後追加攻擊另一名敵人）');
             if(d.alsoPierce)           _eff.push('穿透 ' + (d.pierceChance !== undefined ? d.pierceChance : 100) + '%（命中後追加攻擊另一名敵人）');   // 🌑 v3.3.33 附帶穿透
-            if(d.eff === 'moonburst')  _eff.push('月光爆裂（命中時8%造成1D30＋強化×2風傷）');
+            if(d.eff === 'moonburst')  _eff.push('月光爆裂（命中時8%造成1～30＋強化×2風傷）');
             if(d.eff === 'dice_death') _eff.push('即死（命中時1%使非首領目標死亡）');
             if(d.eff === 'haste')      _eff.push('自我加速（裝備時常駐加速）');
             if(d.eff === 'crush')      _eff.push('重擊（提高重擊機率，重擊取武器最大傷害）');
@@ -1911,7 +1923,7 @@ window.onload = () => {
             if(d.vampPct)              _eff.push('吸取HP ' + Math.round(d.vampPct * 100) + '%（依本次傷害恢復）');   // 🐉 嗜血者鎖鏈劍
             if(d.ignHardSkin)          _eff.push('貫穿（無視硬皮額外減傷）');   // 🗡️ 暗黑十字弓
             if(d.redSpecter)           _eff.push('紅惡靈逆襲（4%＋每強化1%，造成水魔傷並吸取10%HP）');   // 👹 隱藏的魔族武器
-            if(d.blueSpecter)          _eff.push('藍惡靈奪魔（4%＋每強化1%，恢復3D6 MP）');   // 👹 隱藏的魔族武器
+            if(d.blueSpecter)          _eff.push('藍惡靈奪魔（4%＋每強化1%，恢復 3～18 MP）');   // 👹 隱藏的魔族武器
             if(d.block)                _eff.push('格檔 ' + d.block + '%（重擊時依此機率減半傷害；一般攻擊為上述機率的30%）');
             if(d.eff === 'magicburst') _eff.push('魔爆（傷害魔法時依智力觸發，追加該次總傷害30%的無屬性傷害）');
             if(d.eff === 'mp_drain' || d.mpOnHit)   _eff.push('命中恢復MP');
