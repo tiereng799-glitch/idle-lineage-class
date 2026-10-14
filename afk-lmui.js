@@ -81,7 +81,7 @@
       /* 角色/夥伴是 absolute 貼戰鬥框底（核心 inline bottom:2px），padding 對它們無效 → 底線跟著抬 */
       B + '#player-morph-sprite{bottom:calc(' + STAND + ' + 2px) !important;}',
       B + '#pet-layer{top:0 !important;height:auto !important;bottom:' + STAND + ' !important;}',
-      B + '#status-icon-bar{position:absolute !important;top:48px !important;right:6px !important;left:auto !important;max-width:62% !important;z-index:5;display:flex !important;flex-flow:row-reverse wrap !important;justify-content:flex-start !important;gap:3px;}',   // 右上角、地圖鈕下方，從右往左排
+      B + '#status-icon-bar{position:absolute !important;top:var(--lmui-sib-top,60px) !important;right:6px !important;left:auto !important;max-width:62% !important;z-index:5;display:flex !important;flex-flow:row-reverse wrap !important;justify-content:flex-start !important;gap:3px;}',   // 右上角、地圖鈕下方，從右往左排
       /* 狀態（魔法）圖示放大：上游手機只有 ~12px，看不出是哪個魔法 */
       B + '#status-icon-bar .status-icon{width:28px !important;height:28px !important;min-width:28px;border:1px solid rgba(0,0,0,.8);box-shadow:0 1px 3px #000;}',
       B + '#status-icon-bar .status-icon img{width:100% !important;height:100% !important;object-fit:cover;}',
@@ -1773,7 +1773,7 @@
     ['mouseup', 'mouseleave'].forEach(function (ev) { bar.addEventListener(ev, function () { clearTimeout(pressT); }); });
   }
 
-  var lastAlignC = null, lastNameC = null;
+  var lastAlignC = null, lastNameC = null, lastSibTop = '';
   function updateStats() {
     updateName();
     // 名字那一排：右邊不可壓到地圖名框（框寬隨地圖名變）→ 量出可用寬度，名字太長就省略號
@@ -1811,6 +1811,14 @@
         if (el.name) el.name.style.color = nc;
       }
     }
+    // 狀態圖示列貼在地圖名框正下方：框的高度會隨字型／圖示變，量實際位置（換算成相對戰鬥畫面的 top）
+    try {
+      var bvEl = $('battle-view'), mr = el.mapname.getBoundingClientRect();
+      if (bvEl && mr.height) {
+        var sib = Math.round(mr.bottom - bvEl.getBoundingClientRect().top + 4) + 'px';
+        if (sib !== lastSibTop && parseInt(sib, 10) > 0) { lastSibTop = sib; document.documentElement.style.setProperty('--lmui-sib-top', sib); }
+      }
+    } catch (e) {}
     var ms = $('map-select'), mc = $('map-category');
     setTxt(el.mapname.querySelector('b'), ms && ms.selectedOptions[0] ? ms.selectedOptions[0].text : '');
     setMapIcon((ms && ms.selectedOptions[0] ? ms.selectedOptions[0].text : '') + ' ' + (mc && mc.selectedOptions[0] ? mc.selectedOptions[0].text : ''));
