@@ -210,7 +210,7 @@
     if (!btn) {
       btn = document.createElement('button');
       btn.type = 'button'; btn.id = 'my-mail-btn'; btn.className = 'lmui-hit'; btn.setAttribute('aria-label', '功能');
-      btn.innerHTML = '<span class="my-fn-ico">' + FN_SVG + '</span><span class="my-fn-lb">功能</span><i></i>';
+      btn.innerHTML = '<span class="my-fn-ico">' + FN_SVG + '</span><i></i>';   // 站長：圖示下的「功能」字拿掉
       btn.addEventListener('click', function (e) { e.stopPropagation(); toggleFnMenu(btn); });
     }
     var vit = document.getElementById('lmui-vit');
@@ -253,7 +253,7 @@
     'background:rgba(0,0,0,.55);color:#fde68a;font-size:.875rem;line-height:1.6;text-align:center;white-space:normal}' +
     '.my-home-links{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem 1rem;margin-bottom:.5rem}' +
     '.my-home-links a{color:#93c5fd;text-decoration:underline;font-size:.875rem}' +
-    /* 功能鈕：金框方塊圖示＋下方「功能」字（按鈕本身透明） */
+    /* 功能鈕：金框方塊圖示（按鈕本身透明） */
     '#my-mail-btn{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:0;border:0;background:none;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent}' +
     '#my-mail-btn .my-fn-ico{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid #9c7a40;border-radius:6px;' +
     'background:linear-gradient(#3a2e20,#140f09);box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,220,150,.18),0 1px 4px #000}' +
