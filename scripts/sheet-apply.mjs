@@ -134,7 +134,7 @@ for (const def of RECORD_SHEETS) {
   if (!ws) continue;
   if (def.store === 'items') seenItemSheets.add(def.sheet);
   const edit = def.cols.filter(c => c.type !== 'show' && c.type !== 'tpl');
-  const colOf = columnsOf(ws, def.sheet, [ID_HEAD, ...edit.filter(c => c.type !== 'img').map(c => c.zh)]);   // 圖檔欄是後來加的,舊表沒有也照樣能用
+  const colOf = columnsOf(ws, def.sheet, [ID_HEAD, ...edit.filter(c => c.type !== 'img' && !c.opt).map(c => c.zh)]);   // 圖檔欄是後來加的,舊表沒有也照樣能用
   if (!colOf[ID_HEAD]) continue;
   const valid = new Map(def.rows(G).map(([rowKey, recId, prefix]) => [rowKey, [recId, prefix]]));
   const base = { items: G.DB.items, mobs: G.DB.mobs, skills: G.DB.skills }[def.store];

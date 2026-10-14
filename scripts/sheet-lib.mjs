@@ -99,6 +99,18 @@ const C = {
   img: () => ({ key: 'img', zh: '圖檔(自訂)', type: 'img', width: 16, note: '用自己的圖:先把圖上傳到 GitHub 的 assets/custom 資料夾,這格填檔名(例:測試神劍.png)。空白=照原本的圖' }),
   tpl: () => ({ key: null, zh: TPL_HEAD, type: 'tpl', width: 18, note: '新增東西時才填:照哪一件現有的做(ID)。新東西的 ID 要用 my_ 開頭' }),
 };
+// 有「共鳴」的魔杖名單在 js/03（WAND_LIGHTARROW_IDS），只讀那一行
+let _wandReso = null;
+function wandResonanceIds() {
+  if (_wandReso) return _wandReso;
+  try {
+    const m = fs.readFileSync(path.join(GAME_ROOT, 'js', '03-combat-core.js'), 'utf8').match(/const WAND_LIGHTARROW_IDS = \[([^\]]*)\]/);
+    _wandReso = new Set(m ? [...m[1].matchAll(/'([^']+)'/g)].map(x => x[1]) : []);
+  } catch { _wandReso = new Set(); }
+  return _wandReso;
+}
+// 後來才加的欄：舊表沒有也照常讀（沒有那欄＝那欄沒改）
+const OPT = c => Object.assign(c, { opt: true });
 const STATS = [C.int('str', '力量'), C.int('dex', '敏捷'), C.int('con', '體質'), C.int('int', '智力'), C.int('wis', '精神'), C.int('cha', '魅力')];
 const RES = [C.int('resFire', '火抗'), C.int('resWater', '水抗'), C.int('resEarth', '地抗'), C.int('resWind', '風抗')];
 const GEAR_COMMON = [
@@ -116,7 +128,14 @@ export const RECORD_SHEETS = [
     cols: [
       C.text('n', '名稱', 16), C.int('dmgS', '對小怪傷害'), C.int('dmgL', '對大怪傷害'), C.int('hit', '命中'), C.int('dmgBonus', '額外傷害'),
       C.num('spd', '攻擊間隔(秒)', '每幾秒攻擊一次,數字越小越快'), C.int('safe', '安定值', '強化到這個數字以內不會爆'), C.int('p', '價格'),
-      ...STATS.slice(0, 5), C.req(), C.show('雙手武器', d => (d.w2h ? '是' : '')), C.text('d', '說明', 40), C.img(), C.tpl(),
+      ...STATS.slice(0, 5),
+      // 魔杖類常用的魔法欄位（其他武器多半空白）
+      OPT(C.int('mdmg', '魔法傷害', '每次施法固定加的傷害')), OPT(C.int('extraMp', '額外魔法點數(SP)', '魔法傷害的倍率：每 1 點約 +9%')),
+      OPT(C.int('extraMpPerEn', '每強化+SP', '每 +1 強化再加幾點額外魔法點數')), OPT(C.int('mmp', 'MP上限')), OPT(C.int('mpR', 'MP回復')),
+      OPT(C.int('mpOnHitBase', '命中回MP', '打中時回幾點 MP（強化超過 +6 每級再 +1）')), OPT(C.int('mpROverSafe', '超過安定值每+1 MP回復')),
+      OPT(C.int('procRateBase', '觸發機率%', '武器自帶魔法的發動機率')), OPT(C.int('procRatePerEn', '每強化+觸發%')),
+      C.show('共鳴', (d, s, id) => (wandResonanceIds().has(id) ? '是' : '')),
+      C.req(), C.show('雙手武器', d => (d.w2h ? '是' : '')), C.text('d', '說明', 40), C.img(), C.tpl(),
     ],
   },
   {
