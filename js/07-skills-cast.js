@@ -74,7 +74,7 @@ function summonAttack(sm, owner) {
         let hv = Math.max(1, Math.min(20, owner.lv + sm.hitBonus + cha - t.lv + mobEffAC(t) + _sgb.hit + (_teamAtk ? _teamAtk.eh : 0)));   // 🏺 喚獸師鞭＋👑灼熱武器／幻覺光環命中（🚫 召喚控制戒指命中+5 已移除）
         let r = roll(1, 20);
         if(!((r === 20) || (r !== 1 && hv >= r))) { if (typeof vfxMiss === 'function') vfxMiss(t); logCombat(`${sm.n} 的攻擊未命中。`, 'miss'); return; }
-        let dmg = Math.max(1, roll(sm.dmgDice[0], sm.dmgDice[1]) + cha + _sgb.dmg + (_teamAtk ? _teamAtk.ed : 0) - (t.dr || 0));
+        let dmg = Math.max(1, Math.floor((roll(sm.dmgDice[0], sm.dmgDice[1]) + cha + _sgb.dmg + (_teamAtk ? _teamAtk.ed : 0)) * ((typeof COMPANION_DMG_MULT !== 'undefined') ? COMPANION_DMG_MULT : 1)) - (t.dr || 0));   // 🔧 站長規則：夥伴傷害 ×0.75
         dmg += traumaPhysicalBonus(t);
         markBossPhysicalHit(t);
         t.justHit = 'normal'; t.curHp -= dmg; mobWake(t);
@@ -122,7 +122,8 @@ function summonTick(sm, clearFn, owner) {
         logCombat(`<span class="text-purple-300">${sm.n}</span> 消失了。`, 'magic');
         clearFn(); return;
     }
-    if(--sm.cd <= 0) { sm.cd = sm.interval; summonAttack(sm, owner); }
+    if(sm._charm && owner === player && typeof companionDrinkGreen === 'function') companionDrinkGreen(sm, !!player.charmGreen, `<span class="text-pink-300 font-bold">${sm.form}</span>`, '迷魅的怪');   // 🟢 綠水
+    if(--sm.cd <= 0) { sm.cd = (sm._charm && typeof companionSpdMul === 'function') ? Math.max(5, Math.round(sm.interval * companionSpdMul(sm))) : sm.interval; summonAttack(sm, owner); }
     // 高階召喚物技能固定間隔施放；召喚精通使間隔縮短15%。
     if(sm.proc) {
         let procCd = Math.max(1, Math.floor(sm.proc.cd * (isMageSummonMastered(sm, owner) ? 0.85 : 1)));

@@ -356,7 +356,7 @@ function necroSkeletonTick() {
         s._atkCd = (s._atkCd != null ? s._atkCd : 5) - 1;
         if (s._atkCd > 0) continue;
         let d = _necroSkeletonDerive(s, owner);
-        s._atkCd = d.aspd;
+        s._atkCd = Math.max(1, Math.round(d.aspd * ((typeof companionSpdMul === 'function') ? companionSpdMul(s) : 1)));   // 喝了綠水：攻擊間隔 ÷1.33
         let t = (typeof _petPickTarget === 'function') ? _petPickTarget(s) : getTarget();
         if (!t) continue;
         if (typeof threatWrap === 'function') threatWrap(s, () => summonV2AttackOnce(s, d, t, owner));
@@ -549,7 +549,7 @@ function summonV2Tick() {
         s._atkCd = (s._atkCd != null ? s._atkCd : 5) - 1;
         if (s._atkCd > 0) continue;
         const d = _sumDeriveAny(s);
-        s._atkCd = d.aspd;
+        s._atkCd = Math.max(1, Math.round(d.aspd * ((typeof companionSpdMul === 'function') ? companionSpdMul(s) : 1)));   // 喝了綠水：攻擊間隔 ÷1.33
         const t = (typeof _petPickTarget === 'function') ? _petPickTarget(s) : getTarget();
         if (!t) continue;
         // 🎯 v3.7.97 仇恨：召喚物攻擊傷害（含 proc/AOE 波及）→記給該召喚物實體
@@ -563,12 +563,16 @@ function summonV2Tick() {
     player.summonsV2 = (player.summonsV2 || []).filter(s => !s._downed || (now - (s._diedAt || 0)) < 2200);
     if ((player.summonsV2 || []).length !== before) renderSummonPanel(true);
 }
-function _summonPotionTick() {
-    const pct = player.sumPotPct || 0;
-    if (!(pct > 0) || typeof companionDrinkPotion !== 'function') return;
+function _summonPotionTick() {   // 紅水（HP 低於 %）＋綠水（沒加速就喝）
+    const pct = player.sumPotPct || 0, green = !!player.sumGreen;
+    if ((!(pct > 0) && !green) || typeof companionDrinkPotion !== 'function') return;
     let list = (player.summonsV2 || []).filter(s => s && !s._downed && (s.hp || 0) > 0);
     if (typeof necroSkeletonList === 'function') list = list.concat(necroSkeletonList().filter(s => s && !s._downed && (s.hp || 0) > 0 && (!s._necroOwnerKey || _necroOwnerByKey(s._necroOwnerKey) === player)));
-    for (const s of list) companionDrinkPotion(s, pct, s.mhp || 1, `召喚物 <span class="text-purple-300 font-bold">${s.form}</span>`, '召喚物');
+    for (const s of list) {
+        const who = `召喚物 <span class="text-purple-300 font-bold">${s.form}</span>`;
+        if (pct > 0) companionDrinkPotion(s, pct, s.mhp || 1, who, '召喚物');
+        if (green && typeof companionDrinkGreen === 'function') companionDrinkGreen(s, true, who, '召喚物');
+    }
 }
 function summonV2AttackOnce(s, d, t, owner) {
     owner = owner || player;   // 🩸 v3.3.23 owner 參數化：傭兵召喚術抽象輸出共用（讀 owner 裝備/精通；killMob 仍歸真隊長·不換身）
@@ -579,7 +583,7 @@ function summonV2AttackOnce(s, d, t, owner) {
     const _baseMd = Math.min(12, Math.max(0, (owner.d && owner.d.magicDmg) || 0));
     const _teamMd = Math.min(12, Math.max(0, _baseMd + ((_ownerIa && _ownerIa.md) || 0)));
     const _magicAuraRatio = (1 + _teamMd / 80) / (1 + _baseMd / 80);   // _sumDerive/_zmbDerive 已含自身 magicDmg，只補差額避免雙算
-    const _attackMult = d.dmgMult * _magicAuraRatio;
+    const _attackMult = d.dmgMult * _magicAuraRatio * ((typeof COMPANION_DMG_MULT !== 'undefined') ? COMPANION_DMG_MULT : 1);   // 🔧 站長規則：夥伴傷害 ×0.75（喝綠水加速後≈原本）
     const hv = stretchHitValue(d.hit + _sgb.hit + (_ia ? _ia.eh : 0) - t.lv + mobEffAC(t));
     const r = roll(1, 20);
     _petAnimAct(s, 'attack', t.uid);   // 🎬 v3.2.73 補跑中不設→回前景不同步爆播
@@ -641,7 +645,7 @@ function spiritAttackOnce(s, t, owner) {
     if (!((r === 20) || (r !== 1 && hv >= r))) { if (typeof vfxMiss === 'function') vfxMiss(t); logCombat(`<span class="text-purple-300">${s.form}</span> 的攻擊未命中。`, 'miss'); return; }
     const flat = Math.floor(cha * (owner.lv || 1) / (spec.scale || 20));
     const mrPen = (spec.mrPenBase || 0) + Math.floor(cha / 10);
-    const mult = summonDamageMult(smLike, owner, true, (_ownerIa && _ownerIa.md) || 0);
+    const mult = summonDamageMult(smLike, owner, true, (_ownerIa && _ownerIa.md) || 0) * ((typeof COMPANION_DMG_MULT !== 'undefined') ? COMPANION_DMG_MULT : 1);
     const dmg = summonElementDamage(spec.dice || [1, 40], s.ele, t, flat + _sgb.dmg + ((_ia && _ia.royalEd) || 0) + ((_ia && _ia.mel) || 0), mult, mrPen);   // 👑 灼熱武器：魔法型屬性精靈的一般攻擊亦取得全隊額外傷害；🔥 v3.8.3 舞躍之火近距離傷害+3（屬性精靈一般攻擊視為近距離）
     t.justHit = (s.ele && s.ele !== 'none') ? s.ele : 'magic';
     t.curHp -= dmg; if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(t, dmg, 'melee'); mobWake(t);   // 🌅 巨大骷髏：屬性精靈一般攻擊視為近距離

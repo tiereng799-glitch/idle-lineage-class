@@ -224,12 +224,14 @@
   var FN_ICO = {
     mail: '<svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="1.5"/><path d="M3 6l9 7 9-7"/></svg>',
     trade: '<svg viewBox="0 0 24 24"><path d="M4 8h15l-4-4M20 16H5l4 4"/></svg>',
-    rank: '<svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1.5A3.5 3.5 0 0 0 7.5 11M17 6h3v1.5A3.5 3.5 0 0 1 16.5 11"/><path d="M12 14v3.5M8.5 20.5h7M9.5 17.5h5v3h-5z"/></svg>'
+    rank: '<svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1.5A3.5 3.5 0 0 0 7.5 11M17 6h3v1.5A3.5 3.5 0 0 1 16.5 11"/><path d="M12 14v3.5M8.5 20.5h7M9.5 17.5h5v3h-5z"/></svg>',
+    drops: '<svg viewBox="0 0 24 24"><path d="M5 10h14l-1.5 10h-11z"/><path d="M8 10V8a4 4 0 0 1 8 0v2"/><path d="M12 13.5v3.5M10.2 15.2h3.6"/></svg>'
   };
   var FN_ITEMS = [
     { k: 'mail', name: '信箱', run: function () { openMailbox(); } },
     { k: 'trade', name: '交易所', run: function () { logSys('交易所尚未開放。'); } },
-    { k: 'rank', name: '排行榜', run: function () { logSys('排行榜尚未開放。'); } }
+    { k: 'rank', name: '排行榜', run: function () { logSys('排行榜尚未開放。'); } },
+    { k: 'drops', name: '掉寶', run: function () { if (typeof window.lmuiShowMapDrops === 'function') window.lmuiShowMapDrops(); else logSys('要開啟天堂M介面才看得到。'); } }   // 這張地圖的怪物與掉寶（afk-lmui）
   ];
   // 開：選單從功能鈕的位置彈出、選項依序滑入；關：先播收合動畫再移除（點選項時直接移除，不等動畫）
   function closeFnMenu(instant) {
@@ -332,7 +334,7 @@
     'body>#my-fn-menu{transform-origin:100% 0}' +
     '#my-fn-menu.closing{animation:myFnOut .14s ease-in both}' +
     '#my-fn-menu button{animation:myFnItem .24s ease-out both}' +
-    '#my-fn-menu button:nth-child(2){animation-delay:.05s}#my-fn-menu button:nth-child(3){animation-delay:.1s}' +
+    '#my-fn-menu button:nth-child(2){animation-delay:.05s}#my-fn-menu button:nth-child(3){animation-delay:.1s}#my-fn-menu button:nth-child(4){animation-delay:.15s}' +
     '#my-fn-menu.closing button{animation:none}' +
     '@keyframes myFnPop{from{opacity:0;transform:scale(.55) translateX(14px)}to{opacity:1;transform:none}}' +
     '@keyframes myFnOut{from{opacity:1;transform:none}to{opacity:0;transform:scale(.7) translateX(10px)}}' +

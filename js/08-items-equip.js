@@ -446,7 +446,8 @@ function getItemFullName(item) {
     if (item.bless) segs += `<span class="${blessColorClass(item.bless)}">${blessName(item.bless)} </span>`;   // 祝福的金/詛咒的紅
     let en = (item.en > 0) ? (`+${capEn(item.en, d)} `) : ((Number(item.en) || 0) < 0 ? `${item.en} ` : "");   // 🔧 一律顯示 +N（夾擠至上限：武器/防具+15、飾品+5）；🏰 詛咒降階的負值(如 -1)原樣顯示
     let cnt = item.cnt > 1 ? ` (${item.cnt})` : "";
-    let setPrefix = item.seteff ? item.seteff.slice(0, 2) : "";   // 🔮 席琳套裝：套裝名冠在裝備名稱前（如「紅獅環甲」）；顏色沿用 getItemColor（規則同前）
+    let setPrefix = item.seteff ? item.seteff.slice(0, 2) : "";
+    if (item.petUid && typeof petCollarLabel === 'function') return `<span class="${getItemColor(item)}">${d.n}（${petCollarLabel(item)}）${cnt}</span>`;   // 🐾 項圈：顯示是哪一隻   // 🔮 席琳套裝：套裝名冠在裝備名稱前（如「紅獅環甲」）；顏色沿用 getItemColor（規則同前）
     return `${segs}<span class="${getItemColor(item)}">${en}${setPrefix}${d.n}${cnt}</span>`;
 }
 
@@ -508,9 +509,10 @@ function useItem(u, silent = false, keepModal = false) {   // 🔌 加掛版補�
     if (!item) return;
     if (player.dead) { if (!silent) logSys(`死亡狀態無法使用道具，請先復活。`); return; }   // 死亡(未復活前)鎖住手動使用
     if (inAbsBarrier()) { if(!silent) logSys('絕對屏障期間與世界隔絕，無法使用藥水與道具。'); return; }   // 🛡️ 絕對屏障：禁止使用任何道具（自動使用 silent 亦略過）
-    if (item.id === 'scroll_revive') { if(!silent) logSys(`復活卷軸無法從道具欄使用，死亡時可於畫面下方點選『原地復活』。`); return; }
+    if (item.id === 'scroll_revive') { if (!silent && typeof petReviveChooser === 'function' && petReviveChooser()) return; if(!silent) logSys(`復活卷軸無法從道具欄使用，死亡時可於畫面下方點選『原地復活』。`); return; }   // 🐾 有倒下的寵物 → 選一隻用卷軸復活
     let d = DB.items[item.id];
     if (d.noUse) { if(!silent) logSys(`此物品無法直接使用。`); return; }
+    if (d.eff === 'pet_collar') { if (!silent && typeof petCallFromCollar === 'function') petCallFromCollar(item); return; }   // 🐾 項圈：叫出寵物
 
     // 🌅 巨大骷髏的妖魂（eff:'expsoul'·expGain）：使用後獲得經驗值（批量走 batchUseItem）
     if (d.eff === 'expsoul') {

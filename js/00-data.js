@@ -1178,6 +1178,8 @@ const DB = {
         
         // ===== 🐾 夥伴系統 v2（v3.2.17）：誘捕道具（使用後獲得對應誘捕狀態 600 秒·期間擊殺對應動物→寵物保管獲得基本等級寵物並失去狀態）=====
         //   🚫 舊項圈系統（哨子/8種項圈/肉/舊進化果實）已全數移除；舊存檔項圈由 petMigrateLegacy 轉換為寵物。
+        "pet_whistle":        { n: "寵物召喚笛",       type: "misc", req: "all", p: 50000, c: "text-amber-300", noUse: true, noJunk: true, gachaWeight: 0, img: "assets/icons/items/哨子.png", d: "帶在身上才能從項圈叫出寵物（不會消耗）。" },
+        "pet_collar":         { n: "項圈",             type: "misc", req: "all", p: 0, c: "text-amber-200", eff: "pet_collar", noSell: true, noJunk: true, gachaWeight: 0, img: "assets/icons/items/項圈 (牧羊犬).png", d: "點兩下叫出這隻寵物（身上要有寵物召喚笛，每次 5,000 金幣）。" },
         "item_eye_meat":      { n: "漂浮之眼肉",       type: "pot", req: "all", p: 100, c: "text-pink-300",    eff: "petlure", lure: "lure_general",  dur: 600, d: "漂浮之眼身上切下的奇特肉塊，散發野獸無法抗拒的氣味。使用後獲得「一般誘捕」600秒：期間擊殺 狼／牧羊犬／杜賓狗／哈士奇／熊／貓／浣熊／聖伯納犬／狐狸／小獵犬／柯利 時，寵物保管將獲得基本等級的該寵物並失去此狀態。", gachaWeight: 0 },
         "item_carrot":        { n: "胡蘿蔔",           type: "pot", req: "all", p: 100, c: "text-orange-300",  eff: "petlure", lure: "lure_rabbit",   dur: 600, d: "水靈飽滿的胡蘿蔔，暴走兔見了會不顧一切衝過來。使用後獲得「暴走兔誘捕」600秒：期間擊殺 暴走兔 時，寵物保管將獲得基本等級的暴走兔並失去此狀態。", gachaWeight: 0 },
         "item_tiger_feed":    { n: "虎男誘食",         type: "pot", req: "all", p: 100, c: "text-amber-300",   eff: "petlure", lure: "lure_tiger",    dur: 600, d: "馴獸師特製的腥香餌食，能喚醒猛虎心中的認主之念。使用後獲得「虎男誘捕」600秒：期間擊殺 老虎 時，寵物保管將獲得基本等級的虎男並失去此狀態。", gachaWeight: 0 },

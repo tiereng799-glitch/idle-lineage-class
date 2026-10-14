@@ -246,7 +246,16 @@
       '#lmui-hotpick .box{width:100%;max-width:380px;max-height:80vh;display:flex;flex-direction:column;background:#0f0c09;border:1px solid #b7791f;border-radius:10px;overflow:hidden;color:#eee;}',
       '#lmui-hotpick .hd{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #4a3f30;color:#fbbf24;font-weight:700;font-size:17px;}',
       '#lmui-hotpick .hd button{background:none;border:0;color:#aaa;font-size:19px;cursor:pointer;}',
-      '#lmui-hotpick .bd{overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;}',
+      '#lmui-hotpick .bd,#lmui-mapdrops .bd{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:8px;display:flex;flex-direction:column;gap:6px;}',
+      '#lmui-hotpick .tabs{display:flex;gap:4px;padding:6px 8px 0;}',
+      '#lmui-hotpick .tabs button{flex:1;padding:7px;border:1px solid #5a4630;border-radius:6px 6px 0 0;background:#17120c;color:#b9ad98;font-weight:700;font-size:14px;cursor:pointer;}',
+      '#lmui-hotpick .tabs button.on{background:#3a2c1a;color:#fde68a;border-color:#b7791f;}',
+      '#lmui-mapdrops{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:12px;}',
+      '#lmui-mapdrops .box{width:100%;max-width:420px;max-height:84vh;display:flex;flex-direction:column;background:#0f0c09;border:1px solid #b7791f;border-radius:10px;overflow:hidden;color:#eee;}',
+      '#lmui-mapdrops .hd{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #4a3f30;color:#fbbf24;font-weight:700;font-size:16px;}',
+      '#lmui-mapdrops .hd button{background:none;border:0;color:#aaa;font-size:18px;cursor:pointer;}',
+      '#lmui-mapdrops .md-mob{border:1px solid #4a3f30;border-radius:8px;background:#17120c;padding:8px;}',
+      '#lmui-mapdrops .md-mob .mi-stats{margin:4px 0;}',
       '#lmui-hotpick .sec{color:#d9bf86;font-size:14px;margin-top:4px;}',
       '#lmui-hotpick .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px;}',
       '#lmui-hotpick .opt{display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid #4a3f30;border-radius:6px;background:#1a1612;color:#eee;font-size:15px;text-align:left;cursor:pointer;min-width:0;}',
@@ -269,6 +278,9 @@
       '#lmui-tabs button{flex:1;padding:3px 0;font-size:15px;color:#c9b88f;background:linear-gradient(#3b3022,#1c160e);border:1px solid #4d3e29;border-radius:2px;}',
       '#lmui-tabs button.on{color:#fff6dc;background:linear-gradient(#7a5f35,#3f2f18);border-color:#b8955a;}',
       '#lmui-tabs .more{flex:0 0 22px;}',
+      '#lmui-tabs .petflt{display:none;flex:0 0 44px;font-size:13px;color:#8d7c5c;}',
+      'body.lmui-chat-combat #lmui-tabs .petflt{display:block;}',
+      '#lmui-tabs .petflt.on{color:#fff6dc;border-color:#b8955a;background:linear-gradient(#5a4428,#2c2214);}',
       /* ▲ 放大：聊天框吃掉整個下方面板（血條/快捷列先收起） */
       'body.lmui-chatbig #lmui-hot{display:none !important;}',   /* 血條在固定狀態列裡，放大聊天框時不收 */
       'body.lmui-chatbig #lmui-tabs .more{color:#fff6dc;border-color:#b8955a;}',
@@ -649,7 +661,7 @@
         '<div id="lmui-hot" data-mode="0">' + hot + '</div>' +
         '<div id="lmui-chat" class="lmui-hit">' +
           '<div id="lmui-tabs">' +
-            '<div class="row"><button type="button" class="more" data-t="big" aria-label="放大聊天框">▲</button><button type="button" data-t="sys">系統</button><button type="button" data-t="combat">戰鬥</button><button type="button" data-t="drop">掉落</button></div>' +
+            '<div class="row"><button type="button" class="more" data-t="big" aria-label="放大聊天框">▲</button><button type="button" data-t="sys">系統</button><button type="button" data-t="combat">戰鬥</button><button type="button" data-t="drop">掉落</button><button type="button" class="petflt" data-t="petflt" aria-label="寵物訊息">寵物</button></div>' +
             '<div class="row"><button type="button" data-t="say">一般</button><button type="button" data-t="world">世界</button><button type="button" data-t="party">隊伍</button><button type="button" data-t="clan">血盟</button></div>' +
           '</div>' +
           '<div id="lmui-lines"></div>' +
@@ -679,6 +691,7 @@
       e.stopPropagation();
       var t = b.getAttribute('data-t');
       if (t === 'big') { document.body.classList.toggle('lmui-chatbig'); return; }
+      if (t === 'petflt') { try { toggleCompanionFilter(); } catch (err) {} lastChatSig = ''; renderChat(true); return; }   // 戰鬥頁：顯示/隱藏寵物、召喚、迷魅的訊息
       chatTab = t; lastChatSig = ''; renderChat(true);
     });
     $('lmui-send').addEventListener('click', sendChat);
@@ -854,17 +867,26 @@
     var ov = document.createElement('div');
     ov.id = 'lmui-hotpick';
     ov.innerHTML = '<div class="box"><div class="hd">F' + (i + 1) + ' 要放什麼？<button type="button" data-x="1" aria-label="關閉">✕</button></div><div class="bd">' +
-      '<div class="sec">技能</div><div class="grid">' + (sk.map(function (id) { return opt('skill', id, DB.skills[id]); }).join('') || '<span style="color:#94a3b8;font-size:14px;">還沒學會技能</span>') + '</div>' +
-      '<div class="sec">道具（背包裡有的）</div><div class="grid">' + (items.map(function (id) { return opt('item', id, DB.items[id], ' ×' + hotItemCount(id)); }).join('') || '<span style="color:#94a3b8;font-size:14px;">背包沒有可用的道具</span>') + '</div>' +
+      '<div class="grid" data-pane="sk">' + (sk.map(function (id) { return opt('skill', id, DB.skills[id]); }).join('') || '<span style="color:#94a3b8;font-size:12px;">還沒學會魔法</span>') + '</div>' +
+      '<div class="grid" data-pane="it" style="display:none;">' + (items.map(function (id) { return opt('item', id, DB.items[id], ' ×' + hotItemCount(id)); }).join('') || '<span style="color:#94a3b8;font-size:12px;">背包沒有可用的道具</span>') + '</div>' +
       '</div><div class="ft"><button type="button" data-clear="1">清空這格</button><button type="button" data-auto="1">全部改回自動排列</button></div></div>';
+    ov.querySelector('.bd').insertAdjacentHTML('beforebegin', '<div class="tabs"><button type="button" data-tab="sk" class="on">魔法</button><button type="button" data-tab="it">道具</button></div>');
     ov.addEventListener('click', function (e) {
       if (e.target === ov || e.target.closest('[data-x]')) { closeHotPick(); return; }
+      var tb = e.target.closest('[data-tab]');
+      if (tb) {
+        var t = tb.getAttribute('data-tab');
+        ov.querySelectorAll('[data-tab]').forEach(function (x) { x.classList.toggle('on', x === tb); });
+        ov.querySelectorAll('[data-pane]').forEach(function (x) { x.style.display = x.getAttribute('data-pane') === t ? '' : 'none'; });
+        return;
+      }
       if (e.target.closest('[data-clear]')) { setHotSlot(i, null); closeHotPick(); return; }
       if (e.target.closest('[data-auto]')) { if (hasP()) { delete player.lmHot; lastHotKey = ''; updateHot(); hotSave(); } closeHotPick(); return; }
       var b = e.target.closest('.opt'); if (!b) return;
       setHotSlot(i, { k: b.getAttribute('data-k'), id: b.getAttribute('data-id') });
       closeHotPick();
     });
+    if (cur && cur.k === 'item') { var itb = ov.querySelector('[data-tab="it"]'); if (itb) itb.click(); }
     document.body.appendChild(ov);
   }
   // ── 怪物資訊小視窗：點戰鬥畫面上的怪 → 資料＋掉落物與機率（點怪原本的「鎖定目標」照舊） ──
@@ -897,7 +919,7 @@
     if (r >= 1) return (Math.round(r * 10) / 10) + '%';
     return parseFloat(r.toPrecision(2)) + '%';
   }
-  function showMobInfo(mob) {
+  function showMobInfo(mob, basic) {
     if (!mob || typeof DB === 'undefined') return;
     var base = DB.mobs && Object.keys(DB.mobs).filter(function (k) { return DB.mobs[k].n === mob.n; })[0];
     var d = (base && DB.mobs[base]) || mob;
@@ -922,10 +944,39 @@
     box.innerHTML = '<div class="mi-hd"><span class="mi-name' + (d.boss ? ' boss' : '') + '">' + (d.boss ? '👑 ' : '') + esc(mob.n) + '</span><span class="mi-lv">Lv.' + (mob.lv || d.lv) + '</span><button type="button" class="mi-x" aria-label="關閉">✕</button></div>' +
       '<div class="mi-tags">' + tags + (d.e && ELE_NAME[d.e] ? '<span class="mi-tag ele-' + d.e + '">' + ELE_NAME[d.e] + '屬性</span>' : '') + '</div>' +
       '<div class="mi-stats">' + stat('HP', hp) + stat('AC', d.ac) + stat('MR', d.mr) + stat('經驗', d.exp) + stat('金幣', (d.goldMin || 0) + '~' + (d.goldMax || 0)) + '</div>' +
-      '<div class="mi-sub">掉落物' + (mult > 1 ? '<em>（已含 ×' + mult + '）</em>' : '') + '</div>' +
-      '<div class="mi-list">' + rows + '</div>';
+      (basic ? '' : '<div class="mi-sub">掉落物' + (mult > 1 ? '<em>（已含 ×' + mult + '）</em>' : '') + '</div>' +
+      '<div class="mi-list">' + rows + '</div>');
     document.body.classList.add('lmui-mobinfo');
   }
+  function showMapDrops() {
+    if (typeof DB === 'undefined' || typeof mapState === 'undefined' || !mapState) return;
+    var old = $('lmui-mapdrops'); if (old) old.remove();
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var pool = (DB.maps && DB.maps[mapState.current]) || [], seen = {}, ids = [];
+    pool.forEach(function (id) { if (DB.mobs[id] && !seen[id]) { seen[id] = 1; ids.push(id); } });
+    ids.sort(function (a, b) { var A = DB.mobs[a], B = DB.mobs[b]; return (A.boss ? 1 : 0) - (B.boss ? 1 : 0) || (A.lv || 0) - (B.lv || 0); });
+    var sher = (typeof player !== 'undefined' && player && (player.sherineMad ? 5 : (player.sherineWorld ? 3 : 1))) || 1;
+    var stat = function (k, v) { return '<span><i>' + k + '</i><b>' + v + '</b></span>'; };
+    var html = ids.map(function (id) {
+      var d = DB.mobs[id], drops = mobDropList(d.n);
+      var rows = drops.length ? drops.map(function (x) {
+        var it = DB.items[x.id];
+        var cls = typeof getItemColor === 'function' ? getItemColor({ id: x.id }) : '';
+        var icon = typeof getIconUrl === 'function' ? getIconUrl(it) : '';
+        return '<div class="mi-drop tip-host" data-tip-id="' + x.id + '" data-tip-craft="1"><img src="' + icon + '" alt="" onerror="this.style.visibility=\'hidden\'"><span class="nm ' + cls + '">' + esc(it.n) + '</span><span class="rt">' + fmtRate(x.rate * sher) + '</span></div>';
+      }).join('') : '<div class="mi-none">沒有專屬掉落物</div>';
+      return '<div class="md-mob"><div class="mi-hd"><span class="mi-name' + (d.boss ? ' boss' : '') + '">' + (d.boss ? '👑 ' : '') + esc(d.n) + '</span><span class="mi-lv">Lv.' + d.lv + '</span></div>' +
+        '<div class="mi-stats">' + stat('HP', d.hp) + stat('AC', d.ac) + stat('MR', d.mr) + stat('經驗', d.exp) + stat('金幣', (d.goldMin || 0) + '~' + (d.goldMax || 0)) + '</div>' + rows + '</div>';
+    }).join('');
+    var mapName = (typeof mapDisplayName === 'function' ? mapDisplayName(mapState.current) : '') || (($('lmui-mapname') || {}).textContent || '').trim() || '這張地圖';
+    var ov = document.createElement('div');
+    ov.id = 'lmui-mapdrops';
+    ov.innerHTML = '<div class="box"><div class="hd">' + esc(mapName) + (sher > 1 ? '（掉率已含 ×' + sher + '）' : '') + '<button type="button" data-x="1" aria-label="關閉">✕</button></div>' +
+      '<div class="bd">' + (html || '<div class="mi-none" style="text-align:center;padding:24px 0;">這裡沒有怪物。</div>') + '</div></div>';
+    ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('[data-x]')) ov.remove(); });
+    document.body.appendChild(ov);
+  }
+  window.lmuiShowMapDrops = showMapDrops;
   function bindMobClick() {
     var list = $('mob-list'); if (!list || list._lmuiMobInfo) return;
     list._lmuiMobInfo = true;
@@ -934,7 +985,7 @@
       var card = e.target.closest('.mob-target[data-uid]'); if (!card) return;
       var uid = card.getAttribute('data-uid');
       var mob = (typeof mapState !== 'undefined' && mapState && mapState.mobs || []).filter(function (m) { return m && m.uid === uid; })[0];
-      if (mob) { try { showMobInfo(mob); } catch (err) { console.warn('[AFK-lmui] 怪物資訊失敗', err); } }
+      if (mob) { try { showMobInfo(mob, true); } catch (err) { console.warn('[AFK-lmui] 怪物資訊失敗', err); } }
     });
   }
 
@@ -1326,7 +1377,8 @@
   // 有沒有彈窗開在戰鬥畫面上（道具/倉庫/afk-banner 清單裡的各種窗/Tailwind 的 .fixed.inset-0 遮罩）
   var WIN_SEL = '#item-modal:not(.hidden),#warehouse-window-frame,.fixed.inset-0,.lmui-below,.lmui-below-c,' + MODAL_HOSTS;
   // 掛在 body 下、蓋到戰鬥場景的彈窗 → 推到下半。不碰：主畫面/我們自己的元件/橫幅(z 極大)/不吃點擊的特效層/提示框
-  var KEEP_IDS = { 'app-stage': 1, 'creation-screen': 1, 'lmui-hud': 1, 'm-nav': 1, 'lmui-bagtabs': 1, 'lmui-pcap': 1, 'm-log-sheet': 1, 'm-logout-overlay': 1 };
+  var KEEP_IDS = { 'app-stage': 1, 'creation-screen': 1, 'lmui-hud': 1, 'm-nav': 1, 'lmui-bagtabs': 1, 'lmui-pcap': 1, 'm-log-sheet': 1, 'm-logout-overlay': 1,
+    'lmui-hotpick': 1, 'lmui-mapdrops': 1, 'companion-overlay': 1, 'pet-revive-overlay': 1, 'my-mailbox': 1 };   // 自己置中、自己限高的視窗：不要被搬到戰鬥畫面下方（會把標題列擠出畫面）
   // 場景下緣：平常＝#game-screen 頂端；功能頁模式 #game-screen 從畫面頂端開始（見 CSS 註解）→ 改量 #lmui-pcap（固定釘在場景下緣）
   function sceneBottom(gs) {
     var b = document.body.classList, cap = $('lmui-pcap');
@@ -1919,7 +1971,9 @@
   function linesAtBottom() { var l = el.lines; return !l || l.scrollHeight - l.scrollTop - l.clientHeight < 24; }
   function renderChat(force) {
     var tabs = el.tabs.querySelectorAll('button[data-t]');
-    for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('on', tabs[i].getAttribute('data-t') === chatTab);
+    var petShown = (typeof companionLogShown !== 'function') || companionLogShown();
+    for (var i = 0; i < tabs.length; i++) { var tk = tabs[i].getAttribute('data-t'); tabs[i].classList.toggle('on', tk === 'petflt' ? petShown : tk === chatTab); }
+    document.body.classList.toggle('lmui-chat-combat', chatTab === 'combat');
     // 玩家往上捲在看舊訊息 → 先不刷新（同核心日誌的捲動鎖定）；捲回最底時由 scroll 事件補上
     if (!force && !linesAtBottom()) { chatDirty = true; return; }
     var src = $(CHAT_SRC[chatTab]);
@@ -1927,12 +1981,13 @@
     if (!src) { el.lines.innerHTML = ''; return; }
     var kids = src.children, n = kids.length;
     var last = n ? kids[n - 1] : null;
-    var sig = chatTab + ':' + n + ':' + (last ? (last.textContent || '').length + (last.textContent || '').slice(-24) : '');
+    var sig = chatTab + ':' + (petShown ? 1 : 0) + ':' + n + ':' + (last ? (last.textContent || '').length + (last.textContent || '').slice(-24) : '');
     if (sig === lastChatSig) return;
     lastChatSig = sig;
     var pick = [];
     for (var j = n - 1; j >= 0 && pick.length < CHAT_LINES; j--) {
       if (chatTab === 'sys' && kids[j].querySelector('.sys-item-gain')) continue;   // 掉落改看「掉落」分頁
+      if (chatTab === 'combat' && !petShown) { var ds = kids[j].getAttribute('data-src'); if (ds === 'pet' || ds === 'summon') continue; }   // 「寵物」開關關掉：跳過寵物／召喚／迷魅的訊息
       pick.unshift(kids[j]);
     }
     var frag = document.createDocumentFragment();
