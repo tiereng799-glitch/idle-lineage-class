@@ -297,9 +297,12 @@
          #game-screen（捲動區）上緣改到頭像列下方；#col-center（戰鬥）照跑，只用 clip-path 裁成頭像列那一條當底圖（不動版面，切回狩獵場不會重排）。
          #col-right 抬到 #col-center（z:1）之上；血條（#lmui-hud 裡、z 比整個 #game-screen 高）直接收起。 */
       ':root{--lmui-ptop:calc(var(--orig-bar-h,0px) + 90px);--lmui-ptabs-h:40px;}',
-      'html body.lmui-battle.lmui-tall #game-screen{top:var(--lmui-ptop) !important;padding:6px 6px calc(var(--m-nav-h,0px) + 6px) !important;}',
-      'html body.lmui-battle.lmui-tall.lmui-ptabs #game-screen{padding-top:calc(var(--lmui-ptabs-h) + 6px) !important;}',
-      'html body.lmui-battle.lmui-tall #col-center{clip-path:inset(0 0 calc(100% - var(--lmui-ptop) + var(--orig-bar-h,0px)) 0);}',
+      /* ⚠️ #game-screen 本身要從畫面頂端開始、用 padding 把內容推到頭像列下方，不能直接把 top 拉低：
+         iPhone 會把「可捲動容器」裡的 fixed 子元素裁在容器範圍內 → 內容一長到要捲（設定/背包/能力），#col-center 那條場景整個被裁掉、只剩底色
+         （魔法頁不用捲所以沒事）。內容往上捲時改由 #col-center（z:3，已裁成頭像列那一條）蓋住，不會捲進場景區。 */
+      'html body.lmui-battle.lmui-tall #game-screen{top:0 !important;padding:calc(var(--lmui-ptop) + 6px) 6px calc(var(--m-nav-h,0px) + 6px) !important;}',
+      'html body.lmui-battle.lmui-tall.lmui-ptabs #game-screen{padding-top:calc(var(--lmui-ptop) + var(--lmui-ptabs-h) + 6px) !important;}',
+      'html body.lmui-battle.lmui-tall #col-center{clip-path:inset(0 0 calc(100% - var(--lmui-ptop) + var(--orig-bar-h,0px)) 0);z-index:3;}',
       'html body.lmui-battle.lmui-tall #col-right{position:relative;z-index:2;}',
       'body.lmui-battle.lmui-tall #lmui-vit{display:none !important;}',
       /* 開著功能頁（上方只露出一條場景）時，iPhone 不會畫「被裁切的 fixed 容器裡、用 multiply 混色的背景圖」→ 狩獵場上方變成一片黑
