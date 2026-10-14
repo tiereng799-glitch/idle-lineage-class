@@ -1357,6 +1357,7 @@ function _updateUIImpl() {
     let _nameEl = document.getElementById('st-class');
     if(_nameEl) {
         if(!window._editingName) _nameEl.innerText = (player.name || '（點此取名）');   // 未取名(改版前建的舊角色)：顯示提示，否則玩家不知道這裡可以點
+        _nameEl.classList.toggle('cursor-pointer', !player.name);   // 只有還沒取名才能點（取過名就不能改，見 js/14 startEditName）
         if (typeof pvpAlignmentColor === 'function') {
             _nameEl.style.color = player.name ? pvpAlignmentColor(player.alignmentValue) : '#94a3b8';
             _nameEl.style.textShadow = '0 0 6px rgba(0,0,0,.75)';
