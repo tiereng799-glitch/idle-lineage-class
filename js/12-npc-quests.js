@@ -495,17 +495,22 @@ function whGold(dir){
 }
 // 🏦 倉庫視窗（2026-10-14 依站長給的範本重排）：
 //   標題列（index.html：寶箱圖＋「倉庫」＋紅色 ✕）→ 一行資訊（共用・格數）→ 金幣列 → 「倉庫／背包」兩個分頁
-//   → 一排工具（分類・搜尋・倉庫分頁多一顆「整理」）→ 物品清單（分頁，每頁 WH_PAGE 列）。
+//   → 一排工具（分類・搜尋）→ 物品清單（分頁，每頁 WH_PAGE 列）。在倉庫分頁再點一次「倉庫」＝整理。
 //   每列：圖示｜名稱×數量｜數量框（可疊的才有，預設整疊）｜取出／存入。
 //   ⚠️ 外掛依賴（勿改名）：#wh-gold-amt、#wh-inv-list、#wh-store-list、select[onchange*=whSetFilter/whSetSubFilter]、
-//      button[onclick*=sortWarehouse]、#wh-search-input、清單每列的 data-tip-uid / data-tip-src
+//      #wh-search-input、清單每列的 data-tip-uid / data-tip-src
 //      （afk-warehouse 長按看資料／只列可穿、afk-whbatch 批次勾選）。
 //      兩份清單都照樣畫出來，非作用分頁的那份只是藏起來（外掛照常找得到）。
 //   分頁：倉庫可到 5,000 格，整份畫出來手機會卡 → 一次只畫一頁；分類／搜尋一變就回第 1 頁。
 const WH_PAGE = 50;
 let _whTab = 'wh';   // 'wh' 倉庫 ／ 'inv' 背包
 let _whPg = { wh: 0, inv: 0 }, _whPgKey = '';
-function whSetTab(t){ _whTab = (t === 'inv') ? 'inv' : 'wh'; renderWarehouseNPC(document.getElementById('interaction-content')); }
+// 已經在「倉庫」分頁時再點一次＝整理倉庫（同背包「全部 ⇅」再點一次＝整理背包）
+function whSetTab(t){
+    let next = (t === 'inv') ? 'inv' : 'wh';
+    if (next === 'wh' && _whTab === 'wh') { sortWarehouse(); return; }
+    _whTab = next; renderWarehouseNPC(document.getElementById('interaction-content'));
+}
 function whSetPage(d){
     _whPg[_whTab] = Math.max(0, (_whPg[_whTab] || 0) + d);
     renderWarehouseNPC(document.getElementById('interaction-content'));
@@ -565,7 +570,7 @@ function renderWarehouseNPC(div){
             </div>
         </div>
         <div class="whx-tabs">
-            <button type="button" class="${onWh ? 'on' : ''}" onclick="whSetTab('wh')">${_WHX_SVG.chest}<span>倉庫（${_whItems.length.toLocaleString()}）</span></button>
+            <button type="button" class="${onWh ? 'on' : ''}" onclick="whSetTab('wh')" title="再點一次整理倉庫">${_WHX_SVG.chest}<span>倉庫（${_whItems.length.toLocaleString()}）</span><span class="whx-tabicon" aria-hidden="true">⇅</span></button>
             <button type="button" class="${onWh ? '' : 'on'}" onclick="whSetTab('inv')">${_WHX_SVG.bag}<span>背包（${_invItems.length.toLocaleString()}）</span></button>
         </div>
         <div class="whx-tools">
@@ -580,7 +585,6 @@ function renderWarehouseNPC(div){
                 ${subOpts.map(o => `<option value="${o.key}" ${_whSubFilter===o.key?'selected':''}>${o.name}</option>`).join('')}
             </select>
             <input id="wh-search-input" type="search" class="whx-input whx-search" placeholder="搜尋" value="${_whEscAttr(_whSearchInput)}" oninput="whSetSearch(this.value, this.selectionStart, event)">
-            ${onWh ? '<button type="button" class="whx-btn whx-btn-sm" onclick="sortWarehouse()">整理</button>' : ''}
         </div>
         <div class="whx-panel">
             <div class="whx-list" id="wh-store-list"${onWh ? '' : ' style="display:none"'}>${whHtml}</div>

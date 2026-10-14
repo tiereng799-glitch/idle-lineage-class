@@ -318,8 +318,8 @@
     }
 
     function injectToggle() {
-        // 倉庫分頁排在「整理」後面;背包分頁沒有整理鈕 → 排在搜尋框後面(兩個分頁都要有入口)
-        var anchor = document.querySelector('button[onclick*="sortWarehouse"]') || document.getElementById('wh-search-input');
+        // 排在搜尋框後面(倉庫／背包兩個分頁都有)
+        var anchor = document.getElementById('wh-search-input');
         if (!anchor || document.getElementById('afk-whb-toggle')) return;
         var b = document.createElement('button');
         b.id = 'afk-whb-toggle';
