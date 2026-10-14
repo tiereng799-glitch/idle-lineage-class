@@ -2037,13 +2037,17 @@ function _asEquipType(d) {
     if (d.type === 'acc') return 'acc';
     return null;
 }
+// 自動賣出清單只賣「白板」：同款但祝福過／強化過／有屬性／遠古／套裝效果的留著（站長：祝福的被一起賣掉 → 強化、屬性也一起保留）
+function _asListKeeps(i) {
+    return i.bless === true || (Number(i.en) || 0) > 0 || !!i.attr || !!(i.anc && !DISABLE_ANC) || !!i.seteff;
+}
 function _autoSellDecision(i, ruleSnapshot, craftRemain) {   // 🔧 v2.6.77 ruleSnapshot：預覽用「快照複本」判定，不讀（也不寫）live 規則；v2.6.91 craftRemain：製作素材保留額度（逐件扣）
     let r = ruleSnapshot || getAutoSellRules(), d = DB.items[i.id];
     if (!d || i.lock || d.noSell || d.noJunk) return { sell:false };
     if (i._userKeep) return { sell:false };   // 🛡️ v2.6.69 審計#10：玩家曾手動取消規則標記→豁免自動販賣（重新儲存規則時清除）
     let ov = r.overrides[i.id];
     if (ov === 'keep') return { sell:false };
-    if (ov === 'sell') return i.bless === true ? { sell:false } : { sell:true, qty:i.cnt };   // 清單照道具種類比對，祝福的同款不算（站長回報：祝福的被一起賣掉）
+    if (ov === 'sell') return _asListKeeps(i) ? { sell:false } : { sell:true, qty:i.cnt };   // 清單照道具種類比對，只賣白板（見 _asListKeeps）
     if (AUTOSELL_LIST_ONLY) return { sell:false };   // 🗑️ 2026-10-14 只賣「自動賣出清單」裡的道具（下面那套整批規則停用）
     // 🏛️ v2.7.56 解除封印後的「古老的○○」是普通武器／防具，沒有詞綴且多數無法強化，會立即符合一般裝備販賣規則；整系列優先保護（個別「永遠販賣」例外仍優先，故置於 overrides 之後）。
     if (r.protectOldSeries && (String(i.id).startsWith('wpn_old_') || String(i.id).startsWith('amr_old_'))) return { sell:false };
