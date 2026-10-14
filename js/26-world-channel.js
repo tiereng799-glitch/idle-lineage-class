@@ -24,8 +24,8 @@ let _wcRecentIdleLines = [];                 // 避免短時間重複抽到相�
 let _wcPrivateActiveId = null;               // 目前開啟私訊的 NPC
 let _wcPrivatePendingIds = Object.create(null); // 正在等待模型回覆的 NPC
 const WC_RECENT_CHAT_LIMIT = 60;
-// 🚫 2026-10-14 站長決定：世界頻道的虛擬玩家聊天整個關掉——每分鐘閒聊／兩人互嗆不再出現，發問輸入列藏起來（css/style.css、afk-lmui）、
-//    worldChannelAsk 不再回答。野外白目玩家遭遇與擊殺後密語屬於 PVP 玩法（js/03），不在此列。
+// 🚫 2026-10-14 站長決定：世界頻道的虛擬玩家聊天整個關掉——每分鐘閒聊／兩人互嗆不再出現；
+//    輸入框保留，worldChannelAsk 只把玩家自己的話印出來、不再有人回答（也不觸發群嘲）。野外白目玩家遭遇與擊殺後密語屬於 PVP 玩法（js/03），不在此列。
 const WC_FAKE_CHAT_CLOSED = true;
 
 function _wcSpawnNpc() {
@@ -2117,7 +2117,6 @@ function _wcTriggerMassTaunt() {
 
 // ================= 💬 發問主流程 =================
 function worldChannelAsk() {
-    if (WC_FAKE_CHAT_CLOSED) return;
     let input = document.getElementById('world-input');
     if (!input) return;
     let q = String(input.value || '').trim();
@@ -2132,6 +2131,7 @@ function worldChannelAsk() {
     let myName = (typeof player !== 'undefined' && player && player.name) ? player.name : '你';
     let myAlignment = (typeof player !== 'undefined' && player) ? player.alignmentValue : 0;
     logWorld(`<span class="wc-ask">${_wcStaticNameHtml(myName, myAlignment)}：${_wcEsc(q)}</span>`);
+    if (WC_FAKE_CHAT_CLOSED) return;   // 虛擬玩家已關：只顯示自己說的話，沒有人回
     if (_wcIsMassTaunt(q)) {
         _wcTriggerMassTaunt();
         return;

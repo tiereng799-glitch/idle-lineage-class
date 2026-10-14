@@ -278,10 +278,10 @@
                 <!-- 📌 v3.5.77 NPC 叫賣釘選列：最多兩條常駐於日誌頂端，不會被其他訊息推走；空的時候由 CSS :empty 自動收起 -->
                 <div id="sys-log-pins"></div>
                 <div id="world-log" class="flex-1 p-4 overflow-y-auto log-bg shadow-inner text-base"></div>
-                <!-- 💬 提問輸入列：Enter 或按鈕送出，隨機 NPC 回答（也可能只是來嘲笑）；點 NPC 名字可嘲諷／感謝 -->
+                <!-- 💬 世界頻道輸入列：Enter 或按鈕送出；虛擬玩家已關閉（js/26 WC_FAKE_CHAT_CLOSED），只顯示自己的話 -->
                 <div id="world-input-row">
-                    <input id="world-input" type="text" maxlength="60" autocomplete="off" placeholder="向世界頻道發問（例：50級去哪練功？法師怎麼玩？大馬那裡打？）">
-                    <button id="world-send" onclick="worldChannelAsk()">發問</button>
+                    <input id="world-input" type="text" maxlength="60" autocomplete="off" placeholder="在世界頻道說話">
+                    <button id="world-send" onclick="worldChannelAsk()">發送</button>
                 </div>
                 <!-- 🔒 世界頻道捲動鎖定提示（同戰鬥日誌） -->
                 <button id="world-log-unlock" onclick="worldLogToBottom()" class="hidden absolute left-1/2 -translate-x-1/2 bottom-14 z-10 px-3 py-1 text-xs font-bold rounded-full shadow-lg bg-amber-700/90 hover:bg-amber-600 border border-amber-400 text-amber-50">🔒 已鎖定捲動 ▾ 回到最新</button>
