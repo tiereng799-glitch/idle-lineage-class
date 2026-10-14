@@ -125,12 +125,6 @@ function gainItem(id, cnt=1, silent=false, forceNormal=false, affixOld=false, de
         if (_forceBless) bless = true;   // 🔧 v3.1.27 製作材料含祝福裝備→成品必定祝福（僅在此裝備詞綴分支·寵物白板 _noAffixCtx 已於上方擋掉）
     }
 
-    // 🔌 加掛版補丁：遺物詞綴鉤子（外掛 afk-relicaffix 提供；未載/未開→null＝完全同原版）
-    if (!forceNormal && !_noAffixCtx && typeof window.__afkRelicAffix === 'function') {
-        let _ra = window.__afkRelicAffix(d, id);
-        if (_ra) { bless = _ra.bless || false; anc = _ra.anc || false; attr = _ra.attr || false; }
-    }
-
     // 🔮 席琳套裝詞綴：⚠️v3.1.68 起「不再出現於裝備上」——原掉落擲骰(0.1%/0.5%/5%)與席琳製作(_forceSherineSet)附加皆停用。
     //   套裝效果改由「席琳遺骸」承載（gainSherineRemains·killMob 掉落／NPC 伊奧兌換／菈克希絲拆分）；
     //   既有裝備上的舊詞綴保留顯示（名稱前綴/資訊欄）但不再計入套裝件數（recomputeStats 只掃遺骸欄）。

@@ -876,7 +876,7 @@
     Object.keys(MAP_CATEGORIES).forEach(function (cat) {
       MAP_CATEGORIES[cat].forEach(function (m) {
         if (!m || !m.v || seen[m.v] || mapTabOf(cat, m.v) !== tab) return;
-        if (m.classicHide && player.classicMode) return;
+        if (m.closed || (m.classicHide && player.classicMode)) return;
         seen[m.v] = 1; out.push(m);
       });
     });

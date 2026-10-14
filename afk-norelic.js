@@ -1,5 +1,5 @@
 /* ============================================================================
- * afk-norelic.js — 隱藏遺物系統（不再掉落、不再有入口）
+ * afk-norelic.js — 隱藏遺物系統（不再掉落、不再有入口）（已鎖定：一律生效、無開關）
  *
  * 遺物＝上游 isRelic(d)（d.relic 為真）的道具。本檔在載入時：
  *   取得管道：怪物掉落表（MOB_DROPS 等）、玩家 NPC 遺物掉落池（_relicDropPool＝空）、
@@ -7,22 +7,15 @@
  *            最後在 gainItem 兜底擋下。
  *   介面入口：收藏面板的「🏺 遺物」收集冊、潘朵拉（黑市）的遺物布告欄與遺物搜尋候補 —— 只藏不刪。
  * 已裝備/持有的遺物不動（照樣能用、能賣），只是拿不到新的。
- * 「席琳遺骸」（裝備頁第 2 頁 rem_*）是另一套系統，不受影響。
- * 開關關掉＝重新整理後一切照原版（本檔只在載入時動手）。
+ * 2026-10-14 起遺物系統永久關閉：不進外掛開關面板、玩家關不掉（舊版玩家存的 afk_toggle_norelic=0 一律忽略）。
+ * 「席琳遺骸」另由核心 SHERINE_CLOSED（js/01）關閉取得管道，不在本檔。
  *
  * 掛接：在 index.html 的 </body> 前 <script src="afk-norelic.js">（核心之後）。
  * ========================================================================== */
 (function () {
   'use strict';
 
-  if (window.AFK_TOGGLES) {
-    AFK_TOGGLES.register({
-      id: 'norelic', name: '隱藏遺物系統', group: '遊戲玩法', def: true,
-      desc: '遺物不再掉落，收藏的遺物冊也不顯示（已擁有的照常使用）'
-    });
-  }
-  function on() { return !window.AFK_TOGGLES || AFK_TOGGLES.enabled('norelic'); }
-  if (!on()) return;
+  // 已鎖定：不 register、不問 AFK_TOGGLES（站長決定遺物系統永久關閉）。
   if (typeof DB === 'undefined' || !DB.items || typeof isRelic !== 'function') { console.warn('[AFK-norelic] 找不到 DB.items / isRelic，停用。'); return; }
 
   var blocked = {}, n = 0;
@@ -64,7 +57,7 @@
   if (typeof window.gainItem === 'function') {
     var _origGain = window.gainItem;
     window.gainItem = function (id) {
-      if (blocked[id] && on()) { console.info('[AFK-norelic] 擋下取得遺物：' + ((DB.items[id] && DB.items[id].n) || id)); return null; }
+      if (blocked[id]) { console.info('[AFK-norelic] 擋下取得遺物：' + ((DB.items[id] && DB.items[id].n) || id)); return null; }
       return _origGain.apply(this, arguments);
     };
   }

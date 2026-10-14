@@ -1,19 +1,17 @@
 /**
  * afk-warehouse.js — 倉庫擴充(純外掛,自 main 的核心版移植):
- *   ② 主分類補「遺物」(橫跨武器/防具/飾品;原本分類下仍查得到,不動 whCategory)。
- *   ③ 主分類補「席琳遺骸」,子分類=套裝名(詞綴在實例 seteff 上,核心 whMatchFilter 只吃 id
- *      → 套裝子分類改在 render 後依清單列的 data-tip-uid 反查實例後過濾,不動核心簽名)。
+   (2026-10-14 遺物與席琳遺骸系統關閉,原 ②③ 主分類「遺物」「席琳遺骸」已拿掉)
  *   ④ 觸控裝置長按倉庫/背包清單物品 → 顯示物品資料(核心只有 hover tooltip,手機看不到)。
  *   ⑤ 「只列可穿」勾選 ＋ 穿不了的列標紅(核心倉庫兩欄只印物品全名,完全看不出本職業能不能穿,
  *      四個角色共用一個倉庫時尤其難挑)。判定一律走核心 checkCanEquip,不自己重寫職業規則。
  *
- * 作法:包 whSubCatOptions/whMatchFilter/whMatchSearch/renderWarehouseNPC 四支全域;缺任一→console.warn 後停用。
+ * 作法:包 whMatchFilter/whMatchSearch/renderWarehouseNPC 三支全域;缺任一→console.warn 後停用。
  */
 (function () {
     'use strict';
     if (window.AFK_TOGGLES && !AFK_TOGGLES.enabled('warehouse')) return;   // 🎚️ 外掛開關
     if (typeof window.renderWarehouseNPC !== 'function' || typeof window.whGold !== 'function'
-        || typeof window.loadWarehouse !== 'function' || typeof window.whSubCatOptions !== 'function'
+        || typeof window.loadWarehouse !== 'function'
         || typeof window.whMatchFilter !== 'function' || typeof window.whMatchSearch !== 'function'
         || typeof window.checkCanEquip !== 'function') {
         try { console.warn('[AFK-warehouse] 缺核心倉庫函式,倉庫擴充停用。'); } catch (e) {}
@@ -53,29 +51,10 @@
         renderWarehouseNPC(document.getElementById('interaction-content'));
     };
 
-    // ── 主分類擴充:relic / remains ──────────────────────────────
-    var _subOpts = window.whSubCatOptions;
-    window.whSubCatOptions = function () {
-        try {
-            if (_whFilter === 'relic') return [{ key: 'wpn', name: '武器' }, { key: 'arm', name: '防具' }, { key: 'acc', name: '飾品' }];
-            if (_whFilter === 'remains') return (typeof SHERINE_EFFECTS !== 'undefined' ? SHERINE_EFFECTS : []).map(function (n) { return { key: n, name: n }; });
-        } catch (e) {}
-        return _subOpts.apply(this, arguments);
-    };
+    // ── 分類過濾:疊上「只列可穿」 ────────────────────────────────
     var _match = window.whMatchFilter;
     window.whMatchFilter = function (id) {
-        try {
-            if (_wearOnly && _cannotWear(id)) return false;
-            if (_whFilter === 'relic') {
-                var d = DB.items[id];
-                if (!d || typeof isRelic !== 'function' || !isRelic(d)) return false;
-                return !_whSubFilter || d.type === _whSubFilter;
-            }
-            if (_whFilter === 'remains') {
-                var d2 = DB.items[id];
-                return !!(d2 && d2.remains);   // 套裝名子分類看「實例」的 seteff → render 後過濾(见 afterRender)
-            }
-        } catch (e) {}
+        try { if (_wearOnly && _cannotWear(id)) return false; } catch (e) {}
         return _match.apply(this, arguments);
     };
     // 搜尋中核心走的是 whMatchSearch(不經 whMatchFilter)，「只列可穿」要在這裡也生效才一致
@@ -283,7 +262,7 @@
         anchor.parentNode.insertBefore(lab, anchor.nextSibling);
     }
 
-    // ── render 後處理:注入鈕/選項 + 遺骸套裝子分類過濾 ─────────────
+    // ── render 後處理:長按、只列可穿、無法裝備標記 ─────────────
     function afterRender() {
         try {
             bindLongPress(document.getElementById('wh-inv-list'));
@@ -292,30 +271,6 @@
         var inp = document.getElementById('wh-gold-amt');
         if (!inp) return;   // 倉庫面板不在畫面上
         try { _wearCSS(); _injectWearToggle(); _markNoEquip(); } catch (e) {}
-        // 主分類下拉補 遺物/席琳遺骸(核心每次重繪都重建 select → 每次補)
-        var sel = document.querySelector('select[onchange*="whSetFilter"]');
-        if (sel && !sel.querySelector('option[value="relic"]')) {
-            [['relic', '遺物'], ['remains', '席琳遺骸']].forEach(function (o) {
-                var op = document.createElement('option');
-                op.value = o[0]; op.textContent = o[1];
-                sel.appendChild(op);
-            });
-        }
-        if (sel && (_whFilter === 'relic' || _whFilter === 'remains')) sel.value = _whFilter;
-        // 席琳遺骸+選了套裝名:依清單列 uid 反查實例 seteff 過濾(核心 whMatchFilter 只吃 id 看不到詞綴)
-        if (_whFilter === 'remains' && _whSubFilter) {
-            var w = loadWarehouse();
-            var lists = [['wh-inv-list', (player && player.inv) || []], ['wh-store-list', (w && w.items) || []]];
-            lists.forEach(function (pair) {
-                var host = document.getElementById(pair[0]); if (!host) return;
-                host.querySelectorAll('[data-tip-uid]').forEach(function (el) {
-                    var uidv = el.getAttribute('data-tip-uid');
-                    var it = pair[1].find(function (i) { return i && String(i.uid) === String(uidv); });
-                    var g = it && it.seteff ? String(it.seteff).slice(0, 2) : '';
-                    if (g !== String(_whSubFilter).slice(0, 2)) el.style.display = 'none';
-                });
-            });
-        }
     }
     var _render = window.renderWarehouseNPC;
     window.renderWarehouseNPC = function () {

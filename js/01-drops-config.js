@@ -846,8 +846,11 @@ function applySaveDefaults(p) {
 //  - 恩賜（applySherineGrace）：席琳世界每次刷新 1% 機率讓場上一隻怪（含頭目）獲恩賜；
 //      一般席琳每 3 分鐘最多一次、場上同時僅一隻(頭目不選)；瘋狂席琳無冷卻、可多隻；HP×10／經驗×10／金錢×10／掉落×10／持續傷害再×2
 // ============================================================================
-function sherineWorldActive() { return !!(player && (player.sherineWorld || player.sherineMad)); }   // 🔮 一般或瘋狂任一開啟皆視為「席琳的世界」（主題/排名/結晶/套裝效果/出怪強化共用此閘）
-function sherineMadActive() { return !!(player && player.sherineMad); }   // 🔮 僅「瘋狂的席琳世界」：供倍率分流
+// 🚫 2026-10-14 站長決定：席琳的世界與席琳神殿永久關閉 → 兩個閘一律回 false（怪物不再席琳化、不掉結晶、主題不套）；
+//    存檔旗標由 sanitizeState 清掉（離線結算 js/27 直接讀 player.sherineWorld，靠那裡一併歸零）。已裝備的遺骸與套裝效果照常。
+const SHERINE_CLOSED = true;
+function sherineWorldActive() { if (SHERINE_CLOSED) return false; return !!(player && (player.sherineWorld || player.sherineMad)); }   // 🔮 一般或瘋狂任一開啟皆視為「席琳的世界」（主題/排名/結晶/套裝效果/出怪強化共用此閘）
+function sherineMadActive() { if (SHERINE_CLOSED) return false; return !!(player && player.sherineMad); }   // 🔮 僅「瘋狂的席琳世界」：供倍率分流
 function applySherineTheme() { document.body.classList.toggle('sherine-world', sherineWorldActive()); document.body.classList.toggle('sherine-mad', sherineMadActive()); }
 let _sherineLootCtx = null;   // 擊殺掉落上下文：killMob 期間設定 { mad }，try/finally 清除。一般怪祝福率 ×3/×5；頭目搭配 _lootMobInfo.boss 固定為席琳 20%／瘋狂席琳 30%。
 //   （🗑️ v3.5.95 刪除此處三行舊註解：它們還在描述已於 v3.5.94 移除的 boss / grace 兩欄，與上一行的「單鍵」敘述互斥，
@@ -960,7 +963,9 @@ const TRIAL_ITEM_CLASS = {
     // === 🛡️🏹 騎士＋妖精 共用（馬沙：兩職皆需古代鑰匙）===
     'item_ancientkey': ['knight', 'elf'],
     // === 🗡️ 黑暗妖精試煉（倫得/康/布魯迪卡 影子裝備 + 50 級試煉墮落鑰匙）===
-    'item_fallen_key': 'dark', 'item_death_oath': 'dark', 'item_orc_elder_head': 'dark', 'item_yeti_head': 'dark',
+    'item_fallen_key': 'dark', 'item_death_oath': 'dark', 'item_orc_elder_head': 'dark', 'item_yeti_head': 'dark',
+
+
     // === 👑 王族試煉（甘特：村民的遺物／馬沙：失去光明的靈魂／迪嘉勒廷 50 試煉：炎魔之心 → 黃金權杖）===
     'new_item_197': 'royal', 'new_item_211': 'royal', 'item_lost_soul': 'royal', 'mat_flame_heart': 'royal'   // 🔧 v3.0.80 搜索狀(new_item_197)＝王族15試煉道具（黑騎士搜索隊掉·接取制）
 };
@@ -2000,6 +2005,7 @@ function sanitizeState() {
     let clampEn = it => { let dd = it && DB.items[it.id]; if (dd && (dd.type === 'wpn' || dd.type === 'arm' || dd.type === 'acc')) it.en = Math.min(Math.max(-1, Number(it.en) || 0), enhanceCap(dd)); };   // 只夾裝備類（素材/消耗品不碰）；🏰 下限 -1（詛咒卷軸紅變，見 executeCurseDeEnhance）
     if (Array.isArray(player.inv)) player.inv.forEach(clampEn);
     if (player.eq) for (let k in player.eq) clampEn(player.eq[k]);
+    if (SHERINE_CLOSED) { player.sherineWorld = false; player.sherineMad = false; }   // 🚫 席琳的世界已關閉：舊存檔開著的旗標歸零
 }
 // 武器強化 → { dmg:額外傷害, hit:額外命中 }
 //  額外傷害：+0~+20 每階+1（實務受 ENHANCE_CAP.wpn=15 夾擠，最高 +15）；
