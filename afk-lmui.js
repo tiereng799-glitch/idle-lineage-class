@@ -2172,6 +2172,13 @@
   function fitSkillBook() {
     var root = document.querySelector('#tab-skill .lsk2');
     if (!root || !root.getClientRects().length) return;
+    // 魔法頁外層本來不捲（overflow hidden）。被 iPhone 鍵盤／回彈捲過一次就卡在半途：書的上半截躲到頭像列底下，
+    //   下面這行量高度又照錯的位置把書撐高 → 一直捲不回來（玩家回報「魔法頂部不見了」）。量之前先拉回頂端。
+    var ae = document.activeElement, typing = ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
+    if (!typing) {
+      var gs = $('game-screen'); if (gs && gs.scrollTop) gs.scrollTop = 0;
+      if (window.scrollY) { try { window.scrollTo(0, 0); } catch (e) {} }
+    }
     var nav = $('m-nav'), bottom = nav && nav.getClientRects().length ? nav.getBoundingClientRect().top : window.innerHeight;
     var h = Math.floor(bottom - root.getBoundingClientRect().top - 8);
     if (h >= 320 && Math.abs((parseFloat(root.style.height) || 0) - h) > 2) { root.style.height = h + 'px'; skSyncSide(root.querySelector('.lsk2-scroll')); }

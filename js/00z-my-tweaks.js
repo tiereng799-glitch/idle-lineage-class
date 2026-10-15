@@ -553,6 +553,7 @@
       var a = document.activeElement;
       if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;   // 跳到另一個輸入框：維持鎖住
       if (vpMeta && vpOrig !== null) vpMeta.setAttribute('content', vpOrig);
+      if (window.scrollY) { try { window.scrollTo(0, 0); } catch (e) {} }   // 整頁本來不捲：iPhone 鍵盤收起後有時留下半截捲動、畫面上半被頂到頭像列底下
     }, 400);
   }
   function isField(t) { return t && t.closest && t.closest('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=range]),textarea,select'); }
