@@ -125,13 +125,8 @@ function recomputeStats() {
     }
 
     // ❄️ 套裝「屬性」加成提前套用：力量/體質須在 Phase 2 換算近傷/HP 之前計入，才會實際吃進戰鬥與 HP；其餘 flat 加成（AC/HP+100/恢復/抗性）仍於 Phase 3 套裝段套用。
-    { let _setEarly = {}, _ssEarly = {};
-      for (let _k in p.eq) { let _e = p.eq[_k]; if (!_e || _k === 'wpn' || _k === 'offwpn') continue; let _ed = DB.items[_e.id]; if (_ed && _ed.set && !_ssEarly[_e.id]) { _ssEarly[_e.id] = true; _setEarly[_ed.set] = (_setEarly[_ed.set] || 0) + 1; } }
-      if (_setEarly['icequeen_charm'] >= 3) { d.str += 2; d.cha += 2; }   // 冰之女王魅力：力量+2/魅力+2（提前→力量實際吃近距傷害/命中/爆擊）
-      if (_setEarly['frost'] >= 3) { d.con += 3; }                         // 寒冰：體質+3（提前→實際吃 HP 與 HP 自然恢復上限）
-      if (_setEarly['orin'] >= 2) { d.str += 1; d.dex += 1; d.con += 1; d.int += 1; d.wis += 1; d.cha += 1; }   // 🔱 歐林西瑪：全六屬性+1（提前→實際吃進 AC/MR/HP/MP/近遠傷害/命中/爆擊等衍生值，否則只改顯示數字不入戰鬥）
-      if (_setEarly['darkelf'] >= 3) { d.str -= 2; d.dex += 2; }   // 🏝️ 黑暗妖精：力量-2/敏捷+2（提前→敏捷實際吃 AC/迴避/遠距傷害命中、力量實際吃近距傷害命中，否則只改顯示數字不入戰鬥）
-      if (_setEarly['bluepirate'] >= 4) { d.int += 1; }   // 🏴‍☠️ 藍海賊套裝：智力+1（提前→吃進 MP/魔法；AC-1/HP+10 flat 於 Phase 3 套裝段）
+    { let _setEarly = countSetPieces(p.eq);   // 六屬性照 DB.sets 表套用（套裝表是單一真相）
+      for (let _code in _setEarly) { if (!setIsActive(_code, _setEarly)) continue; let _s = DB.sets[_code]; SET_STAT_EARLY.forEach(k => { if (_s[k]) d[k] += _s[k]; }); }
     }
     // 🦻 詛咒耳環套裝：淨化之耳環 + 對應色詛咒耳環 同時裝備 → 屬性提前套用（吃進近/遠/魔/HP/MP 等衍生值）
     { let _eqHas = id => Object.values(p.eq).some(e => e && e.id === id);
@@ -437,28 +432,19 @@ d.mr += (baseMr + bonusMr);
             }
         });
     }
-    // ⚠️ 套裝效果唯一真相在此；DB.sets(js/00) 僅供 initSetTags 反向標記、不承載數值
+    // 🛡️ 套裝效果的數值在 DB.sets（js/00，試算表「套裝」分頁可改）
     p._setPoly = null;   // 套裝變身僅在穿著時生效；每次重算先清除，卸下套裝即消失
-    if(setCheck['leather'] >= 4) { d.ac -= 3; }   // 皮套裝（原作未實作，依 DB.sets 補上）
-    if(setCheck['bone'] >= 3) { d.ac -= 2; p.mhp += 10; }
-    if(setCheck['dk'] >= 4) { d.ac -= 4; p._setPoly = Object.assign({}, SET_POLY_FORMS.dk); }   // 🔧 死亡騎士套裝：變身升級為 真‧死亡騎士
-    if(setCheck['silver'] >= 4) { d.ac -= 3; }
-    if(setCheck['oasis'] >= 4) { d.ac -= 3; }
-    if(setCheck['gnome'] >= 3) { d.ac -= 1; p.mhp += 5; }
-    if(setCheck['mage'] >= 2) { p.mmp += 50; d.mpR += 1; }   // 🧙 法師套裝：MP+50、MP自然恢復+1
-    if(setCheck['kurt'] >= 4) { d.ac -= 4; p._setPoly = Object.assign({}, SET_POLY_FORMS.kurt); }   // 🔧 克特套裝：變身升級為 真‧克特
-    if(setCheck['steel'] >= 5) { d.ac -= 2; d.dr += 2; }
-    if(setCheck['mr'] >= 3) { d.mr += 5; }
-    if(setCheck['guard'] >= 3) { d.ac -= 1; }
-    if(setCheck['kinglord'] >= 4) { p.mhp += 30; p.mmp += 30; d.hpR += 10; d.mpR += 10; d.cha += 3; }   // 🔧 四大軍王套裝：HP/MP+30、HP/MP自然恢復+10、魅力+3
-    if(setCheck['demon'] >= 4) { d.ac -= 2; d.hpR += 5; p._setPoly = Object.assign({}, SET_POLY_FORMS.demon); }   // 🗼 惡魔套裝：AC-2、HP自然恢復+5、變身惡魔（額外傷害/命中/魔法傷害/MP/攻速由變身提供）
-    if(setCheck['darkelf'] >= 3) { d.ac -= 3; d.hpR -= 2; d.mpR -= 7; p._setPoly = Object.assign({}, SET_POLY_FORMS.darkelf); }   // 🏝️ 黑暗妖精套裝：AC-3、HP自然恢復-2、MP自然恢復-7、變身高等黑暗精靈（遠距離傷害/命中+5、攻速+30%）（力量-2/敏捷+2 已於 Phase 1 前 _setEarly 提前套用→吃進近/遠戰鬥值）
-    if(setCheck['orin'] >= 2) { d.ac -= 5; p.mhp += 50; }   // 🔱 歐林西瑪套裝：AC-5、HP+50（全六屬性+1 已於 Phase 1 前 _setEarly 提前套用→吃進 AC/MR/HP/MP/傷害等衍生值）
-    if(setCheck['icequeen_charm'] >= 3) { d.ac -= 5; p.mhp += 100; d.mpR += 4; d.resWater += 20; }   // ❄️👸 冰之女王魅力套裝（公主限定）：AC-5、HP+100、MP自然恢復+4、水屬性抗性+20（力量+2/魅力+2 已於 Phase 1 前提前套用）
-    if(setCheck['frost'] >= 3) { d.ac -= 5; p.mhp += 100; d.hpR += 8; d.mpR += 4; d.mr += 15; d.resWater += 20; }   // ❄️ 寒冰套裝（王族）：AC-5、HP+100、HP自然恢復+8、MP自然恢復+4、MR+15、水屬性抗性+20（體質+3 已於 Phase 1 前提前套用）
-    if(setCheck['bluepirate'] >= 4) { d.ac -= 1; p.mhp += 10; }   // 🏴‍☠️ 藍海賊套裝（頭巾＋皮盔甲＋手套＋長靴）：AC-1、HP+10（智力+1 已於 Phase 1 前提前套用）
-    if(setCheck['emperor'] >= 5) { d.ac -= 20; p.mhp += 100; p.mmp += 20; d.hpR += 10; d.atkSpdPct += 30; d.meleeDmg += 5; d.rangedDmg += 5; }   // 🌑 v3.3.33 真‧冥皇套裝（披風/鎧甲/面甲/護手/鋼靴 5 件·黑暗妖精聖地.md）：防禦-20、HP+100、MP+20、HP自然恢復+10、攻速額外+30%（atkSpdPct 管線·與加速/勇敢藥水乘算堆疊）、額外傷害+5（近/遠皆加）
-    if(setCheck['priest'] >= 5) { d.ac -= 50; d.mr += 50; p.mhp += 300; d.mpR += 30; d.meleeCrit += 5; d.rangedCrit += 5; d.magicCrit += 5; d.meleeCritDmg += 50; d.rangedCritDmg += 50; d.magicCritDmg += 50; }   // 🏺 v3.7.52 司祭苦行套裝（5 件遺物·純 flat 免 _setEarly）：AC-50、MR+50、HP+300、MP自然恢復+30、近/遠/魔法爆擊率+5%、近/遠/魔法爆擊傷害+50%
+    { let _sc = countSetPieces(p.eq);   // 🛡️ 照 DB.sets 表套用（六屬性已於前面提前套用）
+      for (let _code in _sc) {
+        if (!setIsActive(_code, _sc)) continue;
+        let _s = DB.sets[_code];
+        if (_s.ac) d.ac -= _s.ac;
+        if (_s.mhp) p.mhp += _s.mhp;
+        if (_s.mmp) p.mmp += _s.mmp;
+        SET_STAT_LATE.forEach(k => { if (_s[k]) d[k] = (d[k] || 0) + _s[k]; });
+        if (_s.poly && SET_POLY_FORMS[_s.poly]) p._setPoly = Object.assign({}, SET_POLY_FORMS[_s.poly]);
+      }
+    }
     // 🌑 v3.4.0 受詛咒的真．冥皇執行劍：裝備時變身 死亡騎士（走 _setPoly 管線＝卸下即消失·速度覆蓋沿 POLY_TIERS 死亡騎士；套裝變身優先於本劍故加 !p._setPoly 守衛）
     if(!p._setPoly && p.eq && p.eq.wpn && p.eq.wpn.id === 'wpn_cursed_emperor_blade') { let _ceb = findPolyForm('死亡騎士'); if(_ceb) p._setPoly = makePolyState(_ceb.form, _ceb.color); }
     // 🌑 v3.4.67 解除詛咒的真死亡騎士．冥皇執行劍：裝備時變身 真死亡騎士 冥皇丹特斯（equip-only·per-weapon APM 攻速·套裝變身優先故加 !p._setPoly 守衛）
@@ -992,6 +978,29 @@ function findPolyForm(name) {
     for (const t of POLY_TIERS) for (const f of t.forms) if (f.n === name) return { form: f, color: t.color };
     for (const f of CONTROL_ONLY_POLY_FORMS) if (f.n === name) return { form: f, color: f.c || "text-yellow-400" };
     return null;
+}
+// ── 🛡️ 套裝共用（js/02 套用、js/10 欄位發光／裝備說明、afk-trackinfo 狀態欄都用這幾個）──
+const SET_STAT_EARLY = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+const SET_STAT_LATE = ['mr', 'hpR', 'mpR', 'dr', 'er', 'resFire', 'resWater', 'resEarth', 'resWind', 'meleeDmg', 'rangedDmg', 'extraDmg', 'extraHit', 'magicDmg', 'extraMp', 'atkSpdPct', 'meleeCrit', 'rangedCrit', 'magicCrit', 'meleeCritDmg', 'rangedCritDmg', 'magicCritDmg'];
+const SET_STAT_LABEL = { ac: '防禦', mhp: 'HP', mmp: 'MP', hpR: 'HP回復', mpR: 'MP回復', mr: '魔防', dr: '傷害減免', er: '迴避', str: '力量', dex: '敏捷', con: '體質', int: '智力', wis: '精神', cha: '魅力',
+    resFire: '火抗', resWater: '水抗', resEarth: '地抗', resWind: '風抗', meleeDmg: '近距離傷害', rangedDmg: '遠距離傷害', extraDmg: '額外傷害', extraHit: '命中', magicDmg: '魔法傷害', extraMp: '額外魔法點數',
+    atkSpdPct: '攻速', meleeCrit: '近距離爆擊', rangedCrit: '遠距離爆擊', magicCrit: '魔法爆擊', meleeCritDmg: '近距離爆擊傷害', rangedCritDmg: '遠距離爆擊傷害', magicCritDmg: '魔法爆擊傷害' };
+const SET_STAT_PCT = { atkSpdPct: 1, meleeCrit: 1, rangedCrit: 1, magicCrit: 1, meleeCritDmg: 1, rangedCritDmg: 1, magicCritDmg: 1 };
+function countSetPieces(eq) {   // 每組套裝穿了幾件（同款只算 1 件；武器欄不算）
+    let cnt = {}, seen = {};
+    if (!eq) return cnt;
+    for (let k in eq) { let e = eq[k]; if (!e || k === 'wpn' || k === 'offwpn' || seen[e.id]) continue; let d = DB.items[e.id]; if (!d || !d.set) continue; seen[e.id] = 1; cnt[d.set] = (cnt[d.set] || 0) + 1; }
+    return cnt;
+}
+function setNeed(code) { let s = DB.sets && DB.sets[code]; return s ? (s.need || (s.items || []).length || 1) : 0; }
+function setIsActive(code, cnt) { let s = DB.sets && DB.sets[code]; return !!s && (cnt[code] || 0) >= setNeed(code); }
+function setBonusText(code) {
+    let s = DB.sets && DB.sets[code]; if (!s) return '';
+    let out = [];
+    if (s.ac) out.push('防禦' + (s.ac > 0 ? '-' : '+') + Math.abs(s.ac));   // 防禦(AC) 越低越好：表上正數＝防禦變好＝顯示「防禦-N」
+    ['mhp', 'mmp'].concat(SET_STAT_EARLY, SET_STAT_LATE).forEach(k => { let v = s[k]; if (!v) return; out.push(SET_STAT_LABEL[k] + (v > 0 ? '+' : '') + v + (SET_STAT_PCT[k] ? '%' : '')); });
+    if (s.poly && SET_POLY_FORMS[s.poly]) out.push('變身' + SET_POLY_FORMS[s.poly].n);
+    return out.join('  ');
 }
 function makePolyState(form, color) { return Object.assign({ c: color }, form); }
 // 🗼 套裝專屬變身（不進入隨機變形池）：死亡騎士套裝→真‧死亡騎士、克特套裝→真‧克特、惡魔套裝→惡魔

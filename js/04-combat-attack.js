@@ -642,7 +642,8 @@ function consumeStrawCurse(m) {
 // 🏺 遺物 特定技能傷害倍率：掃描所有裝備欄，若帶 skillDmgMult{skId或技能名:倍率} 則相乘（暴走兔胡蘿蔔=冰錐 sk_ice_spike ×1.5、光束強化魔杖=光箭 sk_lightarrow/究極光裂術 sk_disintegrate ×1.5）。施放(castSkill·js/07)與觸發(procFreeMagicSkill)兩路徑皆呼叫。
 function equipSkillDmgMult(sk, skId, who) {
     let _w = who || player;   // 🩹 v3.1.76 傭兵吃遺物：可傳入傭兵（掃 ally.eq）·未傳維持玩家
-    let m = 1; if (!_w || !_w.eq) return m;
+    let m = (typeof spellDayNightMult === 'function') ? spellDayNightMult(skId) : 1;   // ✨ 夜晚邪惡魔法 +5%、白天正義魔法 +5%（js/35）
+    if (!_w || !_w.eq) return m;
     for (let k in _w.eq) { let e = _w.eq[k]; if (!e) continue; let dd = DB.items[e.id]; if (!dd || !dd.skillDmgMult) continue; let v = dd.skillDmgMult[skId] || (sk && sk.n && dd.skillDmgMult[sk.n]); if (v) m *= v; }
     return m;
 }
@@ -1201,7 +1202,7 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
         totalDmg = Math.floor(totalDmg * mobRageDmgMult(mob));   // 🔥 HP<門檻：一般攻擊／連擊最終傷害倍率
         if (isBasicAttack && typeof ironGuardTauntWeakensAttack === 'function' && ironGuardTauntWeakensAttack(mob)) totalDmg = Math.floor(totalDmg * 0.9);   // 🔮 鐵衛 5/5：受嘲諷目標的一般攻擊傷害 -10%
         totalDmg = Math.max(1, totalDmg);
-        totalDmg = Math.floor(totalDmg * riftDamageMult());   // 🌀 時空裂痕 30 分後每分鐘 +20% 怪物攻擊力
+        totalDmg = Math.floor(totalDmg * riftDamageMult() * ((typeof nightEvilMult === 'function') ? nightEvilMult(mob) : 1) * ((typeof blessArmorEvilMult === 'function') ? blessArmorEvilMult(mob) : 1));   // 🌀 時空裂痕 30 分後每分鐘 +20% 怪物攻擊力；🌙 夜晚不死／惡魔 ×1.2；🛡️ 祝福防具每件 −5%
         totalDmg = Math.max(0, Math.floor(totalDmg * raceDrMult(player, mob)));   // 🏺 v3.7.52 隨從的護身斗篷：受拉斯塔巴德敵人傷害 -20%（物理）
         totalDmg = Math.max(0, Math.floor(totalDmg * antHelperDrMult()));   // 🐉 v3.7.57 助戰者「護衛」減免（物理）
         totalDmg = dollDamageReduced(totalDmg);   // 🪆 魔法娃娃：受傷機率傷害減免（史巴托/巫妖）
@@ -1486,7 +1487,7 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
       if (ally.eq && ally.eq.shield && (!player.classicMode || _alp)) { let _sh = DB.items[ally.eq.shield.id]; let _bc = _alp ? 100 : ((_sh && _sh.block) ? (heavy ? _sh.block : _sh.block * 0.3) : 0); if (_bc > 0 && Math.random() * 100 < _bc) totalDmg = Math.floor(totalDmg * 0.5); } }
     totalDmg = Math.floor(totalDmg * mobRageDmgMult(mob));   // 🔥 HP<門檻：攻擊傭兵也套用狂暴傷害
     if (isBasicAttack && typeof ironGuardTauntWeakensAttack === 'function' && ironGuardTauntWeakensAttack(mob)) totalDmg = Math.floor(totalDmg * 0.9);   // 🔮 鐵衛 5/5：受嘲諷目標的一般攻擊傷害 -10%
-    totalDmg = Math.max(1, Math.floor(Math.max(1, totalDmg) * riftDamageMult()));   // 🌀 裂痕加成（與玩家一致）
+    totalDmg = Math.max(1, Math.floor(Math.max(1, totalDmg) * riftDamageMult() * ((typeof nightEvilMult === 'function') ? nightEvilMult(mob) : 1)));   // 🌀 裂痕加成（與玩家一致）；🌙 夜晚
     totalDmg = Math.max(0, Math.floor(totalDmg * raceDrMult(ally, mob)));   // 🏺 v3.7.52 隨從的護身斗篷（傭兵·物理）
     totalDmg = allyDollDamageReduced(ally, totalDmg);   // 🆕 v2.6.10 #3：魔法娃娃機率減免（受物理傷害）
     totalDmg = shieldDmgReduceProc(ally, totalDmg);   // 🌑 v3.3.33 反叛者的盾牌（傭兵鏡像·物理）
@@ -1903,7 +1904,7 @@ function _applyMobMagicToAllyInner(mob, sk, ally) {
         if (ally._setIron3) dmg = Math.floor(dmg * 0.8);
         dmg = Math.floor(dmg * allyBuffDmgReduceMult(ally));   // 🆕 v2.6.12 #5a：傭兵聖結界-30%/龍裔-15%/狂怒5-15%（受魔法傷害）
         dmg = Math.floor(dmg * mobRageDmgMult(mob));   // 🔥 HP<門檻：技能傷害倍率
-        dmg = Math.max(1, Math.floor(Math.max(1, dmg) * riftDamageMult()));
+        dmg = Math.max(1, Math.floor(Math.max(1, dmg) * riftDamageMult() * ((typeof nightEvilMult === 'function') ? nightEvilMult(mob) : 1)));   // 🌙 夜晚
         dmg = Math.max(0, Math.floor(dmg * raceDrMult(ally, mob)));   // 🏺 v3.7.52 隨從的護身斗篷（傭兵·魔法）
         dmg = allyDollDamageReduced(ally, dmg);   // 🆕 v2.6.10 #3：魔法娃娃機率減免（受魔法傷害）
         dmg = shieldDmgReduceProc(ally, dmg);   // 🌑 v3.3.33 反叛者的盾牌（傭兵鏡像·魔法）
@@ -2329,7 +2330,7 @@ function _applyMobMagicInner(mob, sk) {
           dmg = Math.floor(dmg * _drMult); }
         dmg = Math.floor(dmg * mobRageDmgMult(mob));   // 🔥 HP<門檻：技能傷害倍率
         dmg = Math.max(1, dmg);
-        dmg = Math.floor(dmg * riftDamageMult());   // 🌀 時空裂痕 30 分後每分鐘 +20% 怪物技能傷害
+        dmg = Math.floor(dmg * riftDamageMult() * ((typeof nightEvilMult === 'function') ? nightEvilMult(mob) : 1) * ((typeof blessArmorEvilMult === 'function') ? blessArmorEvilMult(mob) : 1));   // 🌀 時空裂痕 30 分後每分鐘 +20% 怪物技能傷害；🌙 夜晚；🛡️ 祝福防具
 
         dmg = Math.max(0, Math.floor(dmg * raceDrMult(player, mob)));   // 🏺 v3.7.52 隨從的護身斗篷：受拉斯塔巴德敵人傷害 -20%（魔法·固定傷害亦適用）
         dmg = Math.max(0, Math.floor(dmg * antHelperDrMult()));   // 🐉 v3.7.57 助戰者「護衛」減免（魔法）

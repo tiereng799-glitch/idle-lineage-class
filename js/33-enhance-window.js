@@ -20,6 +20,7 @@
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
     const pct = x => { let v = Math.round(x * 1000) / 10; return (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + '%'; };
 
+    const etype = d => (d && d.slot === 'petwpn') ? 'wpn' : (d && d.type);   // 🐾 寵物武器（之牙）歸在武器、用武器卷軸（成功率照原本飾品的規則）
     function enhanceable(d) { return !!d && ((d.type === 'wpn' && !d.isArrow) || d.type === 'arm' || d.type === 'acc') && !isRelic(d) && !d.noEnhance; }
     function findItem(uid, isEq) {
         if (isEq) { for (let k in player.eq) { let e = player.eq[k]; if (e && e.uid === uid) return e; } return null; }
@@ -30,15 +31,15 @@
         let out = [];
         for (let k in player.eq) {
             let e = player.eq[k]; if (!e || k === 'arrow') continue;
-            let d = DB.items[e.id]; if (enhanceable(d) && d.type === type) out.push({ it: e, isEq: true });
+            let d = DB.items[e.id]; if (enhanceable(d) && etype(d) === type) out.push({ it: e, isEq: true });
         }
-        player.inv.forEach(i => { let d = i && DB.items[i.id]; if (enhanceable(d) && d.type === type) out.push({ it: i, isEq: false }); });
+        player.inv.forEach(i => { let d = i && DB.items[i.id]; if (enhanceable(d) && etype(d) === type) out.push({ it: i, isEq: false }); });
         return out;
     }
     // 這件裝備能用的卷軸（依序：一般、祝福、詛咒；沒有的不列）
     function scrollsFor(d) {
-        let ids = d.type === 'wpn' ? ['scroll_weapon', 'scroll_weapon_b', 'scroll_weapon_c']
-                : d.type === 'arm' ? ['scroll_armor', 'scroll_armor_b', 'scroll_armor_c']
+        let ids = etype(d) === 'wpn' ? ['scroll_weapon', 'scroll_weapon_b', 'scroll_weapon_c']
+                : etype(d) === 'arm' ? ['scroll_armor', 'scroll_armor_b', 'scroll_armor_c']
                 : ['scroll_acc'];
         return ids.map(id => player.inv.find(i => i && i.id === id && (i.cnt || 0) > 0)).filter(Boolean);
     }
@@ -198,7 +199,7 @@
     window.openEnhanceWindow = function (uid, isEq, opt) {
         let it = uid ? findItem(uid, isEq) : null, d = it && DB.items[it.id];
         let scrollId = opt && SCROLL_TAB[opt.scrollId] ? opt.scrollId : null;
-        st = { uid: it ? uid : null, isEq: !!isEq, tab: (d && enhanceable(d)) ? d.type : (scrollId ? SCROLL_TAB[scrollId] : 'wpn'), scrollPick: 0, scrollId: scrollId, result: null };
+        st = { uid: it ? uid : null, isEq: !!isEq, tab: (d && enhanceable(d)) ? etype(d) : (scrollId ? SCROLL_TAB[scrollId] : 'wpn'), scrollPick: 0, scrollId: scrollId, result: null };
         try { if (typeof enhSfxPreload === 'function') enhSfxPreload(); } catch (e) {}
         let win = $('enh-window');
         if (!win) {

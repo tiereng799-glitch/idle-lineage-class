@@ -464,7 +464,7 @@ function _ffPetProgressSum() {
     try {
         petsOutList().forEach(p => {
             let t = Math.max(0, Number(p.exp) || 0);
-            for (let n = 1; n < (p.lv || 1); n++) { let r = Number(petExpReq(n)); if (Number.isFinite(r) && r > 0) t += r; }
+            for (let n = 1; n < (p.lv || 1); n++) { let r = Number(petExpReq(n, p.form)); if (Number.isFinite(r) && r > 0) t += r; }
             sum += t;
         });
     } catch (e) {}
@@ -2382,7 +2382,7 @@ function getPhysicalDmg(diceStr, target, wpn, arrowData, forceHeavy, forceHit, f
         fixed += roll(1, 20);
     }
     // ✨ 2026-10-15 站長規則：受祝福的武器打「不死系、惡魔系」額外傷害 +3～+6（跟神聖武器／銀武器的對不死加成分開算、可疊加）
-    { let _bw = wpnInst || player.eq.wpn; if (_bw && _bw.bless === true && (target.un || target.race === '不死' || target.race === '惡魔')) fixed += 2 + roll(1, 4); }
+    { let _bw = wpnInst || player.eq.wpn; if (_bw && _bw.bless === true && ((typeof isEvilMob === 'function') ? isEvilMob(target) : (target.un || target.race === '不死' || target.race === '惡魔'))) fixed += 2 + roll(1, 4); }
     // 🏺 v3.1.80 傑克的彈弓：對「巨人」種族加成 +1D20（與 unBonus 同模型·獨立於不死/狼人加成·裝箭矢時亦生效）
     if (wpn && wpn.giantBonus && target.race === '巨人') fixed += roll(1, 20);
     // 🗡️ 吉爾塔斯之劍：擊殺後 10 秒內，依主玩家邪惡值比例提高額外傷害（滿邪惡 +10）。

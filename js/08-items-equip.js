@@ -513,6 +513,8 @@ function useItem(u, silent = false, keepModal = false) {   // 🔌 加掛版補�
     let d = DB.items[item.id];
     if (d.noUse) { if(!silent) logSys(`此物品無法直接使用。`); return; }
     if (d.eff === 'pet_collar') { if (!silent && typeof petCallFromCollar === 'function') petCallFromCollar(item); return; }   // 🐾 項圈：叫出寵物
+    if (d.eff === 'lantern') { if (!silent && typeof openLanternPanel === 'function') openLanternPanel(); return; }   // 🏮 燈籠：開關／補燈油
+    if (d.eff === 'pet_evo') { if (!silent && typeof petEvoFromItem === 'function') petEvoFromItem(item); return; }   // 🐾 進化果實／勝利果實：選寵物進化
 
     // 🌅 巨大骷髏的妖魂（eff:'expsoul'·expGain）：使用後獲得經驗值（批量走 batchUseItem）
     if (d.eff === 'expsoul') {
@@ -1472,6 +1474,7 @@ function _updateUIImpl() {
       _el = document.getElementById('dt-movespeed'); if (_el) _el.innerText = `${typeof playerEffectiveMoveSpeedPct === 'function' ? playerEffectiveMoveSpeedPct() : 100 + (player.d.moveSpeedPct || 0)}%`;
       _el = document.getElementById('dt-mpkill'); if (_el) { let _mpIv = (typeof wisMpRegenIntervalTicks === 'function' ? wisMpRegenIntervalTicks(player.d.wis || 0) : 160); _el.innerText = `${_mpIv / 10}秒`; }
       _el = document.getElementById('dt-mr'); if (_el) _el.innerText = player.d.mr || 0;
+      _el = document.getElementById('dt-petdmg'); if (_el) { let _pd = ((typeof petCharmCombatBonus === 'function') ? petCharmCombatBonus().dmg : 0) + ((typeof petGearBonus === 'function') ? (petGearBonus(null).dmg || 0) : 0); _el.innerText = '+' + _pd; }   // 🐾 每隻寵物普攻都加：魅力÷10 ＋ 全寵物遺物
       _el = document.getElementById('dt-resnone'); if (_el) _el.innerText = Math.round(player.d.resNone || 0); }
     if(document.getElementById('dt-resfire')) {
         document.getElementById('dt-resfire').innerText  = Math.round(player.d.resFire  || 0);

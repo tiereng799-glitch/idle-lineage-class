@@ -189,25 +189,7 @@ function renderTabs(force) {
             if(ed.set && !_setSeen[e.id]) { _setSeen[e.id] = true; setCheck[ed.set] = (setCheck[ed.set]||0) + 1; }   // 🔧 與 calcStats 一致：同款物品只計 1 件
         }
     }
-    let activeSets = [];
-    if(setCheck['leather'] >= 4) activeSets.push('leather');   // 皮套裝（補上底色判定）
-    if(setCheck['bone'] >= 3) activeSets.push('bone');
-    if(setCheck['dk'] >= 4) activeSets.push('dk');
-    if(setCheck['silver'] >= 4) activeSets.push('silver');
-    if(setCheck['oasis'] >= 4) activeSets.push('oasis');
-    if(setCheck['gnome'] >= 3) activeSets.push('gnome');
-    if(setCheck['mage'] >= 2) activeSets.push('mage');
-    if(setCheck['kurt'] >= 4) activeSets.push('kurt');
-    if(setCheck['mr'] >= 2) activeSets.push('mr');   // 抗魔套裝僅 2 件，門檻應為 2
-    if(setCheck['guard'] >= 3) activeSets.push('guard');
-    if(setCheck['steel'] >= 5) activeSets.push('steel');
-    if(setCheck['kinglord'] >= 4) activeSets.push('kinglord');   // 🔧 四大軍王套裝：4 件齊→欄位底色亮起
-    if(setCheck['demon'] >= 4) activeSets.push('demon');   // 🗼 惡魔套裝：4 件齊→欄位底色亮起
-    if(setCheck['orin'] >= 2) activeSets.push('orin');   // 🔱 歐林西瑪套裝：2 件齊→欄位底色亮起
-    if(setCheck['icequeen_charm'] >= 3) activeSets.push('icequeen_charm');   // ❄️👸 冰之女王魅力套裝：3 件齊→欄位底色亮起
-    if(setCheck['frost'] >= 3) activeSets.push('frost');   // ❄️ 寒冰套裝：3 件齊→欄位底色亮起
-    if(setCheck['bluepirate'] >= 4) activeSets.push('bluepirate');   // 🏴‍☠️ 藍海賊套裝：4 件齊→欄位底色亮起
-    if(setCheck['priest'] >= 5) activeSets.push('priest');   // 🏺 v3.7.52 司祭苦行套裝：5 件齊→欄位底色亮起
+    let activeSets = Object.keys(setCheck).filter(c => setIsActive(c, setCheck));   // 🛡️ 門檻照 DB.sets.need
 
     slots.forEach(s => {
         if (s.filler) {   // 🦴 v3.1.75 填充格：與 decorateClassicInventoryTab 尾端補的空格同款（無邊框互動·非 .list-item）
@@ -1200,6 +1182,11 @@ function buildItemDescHTML(item) {
     }
     // 👆 新增結束 👆
 
+    // 🛡️ 套裝：顯示這組穿了幾件（n/N）與效果；穿滿變金色
+    if (d.set && typeof DB !== 'undefined' && DB.sets && DB.sets[d.set] && typeof countSetPieces === 'function') {
+        let _sn = (typeof player !== 'undefined' && player && player.eq) ? (countSetPieces(player.eq)[d.set] || 0) : 0, _need = setNeed(d.set), _full = _sn >= _need;
+        desc += `<br><span class="${_full ? 'text-amber-300 font-bold' : 'text-slate-400'}">${DB.sets[d.set].n}（${_sn}/${_need}）<br>套裝效果：${setBonusText(d.set)}</span>`;
+    }
     if(item.bless) {
         if(item.bless === 'cursed') {
             let _ct;
@@ -2622,7 +2609,7 @@ function renderSquadPanel() {
     panel.style.display = '';
     let _sigAllies = allies.map(a => a._slot + ':' + (a._allyName || '') + ':' + (a._downed ? 'D' : '') + ':' + (a.lv || 1)).join('|');
     let sigTeam = _sigAllies
-        + '||P:' + _pets.map(p => p.uid + ':' + p.lv + ':' + (p._downed ? 'D' : '') + ':' + Math.round(p.hp / Math.max(1, p.mhp) * 20) + ':' + Math.round(p.mp / Math.max(1, p.mmp) * 20) + ':' + Math.round((p.exp || 0) / Math.max(1, petExpReq(p.lv)) * 20) + ':' + (p.potPct || 0) + ':' + Math.ceil((p._reviveCd || 0) / 10)).join('|')
+        + '||P:' + _pets.map(p => p.uid + ':' + p.lv + ':' + (p._downed ? 'D' : '') + ':' + Math.round(p.hp / Math.max(1, p.mhp) * 20) + ':' + Math.round(p.mp / Math.max(1, p.mmp) * 20) + ':' + Math.round((p.exp || 0) / Math.max(1, petExpReq(p.lv, p.form)) * 20) + ':' + (p.potPct || 0) + ':' + Math.ceil((p._reviveCd || 0) / 10)).join('|')
         + '||S:' + ((typeof summonTeamSignature === 'function') ? summonTeamSignature() : '')   // team 分頁：名單/倒地/等級＋寵物/召喚血量(5%階)變動才重建
         + '||G:' + ((typeof guardTeamSignature === 'function') ? guardTeamSignature() : '');   // 🏰 城堡護衛血量/倒地/復活倒數變動才重建
     let sigSkill = _sigAllies + '||E:' + allies.map(a => a.elfEle || '').join(',');   // 🩹 v3.2.74 skill 分頁只看傭兵名單/等級→戰鬥中寵物/召喚掉血不重建·開啟的技能下拉不被關

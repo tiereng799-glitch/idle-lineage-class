@@ -69,7 +69,7 @@ function applyMobStatus(m, st, skillName, damageCoef) {
     if(st.pct != null && Math.random() * 100 >= st.pct) return;   // 🏺 v3.7.20 st.pct：固定機率擲骰（寒冰尖刺 50% 冰凍·搭配 force 跳過魔抗判定；未附 pct 者行為不變）
     // 異常狀態魔法命中（玩家對怪物）：見 abnormalMagicHit；st.hitOff＝命中加值（🏛️ 真．冥皇執行劍 衝擊之暈 +4≈命中率+20%）
     // ⚡ st.force：跳過魔抗命中判定，由呼叫端自行擲固定機率（雷神之鎚電光衝擊／伊娃的責罵水之矛的 5% 固定附加）；BOSS 免疫仍上方先擋
-    if(!st.force && !abnormalMagicHit(m, undefined, st.hitOff)) {
+    if(!st.force && !abnormalMagicHit(m, undefined, (st.hitOff || 0) + ((typeof nightHarmHitOff === 'function') ? nightHarmHitOff(st) : 0))) {   // 🌙 夜晚有害魔法 +5%
         logCombat(`<span class="${getMobColor(m.lv)}">${m.n}</span> 抵抗了${skillName || '異常狀態'}。`, 'miss');
         return;
     }

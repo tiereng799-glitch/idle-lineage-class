@@ -25,8 +25,8 @@ if (fs.existsSync(DATA_OUT)) {
 }
 for (const [id, o] of Object.entries(T.newItems || {})) G.DB.items[id] = o;
 for (const [mid, slots] of Object.entries(T.newMagic || {})) if (G.DB.mobs[mid]) Object.assign(G.DB.mobs[mid], slots);
-for (const store of ['items', 'mobs', 'skills']) {
-  const base = { items: G.DB.items, mobs: G.DB.mobs, skills: G.DB.skills }[store];
+for (const store of ['items', 'mobs', 'skills', 'sets']) {
+  const base = { items: G.DB.items, mobs: G.DB.mobs, skills: G.DB.skills, sets: G.DB.sets }[store];
   for (const [id, kv] of Object.entries(T[store] || {})) for (const [p, v] of Object.entries(kv)) if (base[id]) setPath(base[id], p, v);
 }
 for (const [id, list] of Object.entries(T.maps || {})) G.DB.maps[id] = list;
@@ -132,7 +132,7 @@ for (const def of RECORD_SHEETS) {
   const ws = wb.addWorksheet(def.sheet);
   const cols = [{ zh: ID_HEAD, width: 22 }, ...def.cols];
   header(ws, cols, 2);
-  const base = { items: G.DB.items, mobs: G.DB.mobs, skills: G.DB.skills }[def.store];
+  const base = { items: G.DB.items, mobs: G.DB.mobs, skills: G.DB.skills, sets: G.DB.sets }[def.store];
   for (const [rowKey, recId, prefix] of def.rows(G)) {
     const rec = base[recId];
     const sub = prefix ? getPath(rec, prefix.slice(0, -1)) : rec;

@@ -1004,7 +1004,7 @@ const DB = {
         "arm_115": { n: "魔法能量之書", type: "arm", slot: "shield", ac: 2, req: "mage", safe: 4, p: 9800, int: 1, gachaWeight: 20, block: 10 },
         "acc_116": { n: "傳送控制戒指", type: "acc", slot: "ring", ac: 0, req: "all", safe: 0, p: 150000, gachaWeight: 1, unique: true, d: "刻著古老座標的戒指，撕裂空間之餘總會引來潛伏的強敵。攜帶在背包即可生效（無需裝備）：手動施放傳送術/使用瞬移卷軸時必定遭遇 BOSS。" },
         "acc_117": { n: "變形控制戒指", type: "acc", slot: "ring", ac: 0, req: "all", safe: 0, p: 150000, gachaWeight: 1, unique: true, d: "嵌著變幻紋路的戒指，讓施術者得以主宰自身形貌的流轉。攜帶在背包即可生效（無需裝備）：使用變形卷軸時可指定變身型態。" },
-        "acc_summon_ctrl": { n: "召喚控制戒指", type: "acc", slot: "ring", ac: 0, req: "all", safe: 0, p: 50000, gachaWeight: 1, unique: true, d: "召喚師夢寐以求的戒指，能讓喚出的眷屬完全聽從號令。裝備後可在技能清單的「召喚術」挑選要召喚的怪物（含各階稀有種），且 28~48 級階段的召喚數量上限由 5 隻提升為 6 隻。" },
+        "acc_summon_ctrl": { n: "召喚控制戒指", type: "acc", slot: "ring", ac: 0, req: "all", safe: 0, p: 50000, gachaWeight: 1, unique: true, d: "召喚師夢寐以求的戒指，能讓喚出的眷屬完全聽從號令。裝備後可在技能清單的「召喚術」挑選要召喚的怪物（含各階稀有種）。" },
         "rng_earth": { n: "地靈戒指", type: "acc", slot: "ring", ac: 0, resEarth: 10, req: "all", safe: 0, p: 50000, gachaWeight: 1, d: "封存著厚土脈動的戒指，握之如握住一方大地。蘊含大地之力的戒指。" },
         "rng_water": { n: "水靈戒指", type: "acc", slot: "ring", ac: 0, resWater: 10, req: "all", safe: 0, p: 50000, gachaWeight: 1, d: "封存著潺潺水靈的戒指，指尖彷彿淌過清泉。蘊含流水之力的戒指。" },
         "rng_wind": { n: "風靈戒指", type: "acc", slot: "ring", ac: 0, resWind: 10, req: "all", safe: 0, p: 50000, gachaWeight: 1, d: "封存著疾風精魄的戒指，戴上便覺步履輕盈。蘊含疾風之力的戒指。" },
@@ -1179,6 +1179,7 @@ const DB = {
         // ===== 🐾 夥伴系統 v2（v3.2.17）：誘捕道具（使用後獲得對應誘捕狀態 300 秒·期間擊殺對應動物依寵物魅力擲捕獲率(6=45%·12=25%)·成敗都失去狀態）=====
         //   🚫 舊項圈系統（哨子/8種項圈/肉/舊進化果實）已全數移除；舊存檔項圈由 petMigrateLegacy 轉換為寵物。
         "pet_whistle":        { n: "寵物召喚笛",       type: "misc", req: "all", p: 50000, c: "text-amber-300", noUse: true, noJunk: true, gachaWeight: 0, img: "assets/icons/items/哨子.png", d: "帶在身上才能從項圈叫出寵物（不會消耗）。" },
+        "lantern":            { n: "燈籠",             type: "misc", req: "all", p: 3000, c: "text-amber-300", eff: "lantern", noJunk: true, gachaWeight: 0, img: "assets/icons/items/燈籠.svg", d: "夜晚可以照明。點兩下開關燈籠、補充燈油（一次 100 分鐘）。" },
         "pet_collar":         { n: "項圈",             type: "misc", req: "all", p: 0, c: "text-amber-200", eff: "pet_collar", noSell: true, noJunk: true, gachaWeight: 0, img: "assets/icons/items/項圈 (牧羊犬).png", d: "點兩下叫出這隻寵物（身上要有寵物召喚笛，每次 5,000 金幣）。" },
         "item_eye_meat":      { n: "漂浮之眼肉",       type: "pot", req: "all", p: 100, c: "text-pink-300",    eff: "petlure", lure: "lure_general", dur: 300, d: "漂浮之眼身上切下的奇特肉塊，散發野獸無法抗拒的氣味。使用後獲得「一般誘捕」300秒：期間打倒 狼／牧羊犬／杜賓狗／哈士奇／熊／貓／浣熊／聖伯納犬／狐狸／小獵犬／柯利 時有 45% 機率捕獲該寵物（抓到的寵物送往寵物保管、背包得到項圈），不論有沒有抓到都會失去此狀態。", gachaWeight: 0 },
         "item_carrot":        { n: "胡蘿蔔",           type: "pot", req: "all", p: 100, c: "text-orange-300",  eff: "petlure", lure: "lure_rabbit", dur: 300, d: "水靈飽滿的胡蘿蔔，暴走兔見了會不顧一切衝過來。使用後獲得「暴走兔誘捕」300秒：期間打倒 暴走兔 時有 45% 機率捕獲暴走兔（抓到的寵物送往寵物保管、背包得到項圈），不論有沒有抓到都會失去此狀態。", gachaWeight: 0 },
@@ -1189,8 +1190,8 @@ const DB = {
         "item_koreadog_feed": { n: "高麗犬誘食",       type: "pot", req: "all", p: 100, c: "text-cyan-200",    eff: "petlure", lure: "lure_koreadog", dur: 300, d: "熬煮入味的肉乾誘食，幼犬聞香便搖著尾巴跟來。使用後獲得「高麗幼犬誘捕」300秒：期間打倒 高麗幼犬 時有 25% 機率捕獲高麗幼犬（抓到的寵物送往寵物保管、背包得到項圈），不論有沒有抓到都會失去此狀態。", gachaWeight: 0 },
         // 🐾 進化材料（於包武的寵物保管介面對 Lv30+ 寵物使用進化按鈕時消耗；諾斯製作）
         "item_dragon_heart":  { n: "龍之心",   type: "etc", req: "all", p: 5000, c: "text-red-300",    noUse: true, gachaWeight: 0, d: "幼龍胸腔中仍在搏動的緋紅心臟，蘊含純粹的龍之力。製作材料：亞丁「諾斯」可用它製作勝利果實。" },
-        "item_evo_fruit":     { n: "進化果實", type: "etc", req: "all", p: 0,    c: "text-green-300",  noUse: true, gachaWeight: 0, d: "蘊含生命躍遷之力的神祕果實。亞丁「諾斯」可製作：光明的鱗片×100＋綠寶石×20＋金幣20000。", gachaWeight: 0 },
-        "item_victory_fruit": { n: "勝利果實", type: "etc", req: "all", p: 0,    c: "text-yellow-300", noUse: true, gachaWeight: 0, d: "凝聚龍之心力量的黃金果實。亞丁「諾斯」可製作：龍之心×1＋高品質紅寶石×5。", gachaWeight: 0 },
+        "item_evo_fruit":     { eff: "pet_evo", n: "進化果實", type: "etc", req: "all", p: 0,    c: "text-green-300",  gachaWeight: 0, d: "蘊含生命躍遷之力的神祕果實。點兩下選一隻 30 級以上的寵物進化。亞丁「諾斯」可製作：光明的鱗片×100＋綠寶石×20＋金幣20000。", gachaWeight: 0 },
+        "item_victory_fruit": { eff: "pet_evo", n: "勝利果實", type: "etc", req: "all", p: 0,    c: "text-yellow-300", gachaWeight: 0, d: "凝聚龍之心力量的黃金果實。點兩下選一隻 30 級以上的寵物進化成黃金龍。亞丁「諾斯」可製作：龍之心×1＋高品質紅寶石×5。", gachaWeight: 0 },
         // 不死鳥之心（製作材料，不死鳥 1% 掉落）
         "new_phoenix_heart": { n: "不死鳥之心", type: "etc", p: 0, c: "text-blue-300", noUse: true, gachaWeight: 0, d: "不死鳥體內不滅的核心。製作材料。" },
         // ===== 🦴 寵物裝備（之牙）：裝在「寵物裝備」欄，能力只影響寵物，可用對飾品施法的卷軸強化至+5 =====
@@ -1810,22 +1811,29 @@ const DB = {
         "acc_ear_clan":     { n: "族群耳環", type: "acc", slot: "ear", ac: 3, req: "all", safe: 0, p: 0, gachaWeight: 0, noEnhance: true, mhp: 50, mmp: 20, weightCap: 100, d: "凝聚族群的耳環。" },
         "acc_ear_slave":    { n: "奴隸耳環", type: "acc", slot: "ear", legend: true, ac: 3, req: "all", safe: 0, p: 0, gachaWeight: 0, mhp: 50, mmp: 20, weightCap: 200, d: "禁忌的奴隸耳環。" },
     },
-    // ⚠️ 純標記表：僅供 initSetTags（本檔尾）反向標記 DB.items[].set；套裝效果唯一真相在 js/02 recomputeStats（搜 _setEarly）、UI 門檻在 js/10（勿在此加數值欄位·無人讀取）
+    // 🛡️ 套裝（2026-10-15 改成單一真相）：成員 items、需要件數 need、效果數值都在這裡；js/02 照表套用、裝備說明照表顯示、試算表「套裝」分頁可改數值。
+    //   數值欄位同裝備：ac 正數＝防禦變好（套用時 d.ac -= ac）、mhp/mmp/hpR/mpR/mr/dr/六屬性/抗性/近遠傷害/爆擊…；poly＝套裝變身（js/02 SET_POLY_FORMS）。
     sets: {
-        "set_0": { n: "皮套裝", items: ["arm_48", "arm_91", "arm_111", "arm_75"] },
-        "set_1": { n: "歐西斯套裝", items: ["hlm_oasis", "amr_oasis", "clk_oasis", "arm_104"] },
-        "set_2": { n: "侏儒套裝", items: ["hlm_gnome", "arm_86", "shd_gnome"] },
-        "set_3": { n: "銀釘套裝", items: ["hlm_silver", "arm_92", "arm_112", "arm_77"] },
-        "set_4": { n: "骷髏套裝", items: ["hlm_bone", "shd_bone", "amr_bone"] },
-        "set_5": { n: "鋼鐵套裝", items: ["arm_100", "hlm_steel", "arm_113", "arm_94", "arm_79"] },
-        "set_6": { n: "法師套裝", items: ["hlm_mage", "amr_magerobe"] },
-        "set_7": { n: "死亡騎士套裝", items: ["glv_dk", "amr_dk", "bot_dk", "hlm_dk"] },
-        "set_8": { n: "克特套裝", items: ["arm_101", "amr_kurt", "arm_97", "hlm_kurt"] },
-        "set_9": { n: "抗魔套裝", items: ["rng_mr", "acc_126", "blt_mr"] },
-        "set_10": { n: "守護套裝", items: ["acc_118", "acc_124", "acc_138"] },
-        "set_11": { n: "四大軍王套裝", items: ["clk_kingnecro", "amr_kinglaw", "glv_kingassassin", "bot_kingbeast"] },
-        "set_12": { n: "惡魔套裝", items: ["hlm_demon", "amr_demon", "glv_demon", "bot_demon"] },
-        "set_13": { n: "黑暗妖精套裝", items: ["hlm_darkelf", "amr_darkelf", "bot_darkelf"] }
+        "leather":        { n: "皮套裝",         need: 4, items: ["arm_48", "arm_91", "arm_111", "arm_75"], ac: 3 },
+        "oasis":          { n: "歐西斯套裝",     need: 4, items: ["hlm_oasis", "amr_oasis", "clk_oasis", "arm_104"], ac: 3 },
+        "gnome":          { n: "侏儒套裝",       need: 3, items: ["hlm_gnome", "arm_86", "shd_gnome"], ac: 1, mhp: 5 },
+        "silver":         { n: "銀釘套裝",       need: 4, items: ["hlm_silver", "arm_92", "arm_112", "arm_77"], ac: 3 },
+        "bone":           { n: "骷髏套裝",       need: 3, items: ["hlm_bone", "shd_bone", "amr_bone"], ac: 2, mhp: 10 },
+        "steel":          { n: "鋼鐵套裝",       need: 5, items: ["arm_100", "hlm_steel", "arm_113", "arm_94", "arm_79"], ac: 2, dr: 2 },
+        "mage":           { n: "法師套裝",       need: 2, items: ["hlm_mage", "amr_magerobe"], mmp: 50, mpR: 1 },
+        "dk":             { n: "死亡騎士套裝",   need: 4, items: ["glv_dk", "amr_dk", "bot_dk", "hlm_dk"], ac: 4, poly: "dk" },
+        "kurt":           { n: "克特套裝",       need: 4, items: ["arm_101", "amr_kurt", "arm_97", "hlm_kurt"], ac: 4, poly: "kurt" },
+        "mr":             { n: "抗魔套裝",       need: 3, items: ["rng_mr", "acc_126", "blt_mr"], mr: 5 },
+        "guard":          { n: "守護套裝",       need: 3, items: ["acc_118", "acc_124", "acc_138"], ac: 1 },
+        "kinglord":       { n: "四大軍王套裝",   need: 4, items: ["clk_kingnecro", "amr_kinglaw", "glv_kingassassin", "bot_kingbeast"], mhp: 30, mmp: 30, hpR: 10, mpR: 10, cha: 3 },
+        "demon":          { n: "惡魔套裝",       need: 4, items: ["hlm_demon", "amr_demon", "glv_demon", "bot_demon"], ac: 2, hpR: 5, poly: "demon" },
+        "darkelf":        { n: "黑暗妖精套裝",   need: 3, items: ["hlm_darkelf", "amr_darkelf", "bot_darkelf"], str: -2, dex: 2, ac: 3, hpR: -2, mpR: -7, poly: "darkelf" },
+        "orin":           { n: "歐林西瑪套裝",   need: 2, items: ["acc_orin_amulet", "acc_sima_ring"], str: 1, dex: 1, con: 1, int: 1, wis: 1, cha: 1, ac: 5, mhp: 50 },
+        "icequeen_charm": { n: "冰之女王魅力套裝", need: 3, items: ["hlm_icequeen_charm", "amr_icequeen_charm", "bot_icequeen_charm"], str: 2, cha: 2, ac: 5, mhp: 100, mpR: 4, resWater: 20 },
+        "frost":          { n: "寒冰套裝",       need: 3, items: ["hlm_frost", "amr_frost", "bot_frost"], con: 3, ac: 5, mhp: 100, hpR: 8, mpR: 4, mr: 15, resWater: 20 },
+        "bluepirate":     { n: "藍海賊套裝",     need: 4, items: ["arm_bluepirate_helm", "arm_bluepirate_armor", "arm_bluepirate_gloves", "arm_bluepirate_boots"], int: 1, ac: 1, mhp: 10 },
+        "emperor":        { n: "真．冥皇套裝",   need: 5, items: ["clk_emperor", "amr_emperor", "hlm_emperor", "glv_emperor", "bot_emperor"], ac: 20, mhp: 100, mmp: 20, hpR: 10, atkSpdPct: 30, meleeDmg: 5, rangedDmg: 5 },
+        "priest":         { n: "司祭苦行套裝",   need: 5, items: ["relic_priest_hood", "relic_priest_gloves", "relic_priest_collar", "relic_priest_robe", "relic_priest_sandals"], ac: 50, mr: 50, mhp: 300, mpR: 30, meleeCrit: 5, rangedCrit: 5, magicCrit: 5, meleeCritDmg: 50, rangedCritDmg: 50, magicCritDmg: 50 }
     },
             
     mobs: {
@@ -3304,17 +3312,9 @@ const DB = {
 // 修正：原本沒有任何物品擁有 .set，導致 setCheck 永遠為空、套裝加成與底色判定都不會觸發。
 // 註：.set 掛在「基底物品 ID」上，與強化/祝福/遠古/屬性詞綴（存在裝備實例上）無關，
 //     因此帶詞綴的裝備一樣會被正確計入套裝。
-(function initSetTags() {
-    const SET_CODE = {
-        set_0: 'leather', set_1: 'oasis', set_2: 'gnome', set_3: 'silver',
-        set_4: 'bone',    set_5: 'steel', set_6: 'mage',  set_7: 'dk',
-        set_8: 'kurt',    set_9: 'mr',    set_10: 'guard', set_11: 'kinglord',
-        set_12: 'demon',  set_13: 'darkelf'
-    };
-    for (let sid in DB.sets) {
-        let code = SET_CODE[sid];
-        if (!code) continue;
-        (DB.sets[sid].items || []).forEach(iid => {
+(function initSetTags() {   // DB.sets 的鍵＝套裝代碼（＝DB.items[].set）
+    for (let code in DB.sets) {
+        (DB.sets[code].items || []).forEach(iid => {
             if (DB.items[iid]) DB.items[iid].set = code;
         });
     }

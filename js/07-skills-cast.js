@@ -73,7 +73,7 @@ function summonAttack(sm, owner) {
     if(sm.skId === 'sk_charm') {
         let hv = Math.max(1, Math.min(20, owner.lv + sm.hitBonus + cha - t.lv + mobEffAC(t) + _sgb.hit + (_teamAtk ? _teamAtk.eh : 0)));   // 🏺 喚獸師鞭＋👑灼熱武器／幻覺光環命中（🚫 召喚控制戒指命中+5 已移除）
         let r = roll(1, 20);
-        if(!((r === 20) || (r !== 1 && hv >= r))) { if (typeof vfxMiss === 'function') vfxMiss(t); logCombat(`${sm.n} 的攻擊未命中。`, 'miss'); return; }
+        if(!((r === 20) || (r !== 1 && hv >= r)) || (typeof companionHitRoll === 'function' && !companionHitRoll())) { if (typeof vfxMiss === 'function') vfxMiss(t); logCombat(`${sm.n} 的攻擊未命中。`, 'miss'); return; }
         let dmg = Math.max(1, Math.floor((roll(sm.dmgDice[0], sm.dmgDice[1]) + cha + _sgb.dmg + (_teamAtk ? _teamAtk.ed : 0)) * ((typeof COMPANION_DMG_MULT !== 'undefined') ? COMPANION_DMG_MULT : 1)) - (t.dr || 0));   // 🔧 站長規則：夥伴傷害 ×0.75
         dmg += traumaPhysicalBonus(t);
         markBossPhysicalHit(t);
@@ -211,6 +211,7 @@ function manualCast(skId) {
         if (player.d && player.d.charmOnHit) { logSys('裝備斯克巴女皇的魅惑之吻時，迷魅術會改為命中後自動施展。'); return; }
         if(!t) { logSys('沒有目標。'); return; }
         if(t.boss) { logSys('無法魅惑 BOSS。'); return; }
+        if(typeof petCharmCount === 'function' && !player.charmed && petCharmCount() >= COMPANION_PET_CHARM_MAX) { logSys(`寵物和迷魅的怪合計最多 ${COMPANION_PET_CHARM_MAX} 隻。`); return; }
         if((t.lv || 1) > player.lv + CHARM_LV_OVER) { logSys(`無法魅惑比自己高 ${CHARM_LV_OVER} 級以上的怪物。`); return; }   // 🔧 站長規則：怪物等級 ≤ 玩家等級+5（不扣 MP）
         player.mp -= cost; cost = 0;
         // 🏅 召喚精通：對等級比自己低的非 BOSS 怪物，迷魅必定成功；否則一般迷魅成功率最高 60%（cap=12）
@@ -273,6 +274,7 @@ const CHARM_LV_OVER = 5;   // 🔧 站長規則：迷魅只能對「等級 ≤ �
 function relicCharmOnHit(t) {
     let p = player;
     if (!p || !p.d || !p.d.charmOnHit || p.charmed || !t || t.curHp <= 0 || t._dead || t.boss || t.noCharm || (t.lv || 1) > p.lv + CHARM_LV_OVER) return false;
+    if (typeof petCharmCount === 'function' && petCharmCount() >= COMPANION_PET_CHARM_MAX) return false;   // 寵物＋迷魅合計最多 4 隻
     if (!((hasMastery('m_summon') && (t.lv || 1) < p.lv) || abnormalMagicHit(t, 12))) return false;
     let idx = mapState.mobs.findIndex(m => m && m.uid === t.uid);
     if (idx === -1) return false;

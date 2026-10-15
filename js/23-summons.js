@@ -90,7 +90,7 @@ function _sumCountFor(name, owner) {   // 數量：floor((魅力+6)/div)·上限
     if (e.tier.fixedCount) return e.tier.fixedCount;
     const cha = (owner.d && owner.d.cha) || 0;
     const n = Math.floor((cha + 6) / e.tier.div);
-    const cap = hasSummonCtrlRing(owner) ? e.tier.ringCap : e.tier.cap;
+    const cap = Math.min(5, hasSummonCtrlRing(owner) ? e.tier.ringCap : e.tier.cap);   // 🔧 2026-10-15 站長：召喚最多 5 隻（戒指原本可到 6）
     return Math.max(0, Math.min(cap, n));
 }
 // 傷害設計：整隊基準 DPS 由「魅力×玩家等級」連續成長，再由召喚階級按比例逐階增加。
@@ -173,7 +173,8 @@ function _zmbDerive(s, owner) {
     owner = owner || player;
     const t = ZOMBIE_TIERS.find(x => x.lv === s.lv) || ZOMBIE_TIERS[0];
     const tierIdx = Math.max(0, ZOMBIE_TIERS.indexOf(t));
-    const dps = 22 + (owner.lv || 1) * 0.45 + tierIdx * 5;
+    const _zc = Math.max(0, (owner.d && owner.d.cha) || 0);
+    const dps = (39 + 0.09 * _zc * (owner.lv || 1)) * (1 + tierIdx * 0.06) * 0.5;   // 🔧 2026-10-15 站長：造屍術傷害改吃魅力（一隻殭屍≈同階召喚隊伍的一半）；舊式 22＋等級×0.45＋階×5
     const mean = dps * (ZOMBIE_ASPD / 10);
     const flat = Math.round(mean * 0.55);
     const dice = Math.max(1, Math.round((mean - flat) * 2));
@@ -589,7 +590,7 @@ function summonV2AttackOnce(s, d, t, owner) {
     const hv = stretchHitValue(d.hit + _sgb.hit + (_ia ? _ia.eh : 0) - t.lv + mobEffAC(t));
     const r = roll(1, 20);
     _petAnimAct(s, 'attack', t.uid);   // 🎬 v3.2.73 補跑中不設→回前景不同步爆播
-    if (!((r === 20) || (r !== 1 && hv >= r))) { if (typeof vfxMiss === 'function') vfxMiss(t); logCombat(`<span class="text-purple-300">${s.form}</span> 的攻擊未命中。`, 'miss'); return; }
+    if (!((r === 20) || (r !== 1 && hv >= r)) || (typeof companionHitRoll === 'function' && !companionHitRoll())) { if (typeof vfxMiss === 'function') vfxMiss(t); logCombat(`<span class="text-purple-300">${s.form}</span> 的攻擊未命中。`, 'miss'); return; }
     let dmg = ((r === 20 ? d.dice : roll(1, d.dice)) + d.flat + _sgb.dmg) * _attackMult + (_ia ? _ia.ed : 0) + (_ia ? (_ia.mel || 0) : 0);   // 🔥 v3.8.3 _ia.mel＝舞躍之火團隊光環近距離傷害+3（召喚物一般攻擊視為近距離）
     dmg = Math.max(1, Math.floor(dmg) - (t.dr || 0));
     dmg += traumaPhysicalBonus(t);
@@ -644,7 +645,7 @@ function spiritAttackOnce(s, t, owner) {
     _petAnimAct(s, 'attack', t.uid);   // 🎬 v3.2.73 補跑中不設→回前景不同步爆播
     const hv = summonHitValue(smLike, owner, t, _sgb.hit + (_ia ? _ia.eh : 0));
     const r = roll(1, 20);
-    if (!((r === 20) || (r !== 1 && hv >= r))) { if (typeof vfxMiss === 'function') vfxMiss(t); logCombat(`<span class="text-purple-300">${s.form}</span> 的攻擊未命中。`, 'miss'); return; }
+    if (!((r === 20) || (r !== 1 && hv >= r)) || (typeof companionHitRoll === 'function' && !companionHitRoll())) { if (typeof vfxMiss === 'function') vfxMiss(t); logCombat(`<span class="text-purple-300">${s.form}</span> 的攻擊未命中。`, 'miss'); return; }
     const flat = Math.floor(cha * (owner.lv || 1) / (spec.scale || 20));
     const mrPen = (spec.mrPenBase || 0) + Math.floor(cha / 10);
     const mult = summonDamageMult(smLike, owner, true, (_ownerIa && _ownerIa.md) || 0) * ((typeof COMPANION_DMG_MULT !== 'undefined') ? COMPANION_DMG_MULT : 1);
@@ -686,7 +687,7 @@ function enemyAttackSummon(mob, s) {
     let dmg = (heavy ? dc * ds : roll(dc, ds)) + ((mob.db || 0) - (st.weaken > 0 ? 4 : 0) - (st.broken > 0 ? 2 : 0));
     if (mob._sherine) dmg = Math.floor(dmg * (mob._sherineMad ? 3 : 2));
     if (mob._grace) dmg = Math.floor(dmg * 1.5);
-    dmg = Math.max(1, Math.floor(dmg * riftDamageMult()) - d.dr);
+    dmg = Math.max(1, Math.floor(dmg * riftDamageMult() * ((typeof nightEvilMult === 'function') ? nightEvilMult(mob) : 1)) - d.dr);   // 🌙 夜晚
     dmg = Math.max(1, Math.floor(dmg * (typeof teamDmgReduceMult === 'function' ? teamDmgReduceMult(true) : 1)));   // 🔮 化身對寵物／召喚物保留受傷減免；鋼鐵防護只作用於施法者自身 AC
     if (typeof ironGuardTauntWeakensAttack === 'function' && ironGuardTauntWeakensAttack(mob)) dmg = Math.floor(dmg * 0.9);   // 🔮 鐵衛 5/5：受嘲諷目標的一般攻擊傷害 -10%
     s.hp -= dmg;
@@ -709,7 +710,7 @@ function applyMobMagicToSummon(mob, sk, s) {
     let extra = (sk.db || 0) + (sk.dbLv ? (mob.lv || 0) * (sk.dbLvMult || 1) : 0);
     let dmg = sk.fixedDmg ? (baseM + extra) : (Math.floor((baseM + extra) * mrMult(mr)) - dr);
     dmg = Math.max(1, Math.floor(Math.max(1, dmg * shMul) * (typeof teamDmgReduceMult === 'function' ? teamDmgReduceMult(true) : 1)));
-    dmg = Math.max(1, Math.floor(dmg * riftDamageMult()));
+    dmg = Math.max(1, Math.floor(dmg * riftDamageMult() * ((typeof nightEvilMult === 'function') ? nightEvilMult(mob) : 1)));   // 🌙 夜晚
     s.hp -= dmg;
     _petAnimAct(s, 'hurt');
     logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 施放${sk.skn || '魔法'}，對 <span class="text-purple-300">${s.form}</span> 造成 ${dmg} 點魔法傷害。`, 'enemy');
@@ -840,7 +841,7 @@ function openSummonSelect() {
                 <span class="text-slate-400" style="font-size:11px;white-space:nowrap;">${usable ? `×${cnt}·攻1D${d.dice}+${d.flat}·${(m.aspd / 10).toFixed(1)}s` : (ok ? `魅力不足（數量 0·需(魅力+6)/${t.div}≥1）` : (t.reqCha && (player.d.cha || 0) < t.reqCha ? `需魅力${t.reqCha}` : '未解鎖'))}</span>
             </button>`;
         }).join('');
-        return `<div style="margin-bottom:6px;"><div class="text-amber-300 font-bold" style="font-size:12px;">${t.reqLv} 級以上${t.reqCha ? '·魅力 ' + t.reqCha : ''}<span class="text-slate-500">（數量 ${t.fixedCount ? '固定 1 隻' : `(魅力+6)/${t.div}·最多 ${t.cap}${t.ringCap > t.cap ? '（戒指 ' + t.ringCap + '）' : ''} 隻`}）</span></div>${mobs}</div>`;
+        return `<div style="margin-bottom:6px;"><div class="text-amber-300 font-bold" style="font-size:12px;">${t.reqLv} 級以上${t.reqCha ? '·魅力 ' + t.reqCha : ''}<span class="text-slate-500">（數量 ${t.fixedCount ? '固定 1 隻' : `(魅力+6)/${t.div}·最多 ${Math.min(5, t.cap)} 隻`}）</span></div>${mobs}</div>`;
     }).join('');
     ov.innerHTML = `<div style="width:460px;max-height:82vh;overflow-y:auto;background:#0b1220;border:1px solid #6d28d9;border-radius:8px;padding:12px;font-size:13px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">

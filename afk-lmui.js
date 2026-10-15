@@ -389,6 +389,7 @@
       '.mi-x{margin-left:auto;width:26px;height:26px;border:1px solid #5a4630;border-radius:4px;background:#1c150e;color:#d6c7a5;font-size:15px;line-height:1;cursor:pointer;}',
       '.mi-tags{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 4px;}',
       '.mi-tag{padding:1px 6px;font-size:12px;border:1px solid #4d3f2b;border-radius:3px;color:#c9b88f;background:#17120c;}',
+      '.mi-tag.mi-evil{color:#fca5a5;border-color:#7f1d1d;background:#2a0d0d;font-weight:700;}',
       '.mi-tag.ele-fire{color:#fca5a5;border-color:#7f1d1d;}.mi-tag.ele-water{color:#93c5fd;border-color:#1e3a8a;}.mi-tag.ele-earth{color:#d6b98a;border-color:#5a4630;}.mi-tag.ele-wind{color:#86efac;border-color:#14532d;}',
       '.mi-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:3px 8px;font-size:13px;margin-bottom:6px;}',
       '.mi-stats span{display:flex;justify-content:space-between;gap:4px;white-space:nowrap;}',
@@ -930,6 +931,9 @@
     var drops = mobDropList(mob.n);
     var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
     var tags = [d.race, d.s === 'L' ? '大型' : (d.s === 'S' ? '小型' : ''), d.beh, d.un ? '不死' : ''].filter(Boolean).map(function (t) { return '<span class="mi-tag">' + esc(t) + '</span>'; }).join('');
+    // 不死系／惡魔系另外標出來（夜晚會變強、怕祝福武器）；其他種族不加
+    var ek = (typeof evilKind === 'function') ? evilKind(d) : '';
+    if (ek) tags += '<span class="mi-tag mi-evil">' + (ek === 'undead' ? '不死系' : '惡魔系') + ((typeof isNightTime === 'function' && isNightTime()) ? '・夜晚強化中' : '') + '</span>';
     var stat = function (k, v) { return '<span><i>' + k + '</i><b>' + v + '</b></span>'; };
     var hp = (mob.curHp != null ? Math.max(0, Math.round(mob.curHp)) + ' / ' : '') + (mob.hp || d.hp);
     var rows = drops.length ? drops.map(function (x) {

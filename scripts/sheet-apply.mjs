@@ -59,7 +59,7 @@ function toNumber(raw) {
 }
 
 const G = loadGame();
-const out = { home: {}, items: {}, mobs: {}, skills: {}, maps: {}, drops: {} };
+const out = { home: {}, items: {}, mobs: {}, skills: {}, sets: {}, maps: {}, drops: {} };
 
 // ── 首頁 ────────────────────────────────────────────────
 const home = wb.getWorksheet('首頁');
@@ -138,7 +138,7 @@ for (const def of RECORD_SHEETS) {
   if (!colOf[ID_HEAD]) continue;
   for (const c of edit) if (c.was && !colOf[c.zh] && colOf[c.was]) colOf[c.zh] = colOf[c.was];   // 改過名的欄：舊表照舊名讀
   const valid = new Map(def.rows(G).map(([rowKey, recId, prefix]) => [rowKey, [recId, prefix]]));
-  const base = { items: G.DB.items, mobs: G.DB.mobs, skills: G.DB.skills }[def.store];
+  const base = { items: G.DB.items, mobs: G.DB.mobs, skills: G.DB.skills, sets: G.DB.sets }[def.store];
   const seen = new Map();
 
   ws.eachRow((row, i) => {

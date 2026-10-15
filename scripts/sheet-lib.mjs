@@ -41,8 +41,11 @@ export function loadGame() {
   const read = f => fs.readFileSync(path.join(GAME_ROOT, 'js', f), 'utf8');
   vm.runInContext(read('00-data.js') + '\n;globalThis.__DB = DB;', ctx);
   vm.runInContext(read('01-drops-config.js') + '\n;globalThis.__MD = MOB_DROPS;', ctx);
+  _lastDB = ctx.__DB;
   return { DB: ctx.__DB, MOB_DROPS: ctx.__MD, MAP_NAMES: loadMapNames() };
 }
+let _lastDB = null;   // 給只拿得到單筆資料的欄位（例：套裝的「部位」）查物品名稱
+const itemName = id => (_lastDB && _lastDB.items[id] && _lastDB.items[id].n) || id;
 export const loadDB = () => loadGame().DB;
 
 // 地圖中文名:js/11-world-map.js 的 {v:'zone_15',t:'眠龍洞穴1樓'}(只拿來顯示)
@@ -157,6 +160,19 @@ export const RECORD_SHEETS = [
     ],
   },
   {
+    // 🛡️ 套裝：成員與變身只顯示（不能改），件數與效果數值可以改；防禦力填正數＝防禦變好（同裝備分頁）
+    sheet: '套裝', store: 'sets', rows: (G) => Object.keys(G.DB.sets || {}).map(id => [id, id, '']),
+    cols: [
+      C.text('n', '名稱', 16), C.show('部位', (s, sub, id) => (s.items || []).map(i => itemName(i)).join('、'), 40),
+      C.int('need', '需要件數', '穿幾件才有效果'), C.show('變身', s => s.poly || ''),
+      C.int('ac', '防禦力(AC)', '正數＝防禦變好'), C.int('mr', '魔防'), C.int('mhp', 'HP上限'), C.int('mmp', 'MP上限'), C.int('hpR', 'HP回復'), C.int('mpR', 'MP回復'), C.int('dr', '傷害減免'),
+      ...STATS, ...RES,
+      C.int('meleeDmg', '近距離傷害'), C.int('rangedDmg', '遠距離傷害'), C.int('extraDmg', '額外傷害'), C.int('extraHit', '命中'), C.int('magicDmg', '魔法傷害'), C.int('extraMp', '額外魔法點數'),
+      C.int('atkSpdPct', '攻速%'), C.int('meleeCrit', '近距離爆擊%'), C.int('rangedCrit', '遠距離爆擊%'), C.int('magicCrit', '魔法爆擊%'),
+      C.int('meleeCritDmg', '近距離爆擊傷害%'), C.int('rangedCritDmg', '遠距離爆擊傷害%'), C.int('magicCritDmg', '魔法爆擊傷害%'),
+    ],
+  },
+  {
     sheet: '怪物', store: 'mobs', rows: (G) => Object.keys(G.DB.mobs).map(id => [id, id, '']),
     cols: [
       C.show('名稱', d => d.n, 16), C.int('lv', '等級'), C.int('hp', 'HP'), C.int('ac', 'AC', '數字越小越硬'), C.int('mr', '魔防'),
@@ -249,7 +265,7 @@ export function iconOf(d) {
 }
 export function newItemFrom(tplId, tpl) {
   const o = JSON.parse(JSON.stringify(tpl));
-  for (const k of ['relic', 'relicRole', 'legend', 'noSell']) delete o[k];
+  for (const k of ['relic', 'relicRole', 'legend', 'noSell', 'set']) delete o[k];   // 新物品不跟著範本算進套裝
   o.img = iconOf(tpl);
   o.gachaWeight = 0;   // 不進潘朵拉抽獎/黑市
   o.d = '';
