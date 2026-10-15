@@ -117,8 +117,8 @@
                 }
                 if ((Number(item.en) || 0) > 0) {
                     const badge = document.createElement('span');
-                    badge.className = 'equipment-slot-enhance';
-                    badge.textContent = '+' + capEn(item.en, data);
+                    badge.className = 'equipment-slot-enhance' + ((Number(item.en) || 0) > (data.safe || 0) ? ' en-over' : '') + (slot.querySelector('.equipment-slot-equipped') ? ' with-eq' : '');   // 左上角；超過安定值閃（css）
+                    const _b = document.createElement('b'); _b.textContent = '+' + capEn(item.en, data); badge.appendChild(_b);
                     slot.appendChild(badge);
                 } else if ((item.cnt || 1) > 1) {
                     const count = document.createElement('span');

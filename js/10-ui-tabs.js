@@ -243,7 +243,7 @@ function renderTabs(force) {
             let imgHtml = `<img src="${imgUrl}" onerror="this.style.opacity='0';" class="object-contain pointer-events-none ${glowClass}">`;
             let _showEquipped = (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') && !d.isArrow;
             let _cornerValue = (Number(eq.en) || 0) > 0
-                ? `<span class="classic-icon-corner-value is-enhance">+${capEn(eq.en, d)}</span>`
+                ? enBadgeHTML(eq, d, _showEquipped ? 'with-eq' : '')
                 : ((eq.cnt || 1) > 1 ? `<span class="classic-icon-corner-value is-count">${(eq.cnt || 1).toLocaleString()}</span>` : '');
             let _equippedBadge = _showEquipped ? '<span class="classic-equipped-badge" aria-hidden="true">E</span>' : '';
             el.classList.add('tip-host');
@@ -318,7 +318,7 @@ player.inv.forEach(i => {
     let _dimStyle = dimIcon ? ' style="opacity:0.3;filter:grayscale(0.6);"' : '';   // 🔅 無法裝備→圖示黯淡＋去彩度
     let imgHtml = `<img src="${imgUrl}" onerror="this.style.opacity='0';" class="w-6 h-6 object-contain pointer-events-none ${glowClass}"${_dimStyle}>`;
     let _invCornerValue = (Number(i.en) || 0) > 0
-        ? `<span class="classic-icon-corner-value is-enhance">+${capEn(i.en, d)}</span>`
+        ? enBadgeHTML(i, d)
         : ((i.cnt || 1) > 1 ? `<span class="classic-icon-corner-value is-count">${(i.cnt || 1).toLocaleString()}</span>` : '');
     
     // 內容組合 (加入了 statusTag)
@@ -1387,6 +1387,12 @@ function returnToItemModal(uid, isEq) {
 }
 
 // 👇 修改後的功能：顯示選擇卷軸的介面
+// 強化值角標（站長 2026-10-15）：放左上角、字放大；超過安定值閃閃發亮（.en-over；動畫掛在內層 <b>，外層顏色是 !important 動不了）
+//   extra='with-eq'：同格左上角已有「E」裝備中標記 → 往右讓開
+function enBadgeHTML(it, d, extra) {
+    let en = Number(it && it.en) || 0, over = en > ((d && d.safe) || 0);
+    return `<span class="classic-icon-corner-value is-enhance${over ? ' en-over' : ''}${extra ? ' ' + extra : ''}"><b>+${capEn(en, d)}</b></span>`;
+}
 function showEnhanceOptions(uid, isEq) {
     if (typeof openEnhanceWindow === 'function') { closeModal(); openEnhanceWindow(uid, isEq); return; }   // ⚒️ 2026-10-15 改用強化視窗（js/33）；下方舊流程留作後備
     let item = isEq ? Object.values(player.eq).find(e => e && e.uid === uid) : player.inv.find(i => i.uid === uid);

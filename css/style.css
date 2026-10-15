@@ -1016,6 +1016,15 @@ body.view-town #col-center #log-row { flex: 1 1 0; }
 .classic-equipped-badge,.equipment-slot-equipped { position:absolute; z-index:9; left:2px; top:2px; display:flex; align-items:center; justify-content:center; min-width:15px; height:15px; padding:0 2px; box-sizing:border-box; border:1px solid #60a5fa; border-radius:1px; color:#eaf4ff; background:linear-gradient(145deg,#2563a8,#123d78); font:italic 800 12px/1 Georgia,serif; text-shadow:0 1px 1px #082047; box-shadow:0 0 3px #60a5fa99,inset 0 0 2px #bfdbfe88; pointer-events:none; }
 .classic-icon-corner-value,.equipment-slot-enhance,.equipment-slot-count { position:absolute; z-index:9; right:2px; bottom:1px; max-width:88%; overflow:hidden; color:#d5a94f; font:800 clamp(10px,.9vw,15px)/1 Arial,sans-serif; letter-spacing:0; text-align:right; white-space:nowrap; text-shadow:1px 1px 2px #000,-1px -1px 2px #000; pointer-events:none; }
 .classic-icon-corner-value.is-enhance,.equipment-slot-enhance { color:#39a9ff !important; text-shadow:0 0 3px #0b4f99,1px 1px 2px #000 !important; }
+/* 強化值：左上角、字放大（站長 2026-10-15）；同格有「E」時往右讓開。超過安定值（.en-over）閃閃發亮——動畫掛內層 <b>（外層顏色 !important 動不了） */
+.classic-icon-corner-value.is-enhance,.equipment-slot-enhance { left:2px; top:1px; right:auto; bottom:auto; font-size:clamp(12px,1.15vw,17px); text-align:left; overflow:visible; max-width:none; }
+.classic-icon-corner-value.is-enhance.with-eq,.equipment-slot-enhance.with-eq { left:19px; }
+.classic-icon-corner-value > b,.equipment-slot-enhance > b,.ld-en > b,.enh-en > b { font-weight:inherit; }
+.en-over > b { animation:enOverSafe 1.3s ease-in-out infinite; }
+@keyframes enOverSafe {
+  0%,100% { color:#4db3ff; text-shadow:0 0 3px #0b4f99,1px 1px 2px #000; }
+  50%     { color:#f2fbff; text-shadow:0 0 4px #fff,0 0 9px #59c2ff,0 0 14px #2f8cff,1px 1px 2px #000; }
+}
 .classic-icon-corner-value.is-count,.equipment-slot-count { color:#d5a94f; }
 .classic-item-junk .classic-icon-corner-value { bottom:11px; }
 .classic-name-box { display:flex; align-items:center; gap:5px; min-width:0; overflow:hidden; color:#e5e7eb; text-shadow:0 1px 2px #000; white-space:nowrap; }
@@ -2930,7 +2939,8 @@ body.enh-open #m-toast-wrap { display:none !important; }   /* 強化視窗開著
 #enh-window .enh-slot-name.dim { color:#7d6f55; font-weight:400; }
 #enh-window .enh-cycle-tip { font-size:11px; color:#a8997a; }
 #enh-window .enh-plus { font-size:30px; font-weight:900; color:#f3d48a; text-shadow:0 0 12px rgba(243,212,138,.7); margin-top:22px; }
-#enh-window .enh-en { position:absolute; left:3px; top:1px; font-size:12px; font-weight:900; color:#fff; text-shadow:0 0 2px #000,0 0 2px #000,0 0 2px #000; }
+#enh-window .enh-en { position:absolute; left:3px; top:1px; font:800 15px/1 Arial,sans-serif; color:#39a9ff; text-shadow:0 0 3px #0b4f99,1px 1px 2px #000; }
+#enh-window .enh-slot-box .enh-en { font-size:18px; }
 #enh-window .enh-cnt { position:absolute; right:3px; bottom:1px; font-size:11px; font-weight:700; color:#fff; text-shadow:0 0 2px #000,0 0 2px #000,0 0 2px #000; }
 #enh-window .enh-eq { position:absolute; right:2px; top:1px; font-size:10px; font-weight:900; color:#0f0c08; background:#f3d48a; border-radius:3px; padding:0 3px; line-height:14px; }
 #enh-window .enh-info { display:grid; grid-template-columns:1fr 1.2fr 1fr; background:linear-gradient(#1a140c,#0d0a07); border:1px solid #8a6a2e; border-radius:6px; }
