@@ -344,6 +344,7 @@
   //     密碼只存雜湊（cyrb53，防肉眼看到，不防破解）。
   //     之後做連線帳號時整段換掉（伺服器驗證、只存 token）。
   var ACCOUNT_KEY = 'lineage_login_account';
+  var ACCOUNT_ON = false;   // ⏸ 2026-10-15 站長：帳號密碼先不實行（測試期按登錄直接進）；要開回來改 true
   function pwHash(a, p) {
     var str = a + '\u0001' + p, h1 = 0xdeadbeef ^ 7, h2 = 0x41c6ce57 ^ 7;
     for (var i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
@@ -359,13 +360,14 @@
     var t = null;
     function refresh() {   // 依有沒有帳號切換發光與常駐提示
       clearTimeout(t);
-      var has = !!getAccount();
+      var has = !ACCOUNT_ON || !!getAccount();
       btn.classList.toggle('need', !has);
       if (has) msg.classList.remove('show');
       else { msg.textContent = '第一次玩請先按「註冊帳號」'; msg.classList.add('show'); }
     }
     function say(text) { msg.textContent = text; msg.classList.add('show'); clearTimeout(t); t = setTimeout(refresh, 3000); }
     btn.addEventListener('click', function () {
+      if (!ACCOUNT_ON) { say('目前不用註冊，直接按「登錄」就能玩'); return; }
       var a = acc.value.trim(), p = pw.value;
       if (!a || !p) { say('先在上面輸入要註冊的帳號和密碼'); (a ? pw : acc).focus(); return; }
       if (getAccount() && !confirm('已經註冊過了，要改用現在輸入的帳號密碼嗎？角色不會受影響。')) return;
@@ -376,7 +378,8 @@
     document.addEventListener('click', function (e) {
       if (!e.target || (e.target !== go && !go.contains(e.target))) return;
       var ac = getAccount(), why = null;
-      if (!ac) why = '第一次玩請先按「註冊帳號」';
+      if (!ACCOUNT_ON) ac = null;
+      else if (!ac) why = '第一次玩請先按「註冊帳號」';
       else if (acc.value.trim() !== ac.a || pwHash(ac.a, pw.value) !== ac.h) why = '帳號或密碼錯誤';
       if (!why) {   // 通過：收掉剛才的錯誤提示，播劈信紙動畫再進選角色（動畫放不出來就直接進）
         refresh();
@@ -405,8 +408,17 @@
   }
   function playLoginSlash(done) {
     var stage = document.getElementById('login-art-stage'), fx = slashFx();
-    if (_slashing || !stage || !fx) return;
+    if (_slashing || !stage || !fx) { if (!_slashing) done(); return; }
     _slashing = true;
+    var bailed = false;
+    var bail = setTimeout(function () { bailed = true; slashReset(stage); _slashing = false; try { done(); } catch (e) {} }, 2600);   // 最後保險：不管動畫怎樣，2.6 秒後一定進
+    try { playLoginSlashInner(stage, fx, function () { if (bailed) return; clearTimeout(bail); done(); }); }
+    catch (e) { console.warn('[登錄動畫] 播放失敗，直接進:', e); clearTimeout(bail); slashReset(stage); _slashing = false; done(); }
+  }
+  function slashReset(stage) {
+    try { stage.classList.remove('slashing'); var b = document.getElementById('login-slash-black'); if (b) b.style.opacity = '0'; } catch (e) {}
+  }
+  function playLoginSlashInner(stage, fx, done) {
     var q = function (c) { return fx.querySelector(c); };
     var sword = q('.ls-sword'), A = q('.ls-a'), B = q('.ls-b');
     var note = stage.querySelector(':scope > .login-scroll-note');   // 信紙上的字複製進兩半，跟著一起被劈開
