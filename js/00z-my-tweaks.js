@@ -392,7 +392,7 @@
     }, true);
     refresh();
   }
-  // ===== 登錄動畫：劍從地上拔起、劈開信紙 → 轉暗進選角色（版面與座標見 css/style.css「登錄動畫」）=====
+  // ===== 登錄動畫：劍從信紙後面直接劈開 → 轉暗進選角色（版面與座標見 css/style.css「登錄動畫」）=====
   //   點畫面可略過；系統開「減少動態效果」、瀏覽器沒有 Web Animations、圖還沒載好 → 不播，直接進。
   var _slashing = false;
   function slashFx() { var st = document.getElementById('login-art-stage'); return st ? st.querySelector('.login-slash') : null; }
@@ -419,34 +419,33 @@
     var T = 1300;
     an(q('.ls-flash'), [{ opacity: 0 }, { opacity: .9, offset: .3 }, { opacity: 0 }], { duration: 380, easing: 'ease-out' });
     an(q('.ls-dim'), [{ opacity: 0 }, { opacity: .5 }], { duration: 400, easing: 'ease-out' });
-    an(sword, [   // 拔起後仰 → 停一下 → 在信紙後面往左下劈過 → 順勢落下淡出（旋轉中心＝紅寶石；全程在信紙後面）
-      { transform: 'translate(0,0) rotate(-12deg) scale(1)', opacity: 1, easing: 'cubic-bezier(.2,.7,.3,1)' },
-      { transform: 'translate(6.94cqw,-12.15cqw) rotate(65deg) scale(1.05)', opacity: 1, offset: .35 },
-      { transform: 'translate(6.94cqw,-12.15cqw) rotate(68deg) scale(1.05)', opacity: 1, offset: .4, easing: 'cubic-bezier(.6,0,.9,.6)' },
-      { transform: 'translate(14.25cqw,.69cqw) rotate(-5.7deg) scale(1.05)', opacity: 1, offset: .48, easing: 'ease-out' },
-      { transform: 'translate(19.1cqw,10.4cqw) rotate(-14deg) scale(1.05)', opacity: 1, offset: .75 },
+    an(sword, [   // 不抬劍：原地蓄一下 → 直接在信紙後面往右下劈過 → 順勢落下淡出（旋轉中心＝紅寶石；全程在信紙後面）
+      { transform: 'translate(0,0) rotate(-12deg) scale(1)', opacity: 1 },
+      { transform: 'translate(0,0) rotate(-12deg) scale(1)', opacity: 1, offset: .15, easing: 'cubic-bezier(.6,0,.9,.6)' },
+      { transform: 'translate(14.25cqw,.69cqw) rotate(-5.7deg) scale(1.05)', opacity: 1, offset: .27, easing: 'ease-out' },
+      { transform: 'translate(19.1cqw,10.4cqw) rotate(-14deg) scale(1.05)', opacity: 1, offset: .6 },
       { transform: 'translate(20.6cqw,14cqw) rotate(-16deg) scale(1.05)', opacity: 0 }
     ], { duration: T });
-    an(q('.ls-trail'), [{ opacity: 0 }, { opacity: .9, offset: .45 }, { opacity: 0 }], { delay: T * .4, duration: 260 });
+    an(q('.ls-trail'), [{ opacity: 0 }, { opacity: .9, offset: .6 }, { opacity: 0 }], { delay: 200, duration: 220 });
     an(q('.ls-cut'), [
       { opacity: 0, transform: 'rotate(128deg) scaleX(0)' },
       { opacity: 1, transform: 'rotate(128deg) scaleX(1)', offset: .3 },
       { opacity: 0, transform: 'rotate(128deg) scaleX(1)' }
-    ], { delay: 600, duration: 450, easing: 'ease-out' });
-    an(q('.ls-hole'), [{ opacity: 0 }, { opacity: 1 }], { delay: 600, duration: 60 });
+    ], { delay: 330, duration: 450, easing: 'ease-out' });
+    an(q('.ls-hole'), [{ opacity: 0 }, { opacity: 1 }], { delay: 330, duration: 60 });
     an(A, [
       { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
       { transform: 'translate(-4cqw,-2cqw) rotate(-3deg)', opacity: 1, offset: .25 },
       { transform: 'translate(-11cqw,16cqw) rotate(-9deg)', opacity: 0 }
-    ], { delay: 640, duration: 700, easing: 'ease-in' });
+    ], { delay: 370, duration: 700, easing: 'ease-in' });
     an(B, [
       { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
       { transform: 'translate(4cqw,2cqw) rotate(3deg)', opacity: 1, offset: .25 },
       { transform: 'translate(12cqw,22cqw) rotate(10deg)', opacity: 0 }
-    ], { delay: 640, duration: 700, easing: 'ease-in' });
-    var shake = stage.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-1.2cqw,.7cqw)' }, { transform: 'translate(1cqw,-.6cqw)' }, { transform: 'translate(-.5cqw,.3cqw)' }, { transform: 'translate(0,0)' }], { delay: 600, duration: 200 });
+    ], { delay: 370, duration: 700, easing: 'ease-in' });
+    var shake = stage.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-1.2cqw,.7cqw)' }, { transform: 'translate(1cqw,-.6cqw)' }, { transform: 'translate(-.5cqw,.3cqw)' }, { transform: 'translate(0,0)' }], { delay: 330, duration: 200 });
     anims.push(shake);
-    var fade = an(black, [{ opacity: 0 }, { opacity: 1 }], { delay: 1050, duration: 350, easing: 'ease-in' });
+    var fade = an(black, [{ opacity: 0 }, { opacity: 1 }], { delay: 800, duration: 350, easing: 'ease-in' });
     function finish() {
       if (ended) return; ended = true;
       timers.forEach(clearTimeout); fx.removeEventListener('pointerdown', finish);
