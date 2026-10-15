@@ -1332,7 +1332,7 @@ function hanSubmitProof() {
 function chooseMastery(id) {
     if (player.masteryQuest !== 'done') return;
     let md = MASTERY_DATA[player.cls];
-    if (!md || !md.list[id] || player.mastery === id) return;
+    if (!md || !md.list[id] || player.mastery === id || masteryHidden(id)) return;
     // 🔧 詛咒鎖定優先於精通切換：若離開劍術精通會使「被詛咒的騎士武器」失去裝備資格，
     //    但詛咒裝備無法卸下，故直接擋下切換（避免繞過詛咒鎖定強制卸裝）。
     if (player.mastery === 'e_sword' && id !== 'e_sword' && player.eq.wpn && isEquipCursed('wpn')) {
@@ -1341,7 +1341,7 @@ function chooseMastery(id) {
         if (!stillOk) { logSys('<span class="text-red-400 font-bold">手中被詛咒的騎士武器無法卸下，無法切換精通！</span><span class="text-red-300">請先至象牙塔『碧恩』處解除詛咒。</span>'); return; }
     }
     // 初次選擇免費；之後每次更換固定 300 萬金幣（不隨次數遞增）
-    if (player.mastery !== null) {
+    if (player.mastery !== null && !masteryHidden(player.mastery)) {   // 目前是已關閉的精通（連射精通）→ 換掉免費
         let cost = masteryChangeCost();
         if (player.gold < cost.gold) {
             logSys(`<span class="text-red-400 font-bold">更換精通需要 ${cost.gold.toLocaleString()} 金幣。</span>`);
@@ -1416,11 +1416,13 @@ function renderHanNPC(div) {
     }
     // q === 'done'：精通選擇（中央職業徽記 + 上下左右四色按鈕）
     let cur = player.mastery;
+    if (cur && masteryHidden(cur)) cur = null;   // 已關閉的精通：畫面上當作還沒選（免費選一個新的）
     let cost = masteryChangeCost();
     let costTxt = (cur === null)
         ? '<span class="text-emerald-300 font-bold">初次選擇免費</span>'
         : `更換費用：<span class="text-yellow-300 font-bold">${cost.gold.toLocaleString()} 金幣</span>（固定費用）`;
     let btn = (id) => {
+        if (!id || masteryHidden(id)) return '';
         let m = md.list[id];
         let active = cur === id;
         return `<button class="btn w-full h-full py-3 px-2 border-2 ${MASTERY_POS_STYLE[m.pos]} ${active ? 'ring-2 ring-yellow-300 shadow-[0_0_14px_rgba(253,224,71,0.6)]' : ''}" onclick="chooseMastery('${id}')" title="${m.d}">

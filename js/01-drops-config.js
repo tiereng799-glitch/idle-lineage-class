@@ -1079,6 +1079,8 @@ const MASTERY_POS_STYLE = {   // 四向按鈕四色（上紅/左藍/右紫/下�
 };
 const MAGIC_MASTERY_SKILLS = ['sk_blizzard', 'sk_tornado', 'sk_quake', 'sk_fire_storm'];   // 魔導精通可學的法師法術
 function hasMastery(id) { return !!(player && player.mastery === id); }
+// 🏹 連射系統關閉時「連射精通」不顯示、不能選（資料保留：已選的人存檔不會被當成不合法而清掉；這些人換精通免費，見 js/11 chooseMastery）
+function masteryHidden(id) { return !RAPIDFIRE_ON && id === 'e_rapid'; }
 function allyHasMastery(ally, id) { return !!(ally && ally.mastery === id); }   // 🔧 傭兵吃「自身存檔」的精通（不吃主玩家精通）
 function repairMasteryState(p) {
     let result = { changed: false, reset: false, reason: null };
