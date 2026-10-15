@@ -30,7 +30,7 @@
            (CSS 另有 60 秒自動消失的保底)。data-scripts / data-script-kb 是本頁 <script src> 的數量與總大小，由 scripts/stamp-code-versions.mjs 自動對齊。
            無痕模式／第一次開沒有快取，光下載程式就要十幾秒；以前這段進度條停在 0% 不動，看起來像卡死。
            主要照「已下載的位元組」算(檔案大小差很多，00-data 一支就 640KB，只數檔數會一卡好幾秒)；瀏覽器不給大小時退回數檔數。 -->
-      <div id="boot-loader" aria-live="polite" data-scripts="110" data-script-kb="6428">
+      <div id="boot-loader" aria-live="polite" data-scripts="110" data-script-kb="6422">
         <div class="boot-box"><div class="boot-label">載入中 <span class="boot-pct">0%</span></div><div class="boot-bar"><div class="boot-bar-fill"></div></div></div>
       </div>
       <script>
@@ -563,7 +563,7 @@
     <script src="js/00-data.js?v=4c38bf154b.8.34-merc-trial-class-loot"></script>
     <!-- 試算表的修改(Google 試算表 → GitHub「更新遊戲」產生 00y;00z 把它套進 DB 與首頁) -->
     <script src="js/00y-my-tweaks-data.js?v=5f313547b4"></script>
-    <script src="js/00z-my-tweaks.js?v=ad15954f96"></script>
+    <script src="js/00z-my-tweaks.js?v=dc4ecd5b4f"></script>
 <script src="js/01-drops-config.js?v=5287ee0ec4.8.26-flywing-relics"></script>
     <script src="js/01z-my-tweaks-drops.js?v=305132abe5"></script>
 <script src="js/02-stats-recompute.js?v=07eecf39ec.8.26-flywing-relics"></script>
@@ -599,7 +599,7 @@
 <script src="js/32-threat.js?v=3c59d0a5cb.8.23-sherine-set-rework"></script>
 <script src="js/33-enhance-window.js?v=91aebb0ae4"></script>
 <script src="js/34-enhance-broadcast.js?v=6e3619d454"></script>
-<script src="js/35-daynight.js?v=90a179c199"></script>
+<script src="js/35-daynight.js?v=fe89aec0c4"></script>
     <!-- ═══════════ 加掛版外掛層（核心永遠是原作者原版；我們的功能全部是外掛疊上去） ═══════════ -->
     <!-- 此區塊由 scripts/sync-upstream.mjs 於「拉上游 index.html 後」自動注入到 </body> 之前。?v= 由 stamp-code-versions 補。 -->
     <!-- 🌓 宣告「這頁本來就是深色」：沒宣告的話 Android Chrome 的「自動深色主題」會自己疊一層反轉，
