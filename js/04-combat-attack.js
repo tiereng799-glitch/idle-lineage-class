@@ -1202,7 +1202,7 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
         totalDmg = Math.floor(totalDmg * mobRageDmgMult(mob));   // 🔥 HP<門檻：一般攻擊／連擊最終傷害倍率
         if (isBasicAttack && typeof ironGuardTauntWeakensAttack === 'function' && ironGuardTauntWeakensAttack(mob)) totalDmg = Math.floor(totalDmg * 0.9);   // 🔮 鐵衛 5/5：受嘲諷目標的一般攻擊傷害 -10%
         totalDmg = Math.max(1, totalDmg);
-        totalDmg = Math.floor(totalDmg * riftDamageMult() * ((typeof nightEvilMult === 'function') ? nightEvilMult(mob) : 1) * ((typeof blessArmorEvilMult === 'function') ? blessArmorEvilMult(mob) : 1));   // 🌀 時空裂痕 30 分後每分鐘 +20% 怪物攻擊力；🌙 夜晚不死／惡魔 ×1.2；🛡️ 祝福防具每件 −5%
+        totalDmg = Math.floor(totalDmg * riftDamageMult() * ((typeof playerNightEvilMult === 'function') ? playerNightEvilMult(mob) : 1));   // 🌀 時空裂痕 30 分後每分鐘 +20% 怪物攻擊力；🌙 夜晚不死／惡魔 ×1.2（祝福防具每件抵掉這段的 7%）
         totalDmg = Math.max(0, Math.floor(totalDmg * raceDrMult(player, mob)));   // 🏺 v3.7.52 隨從的護身斗篷：受拉斯塔巴德敵人傷害 -20%（物理）
         totalDmg = Math.max(0, Math.floor(totalDmg * antHelperDrMult()));   // 🐉 v3.7.57 助戰者「護衛」減免（物理）
         totalDmg = dollDamageReduced(totalDmg);   // 🪆 魔法娃娃：受傷機率傷害減免（史巴托/巫妖）
@@ -2330,7 +2330,7 @@ function _applyMobMagicInner(mob, sk) {
           dmg = Math.floor(dmg * _drMult); }
         dmg = Math.floor(dmg * mobRageDmgMult(mob));   // 🔥 HP<門檻：技能傷害倍率
         dmg = Math.max(1, dmg);
-        dmg = Math.floor(dmg * riftDamageMult() * ((typeof nightEvilMult === 'function') ? nightEvilMult(mob) : 1) * ((typeof blessArmorEvilMult === 'function') ? blessArmorEvilMult(mob) : 1));   // 🌀 時空裂痕 30 分後每分鐘 +20% 怪物技能傷害；🌙 夜晚；🛡️ 祝福防具
+        dmg = Math.floor(dmg * riftDamageMult() * ((typeof playerNightEvilMult === 'function') ? playerNightEvilMult(mob) : 1));   // 🌀 時空裂痕 30 分後每分鐘 +20% 怪物技能傷害；🌙 夜晚（祝福防具抵銷）
 
         dmg = Math.max(0, Math.floor(dmg * raceDrMult(player, mob)));   // 🏺 v3.7.52 隨從的護身斗篷：受拉斯塔巴德敵人傷害 -20%（魔法·固定傷害亦適用）
         dmg = Math.max(0, Math.floor(dmg * antHelperDrMult()));   // 🐉 v3.7.57 助戰者「護衛」減免（魔法）
