@@ -65,7 +65,8 @@
     st.id = 'afk-townmap-css';
     st.textContent = '#town-npc-map > canvas.afk-tm-cv{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}' +   // NPC、面板都疊在上面，點它們不受影響
         // 進村莊的載入條：蓋住整個地圖（地圖 z-index:1 自成堆疊環境，9000 只在地圖裡面最上層，不會蓋過 NPC 浮動視窗）
-        '#town-npc-map > .afk-tm-load,#battle-view > .afk-tm-load{position:absolute;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(4,7,11,.86);transition:opacity .25s;}' +
+        '#town-npc-map > .afk-tm-load,#battle-view > .afk-tm-load{position:absolute;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(4,7,11,.86);transition:opacity .25s;}' +
+        '.afk-tm-load > .afk-tm-txt{font-size:14px;font-weight:700;letter-spacing:2px;color:#e8cf8f;text-shadow:0 1px 2px #000,0 0 4px #000;}' +
         '#town-npc-map > .afk-tm-load.out,#battle-view > .afk-tm-load.out{opacity:0;}' +
         // 狩獵區（地圖模式）：地圖畫在最底層；原本的怪物卡片變透明、移到怪物站的位置（只留點擊與特效定位）；原本的角色／隊員／寵物圖藏起來（地圖上畫）
         '#battle-view.afk-hm{background-image:none!important;position:relative;}' +
@@ -881,7 +882,7 @@
         var map = document.getElementById(hostId || 'town-npc-map'); if (!map) return;
         if (!LB) {
             var el = document.createElement('div'); el.className = 'afk-tm-load'; el.setAttribute('aria-hidden', 'true');
-            el.innerHTML = '<div class="afk-tm-bar"><i></i></div>';
+            el.innerHTML = '<div class="afk-tm-txt">地圖讀取中…</div><div class="afk-tm-bar"><i></i></div>';
             LB = { el: el, fill: el.querySelector('i'), raf: 0, hide: 0 };
         }
         clearTimeout(LB.hide);
