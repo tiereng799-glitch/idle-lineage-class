@@ -39,6 +39,7 @@
   var TICKS_PER_SEC = 10;   // 核心 TICK_MS=100 → manualCd 是 tick 數
   var HOT_SLOTS = 12;   // F1~F12；一排 6 格，右邊的切換鈕循環「F1~F6 → F7~F12 → 兩排 → F1~F6」
   var HOT_ROW = 6;
+  var SK_COLS = 5;   // 魔法書一排幾格
   var HOT_MODE_KEY = 'lmui_hot_mode';   // 這台裝置的顯示方式（只是畫面偏好，不進存檔）
   var CHAT_LINES = 60;   // 聊天框可往上捲，保留最近幾行（取代 afk-mobile 的完整日誌面板）
   var CLASS_LOGO = { royal: '王族', knight: '騎士', mage: '法師', elf: '妖精', dark: '黑暗妖精' };
@@ -521,7 +522,7 @@
       '.lsk2-side button{flex:0 0 40px;border:1px solid #4d443b;border-radius:4px;background:linear-gradient(#3d3732,#211e1b);color:#a59a8c;font:700 19px/1 Georgia,serif;text-shadow:0 1px 2px #000;}',
       '.lsk2-side button.on{border-color:#b8955a;color:#fff6dc;background:linear-gradient(#5a5047,#2f2a25);}',
       '.lsk2-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border:1px solid #3a332d;border-radius:3px;background:#0e0c0a;padding:3px;}',
-      '.lsk2-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;}',
+      '.lsk2-grid{display:grid;grid-template-columns:repeat(' + SK_COLS + ',1fr);gap:6px;}',   /* 站長：圖示小一點、格子之間留空 */
       '.lsk-cell{position:relative;aspect-ratio:1;border:1px solid #3d3630;border-radius:2px;background:#15120f;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;}',
       '.lsk-cell img{width:100%;height:100%;object-fit:contain;}',
       '.lsk-cell.is-empty{background:#0b0908;cursor:default;}',
@@ -2215,7 +2216,7 @@
       side += '<button type="button" data-grp="' + g.key + '" onclick="__lmuiSkJump(\'' + g.key + '\')">' + g.label + '</button>';
       g.ids.forEach(function (id, i) { var h = skillCell(id, granted); cells.push(i ? h : h.replace('<div class="', '<div data-grp="' + g.key + '" class="')); });
     });
-    while (cells.length % 4 || cells.length < 24) cells.push('<div class="lsk-cell is-empty"></div>');
+    while (cells.length % SK_COLS || cells.length < SK_COLS * 6) cells.push('<div class="lsk-cell is-empty"></div>');
     var sp = (player.d && player.d.magicDmg != null) ? Math.round(player.d.magicDmg) : 0;
     var mr = (player.d && player.d.mr != null) ? Math.round(player.d.mr) : 0;
     var old = div.querySelector('.lsk2-scroll');
