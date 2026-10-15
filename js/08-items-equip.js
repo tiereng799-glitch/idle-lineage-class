@@ -1113,11 +1113,13 @@ function doEnhance(targetUid, isEq = true) {
 
     let fn = getItemFullName(target);
     if (success) {
+        let _en0 = target.en;
         let add = (DB.items[scroll.id] && DB.items[scroll.id].isB) ? blessEnhanceGain(target.en) : 1;   // 🌟 祝福卷：+2 以下(含負值) +1~+3、+3~+5 +1~+2、+6 起等同一般卷 +1（純機率）
         target.en = Math.min(_cap, target.en + add);   // 🔧 祝福卷軸跳級不超過上限
         let prefix = (target.en > (d.safe||0)) ? "持續" : "";
         let _enTxt = '+' + capEn(target.en, d);   // 🔧 顯示 +N（夾擠至強化上限）
         logSys(`<span class="text-yellow-400 font-bold">${_enTxt} ${d.n} ${prefix}發出銀色的光芒。</span>`);
+        if (typeof enhBroadcastCheck === 'function') enhBroadcastCheck(target, _en0);   // 📢 超過安定值 3 → 跑馬燈（js/34）
     } else if (destroy) {
         logSys(`<span class="text-red-500 font-bold">${fn} 強烈的發出銀色的光芒就消失了。</span>`);
         if (isEq) {

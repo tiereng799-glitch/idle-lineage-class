@@ -3027,3 +3027,13 @@ body.enh-open #m-toast-wrap { display:none !important; }   /* 強化視窗開著
 @keyframes enhText { 0% { opacity:0; transform:translate(-50%,-50%) scale(.5); } 16% { opacity:1; transform:translate(-50%,-50%) scale(1.15); } 28% { transform:translate(-50%,-50%) scale(1); } 80% { opacity:1; } 100% { opacity:0; transform:translate(-50%,-50%) scale(1); } }
 #enh-window .enh-panel.enh-shake { animation:enhShake .35s linear .25s; }
 @keyframes enhShake { 0%,100% { transform:translate(0,0); } 20% { transform:translate(-6px,2px); } 40% { transform:translate(5px,-2px); } 60% { transform:translate(-4px,1px); } 80% { transform:translate(3px,0); } }
+
+/* 📢 強化跑馬燈（js/34）：畫面上方一條，字從右跑到左；壓過強化視窗(9600)，不擋點擊 */
+#enh-broadcast { position:fixed; left:0; right:0; top:calc(var(--orig-bar-h,0px) + 4px); z-index:9700; height:30px; overflow:hidden; pointer-events:none;
+  background:linear-gradient(90deg, rgba(20,14,6,0), rgba(20,14,6,.88) 12%, rgba(20,14,6,.88) 88%, rgba(20,14,6,0));
+  border-top:1px solid rgba(201,162,77,.55); border-bottom:1px solid rgba(201,162,77,.55); }
+#enh-broadcast.hidden { display:none !important; }
+#enh-broadcast .enh-bc-track { position:absolute; left:0; top:0; height:100%; display:flex; align-items:center; white-space:nowrap; will-change:transform; }
+#enh-broadcast .enh-bc-text { font:700 15px/1 "Microsoft JhengHei",system-ui,sans-serif; color:#f3e3bd; text-shadow:0 1px 0 #000, 0 0 4px #000; }
+#enh-broadcast .enh-bc-name { color:#7fd0ff; }
+#enh-broadcast .enh-bc-en { color:#ffe38a; text-shadow:0 0 6px rgba(255,214,100,.85), 0 1px 0 #000; }
