@@ -118,16 +118,39 @@
   //   信件存在 player.testMail（跟著存檔走）；領取時從清單移除，不記進 giftsClaimed（編號是臨時產生的，記了只會越堆越多）。
   function testMails() { return (loaded() && Array.isArray(player.testMail)) ? player.testMail : []; }
   function findItemByName(name) {
-    var flat = name.replace(/\s+/g, ''), hit = null, near = [];
+    var flat = name.replace(/\s+/g, ''), hit = null;
     for (var id in DB.items) {
       var d = DB.items[id]; if (!d || !d.n) continue;
       if (d.n === name || id === name) return id;
-      var dn = String(d.n).replace(/\s+/g, '');
-      if (!hit && dn === flat) hit = id;
-      else if (near.length < 5 && dn.indexOf(flat) >= 0) near.push(d.n);
+      if (!hit && String(d.n).replace(/\s+/g, '') === flat) hit = id;
     }
-    return hit || { near: near };
+    return hit;
   }
+  // 關鍵字搜尋：名稱含關鍵字（不分空白、大小寫）；開頭就對上的排前面，再來名字短的（越短越接近要找的）
+  var SEARCH_SHOW = 20;
+  function searchItems(kw) {
+    var flat = kw.replace(/\s+/g, '').toLowerCase(), out = [];
+    if (!flat) return out;
+    for (var id in DB.items) {
+      var d = DB.items[id]; if (!d || !d.n) continue;
+      var dn = String(d.n).replace(/\s+/g, ''), k = dn.toLowerCase().indexOf(flat);
+      if (k >= 0) out.push({ id: id, n: d.n, c: d.c, head: k === 0 ? 0 : 1, len: dn.length });
+    }
+    out.sort(function (a, b) { return a.head - b.head || a.len - b.len || String(a.n).localeCompare(String(b.n), 'zh-Hant'); });
+    return out;
+  }
+  function mailItem(id, cnt) {
+    if (!Array.isArray(player.testMail)) player.testMail = [];
+    player.testMail.push({ id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'item', item: id, cnt: cnt, en: 0, _test: true });
+    if (typeof logSys === 'function') logSys('<span class="text-yellow-300 font-bold">📬 ' + esc(DB.items[id].n) + ' ×' + cnt + ' 已寄到信箱。</span>');
+    updateMailButton(); renderMailbox();
+    if (typeof saveGame === 'function') saveGame();
+  }
+  // 搜尋結果裡點道具名稱 → 寄出（id 只收英數底線，避免從日誌 HTML 被塞怪東西）
+  window.myMailPick = function (id, cnt) {
+    if (!loaded() || !/^[\w-]+$/.test(String(id)) || !DB.items[id]) return;
+    mailItem(id, Math.max(1, Math.min(99999, parseInt(cnt, 10) || 1)));
+  };
   // 回傳 true＝這句是指令（已處理，不要當聊天送出）
   window.myChatCommand = function (text) {
     var t = String(text || '').trim();
@@ -149,15 +172,14 @@
       return true;
     }
     var r = findItemByName(name);
-    if (typeof r !== 'string') {
-      say('<span class="text-red-300">找不到「' + esc(name) + '」。' + (r.near.length ? '你是不是要找：' + r.near.map(esc).join('、') : '') + '</span>');
-      return true;
-    }
-    if (!Array.isArray(player.testMail)) player.testMail = [];
-    player.testMail.push({ id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'item', item: r, cnt: cnt, en: 0, _test: true });
-    say('<span class="text-yellow-300 font-bold">📬 ' + esc(DB.items[r].n) + ' ×' + cnt + ' 已寄到信箱。</span>');
-    updateMailButton(); renderMailbox();
-    if (typeof saveGame === 'function') saveGame();
+    if (r) { mailItem(r, cnt); return true; }
+    var hits = searchItems(name);
+    if (!hits.length) { say('<span class="text-red-300">找不到含「' + esc(name) + '」的道具，換個關鍵字試試。</span>'); return true; }
+    var links = hits.slice(0, SEARCH_SHOW).map(function (h) {
+      var cls = /^[\w -]+$/.test(h.c || '') ? h.c : 'text-slate-100';
+      return '<a class="my-cmd-pick ' + cls + '" onclick="myMailPick(\'' + h.id + '\',' + cnt + ')">' + esc(h.n) + '</a>';
+    }).join('　');
+    say('<span class="text-cyan-300">「' + esc(name) + '」相關道具' + (hits.length > SEARCH_SHOW ? '共 ' + hits.length + ' 件，先列 ' + SEARCH_SHOW + ' 件（關鍵字打長一點可以縮小）' : '') + '，點名字寄出 ×' + cnt + '：</span><br>' + links);
     return true;
   };
   function claimGifts(ids) {
@@ -521,6 +543,7 @@
     '.my-mb-x{background:none;border:0;color:#aaa;font-size:18px;cursor:pointer}' +
     '.my-mb-title{display:inline-flex;align-items:center;gap:8px}.my-mb-title svg{width:26px;height:auto}' +
     '.my-mb-list{overflow:auto;display:flex;flex-direction:column;gap:6px}' +
+    '.my-cmd-pick{display:inline-block;padding:1px 2px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}' +
     '.my-mb-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#0e0b08;border:1px solid #4a3f30;border-radius:6px}' +
     '.my-mb-txt{flex:1;min-width:0;display:flex;flex-direction:column}.my-mb-txt small{color:#94a3b8}' +
     '.my-mb-btn{padding:6px 12px;border:1px solid #f59e0b;border-radius:6px;background:linear-gradient(#b45309,#78350f);color:#fff7ed;font-weight:bold;cursor:pointer;white-space:nowrap}' +
