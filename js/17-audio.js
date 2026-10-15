@@ -517,6 +517,21 @@ function _sfxPlayPool(poolKey, vol) {   // 直接播放指定 pool key（不查 
     try { return _sfxStart(poolKey, arr, vol); } catch (e) { return false; }
 }
 function _sfxDynLoad(poolKey, file) { if (typeof catchupActive === 'function' && catchupActive()) return; if (_sfxDynTried[poolKey]) return; _sfxDynTried[poolKey] = true; _sfxTryLoad(poolKey, { file: file || poolKey }); }
+// 🔨 強化視窗音效（js/33 呼叫）：借原版法術音——成功＝擬似魔法武器(武器)/鎧甲護持(防具·飾品)、裝備消失＝壞物術、
+//   強化值降低＝詛咒、沒有變化＝魔法相消術；蓄力＝通用施法音。開視窗時 enhSfxPreload() 先懶載，第一次強化就有聲。
+const ENH_SFX = { ok_wpn: 113, ok_arm: 137, boom: 100, down: 116, none: 140 };
+function enhSfxPreload() {
+    if (!_sfxCfg.on) return;
+    for (var k in ENH_SFX) if (_sfxPool['enh_' + k] === undefined) _sfxDynLoad('enh_' + k, '' + ENH_SFX[k]);
+}
+function playEnhSfx(kind) {
+    if (!_sfxCfg.on) return;
+    if (kind === 'charge') { playSfx('magic'); return; }
+    var n = ENH_SFX[kind]; if (n === undefined) return;
+    var key = 'enh_' + kind;
+    if (_sfxPool[key] === undefined) { _sfxDynLoad(key, '' + n); return; }
+    _sfxPlayPool(key, 0.70);
+}
 function playMobHurt(mob) {
     if (!_sfxCfg.on || !mob) return;
     var n = MOB_HURT_SFX[mob.n]; if (n === undefined) return;   // 沒對應→不出聲（不退回通用，避免亂套）

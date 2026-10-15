@@ -192,6 +192,7 @@
     window.openEnhanceWindow = function (uid, isEq) {
         let it = uid ? findItem(uid, isEq) : null, d = it && DB.items[it.id];
         st = { uid: it ? uid : null, isEq: !!isEq, tab: (d && enhanceable(d)) ? d.type : 'wpn', scrollPick: 0, result: null };
+        try { if (typeof enhSfxPreload === 'function') enhSfxPreload(); } catch (e) {}
         let win = $('enh-window');
         if (!win) {
             win = document.createElement('div');
@@ -240,14 +241,21 @@
         if (!fx) { fx = document.createElement('div'); fx.className = 'enh-fx'; panel.appendChild(fx); }
         return fx;
     }
+    function sfx(kind) { try { if (typeof playEnhSfx === 'function') playEnhSfx(kind); } catch (e) {} }
+    function resultSfx(d) {
+        let r = st.result; if (!r) return;
+        sfx(r.cls === 'good' ? (d.type === 'wpn' ? 'ok_wpn' : 'ok_arm') : r.cls === 'bad' ? 'boom' : /降為/.test(r.html) ? 'down' : 'none');
+    }
     function playEnhance(it, d, run) {
-        if (reduceMotion()) { run(); return; }
+        if (reduceMotion()) { run(); resultSfx(d); return; }
         let src = ''; try { src = getIconUrl(d); } catch (e) {}
         st.busy = true; render();
         let w = $('enh-window'); w.classList.add('enh-charging');
+        sfx('charge');
         setTimeout(() => {
             w.classList.remove('enh-charging');
             run();                            // afterAction → render（busy 仍為 true，按鈕維持停用）
+            resultSfx(d);
             let r0 = rectInPanel(eqBox());   // 執行「後」才量：裝備消失時版面會變矮、視窗重新置中，事前量的位置會對不上（裝備格本身還在，只是變空）
             let kind = st.result ? st.result.cls : 'mid';
             let en1 = 0; let cur = st.uid ? findItem(st.uid, st.isEq) : null; if (cur) en1 = Number(cur.en) || 0;
