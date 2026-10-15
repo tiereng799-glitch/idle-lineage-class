@@ -1,0 +1,16 @@
+{
+ "v": 1,
+ "base": "https://pub-e1ebce07407e406dbaf62e0b0527d135.r2.dev/townmap/",
+ "towns": "towns.218641ed3e.json",
+ "maps": {
+  "0": "m0.37636675b9.json",
+  "4": "m4.50d31caa91.json",
+  "15": "m15.dd7d87ae9f.json",
+  "77": "m77.4d06c2830b.json",
+  "304": "m304.c581699f78.json",
+  "440": "m440.5279d1af0d.json",
+  "534": "m534.9c6482e52e.json",
+  "602": "m602.81cdd195e2.json"
+ },
+ "hunts": "hunts.fef9c60c8b.json"
+}
