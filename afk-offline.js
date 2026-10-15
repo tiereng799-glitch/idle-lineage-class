@@ -30,6 +30,10 @@
     id: 'offlinechase', name: '掛機期間遭遇玩家對戰', group: '遊戲玩法', parent: 'offline', def: false,
     desc: '離線掛機也會被記恨你的玩家追殺、被捲入血盟群戰；結算時間會明顯變長'
   });
+  if (window.AFK_TOGGLES) AFK_TOGGLES.register({
+    id: 'offlinepopup', name: '上線顯示離線收益視窗', group: '遊戲玩法', parent: 'offline', def: true,
+    desc: '關掉就只寫在系統日誌'
+  });
   function chaseOn() { return !!(window.AFK_TOGGLES && AFK_TOGGLES.enabled('offlinechase')); }
 
   // ----- 可調參數 ---------------------------------------------------------
@@ -422,6 +426,14 @@
     });
     if (!shown) { try { logSys('（本次攀登無明顯收益）'); } catch (e) {} }
     if (died) { try { logSys('<span class="text-red-500 font-bold">離線攀登中陣亡，已結算至死亡前並送回村莊。</span>'); } catch (e) {} }
+    // 給上線彈窗用的合計(各樓相加;道具同 id 合併)
+    var tot = { gold: 0, exp: 0, lv: 0, items: [], map: '傲慢之塔 ' + fromFloor + ' → ' + reached + ' 樓' }, byId = {};
+    segs.forEach(function (s) {
+      tot.gold += s.gold > 0 ? s.gold : 0; tot.exp += s.exp; tot.lv += s.lv > 0 ? s.lv : 0;
+      s.items.forEach(function (it) { if (byId[it.id]) byId[it.id].d += it.d; else { byId[it.id] = { id: it.id, n: it.n, d: it.d }; tot.items.push(byId[it.id]); } });
+    });
+    tot.items.sort(function (x, y) { return y.d - x.d; });
+    return tot;
   }
   function summarize(before, after, doneTicks, died, huntMap, kingInfo) {
     var mins = Math.round(doneTicks * TICK_MS / 60000);
@@ -490,6 +502,100 @@
       try { logSys('<span class="text-red-500 font-bold">離線期間角色陣亡，進度已結算至死亡前。</span>'); }
       catch (e) { console.log('[AFK] 離線期間陣亡，結算至死亡前。'); }
     }
+    return { gold: dGold, exp: dExp, lv: dLv, items: items, map: mapName(huntMap) };
+  }
+
+  // ----- 🌙 上線彈窗:離線收益一覽(時間/地點/金幣/經驗/升級/擊殺/掉落 + 確認鈕) -----
+  //   系統日誌那份摘要照寫(要回頭查還在);彈窗只是「一進來就看到」。純顯示,不碰存檔。
+  //   門檻 POPUP_MIN_MS:重新整理也會結算那幾秒,每次都跳窗很煩 → 結算不滿 1 分鐘(且沒陣亡)就不跳。
+  var POPUP_MIN_MS = 60 * 1000;
+  function popupOn() { return !window.AFK_TOGGLES || AFK_TOGGLES.enabled('offlinepopup'); }
+  function escH(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+  function fmtDur(ms) {
+    var m = Math.round(ms / 60000);
+    if (m < 60) return m + ' 分鐘';
+    return Math.floor(m / 60) + ' 小時' + (m % 60 ? ' ' + (m % 60) + ' 分鐘' : '');
+  }
+  function injectResultCSS() {
+    if (document.getElementById('afk-offres-style')) return;
+    var st = document.createElement('style');
+    st.id = 'afk-offres-style';
+    st.textContent = [
+      '#afk-offres{position:fixed;inset:0;top:var(--orig-bar-h,0px);z-index:99990;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.72);font-family:system-ui,"Segoe UI",sans-serif;}',
+      '#afk-offres .or-card{width:min(440px,100%);max-height:calc(100dvh - var(--orig-bar-h,0px) - 32px);display:flex;flex-direction:column;background:linear-gradient(#1c1712,#0e0b08);border:1px solid #8a6a2e;border-radius:10px;box-shadow:0 0 0 1px #000,0 18px 50px rgba(0,0,0,.7),inset 0 0 24px rgba(201,162,77,.08);color:#e8dcc0;overflow:hidden;animation:afkOrIn .22s ease-out;}',
+      '@keyframes afkOrIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}',
+      '#afk-offres .or-head{padding:12px 14px 10px;text-align:center;border-bottom:1px solid #4a3a1c;background:linear-gradient(rgba(201,162,77,.16),transparent);}',
+      '#afk-offres .or-title{font-size:17px;font-weight:bold;color:#f3d48a;letter-spacing:2px;text-shadow:0 1px 2px #000;}',
+      '#afk-offres .or-sub{margin-top:4px;font-size:13px;color:#cdbf9f;}',
+      '#afk-offres .or-sub b{color:#fff3d0;}',
+      '#afk-offres .or-cap{display:inline-block;margin-left:6px;font-size:11px;color:#fcd34d;border:1px solid #b45309;border-radius:5px;padding:0 5px;}',
+      '#afk-offres .or-body{flex:1 1 auto;overflow-y:auto;padding:12px 14px;}',
+      '#afk-offres .or-died{margin-bottom:10px;padding:7px 10px;border:1px solid #991b1b;background:rgba(127,29,29,.35);color:#fca5a5;font-size:13px;font-weight:bold;border-radius:6px;text-align:center;}',
+      '#afk-offres .or-err{margin-bottom:10px;padding:7px 10px;border:1px solid #92400e;background:rgba(120,53,15,.3);color:#fcd34d;font-size:12.5px;border-radius:6px;text-align:center;}',
+      '#afk-offres .or-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;}',
+      '#afk-offres .or-stat{background:rgba(0,0,0,.35);border:1px solid #3a2e17;border-radius:6px;padding:6px 9px;display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:12.5px;color:#a8997a;}',
+      '#afk-offres .or-stat b{font-size:14px;}',
+      '#afk-offres .v-gold{color:#fde047;}#afk-offres .v-exp{color:#c4b5fd;}#afk-offres .v-lv{color:#86efac;}#afk-offres .v-kill{color:#fca5a5;}',
+      '#afk-offres .or-sec{margin:12px 0 6px;font-size:12.5px;color:#d9b866;font-weight:bold;display:flex;align-items:center;gap:6px;}',
+      '#afk-offres .or-sec::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#5a4520,transparent);}',
+      '#afk-offres .or-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;}',
+      '#afk-offres .or-it{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;}',
+      '#afk-offres .or-ic{position:relative;width:44px;height:44px;border:1px solid #4a3a1c;border-radius:6px;background:radial-gradient(#2a2216,#120e09);display:flex;align-items:center;justify-content:center;}',
+      '#afk-offres .or-ic img{width:34px;height:34px;object-fit:contain;}',
+      '#afk-offres .or-cnt{position:absolute;right:2px;bottom:0;font-size:11px;font-weight:bold;color:#fff;text-shadow:0 0 2px #000,0 0 2px #000,0 0 2px #000;}',
+      '#afk-offres .or-nm{font-size:11px;line-height:1.25;text-align:center;color:#d6c9ab;word-break:break-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}',
+      '#afk-offres .or-none{color:#8a7d62;font-size:12.5px;text-align:center;padding:6px 0;}',
+      '#afk-offres .or-foot{padding:10px 14px 14px;border-top:1px solid #4a3a1c;display:flex;justify-content:center;}',
+      '#afk-offres .or-ok{min-width:140px;padding:10px 0;font-size:15px;font-weight:bold;letter-spacing:4px;color:#2a1c05;background:linear-gradient(#f6dc94,#c99a3c);border:1px solid #7a5a1c;border-radius:7px;cursor:pointer;box-shadow:0 2px 0 #5a3f10;}',
+      '#afk-offres .or-ok:active{transform:translateY(1px);box-shadow:none;}'
+    ].join('');
+    (document.head || document.documentElement).appendChild(st);
+  }
+  // d = { ms, capped, map, gold, exp, lv, kills, items:[{id,n,d}], died, err }
+  function showResultPopup(d) {
+    try {
+      var old = document.getElementById('afk-offres');
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+      injectResultCSS();
+      var stats = '';
+      function stat(lbl, cls, v) { stats += '<div class="or-stat"><span>' + lbl + '</span><b class="' + cls + '">' + v + '</b></div>'; }
+      stat('金幣', 'v-gold', '+' + fmt(d.gold > 0 ? d.gold : 0));
+      stat('經驗', 'v-exp', '+' + fmt(d.exp > 0 ? d.exp : 0));
+      if (d.lv > 0) stat('等級', 'v-lv', '+' + d.lv);
+      if (d.kills > 0) stat('擊殺', 'v-kill', fmt(d.kills));
+      var items = (d.items || []).map(function (it) {
+        var db = (typeof DB !== 'undefined' && DB.items) ? DB.items[it.id] : null;
+        var src = '';
+        try { if (db && typeof getIconUrl === 'function') src = getIconUrl(db); } catch (e) {}
+        var cls = itemColorClass(it.id);
+        return '<div class="or-it" title="' + escH(it.n) + ' ×' + fmt(it.d) + '"><div class="or-ic">'
+          + (src ? '<img src="' + escH(src) + '" alt="" onerror="this.style.display=\'none\'">' : '')
+          + '<span class="or-cnt">' + fmt(it.d) + '</span></div><div class="or-nm' + (cls ? ' ' + cls : '') + '">' + escH(it.n) + '</div></div>';
+      }).join('');
+      var box = document.createElement('div');
+      box.id = 'afk-offres';
+      box.innerHTML =
+        '<div class="or-card" role="dialog" aria-modal="true" aria-label="離線掛機結果">' +
+          '<div class="or-head"><div class="or-title">離線掛機結果</div>' +
+            '<div class="or-sub"><b>' + escH(fmtDur(d.ms)) + '</b>' + (d.capped ? '<span class="or-cap">已達 ' + CAP_HOURS + ' 小時上限</span>' : '') +
+            '　在 <b>' + escH(d.map || '?') + '</b></div></div>' +
+          '<div class="or-body">' +
+            (d.died ? '<div class="or-died">離線期間陣亡，收益算到死亡前</div>' : '') +
+            (d.err ? '<div class="or-err">結算中途出錯，原因寫在系統日誌</div>' : '') +
+            '<div class="or-stats">' + stats + '</div>' +
+            '<div class="or-sec">獲得道具</div>' +
+            (items ? '<div class="or-items">' + items + '</div>' : '<div class="or-none">沒有撿到道具</div>') +
+          '</div>' +
+          '<div class="or-foot"><button type="button" class="or-ok">確認</button></div>' +
+        '</div>';
+      var layer = null;
+      function hide() { if (box.parentNode) box.parentNode.removeChild(box); layer = null; }
+      function close() { if (layer && window.AFK_UI && AFK_UI.closeLayer) AFK_UI.closeLayer(layer); else hide(); }
+      box.querySelector('.or-ok').addEventListener('click', close);
+      document.body.appendChild(box);
+      try { layer = (window.AFK_UI && AFK_UI.openLayer) ? AFK_UI.openLayer(hide) : null; } catch (e) {}
+      return true;
+    } catch (e) { console.warn('[AFK] 離線結果視窗失敗:', e); return false; }
   }
 
   // 切換地圖(關閉 ff 下的 log,switchMap 內部 logSys 會被靜音)
@@ -1359,8 +1465,9 @@
     }
     if (_giDefer) { window.gainItem = _giDefer; _giDefer = null; }   // ⚡ 還原 gainItem(解除強制 deferUi);之後的獲得恢復即時排序/重繪
     try { if (typeof autoSortInventory === 'function') autoSortInventory(); } catch (e) {}   // 結算期間跳過的背包排序,在此統一補一次(內含玩家開關與節流判斷)
-    if (climbSegs && climbSegs.length) summarizeClimb(climbSegs, done, died);   // 攀登:逐層摘要
-    else summarize(before, after, done, died, (isObl && oblEndMap) ? oblEndMap : huntMap, kingInfo);   // 遺忘之島:用實際結束地圖顯示地圖名;軍王之室:附帶擊敗輪數/鑰匙消耗摘要
+    var _sum = null;
+    if (climbSegs && climbSegs.length) _sum = summarizeClimb(climbSegs, done, died);   // 攀登:逐層摘要
+    else _sum = summarize(before, after, done, died, (isObl && oblEndMap) ? oblEndMap : huntMap, kingInfo);   // 遺忘之島:用實際結束地圖顯示地圖名;軍王之室:附帶擊敗輪數/鑰匙消耗摘要
     // ⏱ 結算耗時（＋真模擬/快速事件組成）不再印進遊戲日誌／console，改存進離線掛機紀錄（見 buildHistRec 的 settleMs/simTicks/fastEvents），平常不顯示。
     if (_runErr) {   // 結算中途拋例外 → 把死因印出來(見上方 catch);沒這行的話玩家只看得到「離線掛機 0 分鐘」,完全不知道發生什麼事
       var _eEsc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
@@ -1402,9 +1509,20 @@
     } catch (e) { console.warn('[AFK] 寫離線紀錄失敗:', e); }
     try { if (typeof updateUI === 'function') updateUI(); } catch (e) {}
     try { if (typeof renderTabs === 'function') renderTabs(true); } catch (e) {}
-    // 手機:離線結算摘要寫在系統日誌,自動打開日誌浮動面板(切到系統)讓玩家一進來就看到
+    // 🌙 上線彈窗(只在真實離線:有 timing;debug forceCatchup 不跳)
+    var _popShown = false;
     try {
-      if (window.__afkm && window.__afkm.isMobile && window.__afkm.isMobile()) {
+      if (_sum && timing && timing.closeTs && popupOn() && (done * TICK_MS >= POPUP_MIN_MS || died)) {
+        _popShown = showResultPopup({
+          ms: done * TICK_MS, capped: ((timing.loginTs || Date.now()) - timing.closeTs) > CAP_MS,
+          map: _sum.map, gold: _sum.gold, exp: _sum.exp, lv: _sum.lv, items: _sum.items,
+          kills: tallySum(killTally || {}), died: !!died, err: !!_runErr
+        });
+      }
+    } catch (e) { console.warn('[AFK] 離線結果視窗失敗:', e); }
+    // 手機:離線結算摘要寫在系統日誌,自動打開日誌浮動面板(切到系統)讓玩家一進來就看到(已跳彈窗就不必)
+    try {
+      if (!_popShown && window.__afkm && window.__afkm.isMobile && window.__afkm.isMobile()) {
         if (window.__afkm.setLog) window.__afkm.setLog('sys');
         if (window.__afkm.openLog) window.__afkm.openLog();
       }
