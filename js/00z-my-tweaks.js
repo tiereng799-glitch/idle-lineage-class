@@ -419,7 +419,7 @@
     var T = 1300;
     an(q('.ls-flash'), [{ opacity: 0 }, { opacity: .9, offset: .3 }, { opacity: 0 }], { duration: 380, easing: 'ease-out' });
     an(q('.ls-dim'), [{ opacity: 0 }, { opacity: .5 }], { duration: 400, easing: 'ease-out' });
-    an(sword, [   // 拔起後仰 → 停一下 → 往左下劈過信紙 → 順勢落下淡出（旋轉中心＝紅寶石）
+    an(sword, [   // 拔起後仰 → 停一下 → 在信紙後面往左下劈過 → 順勢落下淡出（旋轉中心＝紅寶石；全程在信紙後面）
       { transform: 'translate(0,0) rotate(-12deg) scale(1)', opacity: 1, easing: 'cubic-bezier(.2,.7,.3,1)' },
       { transform: 'translate(6.94cqw,-12.15cqw) rotate(65deg) scale(1.05)', opacity: 1, offset: .35 },
       { transform: 'translate(6.94cqw,-12.15cqw) rotate(68deg) scale(1.05)', opacity: 1, offset: .4, easing: 'cubic-bezier(.6,0,.9,.6)' },
@@ -427,7 +427,6 @@
       { transform: 'translate(19.1cqw,10.4cqw) rotate(-14deg) scale(1.05)', opacity: 1, offset: .75 },
       { transform: 'translate(20.6cqw,14cqw) rotate(-16deg) scale(1.05)', opacity: 0 }
     ], { duration: T });
-    timers.push(setTimeout(function () { sword.classList.add('front'); }, T * .4));   // 劈下前移到信紙前面（拔起時刀身還在信紙後面）
     an(q('.ls-trail'), [{ opacity: 0 }, { opacity: .9, offset: .45 }, { opacity: 0 }], { delay: T * .4, duration: 260 });
     an(q('.ls-cut'), [
       { opacity: 0, transform: 'rotate(128deg) scaleX(0)' },
@@ -454,7 +453,7 @@
       black.style.opacity = '1';
       try { done(); } catch (e) { console.warn('[登錄動畫] 進選角色失敗:', e); }
       anims.forEach(function (x) { try { x.cancel(); } catch (e) {} });
-      stage.classList.remove('slashing'); sword.classList.remove('front');
+      stage.classList.remove('slashing');
       var out = black.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 350, easing: 'ease-out' });
       out.onfinish = function () { black.style.opacity = '0'; };
       _slashing = false;

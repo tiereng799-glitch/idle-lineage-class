@@ -1111,21 +1111,21 @@ body.view-town #col-center #log-row { flex: 1 1 0; }
 /* ── 登錄動畫（站長 2026-10-15）：按登錄 → 劍從地上拔起、劈開信紙 → 轉暗進選角色（js/00z playLoginSlash）──
    座標全是對 login.webp(576×1024) 量的；1 圖片 px = 0.17361cqw。平常整組 visibility:hidden（圖照樣預載）。
    ls-patch＝擦掉原劍的背景補丁；ls-sword＝獨立劍圖（縮 0.8、轉 -12° 後跟圖上的劍重合，旋轉中心＝紅寶石）；
-   ls-half＝兩份背景沿斜線裁成信紙上下兩半（劈開時分開），ls-hole 墊在底下蓋住圖上原本的信紙。 */
+   ls-half＝兩份背景沿斜線裁成信紙上下兩半（劈開時分開），ls-hole 墊在最底下蓋住圖上原本的信紙。
+   劍與刀光全程在信紙後面（站長：劍從信紙後面砍出來），信紙裂開時從縫裡看到劍；只有裂痕的光在信紙前面。 */
 .login-slash { position:absolute; inset:0; z-index:40; pointer-events:none; visibility:hidden; }
 #login-art-stage.slashing .login-slash { visibility:visible; pointer-events:auto; }
 #login-art-stage.slashing .login-sword-fx, #login-art-stage.slashing .login-gem, #login-art-stage.slashing .login-glint, #login-art-stage.slashing > .login-scroll-note { visibility:hidden; }
 .login-slash > * { position:absolute; user-select:none; }
 .ls-patch { left:26.042%; top:12.207%; width:64.236%; height:17.578%; z-index:1; }
 .ls-dim { inset:0; z-index:2; background:#000; opacity:0; }
-.ls-sword { left:1.344%; top:15.02%; width:86.25%; height:44.22%; z-index:3; transform-origin:71.85% 18.375%; transform:translate(0,0) rotate(-12deg) scale(1); will-change:transform; }
-.ls-sword.front { z-index:6; }
-.ls-hole { left:9.549%; top:29.004%; width:87.673%; height:38.379%; z-index:4; background:radial-gradient(ellipse at 50% 45%, #0d0e11 0%, #050506 75%); opacity:0; }
+.ls-sword { left:1.344%; top:15.02%; width:86.25%; height:44.22%; z-index:4; transform-origin:71.85% 18.375%; transform:translate(0,0) rotate(-12deg) scale(1); will-change:transform; }
+.ls-hole { left:9.549%; top:29.004%; width:87.673%; height:38.379%; z-index:3; background:radial-gradient(ellipse at 50% 45%, #0d0e11 0%, #050506 75%); opacity:0; }
 .ls-half { inset:0; z-index:5; transform-origin:52% 48%; }
 .ls-half > img { position:absolute; inset:0; width:100%; height:100%; }
 .ls-a { clip-path:polygon(9.549% 29.004%, 80.38% 29.004%, 27.08% 67.383%, 9.549% 67.383%); }
 .ls-b { clip-path:polygon(80.38% 29.004%, 97.222% 29.004%, 97.222% 67.383%, 27.08% 67.383%); }
-.ls-trail { left:-3cqw; top:-49.2cqw; width:182cqw; height:182cqw; z-index:7; border-radius:50%; opacity:0;
+.ls-trail { left:-3cqw; top:-49.2cqw; width:182cqw; height:182cqw; z-index:4; border-radius:50%; opacity:0;
   background:conic-gradient(from 218deg, rgba(255,250,230,.55) 0deg, rgba(255,250,230,0) 55deg, transparent 55deg);
   -webkit-mask:radial-gradient(circle, transparent 74%, #000 84%, #000 96%, transparent 100%); mask:radial-gradient(circle, transparent 74%, #000 84%, #000 96%, transparent 100%); }
 .ls-cut { left:80.38cqw; top:51.56cqw; width:86.6cqw; height:.9cqw; margin-top:-.45cqw; z-index:8; transform-origin:0 50%; transform:rotate(128deg) scaleX(0); border-radius:1cqw;
