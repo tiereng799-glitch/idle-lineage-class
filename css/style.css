@@ -1415,6 +1415,10 @@ button.classic-skill-cell { cursor:pointer; }
     pointer-events:none;
     user-select:none;
 }
+/* 左上角「返回」：回登入畫面（打帳密那頁）；圖沿用建立角色的返回鈕 */
+#load-back-button { position:absolute; left:3%; top:2.6%; width:22%; aspect-ratio:314 / 98; z-index:3; padding:0; margin:0; border:0; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+#load-back-button img { display:block; width:100%; height:100%; mix-blend-mode:lighten; pointer-events:none; }
+#load-back-button:active { filter:brightness(1.3); }
 #load-select-title {
     position:absolute;
     left:0;
