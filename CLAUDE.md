@@ -33,7 +33,8 @@
 4. **改到外掛已經包住的核心函式時**:先 grep 有哪些 `afk-*.js` 包了它(`window.<函式名> = function`),確認外掛的假設還成立。
 5. `assets/`、`public/` 現在可以放我們自己的檔案(已經沒有 `rsync --delete` 同步會刪它)。
 
-**外掛開關(afk-toggles.js,載入順序第一)**:每支外掛可被玩家單獨關掉——某支壞掉時玩家關掉它就能用原版繼續玩(逃生門)。契約:
+**外掛開關(afk-toggles.js,載入順序第一)**:每支外掛可被單獨關掉——某支壞掉時關掉它就能用原版繼續玩(逃生門)。
+⚠️ 2026-10-15 起**玩家沒有任何入口打開開關面板**(按鈕與 `?plugins`/`#plugins` 網址都拿掉,站長要求不要有任何連結能打開;只剩站長主控台 `AFK_TOGGLES.openPanel()`)→ 不要叫玩家去外掛面板關東西;新外掛壞了只能改程式碼修,上線前要測夠。契約:
 - 純新增型外掛檔頭 `if (window.AFK_TOGGLES && !AFK_TOGGLES.enabled('<id>')) return;`;包核心函式型在 wrapper 內每次先問 `enabled()`,關掉就透明放行原函式。
 - 載入時 `AFK_TOGGLES.register({id,name,desc,group,def})` 進開關面板。讀不到 AFK_TOGGLES 一律當開啟。afk-toggles 自己不可被關、不依賴任何外掛。
 - **子選項**:`register({..., parent:'<父外掛id>'})` → 面板上縮排排在父項底下,且**父項關掉時 `enabled(子)` 一律回 false**(子項自己不必再問父項)。

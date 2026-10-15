@@ -164,16 +164,18 @@ const _mDeadline = Date.now() + 20000;
 while (Date.now() < _mDeadline && !seen(needMobileOnly)) await mpage.waitForTimeout(200);
 
 // --- 第三輪:手機 + 「手機版面」外掛關閉 ---
-//   為什麼要驗這個:玩家可以逐支關外掛,但 afk-toggles 的逃生門(?plugins 網址開的面板)與各外掛入口「不可以跟著消失」——
+//   為什麼要驗這個:外掛開關被關掉時(舊存檔、或站長從主控台關),基礎設施與首頁入口「不可以跟著消失」——
 //   否則玩家關掉某支外掛後連把它開回來的入口都沒有,變成死結(2026-07-20 實際回報)。
-//   歷史成因都是「基礎設施依賴了可被關掉的外掛」:逃生門的 top 讀 afk-mobile 設的 --orig-bar-h、
+//   歷史成因都是「基礎設施依賴了可被關掉的外掛」:開關面板的 top 讀 afk-mobile 設的 --orig-bar-h、
 //   afk-skin 靠 afk-mobile 掛的 body.m-mobile 判斷手機。前兩輪都是「全開」狀態,永遠測不到。
+//   2026-10-15 起開關面板沒有任何玩家入口(按鈕與 ?plugins 網址都拿掉,站長要求「不要有任何連結能打開」)→
+//   這輪改驗「網址打不開面板」,面板版面改用主控台那條路(AFK_TOGGLES.openPanel)開起來驗。
 const octx = await browser.newContext({ ...devices['iPhone 13'], ...SMOKE_CTX });
 const opage = await octx.newPage();
 watch(opage);
 await opage.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'domcontentloaded' });
 await opage.evaluate(() => localStorage.setItem('afk_toggle_mobile', '0'));
-// 逃生門入口是網址 ?plugins（2026-10-14 起左上角按鈕拿掉）→ 用這個網址開，驗面板會自己跳出來、關閉鈕點得到
+// 用舊的網址入口開:面板不可以自己跳出來(下面驗)
 await opage.goto(`http://127.0.0.1:${PORT}/index.html?plugins`, { waitUntil: 'domcontentloaded' });
 await opage.waitForTimeout(3000);
 // 模擬線上的非官方橫幅(本機沒有;逃生門必須避開它)
@@ -188,8 +190,16 @@ await opage.evaluate(() => {
   document.body.appendChild(d);
 });
 await opage.waitForTimeout(1500);
-const toggleOffProblems = await opage.evaluate(() => {
+const toggleOffProblems = await opage.evaluate(async () => {
   const bad = [];
+  // 不可以有任何連結能打開外掛開關面板:?plugins 與 #plugins 都要沒反應
+  if (document.getElementById('afk-toggles-overlay')) bad.push('網址加 ?plugins 還是打開了外掛開關面板(站長要求不可以有任何連結能打開)');
+  location.hash = '#plugins';
+  await new Promise((r) => setTimeout(r, 400));
+  if (document.getElementById('afk-toggles-overlay')) bad.push('網址加 #plugins 還是打開了外掛開關面板(站長要求不可以有任何連結能打開)');
+  history.replaceState(null, '', location.pathname);
+  // 面板本身(站長主控台用)開起來版面仍要正常:關閉鈕不可被橫幅蓋住
+  if (window.AFK_TOGGLES && typeof AFK_TOGGLES.openPanel === 'function') AFK_TOGGLES.openPanel();
   // 橫幅讓位:必須由 afk-banner(不可停用)提供 → 關掉「手機版面」後依然要生效。
   //   歷史成因:讓位整組寫在 afk-mobile 裡,平板玩家為了換回三欄把它關掉 → 頂端(冒險地圖標題/黑市/瞬移/右欄分頁)
   //   全被橫幅蓋住(2026-07-23 回報)。
@@ -201,7 +211,7 @@ const toggleOffProblems = await opage.evaluate(() => {
     if (el && el.getBoundingClientRect().top < barBottom) bad.push(`#${id} 頂端(${Math.round(el.getBoundingClientRect().top)}px)還在橫幅底下,會被蓋住`);
   }
   const btn = document.getElementById('afk-tg-close');
-  if (!document.getElementById('afk-toggles-overlay') || !btn) bad.push('用 ?plugins 網址開,外掛開關面板(逃生門)沒有跳出來');
+  if (!document.getElementById('afk-toggles-overlay') || !btn) bad.push('AFK_TOGGLES.openPanel() 開不出外掛開關面板');
   else {
     const r = btn.getBoundingClientRect();
     const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
@@ -375,9 +385,9 @@ if (bossAvoidProblems.length) {
 }
 
 if (toggleOffProblems.length) {
-  console.error('冒煙測試失敗:關掉「手機版面」外掛後,手機上的逃生門/入口不見了(玩家會無法把外掛開回來):');
+  console.error('冒煙測試失敗:關掉「手機版面」外掛後的手機畫面有問題(開關面板/首頁入口/網址入口):');
   for (const p of toggleOffProblems) console.error('  ' + p);
-  console.error('  判準:不可停用的基礎設施不能依賴可被關掉的外掛提供的 CSS 變數 / body class。');
+  console.error('  判準:不可停用的基礎設施不能依賴可被關掉的外掛提供的 CSS 變數 / body class;外掛開關面板不可以有任何網址入口。');
   die();
 }
 

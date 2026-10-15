@@ -26,7 +26,7 @@
 
 | 檔案 | 功能 |
 |---|---|
-| `afk-toggles.js` | 外掛開關中樞(最先載;逃生門,自己不可關)。2026-10-14 起沒有畫面上的按鈕,入口是網址加 `?plugins`(或 `#plugins`) |
+| `afk-toggles.js` | 外掛開關中樞(最先載;自己不可關)。玩家沒有任何入口:2026-10-14 拿掉畫面上的按鈕、2026-10-15 拿掉 `?plugins`/`#plugins` 網址入口(站長要求不要有任何連結能打開);只剩站長在主控台 `AFK_TOGGLES.openPanel()` |
 | `afk-banner.js` | 非官方轉載橫幅讓位(量橫幅→`--orig-bar-h`/`body.afk-bar`→位移全螢幕容器+桌機/平板彈窗讓位;基礎設施,無開關) |
 | `afk-nobanner.js` | 隱藏非官方轉載橫幅(**預設關**)。**只藏不刪**:上游 js/03 `gameLoop` 每 100ms 呼叫 `_origEnforce` 重蓋橫幅,但它一開頭就檢查 `getElementById('_orig_pbar')` → 元素留著只是 `display:none`,它自己就不會再蓋 = 不必跟 gameLoop 打架。藏完呼叫 `AFK_BANNER.remeasure()` 讓 `--orig-bar-h` 歸零、`body.afk-bar` 拿掉,版面當場把空間收回(不必重新整理)。**兩把鎖**:開關(`afk_toggle_nobanner`)＋同意紀錄(`afk_nobanner_ack`),`enabled() && acked()` 都成立才藏——分開存是因為開關有好幾條路徑會被改到(面板「全部恢復預設」是直接刪 localStorage、不經過 `set()`,攔不到),而同意紀錄只有本檔寫 → 任何情況都不可能沒問過就藏。包 `AFK_TOGGLES.set` 攔勾選當下跳確認(面板自己不會重新整理);取消時把開關撥回去並取消面板上的勾;撥回關閉時清掉同意紀錄(下次再開會再問)。⚠️ **確認視窗要墊 z-index**:外掛開關面板 overlay 是 100000、共用 `AFK_UI.confirm` 只有 10001 → 不墊就開在面板底下、玩家按了像沒反應(已由測試涵蓋)。⚠️ **墊高那條規則不可以跟隱藏規則放在同一份 `disabled` 的 stylesheet 裡**:它要在「還沒隱藏」時生效,一起停掉就等於沒寫(踩過)——故 style 永遠啟用,隱藏改用 `<html>` 上的 class 切。⚠️ 確認視窗裡的官方網址是**寫死的字串**,不要改成「連結在首頁」——首頁那條(afk-syncinfo)掛在 `skin` 開關底下,玩家一關就沒了,而這裡正是要把橫幅拿掉的地方 |
 | `afk-synccompress.js` | 存檔即時壓縮(預設關;把 `_lzSet` 換回同步壓縮,根治登出/多開後存檔未壓縮爆滿;代價=存檔當下多花 0.02~0.4 秒) |

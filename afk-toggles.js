@@ -121,7 +121,7 @@
         ov.id = 'afk-toggles-overlay';
         ov.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.66);display:flex;align-items:flex-start;justify-content:center;padding:14px 12px 12px;';
         applyBannerPad(ov);
-        // 網址入口（?plugins）在頁面一載好就開，那時遊戲的橫幅可能還沒插進來 → 開著的期間每秒再量一次，標題列與「關閉」才不會被後到的橫幅蓋住
+        // 遊戲的橫幅可能比面板晚插進來 → 開著的期間每秒再量一次，標題列與「關閉」才不會被後到的橫幅蓋住
         var padTimer = setInterval(function () { if (!ov.parentNode) { clearInterval(padTimer); return; } applyBannerPad(ov); }, 1000);
         // （以下原註解）開啟當下實測橫幅高度直接設 padding-top（不靠 afk-mobile 的非同步 --orig-bar-h，避免量測未就緒時被橫幅蓋住）
         var card = document.createElement('div');
@@ -201,12 +201,7 @@
             note.style.display = 'block';
         });
         card.querySelector('#afk-tg-reload').addEventListener('click', function () {
-            try {
-                if (wantPanel()) {   // 從 ?plugins 網址進來的：重新整理時把它拿掉，不然面板又自己跳出來
-                    var u = new URL(location.href); u.searchParams.delete('plugins'); if (u.hash === '#plugins') u.hash = '';
-                    location.replace(u.toString());
-                } else location.reload();
-            } catch (e) { close(); }
+            try { location.reload(); } catch (e) { close(); }
         });
 
         // ── 篩選：搜尋 ＋ 只看我改過的（兩者同時生效，共用同一支 applyFilter）──
@@ -274,15 +269,8 @@
 
     function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
-    // 🚪 2026-10-14 站長：左上角「🎚️ 外掛」按鈕拿掉。
-    //    逃生門改成「網址入口」：在網址後面加 ?plugins（或 #plugins）開啟就會直接跳出開關面板——
-    //    某支外掛壞掉時，告訴玩家用這個網址開，就能把它關掉回到原版。入口只看網址，不碰任何外掛（逃生門不可依賴可被關掉的東西）。
-    //    要等所有外掛載完（DOMContentLoaded：body 尾端的外掛 script 都跑完了）才開，面板清單才完整。
-    function wantPanel() { try { return new URLSearchParams(location.search).has('plugins') || location.hash === '#plugins'; } catch (e) { return false; } }
-    api.panelFromUrl = wantPanel;
-    function openFromUrl() { if (wantPanel()) { try { openPanel(); } catch (e) {} } }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', openFromUrl);
-    else openFromUrl();
-    window.addEventListener('hashchange', openFromUrl);
+    // 🚪 玩家沒有任何入口打開這個面板：2026-10-14 站長拿掉左上角「🎚️ 外掛」按鈕，
+    //    2026-10-15 站長再拿掉網址入口（?plugins / #plugins），不要有任何連結能打開。
+    //    只剩站長自己除錯用：瀏覽器主控台執行 AFK_TOGGLES.openPanel()。外掛壞了只能改程式碼修。
     try { console.log('[AFK-toggles] ready'); } catch (e) {}
 })();
