@@ -336,9 +336,10 @@
   }
   // ===== 帳號（單機：只存在這台裝置）=====
   //   第一次玩：「註冊帳號」發光＋下方常駐提示，按「登錄」會被擋下；按註冊＝用輸入框的帳號密碼建立。
-  //   註冊後：登錄前比對帳號密碼；右邊按鈕變「忘記密碼」→ 確認後清掉帳號重設（角色存檔不動）。
+  //   註冊後：登錄前比對帳號密碼；按鈕仍是「註冊帳號」，再按＝確認後改用輸入框的新帳號密碼（角色存檔不動）。
   //   ⚠ 這不是安全機制：存檔就在玩家自己的裝置上，帳號只是進遊戲前那道門。單機沒有找回管道，
-  //     不給重設＝把玩家鎖在自己的存檔外，所以「忘記密碼」一定要留。密碼只存雜湊（cyrb53，防肉眼看到，不防破解）。
+  //     不能重新註冊＝忘了密碼就被鎖在自己的存檔外，所以「已註冊還能再註冊」要留（站長不要「忘記密碼」字樣）。
+  //     密碼只存雜湊（cyrb53，防肉眼看到，不防破解）。
   //     之後做連線帳號時整段換掉（伺服器驗證、只存 token）。
   var ACCOUNT_KEY = 'lineage_login_account';
   function pwHash(a, p) {
@@ -354,23 +355,18 @@
     var btn = document.getElementById('login-register-btn'), msg = document.getElementById('login-msg'), go = document.getElementById('btn-start-menu');
     if (!acc || !pw || !btn || !msg || !go) return;
     var t = null;
-    function refresh() {   // 依有沒有帳號切換按鈕文字、發光與常駐提示
+    function refresh() {   // 依有沒有帳號切換發光與常駐提示
       clearTimeout(t);
       var has = !!getAccount();
-      btn.textContent = has ? '忘記密碼' : '註冊帳號';
       btn.classList.toggle('need', !has);
       if (has) msg.classList.remove('show');
       else { msg.textContent = '第一次玩請先按「註冊帳號」'; msg.classList.add('show'); }
     }
     function say(text) { msg.textContent = text; msg.classList.add('show'); clearTimeout(t); t = setTimeout(refresh, 3000); }
     btn.addEventListener('click', function () {
-      if (getAccount()) {
-        if (!confirm('清除這台裝置的帳號密碼，重新註冊？角色存檔不會受影響。')) return;
-        try { lsRm(ACCOUNT_KEY); } catch (e) {}
-        refresh(); acc.focus(); return;
-      }
       var a = acc.value.trim(), p = pw.value;
       if (!a || !p) { say('先在上面輸入要註冊的帳號和密碼'); (a ? pw : acc).focus(); return; }
+      if (getAccount() && !confirm('已經註冊過了，要改用現在輸入的帳號密碼嗎？角色存檔不會受影響。')) return;
       try { lsSet(ACCOUNT_KEY, JSON.stringify({ a: a, h: pwHash(a, p) })); } catch (e) { say('註冊失敗，請再試一次'); return; }
       refresh(); say('註冊完成，按「登錄」開始');
     });
