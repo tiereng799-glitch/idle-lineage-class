@@ -433,7 +433,7 @@ function decorateClassicInventoryTab(div){
     sortMenu.className='classic-sort-menu';
     if(_invSortMenuOpen)sortMenu.classList.add('open');   // 🔧 v3.0.92 重繪時依持久旗標復原開啟（掛機掉物/自動販賣不再關閉）
     let mode=inventorySortMode();
-    sortMenu.innerHTML=`<button type="button" data-sort="category" class="${mode==='category'?'active':''}">分類整理</button><button type="button" data-sort="quality" class="${mode==='quality'?'active':''}">品質整理</button><button type="button" data-sort="name" class="${mode==='name'?'active':''}">名稱整理</button><label><input type="checkbox" ${player.inventoryAutoSort===false?'':'checked'}> 取得物品時自動整理</label>`;
+    sortMenu.innerHTML=`<button type="button" data-sort="category" class="${mode==='category'?'active':''}">分類整理</button><button type="button" data-sort="quality" class="${mode==='quality'?'active':''}">品質整理</button><button type="button" data-sort="name" class="${mode==='name'?'active':''}">名稱整理</button><label><input type="checkbox" ${player.inventoryAutoSort===true?'checked':''}> 取得物品時自動整理</label>`;
     sortBtn.onclick=(ev)=>{ev.stopPropagation();_invSortMenuOpen=!_invSortMenuOpen;sortMenu.classList.toggle('open',_invSortMenuOpen);};
     sortMenu.querySelectorAll('[data-sort]').forEach(b=>b.onclick=(ev)=>{ev.stopPropagation();_invSortMenuOpen=false;setInventorySortMode(b.dataset.sort);});
     let auto=sortMenu.querySelector('input');if(auto)auto.onchange=()=>toggleInventoryAutoSort(auto.checked);
@@ -1926,7 +1926,7 @@ function toggleInventoryAutoSort(on){ if(!player)return;player.inventoryAutoSort
 let _autoSortAt = -99999;
 function autoSortInventory() {
     if (!player || !Array.isArray(player.inv) || typeof state === 'undefined' || !state.running) return;   // 遊戲未開始（創角配發起始道具等）不排
-    if (player.inventoryAutoSort === false) return;   // 整理開關獨立於自動販賣
+    if (player.inventoryAutoSort !== true) return;   // 整理開關獨立於自動販賣；預設關：新拿到的東西照取得順序排在後面，玩家按「整理」才重排（玩家要求）
     if (state.ticks - _autoSortAt < 100) return;   // ⏲️ 10 秒節流（100 ticks）
     _autoSortAt = state.ticks;
     player.inv.sort(invSortCmp);
