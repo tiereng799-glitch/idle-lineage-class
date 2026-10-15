@@ -74,7 +74,7 @@
         let glow = ''; try { glow = getGlowClass(it, d) || ''; } catch (e) {}
         return `<img class="${cls} ${glow}" src="${esc(src)}" alt="" draggable="false" onerror="this.style.visibility='hidden'">`;
     }
-    function enTag(en) { en = Number(en) || 0; return en ? `<span class="enh-en">${en > 0 ? '+' : ''}${en}</span>` : ''; }
+    function enTag(en, d) { en = Number(en) || 0; return en ? `<span class="enh-en${d && en > (d.safe || 0) ? ' en-over' : ''}"><b>${en > 0 ? '+' : ''}${en}</b></span>` : ''; }
 
     function render() {
         let win = $('enh-window'); if (!win) return;
@@ -90,7 +90,7 @@
 
         // 上：兩格
         let mainSlot = it
-            ? `<div class="enh-slot-box">${iconHTML(it, d, 'enh-slot-img')}${enTag(en)}</div><div class="enh-slot-name ${getItemColor(it)}">${esc(d.n)}</div>`
+            ? `<div class="enh-slot-box">${iconHTML(it, d, 'enh-slot-img')}${enTag(en, d)}</div><div class="enh-slot-name ${getItemColor(it)}">${esc(d.n)}</div>`
             : `<div class="enh-slot-box empty"></div><div class="enh-slot-name dim">選擇裝備</div>`;
         let scrollSlot = sc
             ? `<div class="enh-slot-box">${iconHTML(sc, sd, 'enh-slot-img')}<span class="enh-cnt">${(sc.cnt || 1).toLocaleString()}</span></div><div class="enh-slot-name ${isBless ? 'text-yellow-300' : isCurse ? 'c-cursed' : ''}">${esc(sd.n)}</div>`
@@ -138,7 +138,7 @@
         let grid = list.length ? list.map(x => {
             let dd = DB.items[x.it.id], sel = it && x.it.uid === it.uid;
             return `<button type="button" class="enh-cell ${sel ? 'sel' : ''}" onclick="enhWinPick('${x.it.uid}', ${x.isEq})">`
-                + `<span class="enh-cell-box">${iconHTML(x.it, dd, 'enh-cell-img')}${enTag(x.it.en)}${x.isEq ? '<span class="enh-eq">E</span>' : ''}${(x.it.cnt || 1) > 1 ? `<span class="enh-cnt">${x.it.cnt}</span>` : ''}</span>`
+                + `<span class="enh-cell-box">${iconHTML(x.it, dd, 'enh-cell-img')}${enTag(x.it.en, dd)}${x.isEq ? '<span class="enh-eq">E</span>' : ''}${(x.it.cnt || 1) > 1 ? `<span class="enh-cnt">${x.it.cnt}</span>` : ''}</span>`
                 + `<span class="enh-cell-name ${getItemColor(x.it)}">${esc(dd.n)}</span></button>`;
         }).join('') : `<div class="enh-empty">沒有可以強化的${TABS.find(t => t[0] === st.tab)[1]}</div>`;
 

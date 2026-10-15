@@ -357,6 +357,9 @@
       'html body.lmui-bag #tab-content-panel .classic-icon-box img{width:100% !important;height:100% !important;object-fit:contain;filter:drop-shadow(0 1px 1px #000);}',
       /* 角落數字（數量金色/強化藍色，上游配色）：afk-invlist 條列式把它藏了（數量寫在名稱裡），方格只剩圖示，要叫回來 */
       'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item .classic-icon-corner-value{display:block !important;position:absolute !important;right:3px !important;bottom:2px !important;left:auto !important;top:auto !important;font-size:14px !important;background:none !important;}',
+      /* 強化值改放左上角、字放大（站長 2026-10-15）；數量仍在右下 */
+      'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item .classic-icon-corner-value.is-enhance{left:3px !important;top:2px !important;right:auto !important;bottom:auto !important;font-size:17px !important;}',
+      'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item .classic-icon-corner-value.is-enhance.with-eq{left:22px !important;}',
       /* 勾選框等其他子元素（快速強化/廢品模式）縮到右上角 */
       'html body.lmui-bag #tab-content-panel .classic-inventory-viewport>.list-item>:not(.classic-item-main){position:absolute !important;top:2px;right:2px;transform:scale(.85);transform-origin:top right;}',
       /* ── 背包「自動賣出」分類：自動賣出清單（下拉選背包裡的道具＋新增；每列 圖示／名稱／點此移除） ── */
@@ -490,7 +493,7 @@
       '.ld-cell img{width:78%;height:78%;object-fit:contain;filter:drop-shadow(0 1px 2px #000);}',
       '.ld-cell.is-empty{cursor:default;color:rgba(255,255,255,.16);}',
       '.ld-cell.is-empty svg{width:62%;height:62%;}',
-      '.ld-en{position:absolute;right:2px;bottom:1px;font:800 13px/1 Arial,sans-serif;color:#39a9ff;text-shadow:0 0 3px #0b4f99,1px 1px 1px #000;}',
+      '.ld-en{position:absolute;left:2px;top:1px;font:800 15px/1 Arial,sans-serif;color:#39a9ff;text-shadow:0 0 3px #0b4f99,1px 1px 1px #000;}',
       '.ld-cnt{position:absolute;right:2px;bottom:1px;font:800 13px/1 Arial,sans-serif;color:#d5a94f;text-shadow:1px 1px 1px #000;}',
       '.ld-tabs{display:flex;gap:3px;}',
       '.ld-tabs button{flex:0 0 44px;height:26px;display:flex;align-items:center;justify-content:center;border:1px solid #4a4a4a;border-radius:3px;background:linear-gradient(#3a3a3a,#1a1a1a);color:#8f8f8f;}',
@@ -2305,7 +2308,7 @@
     }
     var glow = (typeof getGlowClass === 'function') ? (getGlowClass(item, data) || '') : '';
     var en = Number(item.en) || 0, badge = '';
-    if (en > 0) badge = '<span class="ld-en">+' + (typeof capEn === 'function' ? capEn(item.en, data) : en) + '</span>';
+    if (en > 0) badge = '<span class="ld-en' + (en > ((data && data.safe) || 0) ? ' en-over' : '') + '"><b>+' + (typeof capEn === 'function' ? capEn(item.en, data) : en) + '</b></span>';   // 左上角；超過安定值閃（css .en-over）
     else if ((item.cnt || 1) > 1) badge = '<span class="ld-cnt">' + (item.cnt || 1).toLocaleString() + '</span>';
     return '<div class="ld-cell is-filled tip-host" data-k="' + key + '" data-tip-uid="' + item.uid + '" data-tip-src="eq" title="' + (data.n || '') + '">' +
       '<img src="' + getIconUrl(data) + '" alt="" draggable="false" class="' + glow + '" onerror="this.style.display=\'none\'">' + badge + '</div>';
