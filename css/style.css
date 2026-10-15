@@ -2921,7 +2921,7 @@ button.classic-skill-cell { cursor:pointer; }
 #battle-view.area-fit #mob-list.mob-grid3 .mob-back { grid-column: 1 / span 2; justify-self: center; width: 50%; }
 
 /* ===== ⚒️ 裝備強化視窗（js/33-enhance-window.js·站長 2026-10-15 照範本圖）：暗色石框＋金邊 ===== */
-#enh-window { position:fixed; inset:0; top:var(--orig-bar-h,0px); z-index:95; display:flex; align-items:center; justify-content:center; padding:8px; background:rgba(0,0,0,.72); }
+#enh-window { position:fixed; inset:0; top:var(--orig-bar-h,0px); z-index:9600; display:flex; align-items:center; justify-content:center; padding:8px; background:rgba(0,0,0,.72); }
 #enh-window.hidden { display:none !important; }
 body.enh-open #m-toast-wrap { display:none !important; }   /* 強化視窗開著時藏浮動訊息（它在最上層，會蓋住主裝備格） */
 #enh-window .enh-panel { width:min(460px,100%); max-height:calc(100dvh - var(--orig-bar-h,0px) - 16px); display:flex; flex-direction:column; background:linear-gradient(#211a12,#0f0c08); border:2px solid #8a6a2e; border-radius:10px; box-shadow:0 0 0 1px #000, inset 0 0 0 1px rgba(255,214,140,.15), 0 20px 50px rgba(0,0,0,.75); color:#e8dcc0; font-family:"Microsoft JhengHei",system-ui,sans-serif; overflow:hidden; }
