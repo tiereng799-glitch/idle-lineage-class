@@ -65,7 +65,7 @@
     var STAND = '0px';   // 戰鬥框已縮在上半（#col-center 釘住），怪物/角色直接站在框底
     var css = [
       /* 戰鬥場景只佔上半（玩家要求「縮到一半、下方留空間」）：下方 HUD 面板＝可用高度的一半扣掉 AUTO 那條 */
-      ':root{--lmui-btns:0px;--lmui-vit:64px;--lmui-stack:calc((100dvh - var(--orig-bar-h,0px) - var(--m-nav-h,0px)) / 2 - var(--lmui-vit));--lmui-gold:#d9bf86;--lmui-line:rgba(214,190,140,.45);--lmui-glass:rgba(8,8,10,.42);}',
+      ':root{--lmui-btns:0px;--lmui-vit:50px;--lmui-stack:calc((100dvh - var(--orig-bar-h,0px) - var(--m-nav-h,0px)) / 2 - var(--lmui-vit));--lmui-gold:#d9bf86;--lmui-line:rgba(214,190,140,.45);--lmui-glass:rgba(8,8,10,.42);}',
 
       /* ── 上下兩塊：上半永遠是戰鬥（不管切到哪個分頁），下半放 HUD 或分頁內容 ──
          #col-center 釘在上半（fixed，不受 afk-mobile「一次只顯示一欄」影響）；#game-screen 本身縮到下半當捲動區——
@@ -552,16 +552,15 @@
       'body.lmui #m-nav{background:linear-gradient(#2b2b2b,#141414 45%,#0a0a0a) !important;border-top:1px solid #5a5a5a !important;box-shadow:0 -2px 6px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08);position:fixed;}',
       'body.lmui #m-nav>.m-nav-btn{display:none !important;}',
       /* 工具列＝純文字按鈕（玩家要求「直接顯示文字」）：選中的那格金底深字，其他淺色字；圖示保留在 DOM 但不顯示 */
-      '#lmui-nav{display:flex;flex:1;align-items:stretch;gap:2px;padding:3px 2px 12px;}',
-      '.lmui-tool{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:10px 0;background:transparent;border:1px solid transparent;border-radius:3px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;font-family:inherit;}',
+      '#lmui-nav{display:flex;flex:1;flex-wrap:wrap;align-items:stretch;gap:2px;padding:2px 2px 6px;}',
+      /* 經驗條：工具列按鈕下方（syncToolbar 搬過來），任何分頁都看得到 */
+      '#lmui-nav #lmui-exp{flex:0 0 100%;order:9;margin:1px 0 0;}',
+      '.lmui-tool{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:4px 0;background:transparent;border:1px solid transparent;border-radius:3px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;font-family:inherit;}',
       '.lmui-tool svg{display:none;}',
       '.lmui-tool span{font-size:16px;font-weight:600;color:#d8cbb0;white-space:nowrap;letter-spacing:.5px;text-shadow:0 1px 1px #000;}',
       '.lmui-tool:active{background:rgba(255,255,255,.08);}',
       '.lmui-tool.on{background:linear-gradient(#e7c56f,#a8822f);border-color:#f0d58c;box-shadow:inset 0 1px 0 rgba(255,250,220,.5),0 0 6px rgba(231,197,111,.35);}',
-      '.lmui-tool.on span{color:#1d1407;font-weight:700;text-shadow:none;}',
-      /* 經驗 % 已移到狀態列的經驗條裡，這裡不再重複顯示 */
-      'body.lmui-battle #lmui-navexp{display:none;}',
-      '#lmui-navexp{position:absolute;left:0;right:0;bottom:1px;text-align:center;font-size:12px;font-weight:700;color:#bdbdbd;pointer-events:none;}'
+      '.lmui-tool.on span{color:#1d1407;font-weight:700;text-shadow:none;}'
     ].join('\n');
     css += '\n' + themeCSS();
     var s = document.createElement('style');
@@ -653,7 +652,7 @@
       '<div id="lmui-tr">' +
         '<button type="button" id="lmui-mini" class="lmui-hit" aria-label="地圖"><span class="moon">🌙</span><i class="me" style="left:50%;top:50%"></i></button>' +
       '</div>' +
-      /* 狀態列：經驗條（等級）＋血條/魔力條（AUTO 壓在中間圓章上），釘在戰鬥畫面下緣，任何分頁都在 */
+      /* 狀態列：血條/魔力條（AUTO 壓在中間圓章上），釘在戰鬥畫面下緣；經驗條建在這裡，syncToolbar 再搬到底部工具列按鈕下方 */
       '<div id="lmui-vit">' +
         '<button type="button" id="lmui-mapname" class="lmui-hit"><b></b><small></small></button>' +   // 地區名：純文字，靠左貼在等級條上方
         '<div id="lmui-comp"></div><div id="lmui-comp-pop" class="hidden"></div>' +
@@ -1513,8 +1512,6 @@
       });
       bar.appendChild(b);
     });
-    var ex = document.createElement('div'); ex.id = 'lmui-navexp';
-    bar.appendChild(ex);
     n.appendChild(bar);
   }
   // 目前在哪一格：日誌開著＝聊天；戰鬥/隊伍看 mview-*；右欄看哪個分頁亮著（武器/防具算背包，裝備欄位算能力）
@@ -1535,7 +1532,8 @@
     var cur = currentTool();
     var btns = bar.querySelectorAll('.lmui-tool');
     for (var i = 0; i < btns.length; i++) { var on = btns[i].getAttribute('data-tool') === cur; if (btns[i].classList.contains('on') !== on) btns[i].classList.toggle('on', on); }
-    setTxt($('lmui-navexp'), txt('txt-exp'));
+    // 經驗條住在工具列裡：離開遊戲時 afk-mobile 會把整條 #m-nav 拆掉，重建後用 el.exp（同一個節點）搬回來
+    if (el.exp && el.exp.parentNode !== bar) bar.appendChild(el.exp);
   }
 
   // ── 右欄面板上方的分頁列（取代上游那排 12 顆分頁鈕）：依目前所在的工具分組，釘在頭像列正下方 ──
