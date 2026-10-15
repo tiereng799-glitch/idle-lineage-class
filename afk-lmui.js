@@ -1378,7 +1378,7 @@
   var WIN_SEL = '#item-modal:not(.hidden),#warehouse-window-frame,.fixed.inset-0,.lmui-below,.lmui-below-c,' + MODAL_HOSTS;
   // 掛在 body 下、蓋到戰鬥場景的彈窗 → 推到下半。不碰：主畫面/我們自己的元件/橫幅(z 極大)/不吃點擊的特效層/提示框
   var KEEP_IDS = { 'app-stage': 1, 'creation-screen': 1, 'lmui-hud': 1, 'm-nav': 1, 'lmui-bagtabs': 1, 'lmui-pcap': 1, 'm-log-sheet': 1, 'm-logout-overlay': 1,
-    'lmui-hotpick': 1, 'lmui-mapdrops': 1, 'companion-overlay': 1, 'pet-revive-overlay': 1, 'my-mailbox': 1, 'afk-offres': 1 };   // 自己置中、自己限高的視窗：不要被搬到戰鬥畫面下方（會把標題列擠出畫面）
+    'lmui-hotpick': 1, 'lmui-mapdrops': 1, 'companion-overlay': 1, 'pet-revive-overlay': 1, 'my-mailbox': 1, 'afk-offres': 1, 'enh-window': 1 };   // 自己置中、自己限高的視窗：不要被搬到戰鬥畫面下方（會把標題列擠出畫面）
   // 場景下緣：平常＝#game-screen 頂端；功能頁模式 #game-screen 從畫面頂端開始（見 CSS 註解）→ 改量 #lmui-pcap（固定釘在場景下緣）
   function sceneBottom(gs) {
     var b = document.body.classList, cap = $('lmui-pcap');

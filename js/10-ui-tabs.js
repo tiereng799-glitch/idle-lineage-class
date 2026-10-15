@@ -1388,6 +1388,7 @@ function returnToItemModal(uid, isEq) {
 
 // 👇 修改後的功能：顯示選擇卷軸的介面
 function showEnhanceOptions(uid, isEq) {
+    if (typeof openEnhanceWindow === 'function') { closeModal(); openEnhanceWindow(uid, isEq); return; }   // ⚒️ 2026-10-15 改用強化視窗（js/33）；下方舊流程留作後備
     let item = isEq ? Object.values(player.eq).find(e => e && e.uid === uid) : player.inv.find(i => i.uid === uid);
     if (!item) return;
     let d = DB.items[item.id];
