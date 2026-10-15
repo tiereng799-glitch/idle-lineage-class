@@ -186,7 +186,7 @@ function _wcMasteryNames(cls) {
         let m = MASTERY_DATA[cls];
         if (!m) return [];
         let list = m.list || m;
-        return Object.keys(list).map(k => (list[k] && list[k].n) || k).filter(Boolean);
+        return Object.keys(list).filter(k => !(typeof masteryHidden === 'function' && masteryHidden(k))).map(k => (list[k] && list[k].n) || k).filter(Boolean);
     } catch (e) { return []; }
 }
 function _wcClsName(cls) { return (typeof CLAN_CLASS_NAMES === 'object' && CLAN_CLASS_NAMES[cls]) || cls || '你的職業'; }
