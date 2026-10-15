@@ -1341,6 +1341,7 @@ function allyMageAct(ally) {
 }
 // 妖精協力：連射（弓）— 依記錄的發動機率追加 1~3 箭，每箭約 30% 傷害，隨機命中場上敵人
 function allyRapidfire(ally, forceProc, classicOk) {
+    if (!RAPIDFIRE_ON) return;   // 🏹 連射系統已刪除（js/01 RAPIDFIRE_ON）
     if (ally.classicMode && !classicOk) return;   // 🎮 經典模式：一般連射停用；地精靈王的抗拒受擊連射例外
     let d = ally.d || {};
     let wpn = (ally.eq && ally.eq.wpn) ? DB.items[ally.eq.wpn.id] : null;
