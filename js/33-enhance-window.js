@@ -11,6 +11,9 @@
 (function () {
     'use strict';
     const TABS = [['wpn', '武器'], ['arm', '防具'], ['acc', '飾品']];
+    // 道具欄雙擊強化卷軸 → 開視窗：分頁跟著卷軸種類、選好那一種卷軸（js/10 renderInv 的 ondblclick 用）
+    const SCROLL_TAB = { scroll_weapon: 'wpn', scroll_weapon_b: 'wpn', scroll_weapon_c: 'wpn', scroll_armor: 'arm', scroll_armor_b: 'arm', scroll_armor_c: 'arm', scroll_acc: 'acc' };
+    window.enhScrollTab = id => SCROLL_TAB[id] || null;
     let st = { uid: null, isEq: false, tab: 'wpn', scrollPick: 0, result: null };
 
     const $ = id => document.getElementById(id);
@@ -84,8 +87,9 @@
         let en = it ? (Number(it.en) || 0) : 0;
         let cap = d ? enhanceCap(d) : 0;
         let scrolls = d ? scrollsFor(d) : [];
+        if (st.scrollId) { let k = scrolls.findIndex(s => s.id === st.scrollId); if (k >= 0) st.scrollPick = k; }   // 從卷軸雙擊進來：選裝備後仍用那一種卷軸
         if (st.scrollPick >= scrolls.length) st.scrollPick = 0;
-        let sc = scrolls[st.scrollPick] || null, sd = sc ? DB.items[sc.id] : null;
+        let sc = scrolls[st.scrollPick] || (!it && st.scrollId ? player.inv.find(i => i && i.id === st.scrollId && (i.cnt || 0) > 0) : null) || null, sd = sc ? DB.items[sc.id] : null;
         let isCurse = !!(sd && sd.isC), isBless = !!(sd && sd.isB);
 
         // 上：兩格
@@ -191,9 +195,10 @@
         render();
     }
 
-    window.openEnhanceWindow = function (uid, isEq) {
+    window.openEnhanceWindow = function (uid, isEq, opt) {
         let it = uid ? findItem(uid, isEq) : null, d = it && DB.items[it.id];
-        st = { uid: it ? uid : null, isEq: !!isEq, tab: (d && enhanceable(d)) ? d.type : 'wpn', scrollPick: 0, result: null };
+        let scrollId = opt && SCROLL_TAB[opt.scrollId] ? opt.scrollId : null;
+        st = { uid: it ? uid : null, isEq: !!isEq, tab: (d && enhanceable(d)) ? d.type : (scrollId ? SCROLL_TAB[scrollId] : 'wpn'), scrollPick: 0, scrollId: scrollId, result: null };
         try { if (typeof enhSfxPreload === 'function') enhSfxPreload(); } catch (e) {}
         let win = $('enh-window');
         if (!win) {
@@ -212,7 +217,7 @@
     window.closeEnhanceWindow = function () { if (st.layer && window.AFK_UI && AFK_UI.closeLayer) AFK_UI.closeLayer(st.layer); else hideWin(); };
     window.enhWinTab = function (k) { if (st.busy) return; st.tab = k; render(); };
     window.enhWinPick = function (uid, isEq) { if (st.busy) return; st.uid = uid; st.isEq = !!isEq; st.scrollPick = 0; st.result = null; render(); };
-    window.enhWinCycle = function () { if (st.busy) return; st.scrollPick++; st.result = null; render(); };
+    window.enhWinCycle = function () { if (st.busy) return; st.scrollPick++; st.scrollId = null; st.result = null; render(); };
     window.enhWinGo = function () {
         if (st.busy) return;
         let it = findItem(st.uid, st.isEq); if (!it) return;
