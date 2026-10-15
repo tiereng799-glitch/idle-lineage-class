@@ -1122,7 +1122,7 @@ input.login-field-hint:focus { box-shadow:inset 0 0 0 1px #7d6c4c; }
 .login-field-account { top:68.9%; }
 .login-field-password { top:74.75%; }
 /* 「記住帳號密碼」：密碼框正下方、跟帳密框左緣對齊，夾在密碼框與登錄鈕之間 */
-.login-remember { position:absolute; left:28%; top:79.15%; height:2.2%; display:flex; align-items:center; gap:1.6cqw; color:#a89f8e; font-size:2.9cqw; letter-spacing:.08em; cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
+.login-remember { position:absolute; left:50%; top:88.9%; transform:translateX(-50%); white-space:nowrap; height:2.6%; display:flex; align-items:center; gap:1.6cqw; color:#a89f8e; font-size:2.9cqw; letter-spacing:.08em; cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
 .login-remember input { appearance:none; -webkit-appearance:none; flex:none; width:3.2cqw; height:3.2cqw; margin:0; border:1px solid #7d6c4c; border-radius:2px; background:#0c0c0c; display:grid; place-items:center; cursor:pointer; }
 .login-remember input::after { content:""; width:1.7cqw; height:.9cqw; border:solid #e2bd6b; border-width:0 0 .45cqw .45cqw; transform:translateY(-.2cqw) rotate(-45deg); opacity:0; }
 .login-remember input:checked { border-color:#d9b25e; }
