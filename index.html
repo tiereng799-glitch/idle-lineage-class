@@ -14,7 +14,7 @@
     <title>放置天堂 - 日出之國</title>
     <link rel="icon" type="image/png" href="assets/favicon.png">   <!-- 🖼️ 瀏覽器分頁圖示(favicon)：把你的圖放到 assets/favicon.png 即生效；可改 href 路徑或副檔名(.ico/.svg) -->
 
-    <link rel="stylesheet" href="css/style.css?v=e8c28b3463.8.6-npc-private-chat">
+    <link rel="stylesheet" href="css/style.css?v=69c95aec57.8.6-npc-private-chat">
     <link rel="stylesheet" href="css/floating-ui.css?v=f9232e9e67.5.100-audit-tail">
     <link rel="stylesheet" href="css/tailwind-built.css?v=c0926cfba4"><!-- 🔧 預編譯 Tailwind（取代執行期 JIT tailwind.js）：只含實際用到的 class，省 407KB runtime + 移除持續掃描 DOM 的成本。置於 style.css 之後以保留原 cascade（utility 平手時勝過自訂 class，與舊 JIT 注入順序一致） -->
 </head>
@@ -30,7 +30,7 @@
            (CSS 另有 60 秒自動消失的保底)。data-scripts / data-script-kb 是本頁 <script src> 的數量與總大小，由 scripts/stamp-code-versions.mjs 自動對齊。
            無痕模式／第一次開沒有快取，光下載程式就要十幾秒；以前這段進度條停在 0% 不動，看起來像卡死。
            主要照「已下載的位元組」算(檔案大小差很多，00-data 一支就 640KB，只數檔數會一卡好幾秒)；瀏覽器不給大小時退回數檔數。 -->
-      <div id="boot-loader" aria-live="polite" data-scripts="108" data-script-kb="6225">
+      <div id="boot-loader" aria-live="polite" data-scripts="108" data-script-kb="6228">
         <div class="boot-box"><div class="boot-label">載入中 <span class="boot-pct">0%</span></div><div class="boot-bar"><div class="boot-bar-fill"></div></div></div>
       </div>
       <script>
@@ -562,7 +562,7 @@
     <script src="js/00-data.js?v=be37411653.8.34-merc-trial-class-loot"></script>
     <!-- 試算表的修改(Google 試算表 → GitHub「更新遊戲」產生 00y;00z 把它套進 DB 與首頁) -->
     <script src="js/00y-my-tweaks-data.js?v=5f313547b4"></script>
-    <script src="js/00z-my-tweaks.js?v=8c2db3056d"></script>
+    <script src="js/00z-my-tweaks.js?v=71c5aaee31"></script>
 <script src="js/01-drops-config.js?v=5287ee0ec4.8.26-flywing-relics"></script>
     <script src="js/01z-my-tweaks-drops.js?v=305132abe5"></script>
 <script src="js/02-stats-recompute.js?v=8cbe6d84de.8.26-flywing-relics"></script>
@@ -575,14 +575,14 @@
 <script src="js/09-vfx-render.js?v=c50c5fb1ea.8.32-merc-vfx-origin"></script>
     <script src="js/10-ui-tabs.js?v=6d30dd727e.8.14-merc-guild"></script>
 <script src="js/11-world-map.js?v=0a563da5c7.8.17-item-stack-source"></script>
-<script src="js/12-npc-quests.js?v=0785866c43.8.34-merc-trial-class-loot"></script>
+<script src="js/12-npc-quests.js?v=4b21292fc1.8.34-merc-trial-class-loot"></script>
 <script src="js/13-shop-save.js?v=90416009dc.8.18-desktop-save-isolation"></script>
 <script src="js/14-craft-pandora.js?v=afdd98b1ba.8.17-item-stack-source"></script>
 <script src="js/15-cards.js?v=9f3f5ca582.7.66"></script>
 <script src="js/16-equip-book.js?v=d0f2dd908e.8.15-legacy-import-smooth"></script>
 <script src="js/18-misc-book.js?v=e3c0995919.8.15-legacy-import-smooth"></script>
 <script src="js/sfx-index.js?v=d3ce2a0cf4"></script><!-- 音檔索引(檔名→副檔名，gen-manifests 產)：17-audio 查表取代逐一試副檔名的網路探測 -->
-<script src="js/17-audio.js?v=76af424ad4.8.1-monia-sfx"></script>
+<script src="js/17-audio.js?v=4811e1e262.8.1-monia-sfx"></script>
 <script src="js/19-equipment-window.js?v=101ee97d79.7.57"></script>
 <script src="js/20-warehouse-window.js?v=f0ce1aeb02.5.100-audit-tail"></script>
 <script src="js/21-relic-book.js?v=7d118874fb.8.15-legacy-import-smooth"></script>
@@ -596,7 +596,7 @@
 <script src="js/30-siege-v2.js?v=616f9643f4.7.89-castle-ring-layout"></script>
 <script src="js/31-castle-guards.js?v=91544fd42d.8.23-sherine-set-rework"></script>
 <script src="js/32-threat.js?v=3c59d0a5cb.8.23-sherine-set-rework"></script>
-<script src="js/33-enhance-window.js?v=88dad883fd"></script>
+<script src="js/33-enhance-window.js?v=476874b1ff"></script>
     <!-- ═══════════ 加掛版外掛層（核心永遠是原作者原版；我們的功能全部是外掛疊上去） ═══════════ -->
     <!-- 此區塊由 scripts/sync-upstream.mjs 於「拉上游 index.html 後」自動注入到 </body> 之前。?v= 由 stamp-code-versions 補。 -->
     <!-- 🌓 宣告「這頁本來就是深色」：沒宣告的話 Android Chrome 的「自動深色主題」會自己疊一層反轉，
