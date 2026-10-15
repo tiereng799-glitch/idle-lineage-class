@@ -142,7 +142,8 @@
                 + `<span class="enh-cell-name ${getItemColor(x.it)}">${esc(dd.n)}</span></button>`;
         }).join('') : `<div class="enh-empty">沒有可以強化的${TABS.find(t => t[0] === st.tab)[1]}</div>`;
 
-        win.querySelector('.enh-body').innerHTML =
+        let body = win.querySelector('.enh-body'), og = body.querySelector('.enh-grid'), gTop = og ? og.scrollTop : 0;   // 清單自己捲動：重畫後捲回原位（點下面的道具不會跳回頂端）
+        body.innerHTML =
             `<div class="enh-slots">
                 <div class="enh-slot sc ${canCycle ? 'cycle' : ''}" ${canCycle && !st.busy ? 'onclick="enhWinCycle()"' : ''}>${scrollSlot}${canCycle ? '<span class="enh-cycle-tip">點擊換卷軸</span>' : ''}</div>
                 <div class="enh-plus">＋</div>
@@ -156,6 +157,7 @@
             ${auto}
             <div class="enh-tabs">${tabs}</div>
             <div class="enh-grid">${grid}</div>`;
+        let ng = body.querySelector('.enh-grid'); if (ng && gTop) ng.scrollTop = gTop;
     }
     function cell(label, val, cls) { return `<div class="enh-info-cell"><div class="enh-info-label">${label}</div><div class="enh-info-val ${cls || ''}">${val}</div></div>`; }
     function statTable(d, en0, en1) {
