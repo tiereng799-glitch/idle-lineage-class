@@ -1160,12 +1160,13 @@
         if (gap > 40 && gap < 600) S.tickMs = (S.tickMs || 100) * 0.7 + gap * 0.3;   // 遊戲主迴圈實際多久跑一次（手機忙時常常 >0.1 秒）
         S.ht++; S.lastLogicMs = now;
         // 畫面插值：起點＝這一刻畫面上的位置（接得上、不跳），終點＝這次邏輯算完的位置，下一拍之前畫面從起點滑到終點
-        huntActors().forEach(function (a) { a.p0x = a.fx; a.p0y = a.fy; a.pt0 = a.vt != null ? a.vt : a.t; a.pcell = a.tx + ',' + a.ty; });
+        huntActors().forEach(function (a) { a.p0x = a.fx; a.p0y = a.fy; a.pt0 = a.vt != null ? a.vt : a.t; a.pcell = a.tx + ',' + a.ty; a.w0 = a.walking && a.t < 1; });
         huntTickLogic(idle);
         huntActors().forEach(function (a) {
             var mv = a.walking && a.t < 1, lx = mv ? a.sx + (a.tx - a.sx) * a.t : a.tx, ly = mv ? a.sy + (a.ty - a.sy) * a.t : a.ty;
             if (a.p0x == null || Math.abs(lx - a.p0x) + Math.abs(ly - a.p0y) > 3) { a.p0x = lx; a.p0y = ly; }   // 剛放上地圖／重生／瞬移：直接到位，不要滑過整張圖
             a.p1x = lx; a.p1y = ly; a.newStep = a.pcell !== a.tx + ',' + a.ty;
+            a.stopped = a.w0 && !mv;   // 就是這一拍走完那一步停下來（畫面補播走路幀只限這一拍）
         });
     }
     function huntTickLogic(idle) {
@@ -1209,8 +1210,9 @@
             if (a.p1x == null) { a.vt = null; return; }
             a.fx = a.p0x + (a.p1x - a.p0x) * al; a.fy = a.p0y + (a.p1y - a.p0y) * al;
             if (a.walking && a.t < 1) { var t0 = (a.newStep || a.pt0 == null || a.pt0 > a.t) ? 0 : a.pt0; a.vt = Math.min(0.999, t0 + (a.t - t0) * al); }
-            // 這一拍邏輯上已經走到格子停下，畫面還在滑最後一段：照樣播走路幀走完，不然最後一段是站姿平移＝在滑
-            else if (al < 1 && a.pt0 != null && a.pt0 < 1 && (a.p0x !== a.p1x || a.p0y !== a.p1y)) { a.glide = true; a.vt = Math.min(0.999, a.pt0 + (1 - a.pt0) * al); }
+            // 這一拍邏輯上已經走到格子停下，畫面還在滑最後一段：照樣播走路幀走完，不然最後一段是站姿平移＝在滑。
+            //   ⚠ 只能看「這一拍剛停」：主迴圈間隔不規則時，站著的人每拍都還差一點點沒對齊，拿位置差來判斷會一直當成在走＝原地踏步、攻擊動作被蓋掉（玩家回報）
+            else if (a.stopped && al < 1 && a.pt0 != null && a.pt0 < 1) { a.glide = true; a.vt = Math.min(0.999, a.pt0 + (1 - a.pt0) * al); }
             else a.vt = null;
         }
         f(S.me); S.pets.forEach(f); S.ents.forEach(function (e) { if (e.placed) f(e); });
