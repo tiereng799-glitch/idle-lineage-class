@@ -67,7 +67,7 @@
 | `afk-invlist.js` | 背包條列式(桌機手機通用;**本檔整片鋪底的 `background:...!important` 會蓋掉核心給的狀態底色**——「無法裝備/無法學習」的 `bg-red-950/40` 就這樣被吃掉過,已補回紅底＋左紅條,`.bg-red-950\/40` 與 `:has(.text-red-500)` 兩種選法各寫一條、不可併成 selector list) |
 | `afk-eqlist.js` | 裝備分頁條列式(隱藏 12 格圖形窗,露出原生部位條列) |
 | `afk-npclist.js` | 村莊 NPC 條列式(鏡射地圖 NPC 成列表) |
-| `afk-townmap.js` | 說話之島村莊動態地圖(包 renderTownNPCMap;canvas 畫用戶端真地圖、玩家點地面/按住/方向鍵操控角色走動、NPC 釘站位格;資料 `assets/townmap/` 由 `tools/gen-townmap.js` 產生) |
+| `afk-townmap.js` | 說話之島村莊動態地圖(包 renderTownNPCMap;canvas 畫用戶端真地圖、玩家點地面/按住/方向鍵操控角色走動;走速吃 playerMoveDelayMultiplier(一二三段加速、變身走速);外型同狩獵區(職業+武器、真夏納、變身)每秒重查;帶出來的寵物跟在後面;NPC 釘站位格;資料 `assets/townmap/` 由 `tools/gen-townmap.js` 產生) |
 | `afk-mobname.js` | 怪物名稱顯示模式三選一(純 CSS+body data 驅動) |
 | `afk-npclabel.js` | 村莊 NPC 名牌不出界(包核心 `_resolveTownLabelOverlap`,排完之後夾回「地圖 ∩ 視窗」)。玩家回報炎魔謁見所的「炎魔的輔佐官」名字看不到 —— 量出來是**上方**出界:名牌貼在立繪正上方(`.tn-label` bottom:100%),這位站得高(y=32%)又立繪特別高 → 整個跑到地圖頂端外 68px 被面板蓋掉,**與視窗寬度無關**(1400/1024/860 都差 68px)。核心那支只在「為了閃開別的名牌而往上抬」時檢查地圖頂端,名牌**天生**就在外面的它不管。上方出界時**先把整個 NPC 往下挪**(改 el 的 margin-top·牠自己的腳不可掉出地圖下緣),挪不夠才退而求其次把名牌壓下來(margin-bottom·與核心同一管道);左右出界用 translateX(順手治「名字長又站得靠邊」:視窗 860px 時這位的名牌右緣會超出瀏覽器)。resize 後重夾。🚨 **位移一律不可以用 transform**:`.town-npc` 的 CSS 帶 `transition: transform .12s`,設完馬上 getBoundingClientRect 會量到動畫途中的值 → 後續步驟依據錯的數字再補一次位移,名牌就被推到立繪身上,而且時好時壞(踩過)。margin 沒有 transition。另外立繪是逐張載入、版面會再動好幾次 → 每次排完補跑 120/400/900ms 三次(clamp 冪等),並在地圖矩形還沒安定(高度<60)時直接跳過 |
 | `afk-toast.js` | 手機 toast(包 logSys,點擊同步窗內訊息浮現) |

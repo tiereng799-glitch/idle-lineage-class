@@ -5,7 +5,12 @@
  *   - 背景換成天堂用戶端的真地圖(地磚＋房子樹木)，用 canvas 即時畫；鏡頭跟著角色、夾在資料範圍內
  *   - 角色＝玩家目前的職業外型＋手上武器的走路／待機動畫(assets/classanim 八方向)，
  *     由玩家操控(站長要求：不要自己走)：點地面＝找路走過去、按住＝往手指方向走、電腦方向鍵；
- *     官方未變身走速(每格 16/24 秒)；八方向、斜走不切牆角、不能走的格子照用戶端第 3 層屬性
+ *     八方向、斜走不切牆角、不能走的格子照用戶端第 3 層屬性
+ *   - 走速＝官方未變身每格 16/24 秒 × 遊戲自己的移速倍率 playerMoveDelayMultiplier(js/02)：
+ *     一段/二段/三段加速(加速、勇敢、疾走、餅乾、行走加速)、變身走速、裝備移速都照遊戲現有規則，每一步重算
+ *   - 外型跟狩獵區同一套(每秒重查)：職業＋手上武器；真夏納＝職業式變身；一般變身有同名怪物走路動畫
+ *     (assets/anim 八方向)就用它，沒有的(目前 79 個變身只有 8 個有)移動時播變身待機
+ *   - 帶出來的寵物(petsOutList)沿著角色走過的格子跟在後面，用寵物自己的八方向走路／待機動畫
  *   - 站在地圖上的 NPC／叫賣玩家(.town-npc，核心照舊建)釘在村裡固定的格子上，跟著地圖捲動，點擊照舊
  *   - 前後遮擋：房子、樹會擋住走到後面的角色；被整個擋住時再疊一層半透明身影
  *
@@ -94,33 +99,79 @@
         });
     }
 
-    // ── 角色外型（職業＋武器）───────────────────────────
+    // ── 外型（角色／變身／寵物）───────────────────────────
+    //   class＝assets/classanim/<外型><方向>/<武器>_<動作>_N（八方向、走路 4 幀；落腳點與逐幀位移查 TOWNMAP_HERO）
+    //   anim ＝assets/anim/<名>/d<方向>/<動作>_N（寵物、有走路幀的變身；走路一輪＝一格、每幀往前 1/N 格，用等分扣掉）
+    //   morph＝assets/morphanim/<名>{,2,F}/idle_N（沒有走路幀的變身：移動時也播待機，repo 裡沒有它們的走路動畫）
     var imgCache = {};
     function img(src) {
         var im = imgCache[src];
         if (!im) { im = imgCache[src] = new Image(); im.src = src; }
         return im;
     }
-    function heroForm() {
+    function mf(folder, pfx) { try { return (ANIM_MANIFEST[folder] || {})[pfx] || 0; } catch (e) { return 0; } }
+    var SFX3 = ['2', 'F', '', '', '', '', '2', '2'];   // 三方向變身：右半邊→東北那夾、左半邊→西北那夾（同 js/09 ANIM_DIR_SFX3）
+    function classLook(av, wk) {
+        var tab = window.TOWNMAP_HERO && TOWNMAP_HERO[av]; if (!tab) return null;
+        if (!tab[wk]) wk = 'unarmed';
+        if (!tab[wk]) return null;
+        return { key: 'c:' + av + ':' + wk, kind: 'class', av: av, wk: wk, at: tab[wk], walkN: 4, idleN: mf('assets/classanim/' + av + 'd5', wk + '_idle_') || 1 };
+    }
+    function animLook(name) {
+        var at = window.TOWNMAP_ANIM && TOWNMAP_ANIM[name]; if (!at) return null;
+        var f = 'assets/anim/' + name;
+        return { key: 'a:' + name, kind: 'anim', name: name, at: at, walkN: mf(f, 'd5/walk_'), idleN: mf(f, 'd5/idle_') || 1 };
+    }
+    function morphLook(name) {
+        var M = window.TOWNMAP_MORPH || {};
+        if (!M[name]) return null;
+        return { key: 'm:' + name, kind: 'morph', name: name, three: !!(M[name + '2'] && M[name + 'F']), walkN: 0, idleN: mf('assets/morphanim/' + name, 'idle_') || 1 };
+    }
+    function morphFolder(L, dir) { return L.name + (L.three ? SFX3[dir] : ''); }
+    function frameSrc(L, dir, act, k, shadow) {
+        var s = (shadow ? '_s_' : '_') + k + '.png';
+        if (L.kind === 'class') return 'assets/classanim/' + encodeURIComponent(L.av + DIR_SFX[dir]) + '/' + L.wk + '_' + act + s;
+        if (L.kind === 'anim') return 'assets/anim/' + encodeURIComponent(L.name) + '/d' + dir + '/' + act + s;
+        return 'assets/morphanim/' + encodeURIComponent(morphFolder(L, dir)) + '/idle' + s;
+    }
+    // 落腳點＝影子中心在圖裡的位置；走路幀本身每幀往前挪，角色改成平滑移動，所以把這段扣掉，人才穩、地圖平順捲動
+    function anchorOf(L, dir, walk, k) {
+        if (L.kind === 'class') { var a = L.at[dir]; return walk ? [a[0] + (k ? a[2 * k] : 0), a[1] + (k ? a[2 * k + 1] : 0)] : [a[8], a[9]]; }
+        if (L.kind === 'anim') {
+            var b = L.at[dir]; if (!walk) return [b[2], b[3]];
+            var d = DIRS[dir], f = k / L.walkN;
+            return [b[0] + 24 * (d[0] + d[1]) * f, b[1] + 12 * (d[1] - d[0]) * f];
+        }
+        return TOWNMAP_MORPH[morphFolder(L, dir)] || TOWNMAP_MORPH[L.name];
+    }
+    function preloadDir(L, dir) {
+        if (!L) return;
+        for (var k = 0; k < L.walkN; k++) { img(frameSrc(L, dir, 'walk', k)); img(frameSrc(L, dir, 'walk', k, true)); }
+        for (k = 0; k < L.idleN; k++) { img(frameSrc(L, dir, 'idle', k)); img(frameSrc(L, dir, 'idle', k, true)); }
+    }
+    // 玩家目前外型（跟狩獵區同一套規則）：變身優先——真夏納＝職業式變身(classanim 真夏納<外型>)；
+    //   一般變身有同名怪物走路動畫就用它，沒有就用變身的待機動畫；沒變身＝職業外型＋手上武器
+    function heroLook() {
         try {
             var p = (typeof player !== 'undefined') ? player : null;   // 核心的 let 全域
-            var av = p && p.avatar, tab = window.TOWNMAP_HERO && TOWNMAP_HERO[av];
-            if (!tab) return null;
-            var wk = 'unarmed';
-            if (typeof _classAnimWpnKey === 'function' && typeof CLASS_ANIM_SETS !== 'undefined' && CLASS_ANIM_SETS[av]) wk = _classAnimWpnKey(p, CLASS_ANIM_SETS[av]);
-            if (!tab[wk]) wk = 'unarmed';
-            if (!tab[wk]) return null;
-            var idleN = 1;
-            try { idleN = ANIM_MANIFEST['assets/classanim/' + av + DIR_SFX[5]][wk + '_idle_'] || 1; } catch (e) {}
-            return { av: av, wk: wk, at: tab[wk], idleN: idleN };
+            if (!p) return null;
+            var av = p.avatar;
+            var wkOf = function (sets) { return (typeof _classAnimWpnKey === 'function' && sets && sets[av]) ? _classAnimWpnKey(p, sets[av]) : 'unarmed'; };
+            var pf = p._setPoly || ((p.buffs && p.buffs.poly > 0 && p.poly) ? p.poly : null);
+            if (pf && pf.classMorph && typeof TRUE_SHANNA_ANIM_SETS !== 'undefined' && TRUE_SHANNA_ANIM_SETS[av]) {
+                var cm = classLook(pf.n + av, wkOf(TRUE_SHANNA_ANIM_SETS));
+                if (cm) return cm;
+            }
+            var m = (typeof _actorMorphName === 'function') ? _actorMorphName(p) : null;
+            if (m) { var ml = animLook(m) || morphLook(m); if (ml) return ml; }
+            return classLook(av, wkOf(typeof CLASS_ANIM_SETS !== 'undefined' ? CLASS_ANIM_SETS : null));
         } catch (e) { return null; }
     }
-    function frameSrc(f, dir, act, k, shadow) {
-        return 'assets/classanim/' + encodeURIComponent(f.av + DIR_SFX[dir]) + '/' + f.wk + '_' + act + (shadow ? '_s_' : '_') + k + '.png';
-    }
-    function preloadDir(f, dir) {
-        for (var k = 0; k < 4; k++) { img(frameSrc(f, dir, 'walk', k)); img(frameSrc(f, dir, 'walk', k, true)); }
-        for (k = 0; k < f.idleN; k++) { img(frameSrc(f, dir, 'idle', k)); img(frameSrc(f, dir, 'idle', k, true)); }
+    // 走一格的秒數：官方未變身每格 16/24 秒 × 遊戲自己的移速倍率（變身走速、加速／勇敢／疾走／餅乾／行走加速、裝備移速，js/02）
+    function stepSec() {
+        var m = 1;
+        try { if (typeof playerMoveDelayMultiplier === 'function') m = playerMoveDelayMultiplier(); } catch (e) {}
+        return STEP * ((m > 0.05 && m < 20) ? m : 1);
     }
 
     // ── 執行狀態 ────────────────────────────────────────
@@ -237,7 +288,9 @@
         me.fx = me.tx; me.fy = me.ty; me.dir = d;
         if (!canStep(me.tx, me.ty, DIRS[d])) return false;
         me.sx = me.tx; me.sy = me.ty; me.tx += DIRS[d][0]; me.ty += DIRS[d][1]; me.t = 0; me.walking = true;
-        if (S.form) preloadDir(S.form, d);
+        me.step = stepSec();   // 每一步重算：路上喝水、加速剛好過期都會馬上反映
+        S.trail.push([me.tx, me.ty]); if (S.trail.length > 80) S.trail.shift();   // 寵物沿著這條走
+        preloadDir(S.form, d);
         return true;
     }
     function nextStep() {
@@ -254,10 +307,60 @@
         }
         me.walking = false;
     }
+    // ── 寵物：沿著角色走過的格子跟在後面（第 i 隻落後 2+2i 格），離太遠就直接跳到那格 ──────
+    function petsOut() {
+        try { return (typeof petsOutList === 'function' && typeof player !== 'undefined' && player && player.cls) ? (petsOutList() || []) : []; } catch (e) { return []; }
+    }
+    function spawnNear(x, y, taken) {
+        for (var r = 1; r <= 3; r++) for (var dy = -r; dy <= r; dy++) for (var dx = -r; dx <= r; dx++) {
+            var nx = x + dx, ny = y + dy;
+            if (blocked(nx, ny) || taken.some(function (c) { return c[0] === nx && c[1] === ny; })) continue;
+            return [nx, ny];
+        }
+        return [x, y];
+    }
+    function syncPets() {
+        var outs = petsOut(), keep = [], taken = [[S.me.tx, S.me.ty]];
+        outs.forEach(function (p) {
+            var L = animLook(p.formGfx || p.form) || morphLook(p.formGfx || p.form);
+            if (!L) return;
+            var a = null;
+            for (var j = 0; j < S.pets.length; j++) if (S.pets[j].uid === p.uid) a = S.pets[j];
+            if (!a) {
+                var c = spawnNear(S.me.tx, S.me.ty, taken.concat(keep.map(function (q) { return [q.tx, q.ty]; })));
+                a = { uid: p.uid, fx: c[0], fy: c[1], sx: c[0], sy: c[1], tx: c[0], ty: c[1], t: 1, dir: S.me.dir, walking: false, path: [], step: STEP, phase: Math.random() * 8 };
+            }
+            if (!a.look || a.look.key !== L.key) { a.look = L; preloadDir(L, a.dir); }
+            keep.push(a);
+        });
+        S.pets = keep;
+    }
+    function petTick(a, i, dt) {
+        var left = 0;
+        if (a.t < 1) {
+            var t = a.t + dt / a.step;
+            if (t < 1) { a.t = t; a.fx = a.sx + (a.tx - a.sx) * t; a.fy = a.sy + (a.ty - a.sy) * t; return; }
+            left = t - 1; a.t = 1; a.fx = a.tx; a.fy = a.ty;
+        }
+        var tr = S.trail, gap = 2 + 2 * i, g = tr.length > gap ? tr[tr.length - 1 - gap] : null;
+        if (!g || (g[0] === a.tx && g[1] === a.ty)) { a.walking = false; return; }
+        if (Math.max(Math.abs(g[0] - a.tx), Math.abs(g[1] - a.ty)) > 12) {   // 跟丟了：直接到位
+            a.fx = a.sx = a.tx = g[0]; a.fy = a.sy = a.ty = g[1]; a.path = []; a.walking = false; return;
+        }
+        if (!a.path.length || a.goal !== g) { a.path = findPath(a.tx, a.ty, g[0], g[1]); a.goal = g; }
+        var n = a.path.shift();
+        if (!n) { a.walking = false; return; }
+        for (var k = 0; k < 8; k++) if (DIRS[k][0] === n[0] - a.tx && DIRS[k][1] === n[1] - a.ty) { a.dir = k; break; }
+        a.sx = a.tx; a.sy = a.ty; a.tx = n[0]; a.ty = n[1]; a.walking = true;
+        a.step = S.me.step || STEP;   // 跟主人同速
+        a.t = Math.min(left * 1, 0.99); a.fx = a.sx + (a.tx - a.sx) * a.t; a.fy = a.sy + (a.ty - a.sy) * a.t;
+        preloadDir(a.look, a.dir);
+    }
     function tick(dt) {
         var me = S.me;
+        S.pets.forEach(function (a, i) { petTick(a, i, dt); });
         if (me.t < 1) {
-            var t = me.t + dt / STEP;
+            var t = me.t + dt / (me.step || STEP);
             if (t >= 1) {
                 me.t = 1; me.fx = me.tx; me.fy = me.ty; nextStep();
                 if (me.walking && me.t === 0) me.t = Math.min(t - 1, 0.99);   // 接著走下一步：多出來的時間帶過去，每格之間不會頓一下
@@ -341,27 +444,38 @@
             }
         }
         vis.sort(function (a, b) { return t.tSeq[a] - t.tSeq[b]; });
-        var me = S.me, hv = me.walking ? Math.max(me.sy - me.sx, me.ty - me.tx) : me.ty - me.tx;   // 走路中用起點終點較前面那列
-        var heroKey = 4 * hv + 19.5, todo = !!S.form, after = false, covered = false;
+        // 角色與寵物依各自的「4×畫面列」插進去（走路中用起點終點較前面那列）
+        var acts = [];
+        function addActor(a, L, hero) {
+            if (!L) return;
+            var row = a.walking ? Math.max(a.sy - a.sx, a.ty - a.tx) : a.ty - a.tx;
+            acts.push({ a: a, L: L, hero: hero, key: 4 * row + 19.5 + (hero ? 0.25 : 0) });
+        }
+        addActor(S.me, S.form, true);
+        S.pets.forEach(function (p) { addActor(p, p.look, false); });
+        acts.sort(function (x, y) { return x.key - y.key; });
+        var ai = 0, heroIn = false, covered = false, heroAct = null;
         var hp = heroWorld(), hx0 = hp[0] - 22, hx1 = hp[0] + 22, hy0 = hp[1] - 62, hy1 = hp[1];   // 角色身體大概的範圍
         for (var n = 0; n < vis.length; n++) {
             var e = vis[n];
-            if (todo && t.tKey[e] > heroKey) { drawHero(ctx, cam, dpr, 1); todo = false; after = true; }
-            if (after && !covered && t.tX[e] < hx1 && t.tX[e] + BW > hx0 && t.tY[e] < hy1 && t.tY[e] + BH > hy0) covered = true;
+            while (ai < acts.length && t.tKey[e] > acts[ai].key) { drawActor(ctx, cam, dpr, acts[ai], 1); if (acts[ai].hero) { heroIn = true; heroAct = acts[ai]; } ai++; }
+            if (heroIn && !covered && t.tX[e] < hx1 && t.tX[e] + BW > hx0 && t.tY[e] < hy1 && t.tY[e] + BH > hy0) covered = true;
             blit(ctx, t.tIdx[e], t.tX[e] - cx0, t.tY[e] - cy0);
         }
-        if (todo) drawHero(ctx, cam, dpr, 1);
-        else if (covered) drawHero(ctx, cam, dpr, 0.4);   // 被樹或房子擋住：再疊一層半透明的，才找得到人
+        while (ai < acts.length) drawActor(ctx, cam, dpr, acts[ai++], 1);
+        if (heroIn && covered) drawActor(ctx, cam, dpr, heroAct, 0.4);   // 被樹或房子擋住：再疊一層半透明的，才找得到人
         placeNpcs(cam);
     }
-    function drawHero(ctx, cam, dpr, alpha) {
-        var f = S.form, me = S.me; if (!f) return;
-        var walk = me.walking && me.t < 1, k = walk ? Math.min(3, Math.floor(me.t * 4)) : Math.floor(clock * IDLE_FPS) % f.idleN;
-        var a = f.at[me.dir];   // [走路0幀x,y, 1~3幀位移×3, 待機x,y]
-        // 走路幀本身每幀往前挪約 1/4 格；角色改成平滑移動，所以把這段扣掉，人才穩在中央、地圖平順捲動
-        var ax = walk ? a[0] + (k ? a[2 * k] : 0) : a[8], ay = walk ? a[1] + (k ? a[2 * k + 1] : 0) : a[9];
-        var p = heroWorld(), ox = Math.round((p[0] - cam[0] - ax) * dpr) / dpr, oy = Math.round((p[1] - cam[1] - ay) * dpr) / dpr;
-        var act = walk ? 'walk' : 'idle', body = img(frameSrc(f, me.dir, act, k)), sh = img(frameSrc(f, me.dir, act, k, true));
+    function drawActor(ctx, cam, dpr, it, alpha) {
+        var a = it.a, L = it.L, d = S.t.d;
+        var walk = a.walking && a.t < 1 && L.walkN > 0, k;
+        if (walk) k = Math.min(L.walkN - 1, Math.floor(a.t * L.walkN));
+        else k = Math.floor(clock * IDLE_FPS + (a.phase || 0)) % L.idleN;   // 沒有走路幀的變身：移動中也播待機
+        var an = anchorOf(L, a.dir, walk, k); if (!an) return;
+        var act = walk ? 'walk' : 'idle';
+        var px = 24 * (a.fx + a.fy) + d.ox - cam[0], py = 12 * (a.fy - a.fx) + d.oy - cam[1];
+        var ox = Math.round((px - an[0]) * dpr) / dpr, oy = Math.round((py - an[1]) * dpr) / dpr;
+        var body = img(frameSrc(L, a.dir, act, k)), sh = img(frameSrc(L, a.dir, act, k, true));
         if (alpha === 1 && sh.complete && sh.naturalWidth) { ctx.globalAlpha = 0.55; ctx.drawImage(sh, ox, oy); }
         if (body.complete && body.naturalWidth) { ctx.globalAlpha = alpha; ctx.drawImage(body, ox, oy); }
         ctx.globalAlpha = 1;
@@ -387,8 +501,16 @@
         if (!S || !S.ready) { running = false; return; }
         if (!visible()) { lastT = 0; dirty = true; setTimeout(function () { loop(performance.now()); }, 400); return; }
         var dt = Math.min(0.1, (now - (lastT || now)) / 1000); lastT = now; clock += dt;
+        // 每秒重查一次外型與寵物：換武器、變身、加減寵物不必離開村莊就會反映
+        if (clock - (S.lookAt || 0) > 1) {
+            S.lookAt = clock;
+            var L = heroLook();
+            if ((L && L.key) !== (S.form && S.form.key)) { S.form = L; preloadDir(L, S.me.dir); dirty = true; }
+            var np = S.pets.length; syncPets(); if (S.pets.length !== np) dirty = true;
+        }
         tick(dt);
-        var me = S.me, sig = (me.walking && me.t < 1) ? 'w' + me.t : 'i' + me.tx + ',' + me.ty + ',' + me.dir + ',' + Math.floor(clock * IDLE_FPS);
+        var me = S.me, moving = (me.walking && me.t < 1) || S.pets.some(function (p) { return p.walking; });
+        var sig = moving ? 'w' + clock : 'i' + me.tx + ',' + me.ty + ',' + me.dir + ',' + Math.floor(clock * IDLE_FPS);
         if (sig !== lastSig || dirty || S.marker || S.map.clientWidth !== S.lastW || S.map.clientHeight !== S.lastH) {
             try { draw(); } catch (e) { console.warn('[AFK-townmap] 繪圖失敗，改回原背景：', e); unmount(true); running = false; return; }
             S.lastW = S.map.clientWidth; S.lastH = S.map.clientHeight; dirty = false; lastSig = sig;
@@ -427,7 +549,7 @@
             unmount(false);
             var cv = document.createElement('canvas'); cv.className = 'afk-tm-cv'; cv.setAttribute('aria-hidden', 'true');
             bindInput(cv);
-            S = { name: name, map: map, cv: cv, ctx: cv.getContext('2d'), ready: false, chunks: {}, path: [], npcs: [], marker: null };
+            S = { name: name, map: map, cv: cv, ctx: cv.getContext('2d'), ready: false, chunks: {}, path: [], npcs: [], marker: null, pets: [], trail: [] };
         }
         S.map = map;
         S.bg = map.style.backgroundImage;   // 核心剛設好的靜態背景；資料到之前先留著，失敗時也用它
@@ -435,13 +557,15 @@
         var cur = S;
         loadTown(name).then(function (t) {
             if (S !== cur) return;
-            S.form = heroForm();   // 落腳點表(hero.js)跟地圖資料一起載，載好才查得到；每次重畫都重查(換武器會換動畫)
+            S.form = heroLook();   // 落腳點表(hero.js)跟地圖資料一起載，載好才查得到；之後每秒重查(換武器、變身會換動畫)
             if (!S.t) {
                 S.t = t;
-                var h = t.d.home; S.me = { fx: h[0], fy: h[1], tx: h[0], ty: h[1], sx: h[0], sy: h[1], t: 1, dir: 5, walking: false };
+                var h = t.d.home; S.me = { fx: h[0], fy: h[1], tx: h[0], ty: h[1], sx: h[0], sy: h[1], t: 1, dir: 5, walking: false, step: STEP };
+                S.trail = [[h[0], h[1]]];
             }
             attachNpcs();
-            if (S.form) preloadDir(S.form, S.me.dir);
+            syncPets();
+            preloadDir(S.form, S.me.dir);
             map.style.backgroundImage = 'none';
             S.ready = true; dirty = true;
             kick();

@@ -295,10 +295,41 @@ function centroid(file) {
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const v = a[y * w + x]; if (v) { sx += x * v; sy += y * v; n += v; } }
     return n ? [sx / n, sy / n] : null;
 }
+// 沒有影子幀時的後備：腳底（最下面幾列不透明像素的中心，往上 6px≈影子中心的高度）
+function foot(file) {
+    if (!fs.existsSync(file)) return null;
+    const { w, h, a } = decodePNG(fs.readFileSync(file));
+    let y1 = -1;
+    for (let y = h - 1; y >= 0 && y1 < 0; y--) for (let x = 0; x < w; x++) if (a[y * w + x]) { y1 = y; break; }
+    if (y1 < 0) return null;
+    let sx = 0, n = 0;
+    for (let y = Math.max(0, y1 - 3); y <= y1; y++) for (let x = 0; x < w; x++) if (a[y * w + x]) { sx += x; n++; }
+    return [sx / n, y1 - 6];
+}
+function anchor(dir, act) { return centroid(path.join(dir, act + '_s_0.png')) || foot(path.join(dir, act + '_0.png')); }
+// 寵物／怪物八方向動畫(assets/anim/<名>/d0..d7)：每方向 [走路第0幀落腳 x,y, 待機落腳 x,y]（沒走路幀就用待機的）
+//   這類走路幀一輪剛好走一格、每幀往前挪 1/N 格（量過哈士奇），afk-townmap 用等分位移扣掉，不必逐幀量。
+// 變身動畫(assets/morphanim/<名>{,2,F})：只有待機/攻擊沒有走路幀 → 每個資料夾 [待機落腳 x,y]
+function buildAnims() {
+    const r1 = v => Math.round(v * 10) / 10;
+    const anim = {}, morph = {};
+    const aroot = path.join(REPO_ROOT, 'assets', 'anim');
+    for (const n of fs.readdirSync(aroot)) {
+        if (!fs.existsSync(path.join(aroot, n, 'd0'))) continue;
+        const dirs = [0, 1, 2, 3, 4, 5, 6, 7].map(d => {
+            const dd = path.join(aroot, n, 'd' + d), i = anchor(dd, 'idle'), w = anchor(dd, 'walk') || i;
+            return (i && w) ? [r1(w[0]), r1(w[1]), r1(i[0]), r1(i[1])] : null;
+        });
+        if (dirs.every(Boolean)) anim[n] = dirs;
+    }
+    const mroot = path.join(REPO_ROOT, 'assets', 'morphanim');
+    for (const n of fs.readdirSync(mroot)) { const i = anchor(path.join(mroot, n), 'idle'); if (i) morph[n] = [r1(i[0]), r1(i[1])]; }
+    return { anim, morph };
+}
 function buildHero() {
     const root = path.join(REPO_ROOT, 'assets', 'classanim');
     const names = fs.readdirSync(root);
-    const avatars = names.filter(n => !n.startsWith('真夏納') && DIR_SFX.every(s => names.includes(n + s)));
+    const avatars = names.filter(n => DIR_SFX.every(s => names.includes(n + s)));   // 含真夏納（職業式變身，同樣八方向＋走路幀）
     const out = {};
     const r1 = v => Math.round(v * 10) / 10;
     for (const av of avatars) {
@@ -317,12 +348,17 @@ function buildHero() {
             out[av][wk] = dirs.every(Boolean) ? dirs : null;
         }
     }
-    const js = '// 🤖 自動生成·勿手改 —— node tools/gen-townmap.js --hero-only 重生（掃 assets/classanim 的走路／待機影子幀）\n' +
-        '// [職業][武器] → 八方向（西北起順時針）各 [走路第0幀影子重心x,y, 第1~3幀相對位移 dx,dy ×3, 待機影子重心x,y]\n' +
-        'window.TOWNMAP_HERO = ' + JSON.stringify(out) + ';\n';
+    const { anim, morph } = buildAnims();
+    const js = '// 🤖 自動生成·勿手改 —— node tools/gen-townmap.js --hero-only 重生（掃 assets/classanim、anim、morphanim 的影子幀量落腳點）\n' +
+        '// TOWNMAP_HERO[職業][武器] → 八方向（西北起順時針）各 [走路第0幀影子重心x,y, 第1~3幀相對位移 dx,dy ×3, 待機影子重心x,y]\n' +
+        'window.TOWNMAP_HERO = ' + JSON.stringify(out) + ';\n' +
+        '// TOWNMAP_ANIM[assets/anim 八方向資料夾] → 八方向各 [走路第0幀落腳x,y, 待機落腳x,y]（寵物、有走路幀的變身）\n' +
+        'window.TOWNMAP_ANIM = ' + JSON.stringify(anim) + ';\n' +
+        '// TOWNMAP_MORPH[assets/morphanim 資料夾] → [待機落腳x,y]（沒有走路幀的變身）\n' +
+        'window.TOWNMAP_MORPH = ' + JSON.stringify(morph) + ';\n';
     const f = path.join(OUT_DIR, 'hero.js');
     fs.writeFileSync(f, js);
-    console.log('[gen-townmap] ' + path.relative(REPO_ROOT, f) + '  ' + avatars.length + ' 個職業外型');
+    console.log('[gen-townmap] ' + path.relative(REPO_ROOT, f) + '  ' + avatars.length + ' 個職業外型、' + Object.keys(anim).length + ' 個八方向怪物/寵物、' + Object.keys(morph).length + ' 個變身資料夾');
 }
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
