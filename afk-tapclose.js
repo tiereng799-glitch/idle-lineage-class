@@ -7,8 +7,8 @@
  *   ③ 點的位置不在它裡面 → 走它「自己的」關閉路徑（核心關閉函式或視窗裡的 ✕／關閉鈕），不直接刪 DOM
  *      —— 有的視窗關閉時要收尾，有的是常駐節點只切 class，刪了下次就開不起來（同 afk-lmui closeAllWindows 的理由）。
  *
- * 點在遮罩本身（半透明底）→ 關掉並吃掉這次點擊（底下沒有東西可點）；
- * 點在視窗外的其他介面（例如另一位 NPC、背包裡另一件物品）→ 關掉後照常讓那次點擊生效，不用點兩下。
+ * 點在視窗外面（遮罩本身，或視窗外的其他介面，例如另一位 NPC、背包裡另一件物品）→ 只關視窗、吃掉這次點擊：
+ *   底下的東西不會被點到（玩家要求：點空白＝關閉，不要順便跳出點到位置的視窗）。
  *
  * 不關：
  *   ・找不到 ✕／關閉／返回 鈕的遮罩型視窗（例如只有「領取」的離線結算）——沒有「取消」語意的視窗不能被誤關
@@ -107,14 +107,11 @@
       if (!t || !t.closest || !document.body.contains(t) || exempt(t)) return;
       var w = topmost(openWindows());
       if (!w) return;
-      if (w.overlay && t === w.box) {   // 點在遮罩本身
-        w.close();
-        e.stopPropagation(); e.preventDefault();   // 遮罩底下沒有東西可點，吃掉（也免得視窗自己的遮罩處理再關一次）
-        return;
-      }
-      // 點在視窗內容上 → 不動。（天堂M介面會把遮罩縮到下半部，點在遮罩範圍外也算外面）
-      if (w.box.contains(t)) return;
-      w.close();   // 不吃掉：讓這次點擊照常點到底下的介面
+      // 點在視窗內容上 → 不動。（遮罩型點在遮罩本身不算「內容」；盒子型點在盒子自己的邊框空隙仍算裡面；天堂M介面會把遮罩縮到下半部，點在遮罩範圍外也算外面）
+      if (w.box.contains(t) && !(w.overlay && t === w.box)) return;
+      w.close();
+      e.stopPropagation(); e.preventDefault();   // 吃掉：底下的介面不會被點到（也免得視窗自己的遮罩處理再關一次）
+      if (e.stopImmediatePropagation) e.stopImmediatePropagation();
     } catch (err) { console.warn('[AFK-tapclose]', err); }
   }, true);
 
