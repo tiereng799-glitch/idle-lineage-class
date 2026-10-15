@@ -14,7 +14,7 @@
     <title>放置天堂 - 日出之國</title>
     <link rel="icon" type="image/png" href="assets/favicon.png">   <!-- 🖼️ 瀏覽器分頁圖示(favicon)：把你的圖放到 assets/favicon.png 即生效；可改 href 路徑或副檔名(.ico/.svg) -->
 
-    <link rel="stylesheet" href="css/style.css?v=bbf5703da6.8.6-npc-private-chat">
+    <link rel="stylesheet" href="css/style.css?v=06bf3863e3.8.6-npc-private-chat">
     <link rel="stylesheet" href="css/floating-ui.css?v=f9232e9e67.5.100-audit-tail">
     <link rel="stylesheet" href="css/tailwind-built.css?v=c0926cfba4"><!-- 🔧 預編譯 Tailwind（取代執行期 JIT tailwind.js）：只含實際用到的 class，省 407KB runtime + 移除持續掃描 DOM 的成本。置於 style.css 之後以保留原 cascade（utility 平手時勝過自訂 class，與舊 JIT 注入順序一致） -->
 </head>
@@ -30,7 +30,7 @@
            (CSS 另有 60 秒自動消失的保底)。data-scripts / data-script-kb 是本頁 <script src> 的數量與總大小，由 scripts/stamp-code-versions.mjs 自動對齊。
            無痕模式／第一次開沒有快取，光下載程式就要十幾秒；以前這段進度條停在 0% 不動，看起來像卡死。
            主要照「已下載的位元組」算(檔案大小差很多，00-data 一支就 640KB，只數檔數會一卡好幾秒)；瀏覽器不給大小時退回數檔數。 -->
-      <div id="boot-loader" aria-live="polite" data-scripts="108" data-script-kb="6219">
+      <div id="boot-loader" aria-live="polite" data-scripts="108" data-script-kb="6220">
         <div class="boot-box"><div class="boot-label">載入中 <span class="boot-pct">0%</span></div><div class="boot-bar"><div class="boot-bar-fill"></div></div></div>
       </div>
       <script>
@@ -573,7 +573,7 @@
     <script src="js/07-skills-cast.js?v=25e1060c5e.8.26-flywing-relics"></script>
 <script src="js/08-items-equip.js?v=ed900bb4e5.8.16-wis-regen-interval"></script>
 <script src="js/09-vfx-render.js?v=c50c5fb1ea.8.32-merc-vfx-origin"></script>
-    <script src="js/10-ui-tabs.js?v=c1d2ba3eac.8.14-merc-guild"></script>
+    <script src="js/10-ui-tabs.js?v=6d30dd727e.8.14-merc-guild"></script>
 <script src="js/11-world-map.js?v=0a563da5c7.8.17-item-stack-source"></script>
 <script src="js/12-npc-quests.js?v=0785866c43.8.34-merc-trial-class-loot"></script>
 <script src="js/13-shop-save.js?v=90416009dc.8.18-desktop-save-isolation"></script>
@@ -583,7 +583,7 @@
 <script src="js/18-misc-book.js?v=e3c0995919.8.15-legacy-import-smooth"></script>
 <script src="js/sfx-index.js?v=d3ce2a0cf4"></script><!-- 音檔索引(檔名→副檔名，gen-manifests 產)：17-audio 查表取代逐一試副檔名的網路探測 -->
 <script src="js/17-audio.js?v=76af424ad4.8.1-monia-sfx"></script>
-<script src="js/19-equipment-window.js?v=1d50482e0b.7.57"></script>
+<script src="js/19-equipment-window.js?v=101ee97d79.7.57"></script>
 <script src="js/20-warehouse-window.js?v=f0ce1aeb02.5.100-audit-tail"></script>
 <script src="js/21-relic-book.js?v=7d118874fb.8.15-legacy-import-smooth"></script>
     <script src="js/23-summons.js?v=6f52d891a8.8.23-sherine-set-rework"></script>
@@ -596,7 +596,7 @@
 <script src="js/30-siege-v2.js?v=616f9643f4.7.89-castle-ring-layout"></script>
 <script src="js/31-castle-guards.js?v=91544fd42d.8.23-sherine-set-rework"></script>
 <script src="js/32-threat.js?v=3c59d0a5cb.8.23-sherine-set-rework"></script>
-<script src="js/33-enhance-window.js?v=d0a3c7c6e6"></script>
+<script src="js/33-enhance-window.js?v=65d8ae061f"></script>
     <!-- ═══════════ 加掛版外掛層（核心永遠是原作者原版；我們的功能全部是外掛疊上去） ═══════════ -->
     <!-- 此區塊由 scripts/sync-upstream.mjs 於「拉上游 index.html 後」自動注入到 </body> 之前。?v= 由 stamp-code-versions 補。 -->
     <!-- 🌓 宣告「這頁本來就是深色」：沒宣告的話 Android Chrome 的「自動深色主題」會自己疊一層反轉，
@@ -691,7 +691,7 @@
     <!-- 手機戰鬥框下方的主動技能列：排在 afk-battlebuffs 之後 → 插入時看得到 #m-battle-buffs，才排得到它上面（那支關掉就直接接戰鬥框） -->
     <script src="afk-skillbar.js?v=496ea95617"></script>
     <!-- afk-lmui：天堂M風格介面（afk-mobile 子選項）——戰鬥滿版＋浮動 HUD／技能列／聊天框、導覽列圖示化；排在 afk-skillbar 之後 -->
-    <script src="afk-lmui.js?v=35cb630fb9"></script>
+    <script src="afk-lmui.js?v=f3e86c7db4"></script>
     <script src="afk-toast.js?v=630211acf0"></script>
     <!-- 點視窗外空白處＝關閉最上面那個視窗（走視窗自己的關閉路徑） -->
     <script src="afk-tapclose.js?v=c271db1d28"></script>
