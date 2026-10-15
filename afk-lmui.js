@@ -214,6 +214,10 @@
 
       /* ── 下方堆疊：血條 → 快捷列 → 聊天框 ── */
       '#lmui-vit{position:absolute;left:0;right:0;top:calc(var(--lmui-mtop) - var(--lmui-vit) - var(--orig-bar-h,0px));height:var(--lmui-vit);padding:3px 4px 0;display:flex;flex-direction:column;justify-content:center;gap:2px;background:linear-gradient(#1d1711,#0e0b08);border-top:1px solid #4a3f30;box-shadow:0 -3px 8px rgba(0,0,0,.6);pointer-events:auto;z-index:3;}',
+      'body.lmui-compact{--lmui-stack:46px;--lmui-mtop:calc(100dvh - var(--m-nav-h,0px) - 46px - var(--lmui-btns));}',
+      'body.lmui-compact #lmui-hot,body.lmui-compact #lmui-tabs,body.lmui-compact #lmui-lines{display:none !important;}',
+      'html body.lmui-compact.lmui-battle #lmui-bottom{display:flex !important;}',   /* 村莊預設會藏下方聊天框（給 NPC 卡片），精簡時只留輸入列 */
+      'html body.lmui-compact.lmui-town #afk-npclist{display:none !important;}',
       '#lmui-bottom{position:absolute;left:0;right:0;bottom:0;height:var(--lmui-stack);display:flex;flex-direction:column;gap:4px;padding:6px 4px 4px;background:linear-gradient(#1a1612,#0b0907);border-top:1px solid #4a3f30;box-shadow:0 -6px 14px rgba(0,0,0,.65);}',
       /* HP/MP：經典天堂那種「左右兩條＋中間圓章」的框。框借上游的 assets/character/血條底圖.png（334×34，桌機狀態面板同一張），
          調成銅色（只濾 ::before 那層，血條本身不受影響）；血條位置照上游 .status-vitals-row 的比例（左 3.3%／右 55.5%、寬 41.2%）。 */
@@ -2062,11 +2066,16 @@
     try { syncStatusHost(battle); } catch (e) {}
     try { syncPageCap(); } catch (e) {}
     try { huntTick(town); } catch (e) {}
-    if (!battle) { closeMap(); toggleCls('lmui-dead', false); toggleCls('lmui-deathx', false); toggleCls('lmui-win', false); toggleCls('lmui-chatbig', false); return; }
+    if (!battle) { toggleCls('lmui-compact', false); closeMap(); toggleCls('lmui-dead', false); toggleCls('lmui-deathx', false); toggleCls('lmui-win', false); toggleCls('lmui-chatbig', false); return; }
     // 戰鬥地圖裡不用完整日誌面板（被 CSS 藏起來了）；有人打開它（afk-mobile 登入時自動開）就直接收掉，免得 HUD 跟著被收
     if (document.body.classList.contains('mlog-open')) document.body.classList.remove('mlog-open');
     var dead = isDead();
     toggleCls('lmui-dead', dead);
+    // 精簡下方（站長要求）：狩獵場主畫面預設只留 地圖資訊／血條／聊天輸入框／分頁按鈕／等級，快捷列、聊天分頁、訊息都收起來、地圖往下長；
+    //   按「聊天」才看訊息。村莊：NPC 站在動態地圖上點得到時才收 NPC 卡片（地圖沒載起來時卡片是唯一入口，不收）
+    var bc = document.body.classList;
+    toggleCls('lmui-compact', !dead && bc.contains('mview-center') && !bc.contains('lmui-chatbig') && !bc.contains('lmui-maps') && !bc.contains('lmui-map') &&
+      !bc.contains('lmui-townchat') && !bc.contains('lmui-npcwin') && (!town || !!document.querySelector('#town-npc-map > canvas.afk-tm-cv')));
     if (dead) { try { placeDeadBtn(); buildDeathWin(); renderDeathStats(); } catch (e) {} }
     else toggleCls('lmui-deathx', false);
     try { pushWindowsBelow(); } catch (e) {}
