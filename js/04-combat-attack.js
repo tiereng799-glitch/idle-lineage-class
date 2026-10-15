@@ -121,7 +121,7 @@ function playerAttack() {
                 if (Math.random() * 100 < _dch) result.dmg *= 2;
             }
         }
-        if (player.buffs.sk_royal_bravewill > 0 && Math.random() < (player.mastery === 'k_royal_sword' ? SKILL_FX.sk_royal_bravewill.rateMastery : SKILL_FX.sk_royal_bravewill.rate)) result.dmg = Math.max(1, Math.floor(result.dmg * SKILL_FX.sk_royal_bravewill.mult));   // 👑 勇猛意志：10%(🏅劍術精通20%)機率一般攻擊傷害×1.5
+        if (player.buffs.sk_royal_bravewill > 0 && Math.random() < (masteryOf(player) === 'k_royal_sword' ? SKILL_FX.sk_royal_bravewill.rateMastery : SKILL_FX.sk_royal_bravewill.rate)) result.dmg = Math.max(1, Math.floor(result.dmg * SKILL_FX.sk_royal_bravewill.mult));   // 👑 勇猛意志：10%(🏅劍術精通20%)機率一般攻擊傷害×1.5
         if (wpn && wpn.hardSkinMult && _mainHardSkin > 0) result.dmg = Math.max(1, Math.floor(result.dmg * wpn.hardSkinMult));   // 🦀 巨大鱷魚的狩獵牙：目標有硬皮值時一般攻擊傷害 ×1.5（貫穿故傷害未被硬皮扣減）
         if (wpn && wpn.softMult && _mainHardSkin <= 0) result.dmg = Math.max(1, Math.floor(result.dmg * wpn.softMult));   // 🏺 不死將軍的珍愛巨劍：一般攻擊對「沒有硬皮值」的敵人傷害 ×1.3
         if (wpn && wpn.fullHpMult && target.curHp === target.hp) result.dmg = Math.max(1, Math.floor(result.dmg * wpn.fullHpMult));   // 🏺 遺忘者的狙擊弓：一般攻擊對滿血敵人傷害 ×3（傷害尚未扣、target.curHp 仍為滿血）

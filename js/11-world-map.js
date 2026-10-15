@@ -1330,6 +1330,7 @@ function hanSubmitProof() {
     let el = document.getElementById('interaction-content'); if (el) renderHanNPC(el);
 }
 function chooseMastery(id) {
+    if (!MASTERY_ON) return;
     if (player.masteryQuest !== 'done') return;
     let md = MASTERY_DATA[player.cls];
     if (!md || !md.list[id] || player.mastery === id || masteryHidden(id)) return;
@@ -1654,7 +1655,7 @@ function interactNPC(npcId, townId) {
     if(!npc) return;
     if (townId === 'town_sherine' && SHERINE_CLOSED) return;   // 🚫 席琳神殿已關閉：席琳／伊奧／菈克希絲一律打不開
     if ((npc.id === 'npc_esti' || npc.id === 'npc_tros') && typeof clanNpcVisible === 'function' && !clanNpcVisible(npc.id, townId)) return;
-    if (npc.classicHide && player.classicMode) return;   // 🔥 經典模式：漢 不可互動（縱深防護，正常情況卡片已不渲染；v3.0.77 碧恩經典可用）
+    if ((npc.classicHide && player.classicMode) || (npc.type === 'mastery' && !MASTERY_ON)) return;   // 🔥 經典模式：漢 不可互動（縱深防護，正常情況卡片已不渲染；v3.0.77 碧恩經典可用）
     if (npc.classicOnly && !player.classicMode) return;   // 🕊️ 經典限定 NPC（聖使阿卡塔）：一般模式不可互動（縱深防護，渲染層已過濾）
     _activePanel = null;   // 開啟新面板：先清除自動刷新標記，由對應 render 視需要重新設定
 
@@ -2149,7 +2150,7 @@ function renderTownNPCMap(townId) {
             return typeof clanNpcVisible === 'function' && clanNpcVisible(npc.id, townId);
         }
         if (npc.darkOnly && player.cls !== 'dark') return false;
-        if (npc.classicHide && player.classicMode) return false;
+        if ((npc.classicHide && player.classicMode) || (npc.type === 'mastery' && !MASTERY_ON)) return false;   // 🏅 精通系統關閉：漢 不出現
         if (npc.classicOnly && !player.classicMode) return false;   // 🕊️ 經典限定 NPC（聖使阿卡塔）：一般模式不渲染
         return true;
     }).map(npc => {

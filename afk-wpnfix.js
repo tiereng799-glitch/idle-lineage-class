@@ -42,7 +42,7 @@
   if (window.AFK_TOGGLES) {
     AFK_TOGGLES.register({
       id: 'wpnfix', name: '補武器漏掉的特效', group: '遊戲玩法', def: true,
-      desc: '幾把武器的說明有寫、原版卻沒生效的特效（切割、鈍擊、出血精通、內建魔法沒吃到幻覺套裝…）補回來'
+      desc: '幾把武器的說明有寫、原版卻沒生效的特效（切割、鈍擊、內建魔法沒吃到幻覺套裝…）補回來'
     });
   }
   function on() { try { return !window.AFK_TOGGLES || AFK_TOGGLES.enabled('wpnfix'); } catch (e) { return true; } }

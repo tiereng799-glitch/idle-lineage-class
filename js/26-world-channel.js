@@ -182,6 +182,7 @@ function _wcGearFor(cls, slotWanted) {
     return out;
 }
 function _wcMasteryNames(cls) {
+    if (typeof MASTERY_ON !== 'undefined' && !MASTERY_ON) return [];
     try {
         let m = MASTERY_DATA[cls];
         if (!m) return [];
@@ -832,6 +833,7 @@ const WC_TOPICS = [
         gen: function (q) {
             let cls = _wcClassFromText(q) || _wcMyCls();
             let ms = _wcMasteryNames(cls);
+            if (typeof MASTERY_ON !== 'undefined' && !MASTERY_ON) return ['精通？現在沒那東西了，裝備跟技能顧好比較實在。'];
             if (!ms.length) return ['精通看你職業，能力面板裡面有四個方向可以選，選了就不能改。'];
             return [
                 `${_wcClsName(cls)} 可以選 ${ms.join('／')}，選了不能改，先看清楚說明再點。`,

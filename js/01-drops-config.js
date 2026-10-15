@@ -1029,7 +1029,7 @@ function fragileMult(t) {
         if (player.buffs && player.buffs.sk_royal_precise > 0) _pp = player;
         else if (player.allies) { for (let _a of player.allies) { if (_a && !_a._downed && _a.buffs && _a.buffs.sk_royal_precise > 0) { _pp = _a; break; } } }
     }
-    if (_pp) { let _fx = SKILL_FX.sk_royal_precise, _div = (_pp.mastery === 'k_royal_pledge') ? _fx.lvDivMastery : _fx.lvDiv; m *= (1 + (_fx.base + (_pp.lv || 1) / _div) / 100); }
+    if (_pp) { let _fx = SKILL_FX.sk_royal_precise, _div = (masteryOf(_pp) === 'k_royal_pledge') ? _fx.lvDivMastery : _fx.lvDiv; m *= (1 + (_fx.base + (_pp.lv || 1) / _div) / 100); }
     return m;
 }   // 🔮 脆弱(白鳥5)+10%、🔧 破壞盔甲+58%；👑 精準目標（隊長或傭兵擇一）
 
@@ -1039,6 +1039,10 @@ function fragileMult(t) {
 //        開啟精通選擇。初次選擇免費，之後每次更換固定 300 萬金幣。
 //  狀態：player.masteryQuest = null|'active'|'done'；player.mastery = 精通id|null；player.masteryChangeCnt = 已付費更換次數
 // ============================================================================
+// 🏅 2026-10-15 站長：刪除職業精通（原作者自創、天堂原版沒有）。MASTERY_ON=false → 精通效果全部不生效、NPC 漢 不出現、
+//    精通任務不掉精通之證。存檔裡的 mastery 欄位保留不動（改回 true 即恢復原樣）。
+const MASTERY_ON = false;
+function masteryOf(o) { return (MASTERY_ON && o) ? o.mastery : null; }   // 讀「生效中」的精通；關閉時一律 null
 const MASTERY_DATA = {
     knight: { logo: 'assets/logo/騎士logo.png', boss: '飛龍', list: {
         k_counter: { n: '反擊精通', pos: 'top',    msg: '將反擊與居合磨鍊至極致',       d: '洞悉敵人的攻勢，以必殺的反擊與居合斬破要害，連堅硬外皮也會在劍鋒下崩解。' },
@@ -1078,10 +1082,10 @@ const MASTERY_POS_STYLE = {   // 四向按鈕四色（上紅/左藍/右紫/下�
     bottom: 'bg-emerald-950/80 border-emerald-500 hover:bg-emerald-900'
 };
 const MAGIC_MASTERY_SKILLS = ['sk_blizzard', 'sk_tornado', 'sk_quake', 'sk_fire_storm'];   // 魔導精通可學的法師法術
-function hasMastery(id) { return !!(player && player.mastery === id); }
+function hasMastery(id) { return !!(player && masteryOf(player) === id); }
 // 🏹 連射系統關閉時「連射精通」不顯示、不能選（資料保留：已選的人存檔不會被當成不合法而清掉；這些人換精通免費，見 js/11 chooseMastery）
 function masteryHidden(id) { return !RAPIDFIRE_ON && id === 'e_rapid'; }
-function allyHasMastery(ally, id) { return !!(ally && ally.mastery === id); }   // 🔧 傭兵吃「自身存檔」的精通（不吃主玩家精通）
+function allyHasMastery(ally, id) { return !!(ally && masteryOf(ally) === id); }   // 🔧 傭兵吃「自身存檔」的精通（不吃主玩家精通）
 function repairMasteryState(p) {
     let result = { changed: false, reset: false, reason: null };
     if (!p || typeof p !== 'object') return result;
@@ -1162,11 +1166,11 @@ function skillReqLv(sk, skId) {
         if (sk.reqRoy !== undefined) return sk.reqRoy;
         if (sk.reqM !== undefined && sk.tier === 1) return 10;
         if (sk.reqM !== undefined && sk.tier === 2) return 20;
-        if (player.mastery === 'k_royal_magic' && sk.reqM !== undefined && (sk.tier === 3 || sk.tier === 4 || sk.tier === 5)) return sk.reqM;   // 🏅 魔法精通：可學法師三~五階魔法
+        if (masteryOf(player) === 'k_royal_magic' && sk.reqM !== undefined && (sk.tier === 3 || sk.tier === 4 || sk.tier === 5)) return sk.reqM;   // 🏅 魔法精通：可學法師三~五階魔法
         return undefined;
     }
     let lv = player.cls === 'mage' ? sk.reqM : (player.cls === 'knight' ? sk.reqK : sk.reqE);
-    if (lv === undefined && player.cls === 'elf' && player.mastery === 'e_magic' && skId && MAGIC_MASTERY_SKILLS.includes(skId)) lv = sk.reqM;
+    if (lv === undefined && player.cls === 'elf' && masteryOf(player) === 'e_magic' && skId && MAGIC_MASTERY_SKILLS.includes(skId)) lv = sk.reqM;
     return lv;
 }
 let _echoFree = false;        // 🏅 迴響精通：免費連發旗標（連發那次不耗MP、不再連鎖）

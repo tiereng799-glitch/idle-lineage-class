@@ -1,5 +1,5 @@
 function isMageSummonMastered(sm, owner) {
-    return !!(sm && owner && owner.mastery === 'm_summon' && (sm.skId === 'sk_zombie' || sm.skId === 'sk_summon'));
+    return !!(sm && owner && masteryOf(owner) === 'm_summon' && (sm.skId === 'sk_zombie' || sm.skId === 'sk_summon'));
 }
 function summonAttackCount(sm, owner) {
     owner = owner || player;
@@ -12,7 +12,7 @@ function summonAttackCount(sm, owner) {
 //   玩家與傭兵都讀 js/23 四屬性表；傭兵保持無敵抽象召喚，但攻擊轉交 spiritAttackOnce 共用命中、傷害與精靈王 AOE。
 function _elfSpiritKingOverride(sm, owner) {
     if (!sm || (sm.skId !== 'sk_elf_summon' && sm.skId !== 'sk_elf_summon2') || typeof _spiritSpec !== 'function') return sm;
-    const king = sm.skId === 'sk_elf_summon2' && owner && owner.mastery === 'e_spirit';
+    const king = sm.skId === 'sk_elf_summon2' && owner && masteryOf(owner) === 'e_spirit';
     const spec = _spiritSpec(sm.skId, sm.ele, king);
     sm.dmgDice = spec.dice; sm.elemScale = spec.scale; sm.dmgMult = spec.dmgMult;
     sm.mrPenBase = spec.mrPenBase; sm.hitLvOff = spec.hitLvOff; sm.interval = spec.aspd;
@@ -59,7 +59,7 @@ function summonAttack(sm, owner) {
     if((sm.skId === 'sk_elf_summon' || sm.skId === 'sk_elf_summon2') && typeof spiritAttackOnce === 'function') {
         let _st = getTarget(); if(!_st) return;
         sm.form = sm.form || sm.n || '屬性精靈';
-        sm._king = sm.skId === 'sk_elf_summon2' && owner.mastery === 'e_spirit';
+        sm._king = sm.skId === 'sk_elf_summon2' && masteryOf(owner) === 'e_spirit';
         spiritAttackOnce(sm, _st, owner);
         return;
     }
