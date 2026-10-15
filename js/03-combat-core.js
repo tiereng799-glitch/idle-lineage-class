@@ -2637,6 +2637,7 @@ function magicStrikeProc(target) {
 }
 // ===== 連射：發動攻擊時依機率追加 1~3 箭；每箭各自接受命中判定(可未命中/重擊/爆擊)，傷害為該箭結算的 30%；每箭也各判定月光爆裂 =====
 function rapidfireProc(arrowData, forceProc, classicOk) {
+    if (!RAPIDFIRE_ON) return;   // 🏹 連射系統已刪除（js/01 RAPIDFIRE_ON）
     if (player.classicMode && !classicOk) return;   // 🎮 經典模式：一般連射停用；地精靈王的抗拒受擊連射為指定例外
     let wpn = player.eq.wpn ? DB.items[player.eq.wpn.id] : null;
     if (!wpn || !wpn.rapidfire) return;
@@ -2676,6 +2677,7 @@ function rapidfireProc(arrowData, forceProc, classicOk) {
 }
 // 🏺 地精靈王的抗拒：裝備者受到傷害時必定額外發動一次連射；這個受擊觸發在經典模式仍有效。
 function hurtRapidfireProc() {
+    if (!RAPIDFIRE_ON) return;   // 🏹 連射系統已刪除：要在扣箭之前擋
     if (!player || player.dead || player.hp <= 0 || !player.eq || !player.eq.wpn) return;
     let wpn = DB.items[player.eq.wpn.id];
     if (!wpn || !wpn.hurtRapidfire || !wpn.isBow) return;

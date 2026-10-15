@@ -785,7 +785,7 @@ function relicPurposeLabels(d) {
     if (d.thorns) out.push(`受擊反傷（反彈${d.thorns}點傷害）`);
     if (d.dmgReflect) out.push(`傷害反射 ${d.dmgReflect}%（免疫該次一般攻擊並反射傷害）`);
     if (d.hurtExplode) out.push(`受擊爆裂（自己與全體敵人受到${d.hurtExplode}點火焰魔法傷害）`);
-    if (d.hurtRapidfire) out.push('受擊反制（受到傷害時立即觸發一次連射；經典模式亦生效）');
+    if (d.hurtRapidfire && RAPIDFIRE_ON) out.push('受擊反制（受到傷害時立即觸發一次連射；經典模式亦生效）');
     if (d.counterBarrierX2) out.push('反擊屏障強化（反擊傷害×2）');
     if (d.crushDr) out.push(`重擊防護（受到重擊傷害-${d.crushDr}%）`);
     if (d.physDrGated) out.push(`物理防護（一般攻擊傷害-${d.physDrGated}%，每3秒一次）`);
@@ -829,8 +829,8 @@ function relicPurposeLabels(d) {
     if (d.instakillFull) out.push(`滿血斬殺 ${pctText(d.instakillFull)}（命中滿血非首領敵人時即死）`);
     if (d.procFireSkillRate) out.push(`火焰法術 ${d.procFireSkillRate}%（攻擊時隨機施放火屬性傷害魔法）`);
     if (d.procHealFlat) out.push(`命中治癒 ${d.procHealFlat.rate}%（恢復${d.procHealFlat.hp}點HP）`);
-    if (d.rapidMax) out.push('最大連射（連射發動時，固定射出目前可用的最大額外箭數）');
-    if (d.bonespike) out.push('骨刺爆裂（連射額外箭命中累積骨刺，最多10層；下一次一般攻擊命中引爆，每層20點固定傷害）');
+    if (d.rapidMax && RAPIDFIRE_ON) out.push('最大連射（連射發動時，固定射出目前可用的最大額外箭數）');
+    if (d.bonespike && RAPIDFIRE_ON) out.push('骨刺爆裂（連射額外箭命中累積骨刺，最多10層；下一次一般攻擊命中引爆，每層20點固定傷害）');
     if (d.critDmgLowHp) out.push(`背水爆擊（HP低於${d.critDmgLowHp.hp}時，近距離爆擊傷害+${d.critDmgLowHp.add}%）`);
     if (d.castOnHurt) out.push(`護身反擊 ${d.castOnHurt.rate}%（玩家受到物理或魔法傷害時，免費施放目前設定的自動攻擊傷害法術）`);
 
@@ -1056,7 +1056,7 @@ function buildItemDescHTML(item) {
         if (d.ignHardSkin)          _eff.push('貫穿（無視硬皮額外減傷）');   // 🗡️ 暗黑十字弓：攻擊無視硬皮額外減傷
         if (d.redSpecter)           _eff.push('紅惡靈逆襲（4%＋每強化1%，造成水魔傷並吸取10%HP）');   // 👹 隱藏的魔族武器
         if (d.blueSpecter)          _eff.push('藍惡靈奪魔（4%＋每強化1%，恢復 3～18 MP）');   // 👹 隱藏的魔族武器
-        if (d.rapidfire)            _eff.push('連射 ' + d.rapidfire + '%（追加1～3箭，每箭30%傷害）');
+        if (d.rapidfire && RAPIDFIRE_ON) _eff.push('連射 ' + d.rapidfire + '%（追加1～3箭，每箭30%傷害）');
         if (d.block)                _eff.push('格檔 ' + d.block + '%（重擊時依此機率減半傷害；一般攻擊為上述機率的30%）');
         if (d.immStone)             _eff.push('免疫石化');
         if (d.immPoison)            _eff.push('免疫中毒');

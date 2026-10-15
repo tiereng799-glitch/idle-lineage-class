@@ -1794,7 +1794,7 @@ window.onload = () => {
         sk_counter_barrier: function(){ return '雙手武器也能反擊；單手劍反擊與武士刀居合傷害×'+SKILL_FX.sk_counter_barrier.mult; },
         sk_elf_mind: function(sk){ return '恢復魔力 '+(sk.mpGain||0); },
         sk_elf_worldtree: function(){ let w = SKILL_FX.sk_elf_worldtree; return '妖精森林與眠龍洞穴：米索莉塊、元素石掉率 '+_P(w.matRate)+'%→'+_P(w.matRateLearned)+'%，精靈玉 '+_P(w.gemRate)+'%→'+_P(w.gemRateLearned)+'%'; },
-        sk_elf_triple: function(sk){ return '需要弓：連射 '+(sk.hits||3)+' 箭，每箭各自判定命中與傷害，只耗 1 支箭'; },
+        sk_elf_triple: function(sk){ return '需要弓：一次射出 '+(sk.hits||3)+' 箭，每箭各自判定命中與傷害，只耗 1 支箭'; },
         sk_elf_soul: function(sk){ return '恢復魔力 '+(sk.mpGain||0); },
         sk_elf_singleres: function(){ return '已選屬性的抗性+'+SKILL_FX.sk_elf_singleres.res; },
         sk_elf_watervital: function(){ let w = SKILL_FX.sk_elf_watervital; return '需要水屬性：下次受到治療時回復量×'+w.mult+'（觸發後 '+w.cdSec+' 秒冷卻）'; },
@@ -1936,7 +1936,7 @@ window.onload = () => {
             if(d.immPoison)            _eff.push('免疫中毒');
             if(d.unique)               _eff.push('唯一（最多裝備1個）');
             // 🏹 與背包資訊欄一致補齊：弓連射 / 魔杖共鳴・魔擊 / 蕾雅冰裂術 / 附魔施放（經典模式由 filterClassicEffLabels 過濾停用者）
-            if(d.rapidfire)            _eff.push('連射 ' + d.rapidfire + '%（追加1～3箭，每箭30%傷害）');
+            if(d.rapidfire && RAPIDFIRE_ON) _eff.push('連射 ' + d.rapidfire + '%（追加1～3箭，每箭30%傷害）');
             if(d.eff === 'magicstrike') _eff.push('魔擊（攻擊時依力量觸發必中重擊）');
             if(d.meleeHitSpell)        _eff.push('命中施法（攻擊命中時施放' + (d.meleeHitSpell.skn || '附加法術') + '）');
             if(d.spellProc) {
