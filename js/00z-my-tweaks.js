@@ -334,7 +334,17 @@
       el.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing && go) { e.preventDefault(); el.blur(); go.click(); } });
     });
   }
-  function onReady() { copyWeaponTags(); applyHome(); hookGifts(); bindRemember(); }
+  // 註冊帳號：目前沒有帳號系統，按下只亮一行提示（3 秒後淡出）
+  function bindRegister() {
+    var btn = document.getElementById('login-register-btn'), msg = document.getElementById('login-reg-msg');
+    if (!btn || !msg) return;
+    var t = null;
+    btn.addEventListener('click', function () {
+      msg.classList.add('show');
+      clearTimeout(t); t = setTimeout(function () { msg.classList.remove('show'); }, 3000);
+    });
+  }
+  function onReady() { copyWeaponTags(); applyHome(); hookGifts(); bindRemember(); bindRegister(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
   else onReady();
 
