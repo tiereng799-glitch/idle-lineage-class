@@ -127,7 +127,7 @@
         if (it && sc && !isBless && !isCurse && (d.type === 'wpn' || d.type === 'arm') && en < cap) {
             let safe = d.safe || 0, max = Math.min(cap, Math.max(safe, en) + 6), def = Math.min(max, Math.max(safe, en + 1)), opts = '';
             for (let t = en + 1; t <= max; t++) opts += `<option value="${t}" ${t === def ? 'selected' : ''}>+${t}${t <= safe ? '（安定）' : ''}</option>`;
-            auto = `<div class="enh-auto"><button type="button" class="enh-auto-btn" onclick="enhWinAuto()">連續強化到</button><select id="enh-auto-target" class="enh-auto-sel">${opts}</select></div>`;
+            auto = `<div class="enh-auto"><button type="button" class="enh-auto-btn" ${st.busy ? 'disabled' : ''} onclick="enhWinAuto()">連續強化到</button><select id="enh-auto-target" class="enh-auto-sel">${opts}</select></div>`;
         }
 
         let res = st.result ? `<div class="enh-result ${st.result.cls}">${st.result.html}</div>` : '';
@@ -144,15 +144,15 @@
 
         win.querySelector('.enh-body').innerHTML =
             `<div class="enh-slots">
-                <div class="enh-slot ${canCycle ? 'cycle' : ''}" ${canCycle ? 'onclick="enhWinCycle()"' : ''}>${scrollSlot}${canCycle ? '<span class="enh-cycle-tip">點擊換卷軸</span>' : ''}</div>
+                <div class="enh-slot sc ${canCycle ? 'cycle' : ''}" ${canCycle && !st.busy ? 'onclick="enhWinCycle()"' : ''}>${scrollSlot}${canCycle ? '<span class="enh-cycle-tip">點擊換卷軸</span>' : ''}</div>
                 <div class="enh-plus">＋</div>
-                <div class="enh-slot">${mainSlot}</div>
+                <div class="enh-slot eq">${mainSlot}</div>
             </div>
             <div class="enh-info">${info}</div>
             ${note ? `<div class="enh-note">${note}</div>` : ''}
             ${stats}
             ${res}
-            <button type="button" class="enh-go" ${canGo ? '' : 'disabled'} onclick="enhWinGo()">${isCurse ? '降低強化' : '開始強化'}</button>
+            <button type="button" class="enh-go" ${canGo && !st.busy ? '' : 'disabled'} onclick="enhWinGo()">${isCurse ? '降低強化' : '開始強化'}</button>
             ${auto}
             <div class="enh-tabs">${tabs}</div>
             <div class="enh-grid">${grid}</div>`;
@@ -207,20 +207,91 @@
     };
     function hideWin() { let w = $('enh-window'); if (w) w.classList.add('hidden'); document.body.classList.remove('enh-open'); st.layer = null; }
     window.closeEnhanceWindow = function () { if (st.layer && window.AFK_UI && AFK_UI.closeLayer) AFK_UI.closeLayer(st.layer); else hideWin(); };
-    window.enhWinTab = function (k) { st.tab = k; render(); };
-    window.enhWinPick = function (uid, isEq) { st.uid = uid; st.isEq = !!isEq; st.scrollPick = 0; st.result = null; render(); };
-    window.enhWinCycle = function () { st.scrollPick++; st.result = null; render(); };
+    window.enhWinTab = function (k) { if (st.busy) return; st.tab = k; render(); };
+    window.enhWinPick = function (uid, isEq) { if (st.busy) return; st.uid = uid; st.isEq = !!isEq; st.scrollPick = 0; st.result = null; render(); };
+    window.enhWinCycle = function () { if (st.busy) return; st.scrollPick++; st.result = null; render(); };
     window.enhWinGo = function () {
+        if (st.busy) return;
         let it = findItem(st.uid, st.isEq); if (!it) return;
         let d = DB.items[it.id], sc = scrollsFor(d)[st.scrollPick]; if (!sc) return;
-        let before = { id: it.id, cnt: it.cnt || 1 }, en0 = Number(it.en) || 0;
-        if (DB.items[sc.id].isC) afterAction(before, d, en0, () => executeCurseDeEnhance(it.uid, st.isEq, sc.id));
-        else afterAction(before, d, en0, () => { activeScroll = sc; doEnhance(it.uid, st.isEq); });
+        let before = { id: it.id, cnt: it.cnt || 1 }, en0 = Number(it.en) || 0, isC = !!DB.items[sc.id].isC, uid0 = it.uid, eq0 = st.isEq;
+        playEnhance(it, d, () => {
+            if (isC) afterAction(before, d, en0, () => executeCurseDeEnhance(uid0, eq0, sc.id));
+            else afterAction(before, d, en0, () => { activeScroll = sc; doEnhance(uid0, eq0); });
+        });
     };
     window.enhWinAuto = function () {
+        if (st.busy) return;
         let it = findItem(st.uid, st.isEq); if (!it) return;
         let d = DB.items[it.id], sel = $('enh-auto-target'), sc = scrollsFor(d)[st.scrollPick]; if (!sel || !sc) return;
-        let before = { id: it.id, cnt: it.cnt || 1 }, en0 = Number(it.en) || 0;
-        afterAction(before, d, en0, () => executeAutoSafeEnhance(it.uid, st.isEq, sc.id, Number(sel.value)));
+        let before = { id: it.id, cnt: it.cnt || 1 }, en0 = Number(it.en) || 0, goal = Number(sel.value), uid0 = it.uid, eq0 = st.isEq;
+        playEnhance(it, d, () => afterAction(before, d, en0, () => executeAutoSafeEnhance(uid0, eq0, sc.id, goal)));
     };
+
+    // ===== 強化動畫：蓄力（兩格發光、＋旋轉）→ 執行 → 依結果播 成功（金光爆發）／失敗（銀光後碎裂）／無變化（晃一下冒煙）=====
+    //   動畫層 .enh-fx 掛在 .enh-panel（不在 render 重畫的 .enh-body 裡），位置對準裝備格；失敗時裝備已不在，用事先抓的圖示做碎片。
+    //   系統開「減少動態效果」→ 不播，直接出結果。
+    const CHARGE_MS = 650, OUT_MS = 1250;
+    function reduceMotion() { try { return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; } }
+    function eqBox() { let w = $('enh-window'); return w && w.querySelector('.enh-slot.eq .enh-slot-box'); }
+    function fxLayer() {
+        let panel = $('enh-window') && $('enh-window').querySelector('.enh-panel'); if (!panel) return null;
+        let fx = panel.querySelector('.enh-fx');
+        if (!fx) { fx = document.createElement('div'); fx.className = 'enh-fx'; panel.appendChild(fx); }
+        return fx;
+    }
+    function playEnhance(it, d, run) {
+        if (reduceMotion()) { run(); return; }
+        let src = ''; try { src = getIconUrl(d); } catch (e) {}
+        st.busy = true; render();
+        let w = $('enh-window'); w.classList.add('enh-charging');
+        setTimeout(() => {
+            w.classList.remove('enh-charging');
+            run();                            // afterAction → render（busy 仍為 true，按鈕維持停用）
+            let r0 = rectInPanel(eqBox());   // 執行「後」才量：裝備消失時版面會變矮、視窗重新置中，事前量的位置會對不上（裝備格本身還在，只是變空）
+            let kind = st.result ? st.result.cls : 'mid';
+            let en1 = 0; let cur = st.uid ? findItem(st.uid, st.isEq) : null; if (cur) en1 = Number(cur.en) || 0;
+            outcomeFx(kind, r0, src, en1, st.result && /降為/.test(st.result.html));
+            setTimeout(() => { st.busy = false; render(); }, OUT_MS);
+        }, CHARGE_MS);
+    }
+    function rectInPanel(el) {
+        let panel = $('enh-window').querySelector('.enh-panel');
+        if (!el || !panel) return null;
+        let a = el.getBoundingClientRect(), b = panel.getBoundingClientRect();
+        return { x: a.left - b.left + a.width / 2, y: a.top - b.top + a.height / 2, s: a.width, cx: b.width / 2 };
+    }
+    function outcomeFx(kind, r, src, en1, down) {
+        let fx = fxLayer(); if (!fx || !r) return;
+        fx.innerHTML = '';
+        let host = document.createElement('div');
+        host.className = 'enh-fx-at ' + (kind === 'good' ? 'ok' : kind === 'bad' ? 'boom' : down ? 'down' : 'none');
+        host.style.left = r.x + 'px'; host.style.top = r.y + 'px'; host.style.setProperty('--s', r.s + 'px');
+        let html = '<i class="enh-fx-flash"></i>';
+        if (kind === 'good') {
+            html += '<i class="enh-fx-rays"></i>';
+            for (let k = 0; k < 12; k++) { let a = k * 30 + Math.random() * 18, dist = 0.9 + Math.random() * 0.8; html += `<i class="enh-fx-spark" style="--a:${a}deg;--d:${dist};--t:${(Math.random() * 0.15).toFixed(2)}s"></i>`; }
+            html += `<img class="enh-fx-icon" src="${esc(src)}" alt="">`;
+
+        } else if (kind === 'bad') {
+            // 銀光 → 碎成 8 片往外飛（每片＝同一張圖用 clip-path 裁一塊）
+            const P = ['0 0,50% 0,50% 50%', '50% 0,100% 0,50% 50%', '100% 0,100% 50%,50% 50%', '100% 50%,100% 100%,50% 50%', '100% 100%,50% 100%,50% 50%', '50% 100%,0 100%,50% 50%', '0 100%,0 50%,50% 50%', '0 50%,0 0,50% 50%'];
+            P.forEach((poly, k) => { let a = k * 45 + 22 + (Math.random() * 20 - 10); html += `<img class="enh-fx-shard" src="${esc(src)}" alt="" style="clip-path:polygon(${poly});--a:${a}deg;--r:${Math.round(Math.random() * 300 - 150)}deg">`; });
+
+        } else {
+            html += `<img class="enh-fx-icon" src="${esc(src)}" alt=""><i class="enh-fx-smoke"></i>`;
+
+        }
+        host.innerHTML = html;
+        fx.appendChild(host);
+        // 結果大字：視窗水平置中、壓在兩格那一列（放在裝備格上會超出右邊界、往上飄會蓋到標題）
+        let txt = document.createElement('b');
+        txt.className = 'enh-fx-text ' + (kind === 'good' ? 'ok' : kind === 'bad' ? 'boom' : down ? 'down' : 'none');
+        txt.innerHTML = kind === 'good' ? `強化成功<span>+${en1}</span>` : kind === 'bad' ? '強化失敗' : (down ? '強化值降低' : '沒有變化');
+        txt.style.left = r.cx + 'px'; txt.style.top = r.y + 'px';
+        fx.appendChild(txt);
+        setTimeout(() => { if (txt.parentNode) txt.parentNode.removeChild(txt); }, OUT_MS + 300);
+        if (kind === 'bad') { let pn = fx.parentElement; pn.classList.remove('enh-shake'); void pn.offsetWidth; pn.classList.add('enh-shake'); }
+        setTimeout(() => { if (host.parentNode) host.parentNode.removeChild(host); }, OUT_MS + 300);
+    }
 })();
