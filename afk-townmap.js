@@ -69,6 +69,8 @@
         '#town-npc-map > .afk-tm-load.out,#battle-view > .afk-tm-load.out{opacity:0;}' +
         // 狩獵區（地圖模式）：地圖畫在最底層；原本的怪物卡片變透明、移到怪物站的位置（只留點擊與特效定位）；原本的角色／隊員／寵物圖藏起來（地圖上畫）
         '#battle-view.afk-hm{background-image:none!important;position:relative;}' +
+        // 核心打死怪時會在特效層（#vfx-layer）另外複製一份怪物圖播倒地動畫；地圖上自己播了死亡動作 → 藏起來，不然同一隻怪倒兩次
+        'body.afk-hm-on #vfx-layer > .vfx-ghost{display:none!important;}' +
         '#battle-view.afk-hm > canvas.afk-tm-cv{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}' +
         // 選擇器刻意疊兩次 id：原作手機版（area-fit / mob-grid）的卡片規則也帶 !important、權重是兩個 id＋三個 class，不疊會輸（卡片被拉高、整排被推到右邊＝傷害數字跑到右下角）
         '#battle-view.afk-hm #mob-list#mob-list{position:absolute!important;inset:0!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;display:block!important;transform:none!important;pointer-events:none;z-index:2;}' +
@@ -694,6 +696,7 @@
         var a = it.a, L = it.L, d = S.t.d;
         if (a.act) {
             var fa = actionFrame(a, L, performance.now());
+            if (!fa && a.act === 'death' && a !== S.me) return;   // 這隻怪沒有死亡動作：打死就消失，不要站著留在原地
             if (fa) {
                 if (fa.gone) return;
                 var fx = 24 * (a.fx + a.fy) + d.ox - cam[0], fy = 12 * (a.fy - a.fx) + d.oy - cam[1];
@@ -810,7 +813,7 @@
         if (restoreBg && S.bg != null) S.map.style.backgroundImage = S.bg;
         S.npcs && S.npcs.forEach(function (n) { n.el.style.removeProperty('left'); n.el.style.removeProperty('top'); });
         if (S.kind === 'hunt') {   // 狩獵區：怪物卡片放回原本的排法
-            S.map.classList.remove('afk-hm');
+            S.map.classList.remove('afk-hm'); document.body.classList.remove('afk-hm-on');
             [].forEach.call(S.map.querySelectorAll('#mob-list .mob-target'), function (c) { c.style.removeProperty('left'); c.style.removeProperty('top'); });
             if (restoreBg && typeof applyAreaBackground === 'function') try { applyAreaBackground(); } catch (e) {}
         }
@@ -959,7 +962,7 @@
         bindInput(cv);
         S = { kind: 'hunt', huntId: huntId, hunt: info, map: bv, cv: cv, ctx: cv.getContext('2d'), ready: false, chunks: {}, nChunks: 0, path: [], npcs: [], marker: null, pets: [], trail: [], ents: [], entByUid: {}, ht: 0 };
         S.bg = bv.style.backgroundImage;
-        bv.insertBefore(cv, bv.firstChild); bv.classList.add('afk-hm');
+        bv.insertBefore(cv, bv.firstChild); bv.classList.add('afk-hm'); document.body.classList.add('afk-hm-on');
         showLoadBar('battle-view');
         var cur = S;
         loadMap(info.map).then(function (t) {
