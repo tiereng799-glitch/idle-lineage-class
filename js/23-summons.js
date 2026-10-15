@@ -687,7 +687,7 @@ function enemyAttackSummon(mob, s) {
     let dmg = (heavy ? dc * ds : roll(dc, ds)) + ((mob.db || 0) - (st.weaken > 0 ? 4 : 0) - (st.broken > 0 ? 2 : 0));
     if (mob._sherine) dmg = Math.floor(dmg * (mob._sherineMad ? 3 : 2));
     if (mob._grace) dmg = Math.floor(dmg * 1.5);
-    dmg = Math.max(1, Math.floor(dmg * riftDamageMult() * ((typeof nightEvilMult === 'function') ? nightEvilMult(mob) : 1)) - d.dr);   // 🌙 夜晚
+    dmg = Math.max(1, Math.floor(dmg * riftDamageMult() * ((typeof evilDmgMult === 'function') ? evilDmgMult(mob) : 1)) - d.dr);   // 🌙 夜晚
     dmg = Math.max(1, Math.floor(dmg * (typeof teamDmgReduceMult === 'function' ? teamDmgReduceMult(true) : 1)));   // 🔮 化身對寵物／召喚物保留受傷減免；鋼鐵防護只作用於施法者自身 AC
     if (typeof ironGuardTauntWeakensAttack === 'function' && ironGuardTauntWeakensAttack(mob)) dmg = Math.floor(dmg * 0.9);   // 🔮 鐵衛 5/5：受嘲諷目標的一般攻擊傷害 -10%
     s.hp -= dmg;
@@ -710,7 +710,7 @@ function applyMobMagicToSummon(mob, sk, s) {
     let extra = (sk.db || 0) + (sk.dbLv ? (mob.lv || 0) * (sk.dbLvMult || 1) : 0);
     let dmg = sk.fixedDmg ? (baseM + extra) : (Math.floor((baseM + extra) * mrMult(mr)) - dr);
     dmg = Math.max(1, Math.floor(Math.max(1, dmg * shMul) * (typeof teamDmgReduceMult === 'function' ? teamDmgReduceMult(true) : 1)));
-    dmg = Math.max(1, Math.floor(dmg * riftDamageMult() * ((typeof nightEvilMult === 'function') ? nightEvilMult(mob) : 1)));   // 🌙 夜晚
+    dmg = Math.max(1, Math.floor(dmg * riftDamageMult() * ((typeof evilDmgMult === 'function') ? evilDmgMult(mob) : 1)));   // 🌙 夜晚
     s.hp -= dmg;
     _petAnimAct(s, 'hurt');
     logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 施放${sk.skn || '魔法'}，對 <span class="text-purple-300">${s.form}</span> 造成 ${dmg} 點魔法傷害。`, 'enemy');

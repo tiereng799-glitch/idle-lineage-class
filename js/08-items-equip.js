@@ -1053,7 +1053,7 @@ function buyItem(id, qty) {
     }
 
     // 一般物品：單價 p × 數量
-    let p = shopPrice(DB.items[id].p || 0);
+    let p = shopPrice((typeof shopUnitBase === 'function') ? shopUnitBase(id) : (DB.items[id].p || 0));   // 🗡️ 奇岩試煉商人有自己的售價（js/13）
     let cost = p * qty;
     if (player.gold < cost) { logSys(`金幣不足。`); return; }
     player.gold -= cost;

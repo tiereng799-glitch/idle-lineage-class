@@ -751,7 +751,7 @@ function doLachesisSplit(slotKey) {
 
 // ===== 🔥 v3.0.78 試煉接取制（15/30/45 級）：須達等級向 NPC 接取 → 試煉道具才開始掉落（100%·達需求即停·禁倉庫）→ 一次性完成領「全部」獎勵 =====
 //   狀態：player.trialQ[key] = 0/undefined 未接取、1 進行中、2 已完成（完成後無法再接取、道具不再掉落）。
-//   掉落閘＝js/01 trialDropBlocked → trialItemActive；100% 掉落＝js/05 掉落迴圈 trialForced100。
+//   掉落閘＝js/01 trialDropBlocked → trialItemActive；掉率＝js/05 掉落迴圈 trialQuestDropRate（15/30/45 級 1%、法師 45 級 10%、50 級 100%）。
 const TRIAL_Q = {
     knight15:   { cls:'knight',   lv:15, npc:'瑞奇',         reqs:[['new_item_196',1],['new_item_198',1],['new_item_206',1]], rewards:['arm_53'] },
     knight30:   { cls:'knight',   lv:30, npc:'甘特',         reqs:[['new_item_144',1],['new_item_208',1]], rewards:['wpn_redknight','shd_redknight'] },
@@ -824,7 +824,19 @@ function trialItemActiveFor(owner, id, pending, assignedOnly) {
     return true;   // 非管制道具
 }
 function trialItemActive(id) { return trialItemActiveFor(player, id, 0); }
-function trialForced100(id) { return !!(TRIAL_ITEM_Q[id] || TRIAL50_ITEM[id]); }   // 管制試煉道具通過閘門後 100% 掉落
+function trialForced100(id) { return !!(TRIAL_ITEM_Q[id] || TRIAL50_ITEM[id]); }   // 管制試煉道具：不走掉落表機率，改用下面 trialQuestDropRate
+// 🔧 2026-10-15 站長：15/30/45 級試煉道具掉率 1%（法師 45 級的變形怪的血 10%）；50 級試煉照舊 100%
+const TRIAL_DROP_RATE_SPECIAL = { new_item_240: 0.10 };
+function trialQuestDropRate(id) {
+    if (TRIAL50_ITEM[id]) return 1;
+    if (TRIAL_DROP_RATE_SPECIAL[id] != null) return TRIAL_DROP_RATE_SPECIAL[id];
+    return TRIAL_ITEM_Q[id] ? 0.01 : 1;
+}
+function trialDropPctText(ids) {   // 這幾樣試煉道具的掉率，例「1%」「1%／10%」
+    let u = [];
+    ids.forEach(id => { let t = Math.round(trialQuestDropRate(id) * 1000) / 10 + '%'; if (u.indexOf(t) < 0) u.push(t); });
+    return u.join('／');
+}
 function _trialRerender(rr) { let _c = document.getElementById('interaction-content'); let f = rr && window[rr]; if (_c && typeof f === 'function') f(_c); else closeNpcInteraction(); }
 // 產生單一試煉區塊 HTML（rr＝重繪函式名）
 function trialQHTML(key, rr) {
@@ -834,7 +846,7 @@ function trialQHTML(key, rr) {
     if (st === 2) return h + `<div class="text-emerald-400 text-sm mt-1">✅ 已完成（每個角色僅能完成一次）。</div></div>`;
     if ((player.lv || 1) < c.lv) return h + `<div class="text-red-400 text-sm mt-1">需要等級 ${c.lv} 以上才能接取此試煉。</div></div>`;
     if (st === 0) {
-        h += `<div class="text-xs text-slate-400 mt-1 mb-2">接取後才會開始掉落：${c.reqs.map(p => `<b class="text-amber-200">${DB.items[p[0]].n}</b>×${p[1]}`).join('、')}（擊殺指定怪物 100% 掉落·無法存入倉庫·達需求數量即停止掉落）</div>`;
+        h += `<div class="text-xs text-slate-400 mt-1 mb-2">接取後才會開始掉落：${c.reqs.map(p => `<b class="text-amber-200">${DB.items[p[0]].n}</b>×${p[1]}`).join('、')}（擊殺指定怪物 ${trialDropPctText(c.reqs.map(p => p[0]))} 機率掉落·無法存入倉庫·達需求數量即停止掉落）</div>`;
         h += `<div class="text-xs text-slate-400 mb-2">完成獎勵（全數獲得）：${c.rewards.map(id => `<b class="text-sky-300">${DB.items[id].n}</b>`).join('＋')}</div>`;
         return h + `<button class="btn bg-amber-800 hover:bg-amber-700 py-2 px-4 font-bold" onclick="trialQAccept('${key}','${rr}')">接取試煉任務</button></div>`;
     }
@@ -852,7 +864,7 @@ function trialQAccept(key, rr) {
     if (typeof currentRoleIsMercenary === 'function' && currentRoleIsMercenary()) { logSys('<span class="text-amber-300">此角色正在擔任傭兵，請由隊長在傭兵公會接取試煉。</span>'); return; }
     if (!player.trialQ || typeof player.trialQ !== 'object') player.trialQ = {};
     player.trialQ[key] = 1;
-    logSys(`<span class="text-amber-300 font-bold">${c.npc}：試煉開始！</span>去收集 ${c.reqs.map(p => DB.items[p[0]].n + '×' + p[1]).join('、')}（擊殺指定怪物必定掉落）。`);
+    logSys(`<span class="text-amber-300 font-bold">${c.npc}：試煉開始！</span>去收集 ${c.reqs.map(p => DB.items[p[0]].n + '×' + p[1]).join('、')}（擊殺指定怪物有 ${trialDropPctText(c.reqs.map(p => p[0]))} 機率掉落）。`);
     saveGame(); _trialRerender(rr);
 }
 function trialQComplete(key, rr) {   // 🚫 v3.2.16 移除席琳完成：原第 3 參 sherine（耗結晶必附套裝詞綴）廢止

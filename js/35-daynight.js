@@ -40,19 +40,25 @@ function evilKind(m) {
     return '';
 }
 function isEvilMob(m) { return !!evilKind(m); }
-function nightEvilMult(m) { return (isNightTime() && isEvilMob(m)) ? NIGHT_EVIL_MULT : 1; }   // 夜晚不死／惡魔打人 ×1.2（打玩家、寵物、召喚物、迷魅都套）
-// 🛡️ 祝福的防具／飾品（不含武器）：每件抵銷夜晚狂暴加成（+20% 那段）的 7%，只在夜晚有效；13 件＝抵掉 91%，原本的傷害不會被減
-const BLESS_ARMOR_NIGHT_CUT = 0.07;
-const BLESS_ARMOR_SKIP = ['wpn', 'offwpn', 'arrow', 'pet', 'doll'];
+// 不死／惡魔的狂暴傷害：夜晚 ×1.2；頭目白天也 ×1.1（打玩家、寵物、召喚物、迷魅都套）
+const DAY_EVIL_BOSS_MULT = 1.1;
+function evilDmgMult(m) {
+    if (!isEvilMob(m)) return 1;
+    if (isNightTime()) return NIGHT_EVIL_MULT;
+    return m.boss ? DAY_EVIL_BOSS_MULT : 1;
+}
+// 🛡️ 祝福的頭盔／手套／靴子／內衣／盔甲／斗篷／盾牌（共 7 格）：每件抵掉狂暴多出來那段的 10%；7 件＝抵掉 70%，原本的傷害不會被減
+const BLESS_ARMOR_CUT = 0.10;
+const BLESS_ARMOR_SLOTS = ['helm', 'gloves', 'boots', 'tshirt', 'armor', 'cloak', 'shield'];
 function blessArmorPieces() {
     if (typeof player === 'undefined' || !player || !player.eq) return 0;
     let n = 0;
-    for (let k in player.eq) { let e = player.eq[k]; if (e && !BLESS_ARMOR_SKIP.includes(k) && e.bless === true) n++; }
+    BLESS_ARMOR_SLOTS.forEach(k => { let e = player.eq[k]; if (e && e.bless === true) n++; });
     return n;
 }
-function playerNightEvilMult(mob) {   // 打玩家用：夜晚狂暴 ×1.2，祝福防具把多出來的那段扣掉一部分
-    let m = nightEvilMult(mob); if (m <= 1) return 1;
-    return 1 + (m - 1) * Math.max(0, 1 - BLESS_ARMOR_NIGHT_CUT * blessArmorPieces());
+function playerEvilDmgMult(mob) {   // 打玩家用：狂暴倍率，祝福防具把多出來的那段扣掉一部分
+    let m = evilDmgMult(mob); if (m <= 1) return 1;
+    return 1 + (m - 1) * Math.max(0, 1 - BLESS_ARMOR_CUT * blessArmorPieces());
 }
 // ✨ 魔法的日夜加成：夜晚邪惡魔法 +5%、白天正義魔法 +5%（召喚術、造屍術不算）
 const EVIL_SPELLS = ['sk_cold_shiver', 'sk_vampire', 'sk_darkwave', 'sk_demon_kiss', 'sk_hell_fang'];
@@ -170,13 +176,13 @@ function openLanternPanel() {
     let render = () => {
         let mins = Math.ceil((L.fuel || 0) / 60);
         ov.innerHTML = `<div style="width:100%;max-width:300px;background:#0f0c09;border:1px solid #b7791f;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;color:#eee;">
-            <div style="display:flex;justify-content:space-between;align-items:center;color:#fbbf24;font-weight:bold;font-size:16px;"><span style="display:flex;align-items:center;gap:6px;"><img src="assets/icons/items/燈籠.svg" alt="" style="width:28px;height:28px;">燈籠</span><button type="button" data-x="1" style="background:none;border:0;color:#aaa;font-size:18px;cursor:pointer;">✕</button></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;color:#fbbf24;font-weight:bold;font-size:16px;"><span style="display:flex;align-items:center;gap:6px;"><img src="assets/icons/items/燈籠.png" alt="" style="width:28px;height:28px;">燈籠</span><button type="button" data-x="1" style="background:none;border:0;color:#aaa;font-size:18px;cursor:pointer;">✕</button></div>
             <div style="color:${L.on ? '#fde68a' : '#94a3b8'};">${L.on ? '點亮中' : '熄滅'}・燈油剩 ${mins} 分鐘</div>
             <div style="display:flex;gap:6px;">
                 <button type="button" data-act="on" class="btn font-bold" style="flex:1;padding:8px;${L.on ? 'opacity:.5;' : ''}">打開</button>
                 <button type="button" data-act="off" class="btn font-bold" style="flex:1;padding:8px;${L.on ? '' : 'opacity:.5;'}">關閉</button>
             </div>
-            <button type="button" data-act="refill" class="btn font-bold" style="padding:8px;display:flex;align-items:center;justify-content:center;gap:6px;"><img src="assets/icons/items/燈油.svg" alt="" style="width:24px;height:24px;">補充燈油（${LANTERN_REFILL_COST} 金幣）</button>
+            <button type="button" data-act="refill" class="btn font-bold" style="padding:8px;display:flex;align-items:center;justify-content:center;gap:6px;"><img src="assets/icons/items/燈油.png" alt="" style="width:24px;height:24px;">補充燈油（${LANTERN_REFILL_COST} 金幣）</button>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" data-act="auto" ${L.auto ? 'checked' : ''} style="width:16px;height:16px;">自動補給燈油</label>
         </div>`;
     };

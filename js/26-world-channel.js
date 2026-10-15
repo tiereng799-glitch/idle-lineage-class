@@ -589,7 +589,7 @@ function _wcTrialAnswers(q) {
         let reqs = trial.reqs.map(p => _wcTrialReqText(p[0], p[1])).join('；');
         let rewards = trial.rewards.map(id => (DB.items[id] || {}).n || id).join('＋');
         return [
-            `${_wcClsName(trial.cls)} ${trial.lv} 級試煉找${trial.npc}接取。需求是 ${reqs}；接取後指定試煉品必掉，備齊回去可一次領 ${rewards}。`,
+            `${_wcClsName(trial.cls)} ${trial.lv} 級試煉找${trial.npc}接取。需求是 ${reqs}；接取後指定試煉品掉率 ${typeof trialDropPctText === 'function' ? trialDropPctText(trial.reqs.map(p => p[0])) : '1%'}，備齊回去可一次領 ${rewards}。`,
             `先去找${trial.npc}接${trial.lv}級試煉，沒接任務打多久都不會出。接著收集 ${reqs}，最後獎勵是 ${rewards}。`
         ];
     }

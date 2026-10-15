@@ -1179,7 +1179,7 @@ const DB = {
         // ===== 🐾 夥伴系統 v2（v3.2.17）：誘捕道具（使用後獲得對應誘捕狀態 300 秒·期間擊殺對應動物依寵物魅力擲捕獲率(6=45%·12=25%)·成敗都失去狀態）=====
         //   🚫 舊項圈系統（哨子/8種項圈/肉/舊進化果實）已全數移除；舊存檔項圈由 petMigrateLegacy 轉換為寵物。
         "pet_whistle":        { n: "寵物召喚笛",       type: "misc", req: "all", p: 50000, c: "text-amber-300", noUse: true, noJunk: true, gachaWeight: 0, img: "assets/icons/items/哨子.png", d: "帶在身上才能從項圈叫出寵物（不會消耗）。" },
-        "lantern":            { n: "燈籠",             type: "misc", req: "all", p: 3000, c: "text-amber-300", eff: "lantern", noJunk: true, gachaWeight: 0, img: "assets/icons/items/燈籠.svg", d: "夜晚可以照明。點兩下開關燈籠、補充燈油（一次 100 分鐘）。" },
+        "lantern":            { n: "燈籠",             type: "misc", req: "all", p: 3000, c: "text-amber-300", eff: "lantern", noJunk: true, gachaWeight: 0, img: "assets/icons/items/燈籠.png", d: "夜晚可以照明。點兩下開關燈籠、補充燈油（一次 100 分鐘）。" },
         "pet_collar":         { n: "項圈",             type: "misc", req: "all", p: 0, c: "text-amber-200", eff: "pet_collar", noSell: true, noJunk: true, gachaWeight: 0, img: "assets/icons/items/項圈 (牧羊犬).png", d: "點兩下叫出這隻寵物（身上要有寵物召喚笛，每次 5,000 金幣）。" },
         "item_eye_meat":      { n: "漂浮之眼肉",       type: "pot", req: "all", p: 100, c: "text-pink-300",    eff: "petlure", lure: "lure_general", dur: 300, d: "漂浮之眼身上切下的奇特肉塊，散發野獸無法抗拒的氣味。使用後獲得「一般誘捕」300秒：期間打倒 狼／牧羊犬／杜賓狗／哈士奇／熊／貓／浣熊／聖伯納犬／狐狸／小獵犬／柯利 時有 45% 機率捕獲該寵物（抓到的寵物送往寵物保管、背包得到項圈），不論有沒有抓到都會失去此狀態。", gachaWeight: 0 },
         "item_carrot":        { n: "胡蘿蔔",           type: "pot", req: "all", p: 100, c: "text-orange-300",  eff: "petlure", lure: "lure_rabbit", dur: 300, d: "水靈飽滿的胡蘿蔔，暴走兔見了會不顧一切衝過來。使用後獲得「暴走兔誘捕」300秒：期間打倒 暴走兔 時有 45% 機率捕獲暴走兔（抓到的寵物送往寵物保管、背包得到項圈），不論有沒有抓到都會失去此狀態。", gachaWeight: 0 },
@@ -1369,7 +1369,7 @@ const DB = {
         "new_item_194": { n: "阿西塔基奧的灰燼", p: 1000, gachaWeight: 0 },
         "new_item_195": { n: "精靈玉", p: 100, gachaWeight: 0 },
         "new_item_196": { n: "古老的交易文件", p: 1, c: "text-blue-300", gachaWeight: 0 },   // 🔧 試煉材料統一藍色
-        "new_item_197": { n: "搜索狀", p: 1, noUse: true, noSell: true, gachaWeight: 0, c: "text-amber-300", d: "王族 15 級試煉道具。接取甘特的試煉後，擊殺 黑騎士搜索隊 必定掉落（達需求數量即停止掉落·無法存入倉庫）。" },
+        "new_item_197": { n: "搜索狀", p: 1, noUse: true, noSell: true, gachaWeight: 0, c: "text-amber-300", d: "王族 15 級試煉道具。接取甘特的試煉後，擊殺 黑騎士搜索隊 有 1% 機率掉落（達需求數量即停止掉落·無法存入倉庫）。" },
         "new_item_198": { n: "黑騎士的誓約", p: 1, c: "text-blue-300", gachaWeight: 0 },   // 🔧 試煉材料統一藍色（198~206、208、212~214、240 同）
         "new_item_199": { n: "都達瑪拉妖魔魔法書", p: 1, c: "text-blue-300", gachaWeight: 0 },
         "new_item_200": { n: "那魯加妖魔魔法書", p: 1, c: "text-blue-300", gachaWeight: 0 },
@@ -2412,7 +2412,7 @@ const DB = {
                 { id: "npc_moli", n: "茉莉", title: "製作", type: "craft", d: "茉莉指間的針線從不停歇，能為冒險者製作皮革裝備。" },
 				{ id: "npc_finn", n: "芬", title: "製作", type: "craft", d: "芬在工坊裡敲打不停，提供物品製作服務。" },
                 { id: "npc_joel", n: "喬爾", title: "製作", type: "craft", d: "喬爾是個沉默而可靠的老匠人，提供物品製作服務。" },
-                { id: "npc_ricky", n: "瑞奇", title: "試煉", type: "quest", d: "瑞奇曾是身經百戰的騎士。主持騎士的 15 級試煉：達等級後接取任務，試煉道具擊殺指定怪物必定掉落，收集齊後一次完成領取獎勵。" },
+                { id: "npc_ricky", n: "瑞奇", title: "試煉", type: "quest", d: "瑞奇曾是身經百戰的騎士。主持騎士的 15 級試煉：達等級後接取任務，試煉道具擊殺指定怪物有機會掉落，收集齊後一次完成領取獎勵。" },
                 { id: "npc_red", n: "雷德", title: "任務", type: "quest", d: "雷德眼中燃著難以平息的怒火。雷德的復仇：打倒蕾雅的部下並帶回證明物。" }
             ]
         },
@@ -2516,6 +2516,7 @@ const DB = {
                 { id: "npc_herbert", n: "哈巴特", title: "製作", type: "craft", d: "手藝精湛的裁縫師，一針一線都縫進了對穿戴者的庇護。可以為人們縫製布料防具。" },
                 { id: "npc_lentis", n: "倫提斯", title: "製作", type: "craft", d: "擅長將軍團之力封入金屬的戒指匠師。以軍團印記與軍王徽印打造四屬性的精靈戒指。" },
                 { id: "npc_sebas", n: "賽巴斯", title: "寶石加工", type: "craft", d: "奇岩寶石加工坊的巨匠賽巴斯，能將稀世寶石與龍鱗鍛入飾品。製作四屬性戒指與四精靈皮帶。" },
+                { id: "npc_trial_shop", n: "拉克", title: "試煉商人", type: "shop", d: "走遍各地試煉場的老傭兵，收藏了歷代試煉的獎勵。販售各職業試煉的武器與裝備。" },
                 { id: "npc_wh_giran", n: "蘇瑞耳", title: "倉庫", type: "warehouse", d: "蘇瑞耳看守著奇岩繁忙商街旁的庫房，替你妥善存放物品與金幣，四個存檔角色共用。" }
             ]
         },

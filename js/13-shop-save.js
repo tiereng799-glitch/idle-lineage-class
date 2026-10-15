@@ -214,6 +214,22 @@ const SHOP_LISTS = {
     npc_saedia: ['bk_dark_str','bk_dark_mrup','bk_dark_stealth','bk_dark_poison','bk_dark_refine','bk_dark_dex','bk_dark_poisonres','bk_dark_burn','bk_dark_walkhaste'],
     default: ['potion_heal','potion_strong','potion_ult','potion_blue','potion_haste','potion_brave','new_item_140','new_item_139','scroll_poly','scroll_magicbarrier','scroll_teleport','scroll_revive','pet_whistle','lantern','wpn_5','wpn_22','candle']   // 🚫 v3.2.17 哨子/肉已隨舊項圈系統移除
 };
+// 🗡️ 2026-10-15 奇岩試煉商人（拉克）：各職業試煉的武器與裝備（魔法書／精靈水晶不賣）。
+//   售價照試煉等級分，不改道具本身的 p（賣回商店、黑市等仍照原本的價格）。
+const TRIAL_SHOP_TIERS = [
+    [200000,  ['arm_53', 'arm_115', 'arm_50', 'arm_51', 'arm_shadowmask', 'clk_royal_red']],                                   // 15 級
+    [500000,  ['wpn_redknight', 'shd_redknight', 'wpn_crystalwand', 'arm_85', 'arm_shadowglove', 'clk_royal_majesty']],         // 30 級
+    [1000000, ['acc_134', 'wpn_manawand', 'arm_89', 'arm_102', 'arm_shadowboots', 'acc_royal_guard']],                          // 45 級
+    [3000000, ['wpn_blackflame_sword', 'bot_courage', 'wpn_redflame_bow', 'wpn_redflame_sword', 'bot_sephia', 'wpn_mana_orb', 'bot_mana', 'wpn_golden_scepter', 'bot_divine_will', 'wpn_death_finger']]   // 50 級
+];
+const TRIAL_SHOP_PRICE = {};
+TRIAL_SHOP_TIERS.forEach(t => t[1].forEach(id => { TRIAL_SHOP_PRICE[id] = t[0]; }));
+SHOP_LISTS.npc_trial_shop = TRIAL_SHOP_TIERS.reduce((a, t) => a.concat(t[1]), []);
+// 商店單價的基準（再交給 shopPrice 套攻城 8 折）：試煉商人用上表，其餘照道具的 p
+function shopUnitBase(id) {
+    if (_currentShopNpc === 'npc_trial_shop' && TRIAL_SHOP_PRICE[id]) return TRIAL_SHOP_PRICE[id];
+    return (DB.items[id] && DB.items[id].p) || 0;
+}
 // 🔧 商店販售清單（單一來源）：getShopItemsForNpc 與潘朵拉權重覆寫共用此表
 function getShopItemsForNpc(npcId) {
     let list = SHOP_LISTS[npcId] || SHOP_LISTS.default;
@@ -265,7 +281,7 @@ function renderShopItems() {
 
         // 箭矢與肉的顯示判斷
         let nameDisp = id === 'wpn_5' ? '箭 (1000根)' : (id === 'wpn_22' ? '銀箭 (1000根)' : d.n);
-        let priceDisp = id === 'wpn_5' ? shopPrice(100).toLocaleString() : (id === 'wpn_22' ? shopPrice(200).toLocaleString() : shopPrice(d.p || 0).toLocaleString());
+        let priceDisp = id === 'wpn_5' ? shopPrice(100).toLocaleString() : (id === 'wpn_22' ? shopPrice(200).toLocaleString() : shopPrice(shopUnitBase(id)).toLocaleString());
 
         el.innerHTML = `
             <div class="flex items-center gap-4 min-w-0 flex-1 ${dim ? 'opacity-50' : ''}">

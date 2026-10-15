@@ -933,7 +933,7 @@
     var tags = [d.race, d.s === 'L' ? '大型' : (d.s === 'S' ? '小型' : ''), d.beh, d.un ? '不死' : ''].filter(Boolean).map(function (t) { return '<span class="mi-tag">' + esc(t) + '</span>'; }).join('');
     // 不死系／惡魔系另外標出來（夜晚會變強、怕祝福武器）；其他種族不加
     var ek = (typeof evilKind === 'function') ? evilKind(d) : '';
-    if (ek) tags += '<span class="mi-tag mi-evil">' + (ek === 'undead' ? '不死系' : '惡魔系') + ((typeof isNightTime === 'function' && isNightTime()) ? '・夜晚強化中' : '') + '</span>';
+    if (ek) tags += '<span class="mi-tag mi-evil">' + (ek === 'undead' ? '不死系' : '惡魔系') + ((typeof isNightTime === 'function' && isNightTime()) ? '・夜晚強化中' : ((mob.boss || d.boss) ? '・強化中' : '')) + '</span>';
     var stat = function (k, v) { return '<span><i>' + k + '</i><b>' + v + '</b></span>'; };
     var hp = (mob.curHp != null ? Math.max(0, Math.round(mob.curHp)) + ' / ' : '') + (mob.hp || d.hp);
     var rows = drops.length ? drops.map(function (x) {
