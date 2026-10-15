@@ -1238,10 +1238,11 @@ function buildItemDescHTML(item) {
     if ((d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') && d.slot !== 'petwpn' && d.slot !== 'petarm') {   // 🦴 寵物裝備是給寵物穿的，不列職業
         // 改用文字顯示（logo 太小認不出）
         const _EQ_CLASSES = [['knight','騎士'], ['elf','妖精'], ['mage','法師'], ['dark','黑暗妖精'], ['royal','王族']];
-        let _logos = _EQ_CLASSES
+        let _okCls = _EQ_CLASSES
             .filter(([c]) => isRelic(d) ? reqAllowsClass(d, c) : (c === 'dark') ? darkEquipOk(d, item.id) : (c === 'royal') ? royalEquipOk(d, item.id) : reqAllowsClass(d, c))   // 🏺 遺物：職業適用純以 req 白名單判定（同 checkCanEquip 短路）
-            .map(([, nm]) => `<span class="text-amber-200">${nm}</span>`)
-            .join('<span class="text-slate-500">、</span>');
+        let _logos = (_okCls.length === _EQ_CLASSES.length)   // 五個職業都能裝 → 直接寫「全職業」
+            ? '<span class="text-amber-200">全職業</span>'
+            : _okCls.map(([, nm]) => `<span class="text-amber-200">${nm}</span>`).join('<span class="text-slate-500">、</span>');
         if (_logos) desc += `<br><span class="text-slate-400">適用職業：</span>${_logos}`;
     }
 
