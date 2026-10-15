@@ -3037,3 +3037,5 @@ body.enh-open #m-toast-wrap { display:none !important; }   /* 強化視窗開著
 #enh-broadcast .enh-bc-text { font:700 15px/1 "Microsoft JhengHei",system-ui,sans-serif; color:#f3e3bd; text-shadow:0 1px 0 #000, 0 0 4px #000; }
 #enh-broadcast .enh-bc-name { color:#7fd0ff; }
 #enh-broadcast .enh-bc-en { color:#ffe38a; text-shadow:0 0 6px rgba(255,214,100,.85), 0 1px 0 #000; }
+#enh-broadcast.fail { border-color:rgba(220,80,80,.6); }
+#enh-broadcast .enh-bc-boom { color:#ff8a8a; text-shadow:0 0 6px rgba(255,80,80,.75), 0 1px 0 #000; }

@@ -1122,6 +1122,7 @@ function doEnhance(targetUid, isEq = true) {
         if (typeof enhBroadcastCheck === 'function') enhBroadcastCheck(target, _en0);   // 📢 超過安定值 3 → 跑馬燈（js/34）
     } else if (destroy) {
         logSys(`<span class="text-red-500 font-bold">${fn} 強烈的發出銀色的光芒就消失了。</span>`);
+        if (typeof enhBroadcastFail === 'function') enhBroadcastFail(target);   // 📢 衝門檻失敗 → 跑馬燈（js/34）
         if (isEq) {
             player.eq[slot] = null; // 碎掉身上裝備
             // ⚠️ 爆裝後必須同步副手／沙哈箭：否則主手被炸掉時 offwpn 會殘留在「無主手」的非法狀態，
