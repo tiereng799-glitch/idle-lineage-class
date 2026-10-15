@@ -701,9 +701,12 @@
                 ctx.save();
                 if (fa.flip) { ctx.translate(Math.round(fx * dpr) / dpr, 0); ctx.scale(-1, 1); fx = 0; }
                 var oxx = Math.round((fx - fa.an[0]) * dpr) / dpr;
-                if (alpha === 1 && simg && simg.complete && simg.naturalWidth) { ctx.globalAlpha = 0.55 * fa.fade; ctx.drawImage(simg, oxx, oyy); }
-                if (bimg.complete && bimg.naturalWidth) { ctx.globalAlpha = alpha * fa.fade; ctx.drawImage(bimg, oxx, oyy); }
-                ctx.restore();
+                if (bimg.complete && bimg.naturalWidth) {
+                    if (alpha === 1 && simg && simg.complete && simg.naturalWidth) { ctx.globalAlpha = 0.55 * fa.fade; ctx.drawImage(simg, oxx, oyy); }
+                    ctx.globalAlpha = alpha * fa.fade; ctx.drawImage(bimg, oxx, oyy);
+                    ctx.restore();
+                } else { ctx.restore(); drawLast(ctx, cam, dpr, a, alpha * fa.fade); }   // 這幀還沒下載完：先畫上一張，不要整個不見
+                ctx.globalAlpha = 1;
                 return;
             }
         }
@@ -716,9 +719,20 @@
         var an = anchorOf(L, a.dir, walk, k); if (!an) return;
         var px = 24 * (a.fx + a.fy) + d.ox - cam[0], py = 12 * (a.fy - a.fx) + d.oy - cam[1];
         var ox = Math.round((px - an[0]) * dpr) / dpr, oy = Math.round((py - an[1]) * dpr) / dpr;
+        var pk = (L.key || L.name) + ':' + a.dir;
+        if (a._pd !== pk) { a._pd = pk; preloadDir(L, a.dir); }   // 換方向／換外型：這個方向的走路、待機幀一次先抓
         var body = img(frameSrc(L, a.dir, act, k)), sh = img(frameSrc(L, a.dir, act, k, true));
-        if (alpha === 1 && sh.complete && sh.naturalWidth) { ctx.globalAlpha = 0.55; ctx.drawImage(sh, ox, oy); }
-        if (body.complete && body.naturalWidth) { ctx.globalAlpha = alpha; ctx.drawImage(body, ox, oy); }
+        if (body.complete && body.naturalWidth) {
+            if (alpha === 1 && sh.complete && sh.naturalWidth) { ctx.globalAlpha = 0.55; ctx.drawImage(sh, ox, oy); }
+            ctx.globalAlpha = alpha; ctx.drawImage(body, ox, oy);
+            a._lb = { im: body, an: an };
+        } else drawLast(ctx, cam, dpr, a, alpha);   // 這幀還沒下載完：先畫上一張成功畫過的（不然人物、怪物會一閃一閃不見）
+        ctx.globalAlpha = 1;
+    }
+    function drawLast(ctx, cam, dpr, a, alpha) {
+        var lb = a._lb; if (!lb) return;
+        var d = S.t.d, px = 24 * (a.fx + a.fy) + d.ox - cam[0], py = 12 * (a.fy - a.fx) + d.oy - cam[1];
+        ctx.globalAlpha = alpha; ctx.drawImage(lb.im, Math.round((px - lb.an[0]) * dpr) / dpr, Math.round((py - lb.an[1]) * dpr) / dpr);
         ctx.globalAlpha = 1;
     }
     // 地圖上的 NPC／叫賣玩家：腳點釘在村裡的站位格，跟著鏡頭移（只在鏡頭動了才改位置）
@@ -1117,8 +1131,21 @@
     }
     function placeNear() { S.ents.forEach(placeEnt); }
     // idle＝自動戰鬥暫停（遊戲主迴圈不跑）：由下面的小計時器推動，怪物照常閒晃、玩家可以自己走，只是不開打
+    function huntActors() { var out = [S.me].concat(S.pets); S.ents.forEach(function (e) { if (e.placed) out.push(e); }); return out; }
     function huntTick(idle) {
-        S.ht++; S.lastLogicMs = performance.now();
+        var now = performance.now(), gap = now - (S.lastLogicMs || now);
+        if (gap > 40 && gap < 600) S.tickMs = (S.tickMs || 100) * 0.7 + gap * 0.3;   // 遊戲主迴圈實際多久跑一次（手機忙時常常 >0.1 秒）
+        S.ht++; S.lastLogicMs = now;
+        // 畫面插值：起點＝這一刻畫面上的位置（接得上、不跳），終點＝這次邏輯算完的位置，下一拍之前畫面從起點滑到終點
+        huntActors().forEach(function (a) { a.p0x = a.fx; a.p0y = a.fy; a.pt0 = a.vt != null ? a.vt : a.t; a.pcell = a.tx + ',' + a.ty; });
+        huntTickLogic(idle);
+        huntActors().forEach(function (a) {
+            var mv = a.walking && a.t < 1, lx = mv ? a.sx + (a.tx - a.sx) * a.t : a.tx, ly = mv ? a.sy + (a.ty - a.sy) * a.t : a.ty;
+            if (a.p0x == null || Math.abs(lx - a.p0x) + Math.abs(ly - a.p0y) > 3) { a.p0x = lx; a.p0y = ly; }   // 剛放上地圖／重生／瞬移：直接到位，不要滑過整張圖
+            a.p1x = lx; a.p1y = ly; a.newStep = a.pcell !== a.tx + ',' + a.ty;
+        });
+    }
+    function huntTickLogic(idle) {
         if (!idle) syncEngaged();
         heroAI(idle);
         tick(0.1);   // 角色、寵物走路（同村莊那套）
@@ -1136,17 +1163,21 @@
     }, 100);
     function huntTeleport() {   // 瞬移卷軸／自動瞬移：跳到隨機一個重生點
         var sp = S.hunt.spawns[Math.floor(Math.random() * S.hunt.spawns.length)], me = S.me, x = sp[2], y = sp[3];
-        me.fx = me.sx = me.tx = x; me.fy = me.sy = me.ty = y; me.t = 1; me.walking = false;
+        me.fx = me.sx = me.tx = x; me.fy = me.sy = me.ty = y; me.t = 1; me.walking = false; me.p0x = me.p1x = x; me.p0y = me.p1y = y;
         S.path = []; S.prefer = null; S.goal = null; S.manual = false; S.trail = [[x, y]];
         for (var uid in S.entByUid) S.entByUid[uid].uid = null;
         S.entByUid = {};
-        S.pets.forEach(function (p) { p.fx = p.sx = p.tx = x; p.fy = p.sy = p.ty = y; p.t = 1; p.walking = false; p.path = []; });
+        S.pets.forEach(function (p) { p.fx = p.sx = p.tx = x; p.fy = p.sy = p.ty = y; p.t = 1; p.walking = false; p.path = []; p.p0x = p.p1x = x; p.p0y = p.p1y = y; });
         dirty = true;
     }
-    function huntInterp(now) {   // 畫面：從上次邏輯更新到現在推算走到哪（最多推 0.2 秒）
-        var k = Math.min(0.2, (now - (S.lastLogicMs || now)) / 1000);
+    // 畫面：上一拍畫面位置 → 這拍算完的位置，照「離上次邏輯過了多久 ÷ 主迴圈實際間隔」滑過去。
+    //   ⚠ 不可以從邏輯位置往前「預測」：主迴圈慢於 0.1 秒時畫面會先推過頭、下一拍又被拉回來＝人物和怪物一前一後地飄（玩家回報）
+    function huntInterp(now) {
+        var al = Math.max(0, Math.min(1, (now - (S.lastLogicMs || now)) / (S.tickMs || 100)));
         function f(a) {
-            if (a.walking && a.t < 1) { var t = Math.min(1, a.t + k / (a.step || STEP)); a.vt = t; a.fx = a.sx + (a.tx - a.sx) * t; a.fy = a.sy + (a.ty - a.sy) * t; }
+            if (a.p1x == null) { a.vt = null; return; }
+            a.fx = a.p0x + (a.p1x - a.p0x) * al; a.fy = a.p0y + (a.p1y - a.p0y) * al;
+            if (a.walking && a.t < 1) { var t0 = (a.newStep || a.pt0 == null || a.pt0 > a.t) ? 0 : a.pt0; a.vt = Math.min(0.999, t0 + (a.t - t0) * al); }
             else a.vt = null;
         }
         f(S.me); S.pets.forEach(f); S.ents.forEach(function (e) { if (e.placed) f(e); });
