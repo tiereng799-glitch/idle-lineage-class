@@ -960,7 +960,9 @@ function buildItemDescHTML(item) {
         
         if(d.mdmg) desc += ` / 魔攻: ${formatBonus(d.mdmg)}`;
         // ⚔️ 攻擊速度依「職業性別×武器種類」查表顯示（以目前角色為準）
-        if (typeof atkSpdApm === 'function' && typeof player !== 'undefined' && player && player.cls && atkSpdFamily(item.id)) {   // 箭矢等非揮擊武器不顯示
+        // 🙈 2026-10-15 站長：物品說明不顯示攻擊速度／施法速度／硬直（SHOW_ACTION_SPEED 改 true 可恢復；戰鬥照算）
+        const SHOW_ACTION_SPEED = false;
+        if (SHOW_ACTION_SPEED && typeof atkSpdApm === 'function' && typeof player !== 'undefined' && player && player.cls && atkSpdFamily(item.id)) {   // 箭矢等非揮擊武器不顯示
             let _apm = atkSpdApm(player, item.id);
             if (_apm) desc += `<br><span class="text-orange-200">攻擊速度: 每分鐘 ${_apm} 次（${player.avatar || '依職業性別'}）</span>`;
             // 🏛️ 天堂動作速度：硬直依職業；施法速度依目前職業／變身 cast，與此武器及攻速加成無關。

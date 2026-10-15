@@ -626,7 +626,7 @@
     var body = gameHTML ? '<div style="line-height:1.8;margin:4px 0;">' + withClassNames(gameHTML) + '</div>' : '';
     // 攻擊速度:遊戲的 buildItemDescHTML 不顯示武器攻速,在這補回(讀 DB 的 spd=每次攻擊間隔秒數,越低越快;未填預設 1.0,與戰鬥碼 wpn.spd 同源)
     var spdLine = '';
-    if (d.type === 'wpn') {
+    if (false && d.type === 'wpn') {   // 🙈 2026-10-15 站長：不顯示攻擊速度（與物品說明一致）
       var spd = (d.spd != null) ? d.spd : 1.0;
       spdLine = '<div style="line-height:1.8;margin:4px 0;"><span class="text-orange-300">攻擊速度: 每 ' + spd + ' 秒一次（數值越低攻擊越快）</span></div>';
     }
