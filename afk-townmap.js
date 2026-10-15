@@ -386,6 +386,7 @@
         return (idx + 3 + 8) % 8;
     }
     function wantDir() {
+        if (S && S.kind === 'hunt' && S.me.act === 'death') return -1;   // 倒在地上：不能走
         var vx = 0, vy = 0;
         if (keys.ArrowUp) vy -= 1; if (keys.ArrowDown) vy += 1; if (keys.ArrowLeft) vx -= 1; if (keys.ArrowRight) vx += 1;
         if (vx || vy) return screenDir(vx, vy);
@@ -406,6 +407,7 @@
     }
     function tapTo(px, py) {
         if (!S || !S.ready || !S.cam) return;
+        if (S.kind === 'hunt' && S.me.act === 'death') return;
         if (S.kind === 'hunt') { var pe = huntPick(px, py); if (pe) { S.prefer = pe; S.manual = false; S.path = []; dirty = true; return; } }   // 點到怪：走過去打牠
         var d = S.t.d, s = (px + S.cam[0] - d.ox) / 24, dd = (py + S.cam[1] - d.oy) / 12;
         var c = nearestWalkable(Math.round((s - dd) / 2), Math.round((s + dd) / 2));
@@ -666,11 +668,18 @@
         for (di = 0; di < drawn.length; di++) if (drawn[di].cov) drawActor(ctx, cam, dpr, drawn[di], drawn[di].hero ? 0.45 : 0.4);
         if (S.kind === 'hunt') huntOverlay(ctx, cam); else placeNpcs(cam);
     }
-    // 戰鬥動作（狩獵區）：attack/hurt/skill/death 播一輪；死亡停在最後一幀再淡出。回傳要畫的幀，播完回 null（改畫走路／待機）
+    // 戰鬥動作（狩獵區）：attack/hurt/skill/death 播一輪；怪物死亡停在最後一幀再淡出，角色死亡倒在地上直到復活。回傳要畫的幀，播完回 null（改畫走路／待機）
     //   職業：八方向資料夾裡的 <武器>_attack/_hurt、death/skill；怪物：資料夾根目錄的單方向幀（面向左），角色在右邊就左右翻
-    var ACT_MS = { attack: 80, hurt: 90, skill: 90, death: 130 };
+    //   幀長照原作戰鬥畫面（js/09）：角色攻擊＝出手間隔÷幀數、施法照施法速度，收刀後停在最後一幀等下一刀；其餘 8 幀/秒。
+    //   ⚠ 固定短幀長會一下播完、跳回待機姿勢再等下一刀＝打怪一頓一頓的（玩家回報）
+    var ACT_MS = { attack: 125, hurt: 125, skill: 125, death: 130 }, ATK_HOLD_MS = 250;
+    function actMs(a, act, n) {
+        if (a === S.me && act === 'attack' && typeof _pmAtkFrameMs === 'function') return _pmAtkFrameMs(n);
+        if (a === S.me && act === 'skill' && typeof _skillFrameMs === 'function') return _skillFrameMs(n);
+        return ACT_MS[act] || 125;
+    }
     function actionFrame(a, L, now) {
-        var act = a.act, el = now - a.actT, ms = ACT_MS[act] || 90, folder, name, n, an, flip = false;
+        var act = a.act, el = now - a.actT, ms, folder, name, n, an, flip = false;
         if (L.kind === 'class') {
             folder = 'assets/classanim/' + L.av + DIR_SFX[a.dir];
             name = (act === 'death' || act === 'skill') ? act : L.wk + '_' + act;
@@ -685,17 +694,27 @@
             flip = !!a.faceRight;
         } else return null;
         if (!n) return null;
+        if (a.msFor !== a.actT) {   // 每次出手算一次就好；整組動作圖先下載，第一次往這個方向打才不會跳幀
+            a.msFor = a.actT; a.ms = actMs(a, act, n);
+            for (var pi = 0; pi < n; pi++) { img(folder + '/' + name + '_' + pi + '.png'); if (L.kind === 'class') img(folder + '/' + name + '_s_' + pi + '.png'); }
+        }
+        ms = a.ms;
         var k = Math.floor(el / ms), fade = 1;
         if (k >= n) {
-            if (act !== 'death') { a.act = null; return null; }
-            k = n - 1; fade = Math.max(0, 1 - (el - n * ms) / 600);
-            if (!fade) return { gone: true };
+            if (act === 'attack' && a === S.me && el < n * ms + ATK_HOLD_MS) k = n - 1;   // 收刀幀停一下等下一刀，不閃回待機
+            else if (act !== 'death') { a.act = null; return null; }
+            else {
+                k = n - 1;
+                if (a !== S.me) { fade = Math.max(0, 1 - (el - n * ms) / 600); if (!fade) return { gone: true }; }
+            }
         }
         return { src: folder + '/' + name + '_' + k + '.png', sh: L.kind === 'class' ? folder + '/' + name + '_s_' + k + '.png' : null, an: an, flip: flip, fade: fade };
     }
     function drawActor(ctx, cam, dpr, it, alpha) {
         var a = it.a, L = it.L, d = S.t.d;
-        if (a.act) {
+        // 正在走（核心在角色走向下一隻怪的路上照樣出手）：播走路，不然攻擊姿勢平移過去＝人物在滑（玩家回報）
+        var moving = (a.walking || a.glide) && (a.vt != null ? a.vt : a.t) < 1 && L.walkN > 0;
+        if (a.act && !(moving && a.act !== 'death')) {
             var fa = actionFrame(a, L, performance.now());
             if (!fa && a.act === 'death' && a !== S.me) return;   // 這隻怪沒有死亡動作：打死就消失，不要站著留在原地
             if (fa) {
@@ -715,7 +734,7 @@
             }
         }
         var at = a.vt != null ? a.vt : a.t;   // 狩獵區：邏輯每 0.1 秒走一次，畫面用推算的進度才平順
-        var walk = a.walking && at < 1 && L.walkN > 0, k, act = walk ? 'walk' : 'idle';
+        var walk = (a.walking || a.glide) && at < 1 && L.walkN > 0, k, act = walk ? 'walk' : 'idle';
         if (!walk && L.idle) L = L.idle;                                   // 變身站著：用變身自己的待機
         if (walk) k = Math.min(L.walkN - 1, Math.floor(at * L.walkN));
         else if (L.idleN) k = Math.floor(clock * IDLE_FPS + (a.phase || 0)) % L.idleN;   // 沒有走路幀的變身：移動中也播待機
@@ -1176,12 +1195,22 @@
     }
     // 畫面：上一拍畫面位置 → 這拍算完的位置，照「離上次邏輯過了多久 ÷ 主迴圈實際間隔」滑過去。
     //   ⚠ 不可以從邏輯位置往前「預測」：主迴圈慢於 0.1 秒時畫面會先推過頭、下一拍又被拉回來＝人物和怪物一前一後地飄（玩家回報）
+    // 角色死亡／復活：原作戰鬥畫面是直接看 player.dead 播死亡（不會呼叫 _playerMorphTrigger('death')），地圖上的角色要自己對
+    function syncHeroDeath() {
+        var dead = !!(player && (player.dead || player.hp <= 0)), me = S.me;
+        if (dead && me.act !== 'death') { me.act = 'death'; me.actT = performance.now(); S.path = []; S.goal = null; }
+        else if (!dead && me.act === 'death') me.act = null;
+    }
     function huntInterp(now) {
+        syncHeroDeath();
         var al = Math.max(0, Math.min(1, (now - (S.lastLogicMs || now)) / (S.tickMs || 100)));
         function f(a) {
+            a.glide = false;
             if (a.p1x == null) { a.vt = null; return; }
             a.fx = a.p0x + (a.p1x - a.p0x) * al; a.fy = a.p0y + (a.p1y - a.p0y) * al;
             if (a.walking && a.t < 1) { var t0 = (a.newStep || a.pt0 == null || a.pt0 > a.t) ? 0 : a.pt0; a.vt = Math.min(0.999, t0 + (a.t - t0) * al); }
+            // 這一拍邏輯上已經走到格子停下，畫面還在滑最後一段：照樣播走路幀走完，不然最後一段是站姿平移＝在滑
+            else if (al < 1 && a.pt0 != null && a.pt0 < 1 && (a.p0x !== a.p1x || a.p0y !== a.p1y)) { a.glide = true; a.vt = Math.min(0.999, a.pt0 + (1 - a.pt0) * al); }
             else a.vt = null;
         }
         f(S.me); S.pets.forEach(f); S.ents.forEach(function (e) { if (e.placed) f(e); });
@@ -1265,7 +1294,7 @@
     wrapCore('_partyMemberRect', function (orig) { return function () { return heroRect() || orig.apply(this, arguments); }; });
     wrapCore('_playerMorphTrigger', function (orig) {
         return function (k) {
-            try { if (huntActive() && (k === 'attack' || k === 'skill' || k === 'death')) { S.me.act = k; S.me.actT = performance.now(); } } catch (e) {}
+            try { if (huntActive() && S.me.act !== 'death' && (k === 'attack' || k === 'skill')) { S.me.act = k; S.me.actT = performance.now(); } } catch (e) {}
             return orig.apply(this, arguments);
         };
     });
