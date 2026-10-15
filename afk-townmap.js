@@ -1104,7 +1104,8 @@
         var range = heroRange(), tgt = (typeof getTarget === 'function') ? getTarget() : null, te = tgt && S.entByUid[tgt.uid];
         if (te && cheb(me.tx, me.ty, te.tx, te.ty) <= range) { S.path = []; face(te); return; }   // 打得到：站著打
         var e = (S.prefer && S.prefer.alive && S.prefer.placed) ? S.prefer : (te || nearestEnt(20));
-        if (!e) return;
+        if (!e) { roam(); return; }
+        S.roaming = false;
         if (cheb(me.tx, me.ty, e.tx, e.ty) <= range) {
             if (engage(e)) { var idx = slotOf(e.uid); if (idx >= 0 && mapState.targetIdx !== idx && typeof setTarget === 'function') setTarget(idx); S.prefer = null; }
             S.path = []; face(e); return;
@@ -1115,6 +1116,27 @@
             if (p.length) p.pop(); else e.noPathUntil = S.ht + 50;   // 不走到怪身上；走不到的先換別隻
             S.path = p;
         }
+    }
+    // 附近 20 格沒有怪（打光了、還在重生）：往最近一隻活著或 30 秒內會重生的怪那邊走，不要站著發呆（玩家回報）
+    //   太遠的先走到那個方向 20 格左右（找路有範圍限制），走到了再找下一段；走不到的那隻先換別隻
+    function roam() {
+        var me = S.me;
+        if (S.roaming && S.path.length && S.ht < S.roamAt) return;
+        var best = null, bd = 1e9;
+        for (var i = 0; i < S.ents.length; i++) {
+            var e = S.ents[i]; if (e.gone || (e.noPathUntil || 0) > S.ht) continue;
+            if (!e.alive && (e.respawnAt || 0) - S.ht > 300) continue;
+            var on = e.alive && e.placed, x = on ? e.tx : e.hx, y = on ? e.ty : e.hy, dd = cheb(me.tx, me.ty, x, y);
+            if (dd < 6) continue;   // 就在這附近、只是還沒重生：換下一個地方
+            if (dd < bd) { bd = dd; best = { e: e, x: x, y: y }; }
+        }
+        S.roaming = true; S.goal = null;
+        if (!best) { S.path = []; S.roamAt = S.ht + 20; return; }
+        var gx = best.x, gy = best.y;
+        if (bd > 20) { gx = me.tx + Math.round((gx - me.tx) * 20 / bd); gy = me.ty + Math.round((gy - me.ty) * 20 / bd); }
+        var c = nearestWalkable(gx, gy), p = c ? findPath(me.tx, me.ty, c[0], c[1]) : [];
+        if (p.length) { S.path = p; S.roamAt = S.ht + 30; }
+        else { S.path = []; best.e.noPathUntil = S.ht + 100; S.roamAt = S.ht + 5; }
     }
     // 地圖上的怪：開打中站到角色旁邊；主動怪看到角色追過來（到旁邊就開打）；其餘在出生點附近閒晃
     function entAI(e, idle) {
