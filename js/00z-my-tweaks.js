@@ -146,10 +146,35 @@
     updateMailButton(); renderMailbox();
     if (typeof saveGame === 'function') saveGame();
   }
-  // 搜尋結果裡點道具名稱 → 寄出（id 只收英數底線，避免從日誌 HTML 被塞怪東西）
+  // 數量視窗：搜尋結果點名字、或只打道具名稱沒打數量 → 跳出來輸入數量（inputmode=numeric＝手機彈數字鍵盤）
+  function closeQty() { var ov = document.getElementById('my-qty'); if (ov) ov.remove(); document.body.classList.remove('my-qty-open'); }
+  function openQty(id, cnt) {
+    closeQty();
+    var d = DB.items[id];
+    var ov = document.createElement('div');
+    ov.id = 'my-qty';
+    ov.className = 'fixed inset-0';
+    ov.innerHTML = '<form class="my-mb-box my-qty-box"><div class="my-mb-head"><span class="my-mb-title ' + (/^[\w -]+$/.test(d.c || '') ? d.c : '') + '">' + esc(d.n) + '</span><button type="button" class="my-mb-x" aria-label="關閉">✕</button></div>' +
+      '<input class="my-qty-in" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="send" autocomplete="off" maxlength="5" value="' + cnt + '">' +
+      '<button type="submit" class="my-mb-btn">寄到信箱</button></form>';
+    var inp = ov.querySelector('.my-qty-in');
+    ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('.my-mb-x')) closeQty(); });
+    inp.addEventListener('input', function () { inp.value = inp.value.replace(/\D+/g, ''); });
+    ov.querySelector('form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var n = parseInt(inp.value, 10);
+      if (!(n > 0)) { inp.focus(); return; }
+      closeQty();
+      mailItem(id, Math.min(99999, n));
+    });
+    document.body.appendChild(ov);
+    document.body.classList.add('my-qty-open');   // 浮動訊息在最上層會蓋住視窗 → 開著時先藏
+    try { inp.focus(); inp.select(); } catch (e) {}   // 在點擊當下 focus，手機才會直接彈出鍵盤
+  }
+  // 搜尋結果裡點道具名稱 → 數量視窗（id 只收英數底線，避免從日誌 HTML 被塞怪東西）
   window.myMailPick = function (id, cnt) {
     if (!loaded() || !/^[\w-]+$/.test(String(id)) || !DB.items[id]) return;
-    mailItem(id, Math.max(1, Math.min(99999, parseInt(cnt, 10) || 1)));
+    openQty(id, Math.max(1, Math.min(99999, parseInt(cnt, 10) || 1)));
   };
   // 回傳 true＝這句是指令（已處理，不要當聊天送出）
   window.myChatCommand = function (text) {
@@ -161,6 +186,9 @@
     var gold = /^(金幣|金錢|錢|gold|adena)$/i.test(name);   // 金幣不是道具：寄一封「金幣」信（信箱本來就支援 kind:'gold'）
     var cnt = Math.min(gold ? 2000000000 : 99999, n);
     var say = function (h) { if (typeof logSys === 'function') logSys(h); };
+    var sayWrap = function (h) {   // 多行結果：標記這一行可以換行（天堂M介面的聊天框一行一則、預設截斷）
+      say(h); var L = document.getElementById('sys-log'), e = L && L.lastElementChild; if (e) e.classList.add('my-cmd-wrap');
+    };
     if (!name) { say('<span class="text-slate-300">用法：.道具名稱 數量（例：.對武器施法的卷軸 5）</span>'); return true; }
     if (!(cnt > 0)) { say('<span class="text-red-300">數量要大於 0。</span>'); return true; }
     if (gold) {
@@ -172,14 +200,14 @@
       return true;
     }
     var r = findItemByName(name);
-    if (r) { mailItem(r, cnt); return true; }
+    if (r) { if (m) mailItem(r, cnt); else openQty(r, 1); return true; }   // 有打數量直接寄；沒打數量跳數量視窗
     var hits = searchItems(name);
     if (!hits.length) { say('<span class="text-red-300">找不到含「' + esc(name) + '」的道具，換個關鍵字試試。</span>'); return true; }
     var links = hits.slice(0, SEARCH_SHOW).map(function (h) {
       var cls = /^[\w -]+$/.test(h.c || '') ? h.c : 'text-slate-100';
       return '<a class="my-cmd-pick ' + cls + '" onclick="myMailPick(\'' + h.id + '\',' + cnt + ')">' + esc(h.n) + '</a>';
     }).join('　');
-    say('<span class="text-cyan-300">「' + esc(name) + '」相關道具' + (hits.length > SEARCH_SHOW ? '共 ' + hits.length + ' 件，先列 ' + SEARCH_SHOW + ' 件（關鍵字打長一點可以縮小）' : '') + '，點名字寄出 ×' + cnt + '：</span><br>' + links);
+    sayWrap('<span class="text-cyan-300">「' + esc(name) + '」相關道具' + (hits.length > SEARCH_SHOW ? '共 ' + hits.length + ' 件，先列 ' + SEARCH_SHOW + ' 件（關鍵字打長一點可以縮小）' : '') + '，點名字選數量：</span><br>' + links);
     return true;
   };
   function claimGifts(ids) {
@@ -537,12 +565,16 @@
     '#my-fn-menu i{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;border:1px solid #fff;background:#dc2626;color:#fff;font:bold 11px/16px sans-serif;font-style:normal}' +
     '#my-mail-btn>i{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;border:1px solid #fff;background:#dc2626;color:#fff;font:bold 11px/16px sans-serif;font-style:normal;text-align:center;box-shadow:0 1px 2px #000}' +
     '#my-mail-btn i:empty{display:none}' +
-    '#my-mailbox{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}' +
+    '#my-mailbox,#my-qty{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}' +
     '.my-mb-box{width:100%;max-width:360px;max-height:80vh;display:flex;flex-direction:column;gap:8px;padding:12px;background:#1a1612;border:1px solid #b7791f;border-radius:10px;color:#eee}' +
     '.my-mb-head{display:flex;justify-content:space-between;align-items:center;color:#fbbf24;font-weight:bold;font-size:17px}' +
     '.my-mb-x{background:none;border:0;color:#aaa;font-size:18px;cursor:pointer}' +
     '.my-mb-title{display:inline-flex;align-items:center;gap:8px}.my-mb-title svg{width:26px;height:auto}' +
     '.my-mb-list{overflow:auto;display:flex;flex-direction:column;gap:6px}' +
+    '.my-qty-in{width:100%;padding:10px 12px;font-size:22px;font-weight:bold;text-align:center;color:#fde68a;background:#0e0b08;border:1px solid #b7791f;border-radius:6px;outline:none}' +
+    '.my-qty-box .my-mb-btn{padding:10px;font-size:16px}' +
+    'body.my-qty-open #m-toast-wrap{display:none !important}' +
+    '#lmui-lines>.my-cmd-wrap{white-space:normal !important;overflow:visible !important}' +
     '.my-cmd-pick{display:inline-block;padding:1px 2px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}' +
     '.my-mb-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#0e0b08;border:1px solid #4a3f30;border-radius:6px}' +
     '.my-mb-txt{flex:1;min-width:0;display:flex;flex-direction:column}.my-mb-txt small{color:#94a3b8}' +
