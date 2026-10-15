@@ -366,7 +366,7 @@
     btn.addEventListener('click', function () {
       var a = acc.value.trim(), p = pw.value;
       if (!a || !p) { say('先在上面輸入要註冊的帳號和密碼'); (a ? pw : acc).focus(); return; }
-      if (getAccount() && !confirm('已經註冊過了，要改用現在輸入的帳號密碼嗎？角色存檔不會受影響。')) return;
+      if (getAccount() && !confirm('已經註冊過了，要改用現在輸入的帳號密碼嗎？角色不會受影響。')) return;
       try { lsSet(ACCOUNT_KEY, JSON.stringify({ a: a, h: pwHash(a, p) })); } catch (e) { say('註冊失敗，請再試一次'); return; }
       refresh(); say('註冊完成，按「登錄」開始');
     });
