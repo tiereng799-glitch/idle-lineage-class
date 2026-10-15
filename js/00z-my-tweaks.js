@@ -293,7 +293,7 @@
     { k: 'mail', name: '信箱', run: function () { openMailbox(); } },
     { k: 'trade', name: '交易所', run: function () { logSys('交易所尚未開放。'); } },
     { k: 'rank', name: '排行榜', run: function () { logSys('排行榜尚未開放。'); } },
-    { k: 'drops', name: '掉寶', run: function () { if (typeof window.lmuiShowMapDrops === 'function') window.lmuiShowMapDrops(); else logSys('要開啟天堂M介面才看得到。'); } }   // 這張地圖的怪物與掉寶（afk-lmui）；時鐘在功能鈕左邊（js/35）
+    { k: 'drops', name: '掉寶', run: function () { if (typeof window.lmuiShowMapDrops === 'function') window.lmuiShowMapDrops(); else logSys('要開啟天堂M介面才看得到。'); } }   // 這張地圖的怪物與掉寶（afk-lmui）
   ];
   // 開：選單從功能鈕的位置彈出、選項依序滑入；關：先播收合動畫再移除（點選項時直接移除，不等動畫）
   function closeFnMenu(instant) {
