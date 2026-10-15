@@ -1514,7 +1514,7 @@ function executeAutoSafeEnhance(targetUid, isEq, scrollId, goal) {
         target = singleItem;
     }
 
-    let fn0 = getItemFullName(target);
+    let fn0 = getItemFullName(target), en0 = target.en;
     let used = 0, destroyed = false, hadRisk = false, ranOut = false;
 
     // 逐級強化，直到抵達目標、卷軸用盡或爆裝
@@ -1548,6 +1548,7 @@ function executeAutoSafeEnhance(targetUid, isEq, scrollId, goal) {
         let prefix = hadRisk ? `<span class="text-green-300 font-bold">強化成功！</span>` : '';
         logSys(`${prefix}消耗了 ${used} 張 ${scrollName}，<span class="text-yellow-400 font-bold">+${target.en} ${d.n} 發出銀色的光芒。</span>`);
     }
+    if (!destroyed && typeof enhBroadcastCheck === 'function') enhBroadcastCheck(target, en0);   // 📢 超過安定值 3 → 跑馬燈（js/34）
 
     calcStats();
     renderTabs();
@@ -1698,6 +1699,7 @@ function runQuickEnhance(type) {
             if (r.destroyed) { destroyed++; continue; }   // 爆裝：不保留
             if (r.en >= goal) reached++; else partial++;  // 抵達 or 卷軸不足停在中途
             survivors.push({ ...entry, cnt: 1, uid: uid(), en: r.en, lock: false });
+            if (typeof enhBroadcastCheck === 'function') enhBroadcastCheck(survivors[survivors.length - 1], entry.en || 0);   // 📢 超過安定值 3 → 跑馬燈（js/34）
         }
     });
 
