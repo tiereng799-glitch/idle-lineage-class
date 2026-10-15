@@ -140,7 +140,7 @@ function _sumDerive(mob, owner) {
     const mean = (squadDps / designCount) * (m.aspd / 10);
     const flat = Math.round(mean * 0.55);
     const dice = Math.max(1, Math.round((mean - flat) * 2));
-    const mastery = (owner.mastery === 'm_summon');   // 🧙 召喚精通沿用：傷害×1.2、命中+5
+    const mastery = (masteryOf(owner) === 'm_summon');   // 🧙 召喚精通沿用：傷害×1.2、命中+5
     return {
         flat, dice, aspd: m.aspd,
         dmgMult: (mastery ? 1.2 : 1) * (1 + Math.min(12, Math.max(0, ((owner.d && owner.d.magicDmg) || 0) + _sumOwnerMdBonus(owner))) / 80),   // 🏺 v3.7.20 +summonMdmg
@@ -177,7 +177,7 @@ function _zmbDerive(s, owner) {
     const mean = dps * (ZOMBIE_ASPD / 10);
     const flat = Math.round(mean * 0.55);
     const dice = Math.max(1, Math.round((mean - flat) * 2));
-    const mastery = (owner.mastery === 'm_summon');   // 🧙 召喚精通沿用：造屍術隨從傷害×1.2、命中+5
+    const mastery = (masteryOf(owner) === 'm_summon');   // 🧙 召喚精通沿用：造屍術隨從傷害×1.2、命中+5
     return {
         flat, dice, aspd: ZOMBIE_ASPD,
         dmgMult: (mastery ? 1.2 : 1) * (1 + Math.min(12, Math.max(0, ((owner.d && owner.d.magicDmg) || 0) + _sumOwnerMdBonus(owner))) / 80),   // 🏺 v3.7.20 +summonMdmg
@@ -258,7 +258,7 @@ function _necroSkeletonDerive(s, owner) {
     let mean = Math.max(1, dps * (NECRO_SKELETON_ASPD / 10));
     let flat = Math.round(mean * 0.55);
     let dice = Math.max(1, Math.round((mean - flat) * 2 - 1));
-    let mastery = owner && owner.mastery === 'm_summon';
+    let mastery = owner && masteryOf(owner) === 'm_summon';
     return {
         flat: flat, dice: dice, aspd: NECRO_SKELETON_ASPD, dmgMult: 1,
         hit: _sumScaledHit(tier.lv, Math.max(0, NECRO_SKELETON_TIERS.indexOf(tier)), mastery, owner) + NECRO_SKELETON_HIT_BONUS,
@@ -398,7 +398,7 @@ function _spiritSpec(skId, ele, king) {   // 實體規格（依技能/屬性/是
     const e = (base.ele && (base.ele[ele] || base.ele.water)) || {};
     return { lv: base.lv, mrPenBase: base.mrPenBase, hitLvOff: base.hitLvOff, dmgMult: base.dmgMult, aoe: king ? SPIRIT_KING.aoe : null, hp: e.hp || 400, aspd: e.aspd || 16, dice: e.dice || [1, 40], scale: e.scale || 20 };
 }
-function _spiritIsKing(skId) { return skId === 'sk_elf_summon2' && player && player.mastery === 'e_spirit'; }
+function _spiritIsKing(skId) { return skId === 'sk_elf_summon2' && player && masteryOf(player) === 'e_spirit'; }
 function _spiritFormName(skId, ele) {
     if (_spiritIsKing(skId)) return (SPIRIT_ELE_ZH[ele] || '') + '之精靈王';   // 🏷️ v3.2.27 更名：〈屬〉之精靈系（圖檔資料夾仍為 X屬性精靈·由 formGfx 對應）
     return (SPIRIT_DEF[skId].strong ? '強力' : '') + (SPIRIT_ELE_ZH[ele] || '') + '之精靈';

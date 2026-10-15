@@ -1940,6 +1940,10 @@ function loadGame() {
         // 日後新增欄位只需登錄於 SAVE_DEFAULTS；上方逐項 if(undefined) 為歷史遷移，不必再增列。
         applySaveDefaults(player);
         if (typeof repairMasteryState === 'function') _masteryRepair = repairMasteryState(player);
+        // 🏅 精通系統關閉：劍術精通給的「妖精拿騎士單手武器」失效 → 拿著的卸回背包（詛咒中的卸不下就照原作規則留著）
+        if (typeof MASTERY_ON !== 'undefined' && !MASTERY_ON && player.mastery === 'e_sword' && player.eq && player.eq.wpn) {
+            try { let _mw = DB.items[player.eq.wpn.id]; if (_mw && !reqAllowsClass(_mw, player.cls) && !loadUpAllows(player.eq.wpn.id) && !(typeof isEquipCursed === 'function' && isEquipCursed('wpn'))) returnEquipToInv('wpn'); } catch (e) {}
+        }
         if (!player.siege || typeof player.siege !== 'object') player.siege = {};
         if (player.ismaelAccUsed && !(player.siege.accCdUntil > 0)) player.siege.accCdUntil = Date.now() + 24 * 3600 * 1000;
         delete player.ismaelAccUsed;   // 舊版「攻城獲勝重置額度」遷移為購買後 24 小時冷卻。

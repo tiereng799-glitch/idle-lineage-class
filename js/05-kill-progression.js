@@ -437,7 +437,7 @@ function killMob(idx) {
     }
 
     // === 🏅 精通任務：接取後擊敗職業對應頭目必得「精通之證」（身上已有一枚則不再掉落）===
-    if (player.masteryQuest === 'active' && MASTERY_DATA[player.cls] && mob.n === MASTERY_DATA[player.cls].boss
+    if (MASTERY_ON && player.masteryQuest === 'active' && MASTERY_DATA[player.cls] && mob.n === MASTERY_DATA[player.cls].boss
         && !player.inv.some(i => i.id === 'item_mastery_proof')) {
         gainItem('item_mastery_proof', 1);
         logSys('<span class="text-amber-300 font-bold">✦ 你從強敵的殘骸中拾起了「精通之證」——回威頓村找漢吧。</span>');

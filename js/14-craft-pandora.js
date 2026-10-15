@@ -1814,7 +1814,7 @@ window.onload = () => {
         sk_dark_crit: function(){ return '消耗最大體力 '+_P(SKILL_FX.sk_dark_crit.hpCost)+'% 與全部魔力，打出必中且必爆擊的一擊；魔力越多傷害越高、無視硬皮'; },
         sk_dark_double: function(){ let f = SKILL_FX.sk_dark_double; return '持雙刀或鋼爪時，一般攻擊 '+f.base+'% 機率傷害×2（'+f.fromLv+' 級起每 '+f.perLv+' 級+1%）'; },
         sk_royal_precise: function(){ let f = SKILL_FX.sk_royal_precise; return '全場敵人受到的傷害+（'+f.base+'＋等級÷'+f.lvDiv+'）%'; },
-        sk_royal_bravewill: function(){ let f = SKILL_FX.sk_royal_bravewill; return '一般攻擊 '+_P(f.rate)+'% 機率傷害×'+f.mult+'（劍術精通 '+_P(f.rateMastery)+'%）'; },
+        sk_royal_bravewill: function(){ let f = SKILL_FX.sk_royal_bravewill; return '一般攻擊 '+_P(f.rate)+'% 機率傷害×'+f.mult+(MASTERY_ON ? '（劍術精通 '+_P(f.rateMastery)+'%）' : ''); },
         sk_helm_dex2: function(){ return '攻擊速度與移動速度+'+_S(SKILL_FX.haste.spd)+'%'; },
         sk_helm_str2: '滿血的史巴托不會行動',
     };
@@ -1863,7 +1863,7 @@ window.onload = () => {
         if(sk.status) eff.push('附加：'+(STATUS_NAME[sk.status.kind]||sk.status.kind));
         if(sk.summon) eff.push('召喚協力單位');
         if(sk.mEff) eff.push(SK_MEFF[sk.mEff]||'特殊效果');
-        if(sk.darkPoison) eff.push('一般攻擊命中 50% 機率使目標中毒：每秒該次攻擊 60% 傷害、持續 5 秒、最多 1 層（取較高傷害並刷新；劇毒精通→100%、每秒 200%）');
+        if(sk.darkPoison) eff.push('一般攻擊命中 50% 機率使目標中毒：每秒該次攻擊 60% 傷害、持續 5 秒、最多 1 層（取較高傷害並刷新' + (MASTERY_ON ? '；劇毒精通→100%、每秒 200%' : '') + '）');
         if(sk.moveSpeedMult){
             let moveSpeedText = '移動速度+'+Math.round((sk.moveSpeedMult - 1) * 100)+'%（速度×'+sk.moveSpeedMult;
             if(sid === 'sk_holy_dash') { moveSpeedText += '，與風之疾走互斥'; eff.push('怪物重生等待 5→4 秒；場上最多 4 隻怪'); }
