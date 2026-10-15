@@ -152,6 +152,7 @@ function loadWarehouse(){
         let items = w.items || [];
         try { let tombs = _whTombsRead(); items = items.filter(it => !(it && it.uid != null && tombs[it.uid])); } catch(e){}   // 🪦 墓碑 uid＝已被領出（他分頁復活殘留）→ 隱藏；下次任一寫入時自桶清除
         _whLoadUids = new Set(items.map(it => it && it.uid).filter(u => u != null));
+        items = _whConsolidate(items);   // 同一種東西分成好幾疊 → 合成一疊（_whLoadUids 刻意在合併前算：被併掉的 uid 下次寫入會記墓碑，他分頁的舊快照不會把它復活）
         return { items: items, gold: w.gold || 0 };
     } catch(e){ _whLoadOk = false; return { items: [], gold: 0 }; }   // JSON 毀損→不可當成空倉庫
 }
@@ -377,6 +378,19 @@ if (typeof window !== 'undefined' && window.addEventListener) window.addEventLis
 //    同簽章永遠只有一格，任一方鎖定→合併後整疊鎖定（旗標傳遞統一走 _whStackAbsorb）。
 // ⚠️ 巨靈願望戒指(gw)每只的三個願望各自獨立，而 itemSig 不含 gw → 必須顯式排除，
 //    否則存入/取出會把兩只不同願望的戒指併成一疊、其中一份願望資料就此消失。
+// 🧱 倉庫同簽章多疊合併（站長 2026-10-15 回報「銀礦石分兩格」）：存入時會疊加，但「經典倉庫併入共用倉庫／模式桶合併／多分頁同步」
+//    都是按 uid 串接、不看簽章 → 同一種東西會變成好幾疊、多佔格子。讀取時統一合併：數量相加、鎖定只擴散不遺失、gw（巨靈願望戒指）不併。
+function _whConsolidate(items){
+    let out = [], bySig = Object.create(null);
+    for (let it of items) {
+        if (!it || it.gw) { out.push(it); continue; }
+        let k = itemSig(it), ex = bySig[k];
+        if (!ex) { bySig[k] = it; out.push(it); continue; }
+        ex.cnt = (ex.cnt || 1) + (it.cnt || 1);
+        if (it.lock) ex.lock = true;
+    }
+    return out;
+}
 function _whStackFind(arr, it){ return (!it.gw) ? arr.find(x => !x.gw && sameItemSig(x, it)) : null; }
 function _whStackAbsorb(stack, src, n){ stack.cnt += n; if(src && src.lock){ stack.lock = true; stack.junk = false; } }   // 合併時保護狀態只會擴散、不會遺失
 // 🗑️ 自動販賣暫態旗標不屬於倉庫（那是每次背包工作階段的狀態）。存入與取出都清掉，否則
