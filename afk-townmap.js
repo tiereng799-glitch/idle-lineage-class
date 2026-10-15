@@ -70,10 +70,12 @@
         // 狩獵區（地圖模式）：地圖畫在最底層；原本的怪物卡片變透明、移到怪物站的位置（只留點擊與特效定位）；原本的角色／隊員／寵物圖藏起來（地圖上畫）
         '#battle-view.afk-hm{background-image:none!important;position:relative;}' +
         '#battle-view.afk-hm > canvas.afk-tm-cv{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}' +
-        '#battle-view.afk-hm #mob-list{position:absolute!important;inset:0!important;height:auto!important;display:block!important;pointer-events:none;z-index:2;}' +
-        '#battle-view.afk-hm #mob-list .mob-target{position:absolute!important;width:48px!important;height:70px!important;min-height:0!important;opacity:0!important;pointer-events:auto;transform:none!important;margin:0!important;padding:0!important;}' +
-        '#battle-view.afk-hm #mob-list .mob-target .mob-img-wrap{position:absolute!important;inset:0!important;}' +
-        '#battle-view.afk-hm #mob-list .mob-target .mob-img-inner{width:100%!important;height:100%!important;transform:none!important;}' +
+        // 選擇器刻意疊兩次 id：原作手機版（area-fit / mob-grid）的卡片規則也帶 !important、權重是兩個 id＋三個 class，不疊會輸（卡片被拉高、整排被推到右邊＝傷害數字跑到右下角）
+        '#battle-view.afk-hm #mob-list#mob-list{position:absolute!important;inset:0!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;display:block!important;transform:none!important;pointer-events:none;z-index:2;}' +
+        '#battle-view.afk-hm #mob-list#mob-list .mob-target{position:absolute!important;width:48px!important;height:70px!important;min-height:0!important;max-height:none!important;opacity:0!important;pointer-events:auto;transform:none!important;margin:0!important;padding:0!important;right:auto!important;bottom:auto!important;}' +
+        '#battle-view.afk-hm #mob-list#mob-list .mob-target:not([data-uid]){visibility:hidden!important;pointer-events:none!important;}' +   // 空格子：沒有怪可以對位，別擋住點地圖
+        '#battle-view.afk-hm #mob-list#mob-list .mob-target .mob-img-wrap{position:absolute!important;inset:0!important;}' +
+        '#battle-view.afk-hm #mob-list#mob-list .mob-target .mob-img-inner{width:100%!important;height:100%!important;transform:none!important;}' +
         '#battle-view.afk-hm #player-morph-sprite,#battle-view.afk-hm .party-sprite,#battle-view.afk-hm #pet-layer{opacity:0!important;pointer-events:none!important;}' +
         '.afk-tm-load > .afk-tm-bar{width:min(62%,340px);height:10px;padding:1px;border:1px solid #8a6a2c;border-radius:2px;background:#140f06;box-shadow:inset 0 0 4px #000,0 0 8px rgba(0,0,0,.7);}' +
         '.afk-tm-load > .afk-tm-bar > i{display:block;height:100%;width:0;background:linear-gradient(#f6dc8c,#c08a2c 55%,#8a5e18);}';
@@ -642,16 +644,23 @@
             if (e.placed && e.look && (e.alive || e.act === 'death') && e.tx >= vb[0] - 3 && e.tx <= vb[2] + 3 && e.ty >= vb[1] - 3 && e.ty <= vb[3] + 3) addActor(e, e.look, false);
         });
         acts.sort(function (x, y) { return x.key - y.key; });
-        var ai = 0, heroIn = false, covered = false, heroAct = null;
-        var hp = heroWorld(), hx0 = hp[0] - 22, hx1 = hp[0] + 22, hy0 = hp[1] - 62, hy1 = hp[1];   // 角色身體大概的範圍
+        // 被樹或房子擋住的：最後再疊一層半透明的，才找得到人（村莊只管自己的角色；狩獵區連怪物一起，不然樹林裡什麼都看不到）
+        var ai = 0, drawn = [], seeAll = S.kind === 'hunt';
         for (var n = 0; n < vis.length; n++) {
             var o = vis[n].r, e = vis[n].k;
-            while (ai < acts.length && o.tKey[e] > acts[ai].key) { drawActor(ctx, cam, dpr, acts[ai], 1); if (acts[ai].hero) { heroIn = true; heroAct = acts[ai]; } ai++; }
-            if (heroIn && !covered && o.tX[e] < hx1 && o.tX[e] + BW > hx0 && o.tY[e] < hy1 && o.tY[e] + BH > hy0) covered = true;
+            while (ai < acts.length && o.tKey[e] > acts[ai].key) {
+                var it = acts[ai++];
+                drawActor(ctx, cam, dpr, it, 1);
+                if (it.hero || seeAll) { it.wx = 24 * (it.a.fx + it.a.fy) + d.ox; it.wy = 12 * (it.a.fy - it.a.fx) + d.oy; it.cov = false; drawn.push(it); }   // 身體大概的範圍：腳下往上 62、左右各 22
+            }
+            for (var di = 0; di < drawn.length; di++) {
+                var dw = drawn[di];
+                if (!dw.cov && o.tX[e] < dw.wx + 22 && o.tX[e] + BW > dw.wx - 22 && o.tY[e] < dw.wy && o.tY[e] + BH > dw.wy - 62) dw.cov = true;
+            }
             blit(ctx, o, o.tIdx[e], o.tX[e] - cx0, o.tY[e] - cy0);
         }
         while (ai < acts.length) drawActor(ctx, cam, dpr, acts[ai++], 1);
-        if (heroIn && covered) drawActor(ctx, cam, dpr, heroAct, 0.4);   // 被樹或房子擋住：再疊一層半透明的，才找得到人
+        for (di = 0; di < drawn.length; di++) if (drawn[di].cov) drawActor(ctx, cam, dpr, drawn[di], drawn[di].hero ? 0.45 : 0.4);
         if (S.kind === 'hunt') huntOverlay(ctx, cam); else placeNpcs(cam);
     }
     // 戰鬥動作（狩獵區）：attack/hurt/skill/death 播一輪；死亡停在最後一幀再淡出。回傳要畫的幀，播完回 null（改畫走路／待機）
@@ -1045,7 +1054,7 @@
     }
     function face(e) { var k = dirTo(S.me.tx, S.me.ty, e.tx, e.ty); if (k >= 0 && !S.me.walking) S.me.dir = k; }
     // 角色：自己找最近的怪走過去打；方向鍵／按住＝玩家自己走；點地面＝走過去，到了停 2 秒再自己找怪
-    function heroAI() {
+    function heroAI(idle) {
         var me = S.me;
         if (!player || player.dead) { S.path = []; return; }
         if (!pass(me.tx, me.ty) && regionReadyAt(me.tx, me.ty)) {   // 瞬移到牆裡：拉到旁邊能站的地方
@@ -1053,6 +1062,7 @@
         }
         if (wantDir() >= 0) { S.prefer = null; return; }
         if (S.manual) { if (!S.path.length && !me.walking) { S.manual = false; S.autoAt = S.ht + 20; } return; }
+        if (idle) { if (S.goal) { S.path = []; S.goal = null; } return; }   // 自動暫停：玩家自己走，不自動找怪
         if (S.ht < (S.autoAt || 0)) return;
         var range = heroRange(), tgt = (typeof getTarget === 'function') ? getTarget() : null, te = tgt && S.entByUid[tgt.uid];
         if (te && cheb(me.tx, me.ty, te.tx, te.ty) <= range) { S.path = []; face(te); return; }   // 打得到：站著打
@@ -1070,7 +1080,7 @@
         }
     }
     // 地圖上的怪：開打中站到角色旁邊；主動怪看到角色追過來（到旁邊就開打）；其餘在出生點附近閒晃
-    function entAI(e) {
+    function entAI(e, idle) {
         var me = S.me;
         if (e.walking) {
             e.t += 0.1 / e.step;
@@ -1085,7 +1095,7 @@
             else { var k = dirTo(e.tx, e.ty, me.tx, me.ty); if (k >= 0) e.dir = k; }
             return;
         }
-        if (e.aggro && player && !player.dead && dist <= AGGRO) {
+        if (!idle && e.aggro && player && !player.dead && dist <= AGGRO) {   // 自動暫停時不算戰鬥：主動怪也只閒晃
             if (dist <= 1) { engage(e); return; }
             if (S.ht >= e.next) { stepToward(e, me.tx, me.ty, 0.7); e.next = S.ht + 1; }
             return;
@@ -1106,19 +1116,24 @@
         return false;
     }
     function placeNear() { S.ents.forEach(placeEnt); }
-    function huntTick() {
+    // idle＝自動戰鬥暫停（遊戲主迴圈不跑）：由下面的小計時器推動，怪物照常閒晃、玩家可以自己走，只是不開打
+    function huntTick(idle) {
         S.ht++; S.lastLogicMs = performance.now();
-        syncEngaged();
-        heroAI();
+        if (!idle) syncEngaged();
+        heroAI(idle);
         tick(0.1);   // 角色、寵物走路（同村莊那套）
         var me = S.me;
         for (var i = 0; i < S.ents.length; i++) {
             var e = S.ents[i]; if (e.gone) continue;
             if (!e.alive || !e.placed) { placeEnt(e); continue; }
             if (!e.uid && cheb(e.tx, e.ty, me.tx, me.ty) > 40) continue;   // 離角色遠的先不動
-            entAI(e);
+            entAI(e, idle);
         }
     }
+    // 遊戲主迴圈超過 0.3 秒沒跑（自動戰鬥暫停、角色死亡等）：改由這裡每 0.1 秒推動地圖
+    setInterval(function () {
+        try { if (huntActive() && performance.now() - (S.lastCoreTick || 0) > 300) huntTick(true); } catch (e) {}
+    }, 100);
     function huntTeleport() {   // 瞬移卷軸／自動瞬移：跳到隨機一個重生點
         var sp = S.hunt.spawns[Math.floor(Math.random() * S.hunt.spawns.length)], me = S.me, x = sp[2], y = sp[3];
         me.fx = me.sx = me.tx = x; me.fy = me.sy = me.ty = y; me.t = 1; me.walking = false;
@@ -1161,7 +1176,13 @@
             ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.fillStyle = m.boss ? '#f87171' : '#fff';
             ctx.strokeText(m.n, px, top - 3); ctx.fillText(m.n, px, top - 3);
         }
-        var cards = S.map.querySelectorAll('#mob-list .mob-target[data-uid]');
+        placeCards();
+    }
+    // 核心的透明怪物卡片移到怪物身上。核心重畫怪物時會換掉卡片元素、緊接著照卡片位置噴傷害數字／未命中／死亡特效，
+    //   所以除了每次畫地圖，核心要量卡片位置前（下面包 _vfxFlush 等）也先放一次，不然新卡片停在預設位置（右下角）
+    function placeCards() {
+        if (!S || S.kind !== 'hunt' || !S.ready || !S.cam) return;
+        var d = S.t.d, cam = S.cam, cards = S.map.querySelectorAll('#mob-list .mob-target[data-uid]');
         for (var c = 0; c < cards.length; c++) {
             var el = cards[c], ee = S.entByUid[el.getAttribute('data-uid')];
             if (!ee) { el.style.setProperty('left', '-999px', 'important'); continue; }
@@ -1180,7 +1201,7 @@
     function wrapCore(name, make) { if (typeof window[name] === 'function') window[name] = make(window[name]); }
     wrapCore('tick', function (orig) {
         return function () {
-            try { huntMaybeMount(); if (huntActive() && state.running && !player.dead) huntTick(); } catch (e) { try { console.warn('[AFK-townmap] 狩獵區地圖模式出錯：', e); } catch (x) {} }
+            try { huntMaybeMount(); if (huntActive() && state.running && !player.dead) { S.lastCoreTick = performance.now(); huntTick(); } } catch (e) { try { console.warn('[AFK-townmap] 狩獵區地圖模式出錯：', e); } catch (x) {} }
             return orig.apply(this, arguments);
         };
     });
@@ -1201,6 +1222,9 @@
             try { if (S && S.kind === 'hunt' && S.huntId !== mapState.current) unmount(true); huntMaybeMount(); } catch (e) {}
             return r;
         };
+    });
+    ['_vfxFlush', 'vfxMiss', 'vfxKill', '_vfxSlotRect'].forEach(function (n) {   // 量卡片位置前先把卡片放到怪物身上
+        wrapCore(n, function (orig) { return function () { try { placeCards(); } catch (e) {} return orig.apply(this, arguments); }; });
     });
     wrapCore('_pmCasterRect', function (orig) { return function () { return heroRect() || orig.apply(this, arguments); }; });
     wrapCore('_partyMemberRect', function (orig) { return function () { return heroRect() || orig.apply(this, arguments); }; });
