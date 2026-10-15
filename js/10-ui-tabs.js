@@ -342,9 +342,20 @@ player.inv.forEach(i => {
         // 🖱️ v3.0.38 雙擊快速操作（用戶要求）：可使用型道具（藥水/卷軸/技能書/有效果的 misc）雙擊直接使用、
         //    裝備（武器/防具/飾品）雙擊直接裝備（equipItem 內建 checkCanEquip 職業判定）。
         //    單擊延遲 230ms 才開 Modal（雙擊時取消·同 js/19 裝備視窗側欄 clickTimer 模式）；回憶蠟燭維持單擊進配點重置（排除雙擊使用）。
-        const _dblAct = (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') ? 'equip'
+        //    強化卷軸雙擊 → 開強化視窗（js/33）。
+        const _dblAct = (typeof enhScrollTab === 'function' && enhScrollTab(i.id)) ? 'enh'
+            : (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') ? 'equip'
             : ((i.id !== 'candle' && (d.type === 'pot' || d.type === 'skillbk' || d.type === 'scroll' || (d.type === 'misc' && d.eff && !d.noUse))) ? 'use' : null);
-        if (_dblAct) {
+        if (_dblAct === 'enh') {
+            // 強化卷軸：自己數兩下（手機雙擊不一定有 dblclick 事件）；單擊照舊延遲開物品視窗，延遲拉長到 300ms 讓第二下來得及
+            el.onclick = () => {
+                clearTimeout(window._invClickTimer);
+                let now = Date.now(), lt = window._invLastTap;
+                if (lt && lt.uid === i.uid && now - lt.t < 300) { window._invLastTap = null; openEnhanceWindow(null, false, { scrollId: i.id }); return; }
+                window._invLastTap = { uid: i.uid, t: now };
+                window._invClickTimer = setTimeout(() => openModal(i, false), 300);
+            };
+        } else if (_dblAct) {
             el.onclick = () => { clearTimeout(window._invClickTimer); window._invClickTimer = setTimeout(() => openModal(i, false), 230); };
             el.ondblclick = (ev) => {
                 clearTimeout(window._invClickTimer);
