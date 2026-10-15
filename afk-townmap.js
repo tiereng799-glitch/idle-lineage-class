@@ -1,10 +1,11 @@
 /* ============================================================================
- * afk-townmap.js — 說話之島村莊換成會動的地圖，角色自己在村裡走動
+ * afk-townmap.js — 說話之島村莊換成會動的地圖，玩家可以操控角色在村裡自由走動
  *
  * 村莊畫面(#town-npc-map)原本是一張靜態背景圖。開啟時(只有說話之島，其他村莊照舊)：
  *   - 背景換成天堂用戶端的真地圖(地磚＋房子樹木)，用 canvas 即時畫；鏡頭跟著角色、夾在資料範圍內
  *   - 角色＝玩家目前的職業外型＋手上武器的走路／待機動畫(assets/classanim 八方向)，
- *     閒著就自己挑村裡能走的地方走過去、停幾秒再走(官方未變身走速：每格 16/24 秒)
+ *     由玩家操控(站長要求：不要自己走)：點地面＝找路走過去、按住＝往手指方向走、電腦方向鍵；
+ *     官方未變身走速(每格 16/24 秒)；八方向、斜走不切牆角、不能走的格子照用戶端第 3 層屬性
  *   - 站在地圖上的 NPC／叫賣玩家(.town-npc，核心照舊建)釘在村裡固定的格子上，跟著地圖捲動，點擊照舊
  *   - 前後遮擋：房子、樹會擋住走到後面的角色；被整個擋住時再疊一層半透明身影
  *
@@ -24,7 +25,7 @@
     if (window.AFK_TOGGLES) {
         AFK_TOGGLES.register({
             id: 'townmap', name: '村莊動態地圖', group: '遊戲介面', def: true,
-            desc: '說話之島村莊換成會動的地圖，角色會自己在村裡走動'
+            desc: '說話之島村莊換成會動的地圖，點地面就能讓角色走過去'
         });
         if (!AFK_TOGGLES.enabled('townmap')) return;
     }
@@ -44,7 +45,7 @@
 
     var st = document.createElement('style');
     st.id = 'afk-townmap-css';
-    st.textContent = '#town-npc-map > canvas.afk-tm-cv{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;pointer-events:none;}';
+    st.textContent = '#town-npc-map > canvas.afk-tm-cv{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}';   // NPC、面板都疊在上面，點它們不受影響
     (document.head || document.documentElement).appendChild(st);
 
     // ── 載入 ──────────────────────────────────────────
@@ -126,7 +127,8 @@
     var S = null;          // 目前掛著的村莊
     var running = false, lastT = 0, clock = 0, dirty = true, lastSig = '', lastCam = null;
 
-    function cellFlag(x, y) { var d = S.t.d; return (x < 0 || y < 0 || x >= d.cw || y >= d.ch) ? 1 : S.t.flags[y * d.cw + x]; }
+    // 資料最外一圈當牆：不讓角色走到資料邊上（再過去就沒地圖了）
+    function cellFlag(x, y) { var d = S.t.d; return (x < 1 || y < 1 || x >= d.cw - 1 || y >= d.ch - 1) ? 1 : S.t.flags[y * d.cw + x]; }
     function blocked(x, y) { return (cellFlag(x, y) & 1) || S.occ[y * S.t.d.cw + x] === 1; }
     function canStep(x, y, d) {
         var nx = x + d[0], ny = y + d[1];
@@ -158,18 +160,78 @@
         var out = [], i = G; while (i !== S0) { out.push([i % W, i / W | 0]); i = from[i]; }
         return out.reverse();
     }
-    // 閒著時挑村莊範圍內(flags bit1)附近能走的點
-    function pickWander() {
-        var me = S.me;
-        for (var i = 0; i < 25; i++) {
-            var r = 4 + Math.random() * 12, a = Math.random() * Math.PI * 2;
-            var gx = Math.round(me.tx + Math.cos(a) * r), gy = Math.round(me.ty + Math.sin(a) * r);
-            if (blocked(gx, gy) || !(cellFlag(gx, gy) & 2)) continue;
-            var p = findPath(me.tx, me.ty, gx, gy);
-            if (p.length && p.length <= r * 1.6 + 4) { S.path = p; return; }   // 不挑要繞一大圈才到的點
+    // 點到不能走的地方（牆、房子、樹）：改走到附近最近能站的格子
+    function nearestWalkable(gx, gy) {
+        if (!blocked(gx, gy)) return [gx, gy];
+        var best = null, bd = 1e9;
+        for (var r = 1; r <= 6 && !best; r++) for (var y = gy - r; y <= gy + r; y++) for (var x = gx - r; x <= gx + r; x++) {
+            if (!blocked(x, y)) { var dd = (x - gx) * (x - gx) + (y - gy) * (y - gy); if (dd < bd) { bd = dd; best = [x, y]; } }
         }
-        S.wanderAt = clock + 1;
+        return best;
     }
+    // ── 玩家操作：點地面＝找路走過去；按住＝往手指方向走；電腦方向鍵 ──────────
+    var hold = null, keys = {};
+    function screenDir(dx, dy) {   // 畫面向量 → 方向 0..7（西北起順時針）
+        var idx = Math.round(Math.atan2(dy, dx) * 180 / Math.PI / 45);   // 東=0、南=2、西=±4、北=-2
+        return (idx + 3 + 8) % 8;
+    }
+    function wantDir() {
+        var vx = 0, vy = 0;
+        if (keys.ArrowUp) vy -= 1; if (keys.ArrowDown) vy += 1; if (keys.ArrowLeft) vx -= 1; if (keys.ArrowRight) vx += 1;
+        if (vx || vy) return screenDir(vx, vy);
+        if (hold && hold.follow && S.cam) {
+            var p = heroWorld(), dx = hold.px - (p[0] - S.cam[0]), dy = hold.py - (p[1] - S.cam[1] - 30);
+            if (dx * dx + dy * dy < 400) return -1;   // 手指就在角色身上：停
+            // 手指在兩個方向交界附近時維持原方向，免得一步東一步東北來回換
+            var diff = ((Math.atan2(dy, dx) * 180 / Math.PI - (S.me.dir - 3) * 45) % 360 + 540) % 360 - 180;
+            if (S.me.walking && Math.abs(diff) < 34) return S.me.dir;
+            return screenDir(dx, dy);
+        }
+        return -1;
+    }
+    // 手指在地圖上的位置（地圖 CSS px）；地圖被 CSS 縮放時照比例換回來
+    function mapPoint(e) {
+        var r = S.cv.getBoundingClientRect(), k = r.width ? S.map.clientWidth / r.width : 1;
+        return [(e.clientX - r.left) * k, (e.clientY - r.top) * k];
+    }
+    function tapTo(px, py) {
+        if (!S || !S.ready || !S.cam) return;
+        var d = S.t.d, s = (px + S.cam[0] - d.ox) / 24, dd = (py + S.cam[1] - d.oy) / 12;
+        var c = nearestWalkable(Math.round((s - dd) / 2), Math.round((s + dd) / 2));
+        if (!c) return;
+        S.path = findPath(S.me.tx, S.me.ty, c[0], c[1]);
+        if (S.path.length) S.marker = { x: c[0], y: c[1], t: clock };
+        dirty = true;
+    }
+    function bindInput(cv) {
+        cv.addEventListener('pointerdown', function (e) {
+            if (!S || !S.ready) return;
+            try { cv.setPointerCapture(e.pointerId); } catch (x) {}
+            var p = mapPoint(e);
+            hold = { px: p[0], py: p[1], x0: e.clientX, y0: e.clientY, follow: false };
+            hold.timer = setTimeout(function () { if (hold) { hold.follow = true; S && (S.path = []); dirty = true; } }, 220);
+        });
+        cv.addEventListener('pointermove', function (e) {
+            if (!hold || !S) return;
+            var p = mapPoint(e); hold.px = p[0]; hold.py = p[1];
+            if (!hold.follow && Math.hypot(e.clientX - hold.x0, e.clientY - hold.y0) > 12) { hold.follow = true; S.path = []; }
+        });
+        function release() {
+            if (!hold) return;
+            clearTimeout(hold.timer);
+            if (!hold.follow) tapTo(hold.px, hold.py);   // 短按：找路走過去
+            hold = null;
+        }
+        cv.addEventListener('pointerup', release);
+        cv.addEventListener('pointercancel', release);
+    }
+    function typing(el) { var t = el && el.tagName; return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || (el && el.isContentEditable); }
+    window.addEventListener('keydown', function (e) {
+        if (!/^Arrow(Up|Down|Left|Right)$/.test(e.key) || e.ctrlKey || e.metaKey || e.altKey || typing(document.activeElement) || !visible()) return;
+        keys[e.key] = true; if (S) S.path = []; dirty = true; e.preventDefault();
+    });
+    window.addEventListener('keyup', function (e) { delete keys[e.key]; });
+    window.addEventListener('blur', function () { keys = {}; hold = null; });
     function startStep(d) {
         var me = S.me;
         me.fx = me.tx; me.fy = me.ty; me.dir = d;
@@ -179,7 +241,12 @@
         return true;
     }
     function nextStep() {
-        var me = S.me;
+        var me = S.me, d = wantDir();
+        if (d >= 0) {   // 按住／方向鍵：往那個方向走，正前方擋住就試左右斜方向
+            S.path = [];
+            if (startStep(d) || startStep((d + 1) % 8) || startStep((d + 7) % 8)) return;
+            me.dir = d; me.walking = false; return;
+        }
         if (S.path.length) {
             var n = S.path.shift(), dx = n[0] - me.tx, dy = n[1] - me.ty;
             for (var k = 0; k < 8; k++) if (DIRS[k][0] === dx && DIRS[k][1] === dy) { if (startStep(k)) return; break; }
@@ -196,11 +263,8 @@
                 if (me.walking && me.t === 0) me.t = Math.min(t - 1, 0.99);   // 接著走下一步：多出來的時間帶過去，每格之間不會頓一下
             } else me.t = t;
             me.fx = me.sx + (me.tx - me.sx) * me.t; me.fy = me.sy + (me.ty - me.sy) * me.t;
-        } else if (S.path.length) nextStep();
+        } else if (S.path.length || wantDir() >= 0) nextStep();
         else me.walking = false;
-        if (S.wasWalking && !me.walking) S.wanderAt = clock + 1.5 + Math.random() * 3.5;   // 走到了：站一下再走
-        S.wasWalking = me.walking;
-        if (!me.walking && !S.path.length && clock >= S.wanderAt) pickWander();
     }
 
     // ── 畫面 ──────────────────────────────────────────
@@ -244,6 +308,7 @@
         if (!W || !H) return;
         if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
         var ctx = S.ctx, cam = camera(W, H, dpr), cx0 = cam[0], cy0 = cam[1];
+        S.cam = cam;   // 點地面換算格子要用同一個鏡頭
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.imageSmoothingEnabled = false;
         ctx.fillStyle = '#0b1a26'; ctx.fillRect(0, 0, W, H);
@@ -253,6 +318,17 @@
         for (var cj = j0; cj <= j1; cj++) for (var ci = i0; ci <= i1; ci++) {
             var key = cj * d.cx + ci, ch = S.chunks[key] || (S.chunks[key] = buildChunk(ci, cj));
             ctx.drawImage(ch, ci * d.cs - cx0, cj * d.cs - cy0);
+        }
+        // 點地面的目的地標記：一個慢慢擴散淡出的圈
+        var mk = S.marker;
+        if (mk) {
+            var ma = 1 - (clock - mk.t) / 1.2;
+            if (ma <= 0) S.marker = null;
+            else {
+                var mx = 24 * (mk.x + mk.y) + d.ox - cx0, my = 12 * (mk.y - mk.x) + d.oy - cy0, sc = 1.3 - ma * 0.4;
+                ctx.strokeStyle = 'rgba(255,220,140,' + ma + ')'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.ellipse(mx, my, 24 * sc, 12 * sc, 0, 0, Math.PI * 2); ctx.stroke();
+            }
         }
         // 立著的物件＋角色：依全域序號畫，角色插在第一個比他前面的小塊之前
         vis.length = 0;
@@ -313,7 +389,7 @@
         var dt = Math.min(0.1, (now - (lastT || now)) / 1000); lastT = now; clock += dt;
         tick(dt);
         var me = S.me, sig = (me.walking && me.t < 1) ? 'w' + me.t : 'i' + me.tx + ',' + me.ty + ',' + me.dir + ',' + Math.floor(clock * IDLE_FPS);
-        if (sig !== lastSig || dirty || S.map.clientWidth !== S.lastW || S.map.clientHeight !== S.lastH) {
+        if (sig !== lastSig || dirty || S.marker || S.map.clientWidth !== S.lastW || S.map.clientHeight !== S.lastH) {
             try { draw(); } catch (e) { console.warn('[AFK-townmap] 繪圖失敗，改回原背景：', e); unmount(true); running = false; return; }
             S.lastW = S.map.clientWidth; S.lastH = S.map.clientHeight; dirty = false; lastSig = sig;
         }
@@ -350,7 +426,8 @@
         if (!keep) {
             unmount(false);
             var cv = document.createElement('canvas'); cv.className = 'afk-tm-cv'; cv.setAttribute('aria-hidden', 'true');
-            S = { name: name, map: map, cv: cv, ctx: cv.getContext('2d'), ready: false, chunks: {}, path: [], npcs: [], wanderAt: 0, wasWalking: false };
+            bindInput(cv);
+            S = { name: name, map: map, cv: cv, ctx: cv.getContext('2d'), ready: false, chunks: {}, path: [], npcs: [], marker: null };
         }
         S.map = map;
         S.bg = map.style.backgroundImage;   // 核心剛設好的靜態背景；資料到之前先留著，失敗時也用它
@@ -362,7 +439,6 @@
             if (!S.t) {
                 S.t = t;
                 var h = t.d.home; S.me = { fx: h[0], fy: h[1], tx: h[0], ty: h[1], sx: h[0], sy: h[1], t: 1, dir: 5, walking: false };
-                S.wanderAt = clock + 1.5;
             }
             attachNpcs();
             if (S.form) preloadDir(S.form, S.me.dir);
