@@ -1083,7 +1083,7 @@ body.view-town #col-center #log-row { flex: 1 1 0; }
 #load-delete-dialog .ldd-ok:disabled { opacity:.4; cursor:not-allowed; }
 #creation-screen #login-art-stage { position:relative; width:min(100vw, calc((100dvh - var(--orig-bar-h, 0px)) * 576 / 1024)); height:auto; min-height:0; aspect-ratio:576 / 1024; flex:0 0 auto; margin:auto; display:block; overflow:hidden; background:#050505; box-shadow:0 0 45px #000; container-type:inline-size; }
 #creation-screen #login-bg-image { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; opacity:1; pointer-events:none; user-select:none; }
-#creation-screen #login-art-stage > :not(#login-bg-image):not(.login-field-hint):not(.login-scroll-note):not(.login-deco):not(.login-remember):not(.login-register):not(.login-msg):not(#main-menu) { display:none !important; }
+#creation-screen #login-art-stage > :not(#login-bg-image):not(.login-field-hint):not(.login-scroll-note):not(.login-deco):not(.login-remember):not(.login-register):not(.login-msg):not(.login-slash):not(#main-menu) { display:none !important; }
 /* ── 登入畫面裝飾（站長 2026-10-14）：上方 logo＋背景劍的光芒。全部不吃點擊，位置都是對 login.webp(576×1024) 量的百分比 ── */
 .login-deco { position:absolute; inset:0; pointer-events:none; user-select:none; }
 .login-deco > * { position:absolute; }
@@ -1108,6 +1108,31 @@ body.view-town #col-center #log-row { flex: 1 1 0; }
 .login-glint.lg1 { left:47.6%; top:19.6%; animation-delay:.3s; }
 .login-glint.lg2 { left:57.5%; top:27.2%; animation-delay:1s; }
 @keyframes loginGlint { 0% { opacity:0; transform:scale(0) rotate(20deg); } 8% { opacity:1; transform:scale(1) rotate(65deg); } 18%, 100% { opacity:0; transform:scale(0) rotate(110deg); } }
+/* ── 登錄動畫（站長 2026-10-15）：按登錄 → 劍從地上拔起、劈開信紙 → 轉暗進選角色（js/00z playLoginSlash）──
+   座標全是對 login.webp(576×1024) 量的；1 圖片 px = 0.17361cqw。平常整組 visibility:hidden（圖照樣預載）。
+   ls-patch＝擦掉原劍的背景補丁；ls-sword＝獨立劍圖（縮 0.8、轉 -12° 後跟圖上的劍重合，旋轉中心＝紅寶石）；
+   ls-half＝兩份背景沿斜線裁成信紙上下兩半（劈開時分開），ls-hole 墊在底下蓋住圖上原本的信紙。 */
+.login-slash { position:absolute; inset:0; z-index:40; pointer-events:none; visibility:hidden; }
+#login-art-stage.slashing .login-slash { visibility:visible; pointer-events:auto; }
+#login-art-stage.slashing .login-sword-fx, #login-art-stage.slashing .login-gem, #login-art-stage.slashing .login-glint, #login-art-stage.slashing > .login-scroll-note { visibility:hidden; }
+.login-slash > * { position:absolute; user-select:none; }
+.ls-patch { left:26.042%; top:12.207%; width:64.236%; height:17.578%; z-index:1; }
+.ls-dim { inset:0; z-index:2; background:#000; opacity:0; }
+.ls-sword { left:1.344%; top:15.02%; width:86.25%; height:44.22%; z-index:3; transform-origin:71.85% 18.375%; transform:translate(0,0) rotate(-12deg) scale(1); will-change:transform; }
+.ls-sword.front { z-index:6; }
+.ls-hole { left:9.549%; top:29.004%; width:87.673%; height:38.379%; z-index:4; background:radial-gradient(ellipse at 50% 45%, #0d0e11 0%, #050506 75%); opacity:0; }
+.ls-half { inset:0; z-index:5; transform-origin:52% 48%; }
+.ls-half > img { position:absolute; inset:0; width:100%; height:100%; }
+.ls-a { clip-path:polygon(9.549% 29.004%, 80.38% 29.004%, 27.08% 67.383%, 9.549% 67.383%); }
+.ls-b { clip-path:polygon(80.38% 29.004%, 97.222% 29.004%, 97.222% 67.383%, 27.08% 67.383%); }
+.ls-trail { left:-3cqw; top:-49.2cqw; width:182cqw; height:182cqw; z-index:7; border-radius:50%; opacity:0;
+  background:conic-gradient(from 218deg, rgba(255,250,230,.55) 0deg, rgba(255,250,230,0) 55deg, transparent 55deg);
+  -webkit-mask:radial-gradient(circle, transparent 74%, #000 84%, #000 96%, transparent 100%); mask:radial-gradient(circle, transparent 74%, #000 84%, #000 96%, transparent 100%); }
+.ls-cut { left:80.38cqw; top:51.56cqw; width:86.6cqw; height:.9cqw; margin-top:-.45cqw; z-index:8; transform-origin:0 50%; transform:rotate(128deg) scaleX(0); border-radius:1cqw;
+  background:linear-gradient(90deg, rgba(255,255,255,0), #fff 12%, #fff 88%, rgba(255,255,255,0)); box-shadow:0 0 2cqw 1cqw rgba(255,236,170,.85); opacity:0; }
+.ls-flash { left:63.3cqw; top:41.15cqw; width:120cqw; height:120cqw; margin:-60cqw 0 0 -60cqw; z-index:9; border-radius:50%; background:radial-gradient(closest-side, rgba(255,255,240,.95), rgba(255,240,200,.45) 35%, rgba(255,240,200,0)); opacity:0; }
+/* 轉場黑幕掛在 body（選角色面板蓋上來時還要留著淡出） */
+#login-slash-black { position:fixed; inset:0; z-index:9000; background:#000; opacity:0; pointer-events:none; }
 /* 圖上羊皮紙卷軸的空白處：寫公告（目前是測試指令說明） */
 .login-scroll-note { position:absolute; left:24%; width:52%; top:33%; height:29%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.6cqw; text-align:center; color:#3b2a17; font-family:"Noto Serif TC","PMingLiU",serif; font-size:4.2cqw; line-height:1.55; pointer-events:none; user-select:none; }
 .login-scroll-note b { font-size:5.4cqw; letter-spacing:.2em; color:#5a1d10; margin-bottom:1.5cqw; }

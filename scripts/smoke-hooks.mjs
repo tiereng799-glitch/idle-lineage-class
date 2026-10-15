@@ -323,7 +323,7 @@ const pluginPanelProblems = await game.evaluate(() => {
   const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
   if (!(r.width > 0 && r.height > 0)) bad.push('「開始遊戲」沒有尺寸');
   else if (!(hit === start || start.contains(hit))) bad.push(`「開始遊戲」被「${(hit && (hit.id || hit.tagName)) || '未知元素'}」蓋住,點不到`);
-  const allowed = (el) => el === start || el.id === 'login-bg-image' || el.id === 'main-menu' || el.id === 'login-art-stage' || el.classList.contains('login-field-hint') || !!el.closest('.login-scroll-note') || !!el.closest('.login-deco') || !!el.closest('.login-remember') || !!el.closest('.login-register') || !!el.closest('.login-msg');   // 卷軸上的公告字、logo 與劍光（都不吃點擊）、記住帳號密碼勾選框、註冊帳號鈕與提示
+  const allowed = (el) => el === start || el.id === 'login-bg-image' || el.id === 'main-menu' || el.id === 'login-art-stage' || el.classList.contains('login-field-hint') || !!el.closest('.login-scroll-note') || !!el.closest('.login-deco') || !!el.closest('.login-remember') || !!el.closest('.login-register') || !!el.closest('.login-msg') || !!el.closest('.login-slash');   // 卷軸上的公告字、logo 與劍光（都不吃點擊）、記住帳號密碼勾選框、註冊帳號鈕與提示、登錄動畫（平常隱藏）
   const stray = [...document.querySelectorAll('#login-art-stage *')]
     .filter((el) => !allowed(el) && el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
   if (stray.length) bad.push('首頁舞台上多出看得到的元素:' + stray.slice(0, 5).map((el) => el.id || el.className || el.tagName).join('、'));
