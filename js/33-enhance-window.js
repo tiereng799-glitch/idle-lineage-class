@@ -1,6 +1,6 @@
 // ============================================================================
 // ⚒️ 裝備強化視窗（站長 2026-10-15：照範本圖改版）
-//   上：主裝備格 ＋ 卷軸格（點卷軸格切換 一般／祝福／詛咒）
+//   上：卷軸格 ＋ 要強化的裝備（站長：裝備放右邊；點卷軸格切換 一般／祝福／詛咒）
 //   中：成功機率｜強化等級 +N → +N+1｜消失機率，下面列強化前後的能力變化；開始強化鈕（與「連續強化到 +X」）
 //   下：分頁（武器／防具／飾品）＋道具格，圖示下方顯示名稱，點一下換成要強化的裝備
 //   不顯示金幣（強化本來就不花錢）。
@@ -144,9 +144,9 @@
 
         win.querySelector('.enh-body').innerHTML =
             `<div class="enh-slots">
-                <div class="enh-slot">${mainSlot}</div>
-                <div class="enh-plus">＋</div>
                 <div class="enh-slot ${canCycle ? 'cycle' : ''}" ${canCycle ? 'onclick="enhWinCycle()"' : ''}>${scrollSlot}${canCycle ? '<span class="enh-cycle-tip">點擊換卷軸</span>' : ''}</div>
+                <div class="enh-plus">＋</div>
+                <div class="enh-slot">${mainSlot}</div>
             </div>
             <div class="enh-info">${info}</div>
             ${note ? `<div class="enh-note">${note}</div>` : ''}
