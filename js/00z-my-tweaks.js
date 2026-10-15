@@ -168,7 +168,7 @@
     });
     document.body.appendChild(ov);
     document.body.classList.add('my-qty-open');   // 浮動訊息在最上層會蓋住視窗 → 開著時先藏
-    try { inp.focus(); inp.select(); } catch (e) {}   // 在點擊當下 focus，手機才會直接彈出鍵盤
+    try { lockZoom(); inp.focus(); inp.select(); } catch (e) {}   // 在點擊當下 focus，手機才會直接彈出鍵盤；先鎖縮放，免得 iOS 聚焦時放大
   }
   // 搜尋結果視窗：列出名稱含關鍵字的道具，點一個 → 換成數量視窗（同一個點擊裡 focus，手機才會彈鍵盤）
   //   不放在日誌裡：手機聊天框常停在「一般」分頁，系統訊息只會以浮動訊息閃一下就消失
@@ -537,6 +537,28 @@
     timers.push(setTimeout(finish, 2200));   // 保險：分頁切到背景等動畫事件沒來時也一定會進
     fx.addEventListener('pointerdown', finish);   // 點畫面＝略過
   }
+  // 📱 手機點輸入框時不要整頁放大：iOS 會在聚焦輸入框時自動放大（字小於 16px、或頁面有縮放時都可能）。
+  //   只在「要聚焦輸入框」那一刻把 viewport 鎖在 maximum-scale=1，離開輸入框就還原 → 平常兩指捏合放大照樣能用。
+  //   要在 touchstart 就鎖（iOS 在聚焦當下決定要不要放大，focusin 才鎖會來不及）；程式自己 focus 的（數量視窗）先呼叫 lockZoom()。
+  var vpMeta = null, vpOrig = null, vpTimer = 0;
+  function lockZoom() {
+    vpMeta = vpMeta || document.querySelector('meta[name="viewport"]'); if (!vpMeta) return;
+    if (vpOrig === null) vpOrig = vpMeta.getAttribute('content') || '';
+    clearTimeout(vpTimer);
+    if (!/maximum-scale/.test(vpMeta.getAttribute('content') || '')) vpMeta.setAttribute('content', vpOrig + ', maximum-scale=1');
+  }
+  function unlockZoom() {
+    clearTimeout(vpTimer);
+    vpTimer = setTimeout(function () {
+      var a = document.activeElement;
+      if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;   // 跳到另一個輸入框：維持鎖住
+      if (vpMeta && vpOrig !== null) vpMeta.setAttribute('content', vpOrig);
+    }, 400);
+  }
+  function isField(t) { return t && t.closest && t.closest('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=range]),textarea,select'); }
+  document.addEventListener('touchstart', function (e) { if (isField(e.target)) lockZoom(); }, { passive: true, capture: true });
+  document.addEventListener('focusin', function (e) { if (isField(e.target)) lockZoom(); }, true);
+  document.addEventListener('focusout', function (e) { if (isField(e.target)) unlockZoom(); }, true);
   function onReady() { copyWeaponTags(); applyHome(); hookGifts(); bindRemember(); bindAccount(); setTimeout(function () { try { if (typeof loginSlashSfxPreload === 'function') loginSlashSfxPreload(); } catch (e) {} }, 0); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
   else onReady();
