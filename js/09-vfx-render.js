@@ -2068,7 +2068,7 @@ function _pmCurActivePrio() {   // 目前「仍在播放中」動作的權重（
     if (!a || a === 'probing') return 0;
     let seq = (st.act === 'skill' && a.wskill) ? a.wskill : a[st.act];
     if (!seq || !seq.length) return 0;
-    let fms = (st.act === 'attack') ? _atkFrameMs((player.d && player.d.aspd) || 0, seq.length)
+    let fms = (st.act === 'attack') ? _pmAtkFrameMs(seq.length)
         : (st.act === 'skill') ? _skillFrameMs(seq.length) : (1000 / MOB_ANIM_FPS);
     return ((Date.now() - st.t) < seq.length * fms) ? (_PM_PRIO[st.act] || 0) : 0;   // 仍在播→其權重·已播完→0(idle)
 }
@@ -2079,6 +2079,7 @@ function _playerMorphTrigger(k, skId) {   // js/04 attack／castSkill·manualCas
     let newP = _PM_PRIO[k] || 0, curP = _pmCurActivePrio();   // 🎬 v3.0.106 依權重決定是否打斷（hurt>skill>attack）
     if (newP < curP) { if (k === 'attack') st.pendAtk = true; return; }   // 權重較低→不打斷（attack 排隊·hurt/skill 直接略過）
     st.act = k; st.t = Date.now(); st.pendAtk = false;   // 🔮 新動作生效→清掉排隊中的攻擊（已被取代）
+    if (typeof _pmScheduleFrame === 'function') _pmScheduleFrame(0);   // ⚔️ 出手當下就換第一幀（不等下一拍 8fps ticker，最多慢 125ms）
 }
 function _playerMorphRemove() {
     if (_pmState.el) { try { _pmState.el.remove(); } catch (e) {} }
@@ -2183,6 +2184,31 @@ function _atkFrameMs(intervalSec, seqLen) {
 // 🔮 v3.0.94 技能動畫播放速度隨施法速度：比照 _atkFrameMs·間隔＝castLock(tick·職業施法冷卻下限·js/07 施法鎖同源)÷10 秒·只加速不放慢（慢施法維持 8fps 早播完待機）
 //    v3.0.96 第2參 lockTicks（選用）：傭兵傳自身 ally.d.castLock；未傳＝主玩家 player.d.castLock（fallback 12）
 function _skillFrameMs(seqLen, lockTicks) { return _atkFrameMs((lockTicks != null ? lockTicks : ((player && player.d && player.d.castLock) || 12)) / 10, seqLen); }
+// ⚔️ 2026-10-15 主角攻擊動畫填滿整個攻擊間隔（站長回報「人物攻擊卡卡的、會停頓」）：
+//   舊制（_atkFrameMs）慢攻維持 8fps → 6 幀 0.75 秒就播完，離下一刀(例 0.88 秒)的空檔插進一格「全域時鐘的待機幀」
+//   （每次都是隨機姿勢）→ 每刀之間身體抖一下。改為每幀＝攻擊間隔÷幀數（上限 PM_ATK_FRAME_MAX_MS，比這更慢才早播完回待機），
+//   播完到下一刀之間停在收刀幀（PM_ATK_HOLD_MS 內），並由 _pmScheduleFrame 準時換幀（8fps ticker 跟 147ms 這種幀長對不齊，會一格長一格短）。
+//   只改主角；傭兵仍走 _atkFrameMs（沒有準時換幀，拉長幀長在 8fps ticker 上反而更不均）。
+const PM_ATK_FRAME_MAX_MS = 200;
+const PM_ATK_HOLD_MS = 250;
+function _pmAtkFrameMs(seqLen) {
+    let iv = (typeof playerAttackIntervalTicks === 'function') ? playerAttackIntervalTicks(true) / 10 : ((player.d && player.d.aspd) || 0);   // 實際出手間隔（含緩速）
+    if (!(iv > 0) || !(seqLen > 0)) return 1000 / MOB_ANIM_FPS;
+    return Math.max(45, Math.min(PM_ATK_FRAME_MAX_MS, iv * 1000 / seqLen));
+}
+// 單次動作（攻擊/技能/受擊）播放中：在下一幀的時間點補跑一次 _playerMorphApply（只排最近的一個；照 ticker 的條件跳過背景/補跑）
+let _pmFrameTimer = null, _pmFrameAt = 0;
+function _pmScheduleFrame(ms) {
+    let at = Date.now() + ms;
+    if (_pmFrameTimer !== null && _pmFrameAt <= at + 2) return;
+    if (_pmFrameTimer !== null) clearTimeout(_pmFrameTimer);
+    _pmFrameAt = at;
+    _pmFrameTimer = setTimeout(function () {
+        _pmFrameTimer = null;
+        if (document.hidden || (typeof catchupActive === 'function' && catchupActive())) return;
+        try { _playerMorphApply(); } catch (e) {}
+    }, Math.max(0, ms));
+}
 // 🧍 v3.7.81 用戶指定改回原本的固定站位（不移動）＝回到 v3.6.89 行為：玩家恆站前排中央、朝向永遠對攻擊目標、待機幀不播行走。
 //   走位實作（_playerMoveStep）原樣保留，只由此開關關閉；要改回走位把此值改 true 即可（行走幀仍照常預載）。
 const PLAYER_BATTLE_WALK = false;
@@ -2299,15 +2325,17 @@ function _playerMorphApply() {   // 8fps ticker 驅動（🗡️ v3.0.67 形態�
         let seq = a[_pmState.act];
         if (_pmState.act === 'skill' && a.wskill) { seq = a.wskill; _useW = true; }   // 🗡️ v3.0.70 武器專屬 skill 優先
         if (seq) {
-            let _fms = (_pmState.act === 'attack') ? _atkFrameMs((player.d && player.d.aspd) || 0, seq.length)   // ⚔️ v3.0.91 攻擊動畫隨攻速加速
+            let _fms = (_pmState.act === 'attack') ? _pmAtkFrameMs(seq.length)   // ⚔️ 攻擊動畫填滿攻擊間隔（見 _pmAtkFrameMs）
                 : (_pmState.act === 'skill') ? _skillFrameMs(seq.length)   // 🔮 v3.0.94 技能動畫隨施法速度加速（castLock 內播完）
                 : (1000 / MOB_ANIM_FPS);
-            let ff = Math.floor((Date.now() - _pmState.t) / _fms);
+            let _el = Date.now() - _pmState.t;
+            let ff = Math.floor(_el / _fms);
             if (_pmState.act === 'death') { act = 'death'; f = Math.min(ff, seq.length - 1); }
-            else if (ff < seq.length) { act = _pmState.act; f = ff; }
+            else if (ff < seq.length) { act = _pmState.act; f = ff; _pmScheduleFrame((ff + 1) * _fms - _el); }
+            else if (_pmState.act === 'attack' && !_pmState.pendAtk && _el < seq.length * _fms + PM_ATK_HOLD_MS) { act = 'attack'; f = seq.length - 1; _pmScheduleFrame(seq.length * _fms + PM_ATK_HOLD_MS - _el); }   // 收刀幀停一下等下一刀，不閃待機
             else {
                 _pmState.act = null;
-                if (_pmState.pendAtk && a.attack) { _pmState.pendAtk = false; _pmState.act = 'attack'; _pmState.t = Date.now(); act = 'attack'; f = 0; _useW = false; }   // 🎬 v3.0.106 skill／hurt 播完→接播排隊中的攻擊動畫
+                if (_pmState.pendAtk && a.attack) { _pmState.pendAtk = false; _pmState.act = 'attack'; _pmState.t = Date.now(); act = 'attack'; f = 0; _useW = false; _pmScheduleFrame(_pmAtkFrameMs(a.attack.length)); }   // 🎬 v3.0.106 skill／hurt 播完→接播排隊中的攻擊動畫
                 else _pmState.pendAtk = false;
             }
         } else if (_pmState.act !== 'death') _pmState.act = null;   // 該動作無序列→回待機（death 無序列則維持 idle）
