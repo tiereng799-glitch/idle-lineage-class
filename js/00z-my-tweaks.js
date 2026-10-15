@@ -311,6 +311,7 @@
   function lsGet(k) { return typeof _lsGet === 'function' ? _lsGet(k) : localStorage.getItem(k); }
   function lsSet(k, v) { if (typeof _lsSet === 'function') _lsSet(k, v); else localStorage.setItem(k, v); }
   function lsRm(k) { if (typeof _lsRemove === 'function') _lsRemove(k); else localStorage.removeItem(k); }
+  var rememberStore = null;   // bindRemember 的 store；登錄動畫攔下點擊後由這裡補存
   function bindRemember() {
     var cb = document.getElementById('login-remember-cb'), acc = document.getElementById('login-account'), pw = document.getElementById('login-password');
     if (!cb || !acc || !pw) return;
@@ -325,6 +326,7 @@
         else { lsSet(REMEMBER_KEY, '0'); lsRm(CRED_KEY); }
       } catch (e) {}
     }
+    rememberStore = store;
     cb.addEventListener('change', store);
     acc.addEventListener('input', function () { if (cb.checked) store(); });
     pw.addEventListener('input', function () { if (cb.checked) store(); });
@@ -376,11 +378,90 @@
       var ac = getAccount(), why = null;
       if (!ac) why = '第一次玩請先按「註冊帳號」';
       else if (acc.value.trim() !== ac.a || pwHash(ac.a, pw.value) !== ac.h) why = '帳號或密碼錯誤';
-      if (!why) { refresh(); return; }   // 通過：收掉剛才的錯誤提示
+      if (!why) {   // 通過：收掉剛才的錯誤提示，播劈信紙動畫再進選角色（動畫放不出來就直接進）
+        refresh();
+        if (_slashing) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); return; }
+        if (!slashReady()) return;
+        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+        try { if (rememberStore) rememberStore(); } catch (e2) {}
+        playLoginSlash(function () { if (typeof openLoadSelect === 'function') openLoadSelect(); });
+        return;
+      }
       e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
       say(why);
     }, true);
     refresh();
+  }
+  // ===== 登錄動畫：劍從地上拔起、劈開信紙 → 轉暗進選角色（版面與座標見 css/style.css「登錄動畫」）=====
+  //   點畫面可略過；系統開「減少動態效果」、瀏覽器沒有 Web Animations、圖還沒載好 → 不播，直接進。
+  var _slashing = false;
+  function slashFx() { var st = document.getElementById('login-art-stage'); return st ? st.querySelector('.login-slash') : null; }
+  function slashReady() {
+    var fx = slashFx(); if (!fx || typeof fx.animate !== 'function') return false;
+    try { if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return false; } catch (e) {}
+    var imgs = fx.querySelectorAll('img');
+    for (var i = 0; i < imgs.length; i++) if (!(imgs[i].complete && imgs[i].naturalWidth)) return false;
+    return true;
+  }
+  function playLoginSlash(done) {
+    var stage = document.getElementById('login-art-stage'), fx = slashFx();
+    if (_slashing || !stage || !fx) return;
+    _slashing = true;
+    var q = function (c) { return fx.querySelector(c); };
+    var sword = q('.ls-sword'), A = q('.ls-a'), B = q('.ls-b');
+    var note = stage.querySelector(':scope > .login-scroll-note');   // 信紙上的字複製進兩半，跟著一起被劈開
+    [A, B].forEach(function (h) { var o = h.querySelector('.login-scroll-note'); if (o) o.remove(); if (note) h.appendChild(note.cloneNode(true)); });
+    var black = document.getElementById('login-slash-black');
+    if (!black) { black = document.createElement('div'); black.id = 'login-slash-black'; document.body.appendChild(black); }
+    stage.classList.add('slashing');
+    var anims = [], timers = [], ended = false;
+    function an(el, kf, opt) { var o = { fill: 'forwards' }; for (var k in opt) o[k] = opt[k]; var x = el.animate(kf, o); anims.push(x); return x; }
+    var T = 1300;
+    an(q('.ls-flash'), [{ opacity: 0 }, { opacity: .9, offset: .3 }, { opacity: 0 }], { duration: 380, easing: 'ease-out' });
+    an(q('.ls-dim'), [{ opacity: 0 }, { opacity: .5 }], { duration: 400, easing: 'ease-out' });
+    an(sword, [   // 拔起後仰 → 停一下 → 往左下劈過信紙 → 順勢落下淡出（旋轉中心＝紅寶石）
+      { transform: 'translate(0,0) rotate(-12deg) scale(1)', opacity: 1, easing: 'cubic-bezier(.2,.7,.3,1)' },
+      { transform: 'translate(6.94cqw,-12.15cqw) rotate(65deg) scale(1.05)', opacity: 1, offset: .35 },
+      { transform: 'translate(6.94cqw,-12.15cqw) rotate(68deg) scale(1.05)', opacity: 1, offset: .4, easing: 'cubic-bezier(.6,0,.9,.6)' },
+      { transform: 'translate(14.25cqw,.69cqw) rotate(-5.7deg) scale(1.05)', opacity: 1, offset: .48, easing: 'ease-out' },
+      { transform: 'translate(19.1cqw,10.4cqw) rotate(-14deg) scale(1.05)', opacity: 1, offset: .75 },
+      { transform: 'translate(20.6cqw,14cqw) rotate(-16deg) scale(1.05)', opacity: 0 }
+    ], { duration: T });
+    timers.push(setTimeout(function () { sword.classList.add('front'); }, T * .4));   // 劈下前移到信紙前面（拔起時刀身還在信紙後面）
+    an(q('.ls-trail'), [{ opacity: 0 }, { opacity: .9, offset: .45 }, { opacity: 0 }], { delay: T * .4, duration: 260 });
+    an(q('.ls-cut'), [
+      { opacity: 0, transform: 'rotate(128deg) scaleX(0)' },
+      { opacity: 1, transform: 'rotate(128deg) scaleX(1)', offset: .3 },
+      { opacity: 0, transform: 'rotate(128deg) scaleX(1)' }
+    ], { delay: 600, duration: 450, easing: 'ease-out' });
+    an(q('.ls-hole'), [{ opacity: 0 }, { opacity: 1 }], { delay: 600, duration: 60 });
+    an(A, [
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+      { transform: 'translate(-4cqw,-2cqw) rotate(-3deg)', opacity: 1, offset: .25 },
+      { transform: 'translate(-11cqw,16cqw) rotate(-9deg)', opacity: 0 }
+    ], { delay: 640, duration: 700, easing: 'ease-in' });
+    an(B, [
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+      { transform: 'translate(4cqw,2cqw) rotate(3deg)', opacity: 1, offset: .25 },
+      { transform: 'translate(12cqw,22cqw) rotate(10deg)', opacity: 0 }
+    ], { delay: 640, duration: 700, easing: 'ease-in' });
+    var shake = stage.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-1.2cqw,.7cqw)' }, { transform: 'translate(1cqw,-.6cqw)' }, { transform: 'translate(-.5cqw,.3cqw)' }, { transform: 'translate(0,0)' }], { delay: 600, duration: 200 });
+    anims.push(shake);
+    var fade = an(black, [{ opacity: 0 }, { opacity: 1 }], { delay: 1050, duration: 350, easing: 'ease-in' });
+    function finish() {
+      if (ended) return; ended = true;
+      timers.forEach(clearTimeout); fx.removeEventListener('pointerdown', finish);
+      black.style.opacity = '1';
+      try { done(); } catch (e) { console.warn('[登錄動畫] 進選角色失敗:', e); }
+      anims.forEach(function (x) { try { x.cancel(); } catch (e) {} });
+      stage.classList.remove('slashing'); sword.classList.remove('front');
+      var out = black.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 350, easing: 'ease-out' });
+      out.onfinish = function () { black.style.opacity = '0'; };
+      _slashing = false;
+    }
+    fade.onfinish = finish;
+    timers.push(setTimeout(finish, 2200));   // 保險：分頁切到背景等動畫事件沒來時也一定會進
+    fx.addEventListener('pointerdown', finish);   // 點畫面＝略過
   }
   function onReady() { copyWeaponTags(); applyHome(); hookGifts(); bindRemember(); bindAccount(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
