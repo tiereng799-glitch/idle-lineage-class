@@ -1108,7 +1108,7 @@ body.view-town #col-center #log-row { flex: 1 1 0; }
 .login-glint.lg1 { left:47.6%; top:19.6%; animation-delay:.3s; }
 .login-glint.lg2 { left:57.5%; top:27.2%; animation-delay:1s; }
 @keyframes loginGlint { 0% { opacity:0; transform:scale(0) rotate(20deg); } 8% { opacity:1; transform:scale(1) rotate(65deg); } 18%, 100% { opacity:0; transform:scale(0) rotate(110deg); } }
-/* ── 登錄動畫（站長 2026-10-15）：按登錄 → 劍從地上拔起、劈開信紙 → 轉暗進選角色（js/00z playLoginSlash）──
+/* ── 登錄動畫（站長 2026-10-15）：按登錄 → 劍從信紙後面直接劈開（不抬劍）→ 轉暗進選角色（js/00z playLoginSlash）──
    座標全是對 login.webp(576×1024) 量的；1 圖片 px = 0.17361cqw。平常整組 visibility:hidden（圖照樣預載）。
    ls-patch＝擦掉原劍的背景補丁；ls-sword＝獨立劍圖（縮 0.8、轉 -12° 後跟圖上的劍重合，旋轉中心＝紅寶石）；
    ls-half＝兩份背景沿斜線裁成信紙上下兩半（劈開時分開），ls-hole 墊在最底下蓋住圖上原本的信紙。
