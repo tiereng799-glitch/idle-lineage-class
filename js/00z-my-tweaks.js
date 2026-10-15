@@ -458,6 +458,8 @@
     var shake = stage.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-1.2cqw,.7cqw)' }, { transform: 'translate(1cqw,-.6cqw)' }, { transform: 'translate(-.5cqw,.3cqw)' }, { transform: 'translate(0,0)' }], { delay: 330, duration: 200 });
     anims.push(shake);
     var fade = an(black, [{ opacity: 0 }, { opacity: 1 }], { delay: 800, duration: 350, easing: 'ease-in' });
+    function sfx(k) { try { if (typeof playLoginSlashSfx === 'function') playLoginSlashSfx(k); } catch (e) {} }
+    timers.push(setTimeout(function () { sfx('swing'); }, 170), setTimeout(function () { sfx('cut'); }, 330));   // 揮劍聲對準劍加速那段、爆擊聲對準信紙裂開＋震動
     function finish() {
       if (ended) return; ended = true;
       timers.forEach(clearTimeout); fx.removeEventListener('pointerdown', finish);
@@ -473,7 +475,7 @@
     timers.push(setTimeout(finish, 2200));   // 保險：分頁切到背景等動畫事件沒來時也一定會進
     fx.addEventListener('pointerdown', finish);   // 點畫面＝略過
   }
-  function onReady() { copyWeaponTags(); applyHome(); hookGifts(); bindRemember(); bindAccount(); }
+  function onReady() { copyWeaponTags(); applyHome(); hookGifts(); bindRemember(); bindAccount(); setTimeout(function () { try { if (typeof loginSlashSfxPreload === 'function') loginSlashSfxPreload(); } catch (e) {} }, 0); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
   else onReady();
 

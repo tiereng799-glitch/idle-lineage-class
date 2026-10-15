@@ -517,6 +517,13 @@ function _sfxPlayPool(poolKey, vol) {   // 直接播放指定 pool key（不查 
     try { return _sfxStart(poolKey, arr, vol); } catch (e) { return false; }
 }
 function _sfxDynLoad(poolKey, file) { if (typeof catchupActive === 'function' && catchupActive()) return; if (_sfxDynTried[poolKey]) return; _sfxDynTried[poolKey] = true; _sfxTryLoad(poolKey, { file: file || poolKey }); }
+// 🗡️ 首頁登入劈信紙（js/00z 呼叫）：揮劍＝大劍揮擊音 1540（與玩家大劍共用 wpnatk_1540 池）、劈開那一下＝爆擊聲。
+function loginSlashSfxPreload() { if (_sfxCfg.on && _sfxPool.wpnatk_1540 === undefined) _sfxDynLoad('wpnatk_1540', '1540'); }
+function playLoginSlashSfx(stage) {
+    if (!_sfxCfg.on) return;
+    if (stage === 'swing') { if (_sfxPool.wpnatk_1540 === undefined) loginSlashSfxPreload(); else _sfxPlayPool('wpnatk_1540', 0.85); }
+    else if (stage === 'cut') playSfx('crit');
+}
 // 🔨 強化視窗音效（js/33 呼叫）：借原版法術音——成功＝擬似魔法武器(武器)/鎧甲護持(防具·飾品)、裝備消失＝壞物術、
 //   強化值降低＝詛咒、沒有變化＝魔法相消術；蓄力＝通用施法音。開視窗時 enhSfxPreload() 先懶載，第一次強化就有聲。
 const ENH_SFX = { ok_wpn: 113, ok_arm: 137, boom: 100, down: 116, none: 140 };
