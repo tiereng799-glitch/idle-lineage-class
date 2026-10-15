@@ -127,7 +127,6 @@
     return hit;
   }
   // 關鍵字搜尋：名稱含關鍵字（不分空白、大小寫）；開頭就對上的排前面，再來名字短的（越短越接近要找的）
-  var SEARCH_SHOW = 20;
   function searchItems(kw) {
     var flat = kw.replace(/\s+/g, '').toLowerCase(), out = [];
     if (!flat) return out;
@@ -171,11 +170,31 @@
     document.body.classList.add('my-qty-open');   // 浮動訊息在最上層會蓋住視窗 → 開著時先藏
     try { inp.focus(); inp.select(); } catch (e) {}   // 在點擊當下 focus，手機才會直接彈出鍵盤
   }
-  // 搜尋結果裡點道具名稱 → 數量視窗（id 只收英數底線，避免從日誌 HTML 被塞怪東西）
-  window.myMailPick = function (id, cnt) {
-    if (!loaded() || !/^[\w-]+$/.test(String(id)) || !DB.items[id]) return;
-    openQty(id, Math.max(1, Math.min(99999, parseInt(cnt, 10) || 1)));
-  };
+  // 搜尋結果視窗：列出名稱含關鍵字的道具，點一個 → 換成數量視窗（同一個點擊裡 focus，手機才會彈鍵盤）
+  //   不放在日誌裡：手機聊天框常停在「一般」分頁，系統訊息只會以浮動訊息閃一下就消失
+  var PICK_MAX = 50;
+  function openPick(kw, hits, cnt) {
+    closeQty();
+    try { var ae = document.activeElement; if (ae && ae.blur && ae !== document.body) ae.blur(); } catch (e) {}   // 收掉聊天輸入框的鍵盤，不然會蓋住清單
+    var ov = document.createElement('div');
+    ov.id = 'my-qty';
+    ov.className = 'fixed inset-0';
+    var items = hits.slice(0, PICK_MAX).map(function (h) {
+      var cls = /^[\w -]+$/.test(h.c || '') ? h.c : '';
+      return '<button type="button" class="my-pick-it ' + cls + '" data-id="' + esc(h.id) + '">' + esc(h.n) + '</button>';
+    }).join('');
+    ov.innerHTML = '<div class="my-mb-box"><div class="my-mb-head"><span class="my-mb-title">「' + esc(kw) + '」</span><button type="button" class="my-mb-x" aria-label="關閉">✕</button></div>' +
+      (hits.length > PICK_MAX ? '<div class="my-pick-note">共 ' + hits.length + ' 件，關鍵字打長一點可以縮小</div>' : '') +
+      '<div class="my-pick-list">' + items + '</div></div>';
+    ov.addEventListener('click', function (e) {
+      if (e.target === ov || e.target.closest('.my-mb-x')) { closeQty(); return; }
+      var b = e.target.closest('.my-pick-it'); if (!b) return;
+      var id = b.getAttribute('data-id'); if (DB.items[id]) openQty(id, cnt);
+    });
+    document.body.appendChild(ov);
+    document.body.classList.add('my-qty-open');
+  }
+
   // 回傳 true＝這句是指令（已處理，不要當聊天送出）
   window.myChatCommand = function (text) {
     var t = String(text || '').trim();
@@ -186,9 +205,6 @@
     var gold = /^(金幣|金錢|錢|gold|adena)$/i.test(name);   // 金幣不是道具：寄一封「金幣」信（信箱本來就支援 kind:'gold'）
     var cnt = Math.min(gold ? 2000000000 : 99999, n);
     var say = function (h) { if (typeof logSys === 'function') logSys(h); };
-    var sayWrap = function (h) {   // 多行結果：標記這一行可以換行（天堂M介面的聊天框一行一則、預設截斷）
-      say(h); var L = document.getElementById('sys-log'), e = L && L.lastElementChild; if (e) e.classList.add('my-cmd-wrap');
-    };
     if (!name) { say('<span class="text-slate-300">用法：.道具名稱 數量（例：.對武器施法的卷軸 5）</span>'); return true; }
     if (!(cnt > 0)) { say('<span class="text-red-300">數量要大於 0。</span>'); return true; }
     if (gold) {
@@ -203,11 +219,7 @@
     if (r) { if (m) mailItem(r, cnt); else openQty(r, 1); return true; }   // 有打數量直接寄；沒打數量跳數量視窗
     var hits = searchItems(name);
     if (!hits.length) { say('<span class="text-red-300">找不到含「' + esc(name) + '」的道具，換個關鍵字試試。</span>'); return true; }
-    var links = hits.slice(0, SEARCH_SHOW).map(function (h) {
-      var cls = /^[\w -]+$/.test(h.c || '') ? h.c : 'text-slate-100';
-      return '<a class="my-cmd-pick ' + cls + '" onclick="myMailPick(\'' + h.id + '\',' + cnt + ')">' + esc(h.n) + '</a>';
-    }).join('　');
-    sayWrap('<span class="text-cyan-300">「' + esc(name) + '」相關道具' + (hits.length > SEARCH_SHOW ? '共 ' + hits.length + ' 件，先列 ' + SEARCH_SHOW + ' 件（關鍵字打長一點可以縮小）' : '') + '，點名字選數量：</span><br>' + links);
+    openPick(name, hits, cnt);
     return true;
   };
   function claimGifts(ids) {
@@ -574,8 +586,10 @@
     '.my-qty-in{width:100%;padding:10px 12px;font-size:22px;font-weight:bold;text-align:center;color:#fde68a;background:#0e0b08;border:1px solid #b7791f;border-radius:6px;outline:none}' +
     '.my-qty-box .my-mb-btn{padding:10px;font-size:16px}' +
     'body.my-qty-open #m-toast-wrap{display:none !important}' +
-    '#lmui-lines>.my-cmd-wrap{white-space:normal !important;overflow:visible !important}' +
-    '.my-cmd-pick{display:inline-block;padding:1px 2px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}' +
+    '.my-pick-list{overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:6px}' +
+    '.my-pick-it{padding:8px;text-align:left;font-size:14px;line-height:1.3;background:#0e0b08;border:1px solid #4a3f30;border-radius:6px;cursor:pointer;word-break:break-all}' +
+    '.my-pick-it:not([class*="text-"]):not([class*="c-"]){color:#eee}' +
+    '.my-pick-note{font-size:12px;color:#a8997a}' +
     '.my-mb-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#0e0b08;border:1px solid #4a3f30;border-radius:6px}' +
     '.my-mb-txt{flex:1;min-width:0;display:flex;flex-direction:column}.my-mb-txt small{color:#94a3b8}' +
     '.my-mb-btn{padding:6px 12px;border:1px solid #f59e0b;border-radius:6px;background:linear-gradient(#b45309,#78350f);color:#fff7ed;font-weight:bold;cursor:pointer;white-space:nowrap}' +
