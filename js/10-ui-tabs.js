@@ -1542,6 +1542,7 @@ function executeAutoSafeEnhance(targetUid, isEq, scrollId, goal) {
         if (isEq) { if (slot) player.eq[slot] = null; if (typeof syncShahaArrow === 'function') syncShahaArrow(); if (typeof syncDualWield === 'function') syncDualWield(); }   // ⚠️ 快速強化爆裝同樣要同步副手／沙哈箭（與 js/08 doEnhance 一致）
         else { player.inv = player.inv.filter(i => i.uid !== target.uid); }
         logSys(`消耗了 ${used} 張 ${scrollName}。<span class="text-red-500 font-bold">${fn0} 強烈的發出銀色的光芒就消失了。</span>`);
+        if (typeof enhBroadcastFail === 'function') enhBroadcastFail(target);   // 📢 衝門檻失敗 → 跑馬燈（js/34）
     } else if (ranOut) {
         logSys(`${scrollName} 不足，消耗了 ${used} 張，<span class="text-yellow-400 font-bold">+${target.en} ${d.n} 發出銀色的光芒。</span>`);
     } else {
@@ -1696,7 +1697,7 @@ function runQuickEnhance(type) {
             if ((entry.en || 0) >= Math.min(goal, enhanceCap(d))) { skipped++; survivors.push({ ...entry, cnt: 1, uid: uid() }); continue; }   // 已達/超過目標（或已達淬鍊上限）：原樣保留
             let r = _quickEnhanceUnit(d, entry.en || 0, goal, scrollStacks, st.useBless);   // 🌟 st.useBless＝使用祝福卷（強化成敗為即時擲骰）
             usedTotal += r.used;
-            if (r.destroyed) { destroyed++; continue; }   // 爆裝：不保留
+            if (r.destroyed) { destroyed++; if (typeof enhBroadcastFail === 'function') enhBroadcastFail({ ...entry, en: r.en }); continue; }   // 爆裝：不保留；📢 衝門檻失敗 → 跑馬燈（js/34）
             if (r.en >= goal) reached++; else partial++;  // 抵達 or 卷軸不足停在中途
             survivors.push({ ...entry, cnt: 1, uid: uid(), en: r.en, lock: false });
             if (typeof enhBroadcastCheck === 'function') enhBroadcastCheck(survivors[survivors.length - 1], entry.en || 0);   // 📢 超過安定值 3 → 跑馬燈（js/34）
