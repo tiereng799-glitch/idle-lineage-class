@@ -334,17 +334,59 @@
       el.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing && go) { e.preventDefault(); el.blur(); go.click(); } });
     });
   }
-  // 註冊帳號：目前沒有帳號系統，按下只亮一行提示（3 秒後淡出）
-  function bindRegister() {
-    var btn = document.getElementById('login-register-btn'), msg = document.getElementById('login-reg-msg');
-    if (!btn || !msg) return;
-    var t = null;
-    btn.addEventListener('click', function () {
-      msg.classList.add('show');
-      clearTimeout(t); t = setTimeout(function () { msg.classList.remove('show'); }, 3000);
-    });
+  // ===== 帳號（單機：只存在這台裝置）=====
+  //   第一次玩：「註冊帳號」發光＋下方常駐提示，按「登錄」會被擋下；按註冊＝用輸入框的帳號密碼建立。
+  //   註冊後：登錄前比對帳號密碼；右邊按鈕變「忘記密碼」→ 確認後清掉帳號重設（角色存檔不動）。
+  //   ⚠ 這不是安全機制：存檔就在玩家自己的裝置上，帳號只是進遊戲前那道門。單機沒有找回管道，
+  //     不給重設＝把玩家鎖在自己的存檔外，所以「忘記密碼」一定要留。密碼只存雜湊（cyrb53，防肉眼看到，不防破解）。
+  //     之後做連線帳號時整段換掉（伺服器驗證、只存 token）。
+  var ACCOUNT_KEY = 'lineage_login_account';
+  function pwHash(a, p) {
+    var str = a + '\u0001' + p, h1 = 0xdeadbeef ^ 7, h2 = 0x41c6ce57 ^ 7;
+    for (var i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
   }
-  function onReady() { copyWeaponTags(); applyHome(); hookGifts(); bindRemember(); bindRegister(); }
+  function getAccount() { try { var o = JSON.parse(lsGet(ACCOUNT_KEY) || 'null'); return (o && o.a && o.h) ? o : null; } catch (e) { return null; } }
+  function bindAccount() {
+    var acc = document.getElementById('login-account'), pw = document.getElementById('login-password');
+    var btn = document.getElementById('login-register-btn'), msg = document.getElementById('login-msg'), go = document.getElementById('btn-start-menu');
+    if (!acc || !pw || !btn || !msg || !go) return;
+    var t = null;
+    function refresh() {   // 依有沒有帳號切換按鈕文字、發光與常駐提示
+      clearTimeout(t);
+      var has = !!getAccount();
+      btn.textContent = has ? '忘記密碼' : '註冊帳號';
+      btn.classList.toggle('need', !has);
+      if (has) msg.classList.remove('show');
+      else { msg.textContent = '第一次玩請先按「註冊帳號」'; msg.classList.add('show'); }
+    }
+    function say(text) { msg.textContent = text; msg.classList.add('show'); clearTimeout(t); t = setTimeout(refresh, 3000); }
+    btn.addEventListener('click', function () {
+      if (getAccount()) {
+        if (!confirm('清除這台裝置的帳號密碼，重新註冊？角色存檔不會受影響。')) return;
+        try { lsRm(ACCOUNT_KEY); } catch (e) {}
+        refresh(); acc.focus(); return;
+      }
+      var a = acc.value.trim(), p = pw.value;
+      if (!a || !p) { say('先在上面輸入要註冊的帳號和密碼'); (a ? pw : acc).focus(); return; }
+      try { lsSet(ACCOUNT_KEY, JSON.stringify({ a: a, h: pwHash(a, p) })); } catch (e) { say('註冊失敗，請再試一次'); return; }
+      refresh(); say('註冊完成，按「登錄」開始');
+    });
+    // 登錄前驗證：在 document 捕獲階段攔（早於按鈕本身的 onclick=openLoadSelect）；Enter 送出走 go.click() 一樣會經過這裡
+    document.addEventListener('click', function (e) {
+      if (!e.target || (e.target !== go && !go.contains(e.target))) return;
+      var ac = getAccount(), why = null;
+      if (!ac) why = '第一次玩請先按「註冊帳號」';
+      else if (acc.value.trim() !== ac.a || pwHash(ac.a, pw.value) !== ac.h) why = '帳號或密碼錯誤';
+      if (!why) { refresh(); return; }   // 通過：收掉剛才的錯誤提示
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+      say(why);
+    }, true);
+    refresh();
+  }
+  function onReady() { copyWeaponTags(); applyHome(); hookGifts(); bindRemember(); bindAccount(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
   else onReady();
 
