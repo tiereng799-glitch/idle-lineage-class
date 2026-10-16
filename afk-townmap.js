@@ -1726,6 +1726,9 @@
     //   → 重開遊戲＋暫停中會一直停在舊的戰鬥畫面（玩家回報）。另外每半秒自己對一次，沒事時第一行就返回
     setInterval(function () { try { huntMaybeMount(); } catch (e) {} try { showZone(); } catch (e) {} }, 500);
     wrapCore('maybeSpawnMobs', function (orig) { return function () { if (huntOwns()) return; return orig.apply(this, arguments); }; });
+    // 同時開打幾隻：地圖模式照模擬器——靠近的怪都會打你（模擬器沒有上限；站長 2026-10-16「開打的怪參照模擬器」）。
+    //   核心戰鬥格子寫死 5 格（四軍王房那套前後排），這裡放到核心上限 5；原本一般狩獵 3 格（10/14 定的）是給沒有地圖的舊戰鬥畫面
+    wrapCore('mobSlotCount', function (orig) { return function () { var n = orig.apply(this, arguments); try { if (huntOwns()) n = Math.max(n, 5); } catch (e) {} return n; }; });
     wrapCore('killMob', function (orig) {
         return function (idx) {
             var m = mapState.mobs[idx], r = orig.apply(this, arguments);
