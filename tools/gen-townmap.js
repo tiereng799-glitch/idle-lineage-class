@@ -441,9 +441,12 @@ function readMap(id, b, clientDir, emuDir) {
         const p = readPassTxt(txt, W, H);
         // 用戶端沒有圖的區塊（大陸有幾十塊）模擬器卻標能走：當牆，免得角色走進一片空白
         for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!has[(y / B | 0) * nbx + (x / B | 0)]) p[y * W + x] = 0;
-        let diff = 0; for (let i = 0; i < W * H; i++) if (p[i] !== pass[i]) diff++;
-        console.log('[gen-townmap] 地圖 ' + id + ' 能不能走照模擬器 maps/' + id + '.txt（跟用戶端換算差 ' + diff + ' 格）');
-        pass = p;
+        let diff = 0, ghost = 0, walk = 0;
+        for (let i = 0; i < W * H; i++) { if (p[i] !== pass[i]) diff++; if (pass[i]) walk++; if (p[i] && !pass[i]) ghost++; }
+        // 模擬器的檔跟用戶端是不同版本的地圖（水晶洞穴、巨蟻洞穴：「模擬器說能走、畫面上是牆」超過一成）→ 照模擬器會穿牆（玩家回報），改用用戶端。
+        //   正常的只差伺服器修過的零星幾格（大陸 0.1%、說話之島 28 格），照模擬器
+        if (walk && ghost / walk > 0.02) console.log('[gen-townmap] 地圖 ' + id + ' 模擬器 maps/' + id + '.txt 跟用戶端不是同一版（' + ghost + ' 格畫面上是牆卻能走），改照用戶端');
+        else { console.log('[gen-townmap] 地圖 ' + id + ' 能不能走照模擬器 maps/' + id + '.txt（跟用戶端換算差 ' + diff + ' 格）'); pass = p; }
     }
     return { id, W, H, gameX0: b.startX, gameY0: b.startY, ground, pass, objs, blocks };
 }
