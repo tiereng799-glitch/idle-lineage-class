@@ -1967,17 +1967,26 @@ function capEn(en, d) { return Math.min(Math.max(0, Number(en) || 0), enhanceCap
 function capWpnEn(en) { return Math.min(Math.max(0, Number(en) || 0), ENHANCE_CAP.wpn); }   // 武器專用（上限 +15）
 // ===== 🏰 天堂經典衝裝規則（v3.0.76 強化規則變更·機率單一真相：js/08 doEnhance／js/10 executeAutoSafeEnhance／js/10 _quickEnhanceUnit 共用）=====
 //  安定值內(en < safe)：100% 成功（含負值——詛咒卷軸降至 -1 後再衝必成，即「紅變」技巧）。達到/超過安定值後：
-//   武器：+9 前 1/3 成功、2/3 爆裝；+9 起 1/6 成功、1/6 無事發生、4/6 爆裝
-//   防具(安定值>0)：成功率 = 1/目前強化值（例 +7 過 +8 為 1/7），失敗爆裝
+//   （舊）武器：+9 前 1/3 成功、2/3 爆裝；+9 起 1/6 成功、1/6 無事發生、4/6 爆裝
+//   （舊）防具(安定值>0)：成功率 = 1/目前強化值（例 +7 過 +8 為 1/7），失敗爆裝
 //   防具(安定值0)／飾品：+0 成功率 1/2；+1 以上 = 1/(目前強化值×2)（例 +2 過 +3 為 1/4），失敗爆裝
+// ⚠️ 2026-10-16 站長：上面的機率改成照模擬器（l1jserver C_ItemUSe，rates.properties EnchantChanceWeapon／Armor＝20），見 enhanceOdds
+//   武器：+9 前 (100+3×20)÷3＝53 → 52% 成功、其餘爆裝；+9 起 ÷6＝26 → 25% 成功、26% 無事、其餘爆裝
+//   防具／飾品：t＝強化值（安定值 0 的 +2）；+9 前 (100+t×20)÷t、+9 起 ÷(t×2)＝c → (c−1)% 成功；+9 起再 c% 無事；其餘爆裝
+//   （模擬器擲 1~100、「小於 c」才過 → c−1 %；整數除法照抄）
+const EMU_ENCHANT_RATE = 20;
+function enhanceOdds(type, safe, en) {   // → { ok 成功機率, none 無事機率 }，其餘爆裝
+    if (en < safe) return { ok: 1, none: 0 };
+    let c;
+    if (type === 'wpn') c = Math.floor((100 + 3 * EMU_ENCHANT_RATE) / (en >= 9 ? 6 : 3));
+    else { let t = Math.max(1, safe === 0 ? en + 2 : en); c = Math.floor((100 + t * EMU_ENCHANT_RATE) / (en >= 9 ? t * 2 : t)); }
+    let ok = Math.min(1, Math.max(0, (c - 1) / 100));
+    let none = en >= 9 ? Math.max(0, Math.min(1, (2 * c - 1) / 100) - ok) : 0;
+    return { ok: ok, none: none };
+}
 function enhanceOutcomeFromRoll(type, safe, en, r) {
-    if (en < safe) return 'ok';
-    if (type === 'wpn') {
-        if (en < 9) return r < 1 / 3 ? 'ok' : 'break';
-        return r < 1 / 6 ? 'ok' : (r < 2 / 6 ? 'none' : 'break');
-    }
-    let rate = safe > 0 ? 1 / Math.max(1, en) : (en <= 0 ? 0.5 : 1 / (en * 2));
-    return r < rate ? 'ok' : 'break';
+    let o = enhanceOdds(type, safe, en);
+    return r < o.ok ? 'ok' : (r < o.ok + o.none ? 'none' : 'break');
 }
 function enhanceRollOutcome(d, en) {   // 擲一次衝裝骰 → 'ok'成功 | 'break'爆裝 | 'none'無事（僅武器 +9 起）
     let safe = (d && d.safe) || 0;
@@ -1985,10 +1994,11 @@ function enhanceRollOutcome(d, en) {   // 擲一次衝裝骰 → 'ok'成功 | 'b
     let r = en < safe ? 0 : Math.random();   // 🎲 安定值內不消耗亂數；其餘每次嘗試獨立，可 save/load 重抽
     return enhanceOutcomeFromRoll(d && d.type, safe, en, r);
 }
-// 🌟 祝福卷軸成功時的提升量：+2 以下(含負值) 各 1/3 機率 +1/+2/+3；+3~+5 各 1/2 機率 +1/+2；+6 以上無特殊功能（等同一般卷軸 +1）
+// 🌟 祝福卷軸成功時的提升量（照模擬器 RandomELevel）：+2 以下(含負值) 32% +1、44% +2、24% +3；+3~+5 49% +2、51% +1；+6 以上等同一般卷軸 +1。
+//   祝福卷不提高成功率（模擬器也一樣），好處只在跳級
 function blessEnhanceGainFromRoll(en, r) {
-    if (en <= 2) return 1 + Math.floor(r * 3);
-    if (en <= 5) return 1 + Math.floor(r * 2);
+    if (en <= 2) return r < 0.32 ? 1 : (r < 0.76 ? 2 : 3);
+    if (en <= 5) return r < 0.49 ? 2 : 1;
     return 1;
 }
 function blessEnhanceGain(en) {

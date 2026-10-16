@@ -2944,7 +2944,7 @@ body.enh-open #m-toast-wrap { display:none !important; }   /* 強化視窗開著
 #enh-window .enh-slot-box .enh-en { font-size:16px; }
 #enh-window .enh-cnt { position:absolute; right:3px; bottom:1px; font-size:11px; font-weight:700; color:#fff; text-shadow:0 0 2px #000,0 0 2px #000,0 0 2px #000; }
 #enh-window .enh-eq { position:absolute; right:2px; top:1px; font-size:10px; font-weight:900; color:#0f0c08; background:#f3d48a; border-radius:3px; padding:0 3px; line-height:14px; }
-#enh-window .enh-info { display:grid; grid-template-columns:1fr 1.2fr 1fr; background:linear-gradient(#1a140c,#0d0a07); border:1px solid #8a6a2e; border-radius:6px; }
+#enh-window .enh-info { display:grid; grid-template-columns:1fr 1.2fr;   /* 2026-10-16 站長：拿掉「消失機率」，剩成功機率／強化等級兩欄 */ background:linear-gradient(#1a140c,#0d0a07); border:1px solid #8a6a2e; border-radius:6px; }
 #enh-window .enh-info-cell { padding:4px 4px; text-align:center; }
 #enh-window .enh-info-cell + .enh-info-cell { border-left:1px solid #3e3018; }
 #enh-window .enh-info-label { font-size:11px; color:#bfae86; }

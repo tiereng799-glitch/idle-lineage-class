@@ -106,25 +106,25 @@
         let info = '', stats = '', canGo = false, note = '';
         if (it) {
             if (isCurse) {
-                info = cell('成功機率', '100%') + cell('強化等級', `+${en} → ${en - 1 >= 0 ? '+' : ''}${en - 1}`) + cell('消失機率', '0%', 'safe');
+                info = cell('成功機率', '100%') + cell('強化等級', `+${en} → ${en - 1 >= 0 ? '+' : ''}${en - 1}`);
                 stats = statTable(d, en, en - 1);
                 canGo = en > -1;
                 if (!canGo) note = '已經降到最低';
             } else if (en >= cap) {
-                info = cell('成功機率', '—') + cell('強化等級', `+${en}`) + cell('消失機率', '—');
+                info = cell('成功機率', '—') + cell('強化等級', `+${en}`);
                 note = `已達強化上限 +${cap}`;
             } else {
                 let c = chances(d, en);
                 let to = en + 1, toTxt = '+' + to;
                 if (isBless && c.ok > 0) { let mx = Math.min(cap, en + (en <= 2 ? 3 : en <= 5 ? 2 : 1)); if (mx > to) toTxt = `+${to}～+${mx}`; }
-                info = cell('成功機率', pct(c.ok)) + cell('強化等級', `+${en} → ${toTxt}`) + cell('消失機率', pct(c.break), c.break > 0 ? 'danger' : 'safe');
+                info = cell('成功機率', pct(c.ok)) + cell('強化等級', `+${en} → ${toTxt}`);
                 if (c.none > 0) note = `無變化 ${pct(c.none)}`;
                 stats = statTable(d, en, to);
                 canGo = !!sc;
             }
             if (!sc) canGo = false;
         } else {
-            info = cell('成功機率', '—') + cell('強化等級', '—') + cell('消失機率', '—');
+            info = cell('成功機率', '—') + cell('強化等級', '—');
         }
 
         // 連續強化（一般卷軸＋武器／防具，沿用原本的「一鍵強化到指定值」）

@@ -22,15 +22,21 @@ const fs = require('fs'), path = require('path'), zlib = require('zlib');
 const REPO = path.resolve(__dirname, '..');
 function arg(n) { const i = process.argv.indexOf('--' + n); return i > 0 ? process.argv[i + 1] : null; }
 const CLIENT = arg('client'), DB = arg('db'), ONLY = arg('only') ? new Set(arg('only').split(',')) : null;
-if (!CLIENT) { console.error('用法：node tools/gen-walk-anim.js --client <用戶端資料夾> [--db <l1jdb.sql>] [--only 名,名]'); process.exit(1); }
+const MAIN = require.main === module;   // 被 tools/fix-walk-gfx.js 引用時只拿解檔函式，不跑
+if (MAIN && !CLIENT) { console.error('用法：node tools/gen-walk-anim.js --client <用戶端資料夾> [--db <l1jdb.sql>] [--only 名,名] [--gfx 名=編號,…]'); process.exit(1); }
 const BW = 24, BH = 23;
+// --gfx 名=編號：直接指定圖檔編號（tools/fix-walk-gfx.js 照長相找出來的；名字對到的編號抓錯隻時用）
+const GFX_FIX = Object.fromEntries((arg('gfx') || '').split(',').filter(Boolean).map(s => { const i = s.lastIndexOf('='); return [s.slice(0, i), +s.slice(i + 1)]; }));
 
 // ── 用戶端 idx/pak ───────────────────────────────
 const index = new Map(), fds = {};
-for (const f of fs.readdirSync(CLIENT).filter(f => /^Sprite\d*\.idx$/i.test(f))) {
-    const b = fs.readFileSync(path.join(CLIENT, f)), n = b.readInt32LE(0), pak = path.join(CLIENT, f.replace(/\.idx$/i, '.pak'));
-    for (let i = 0; i < n; i++) { const o = 4 + i * 28; index.set(b.toString('latin1', o + 4, o + 24).replace(/\0.*$/, '').toLowerCase(), { pak, off: b.readUInt32LE(o), size: b.readInt32LE(o + 24) }); }
+function openClient(dir) {
+    for (const f of fs.readdirSync(dir).filter(f => /^Sprite\d*\.idx$/i.test(f))) {
+        const b = fs.readFileSync(path.join(dir, f)), n = b.readInt32LE(0), pak = path.join(dir, f.replace(/\.idx$/i, '.pak'));
+        for (let i = 0; i < n; i++) { const o = 4 + i * 28; index.set(b.toString('latin1', o + 4, o + 24).replace(/\0.*$/, '').toLowerCase(), { pak, off: b.readUInt32LE(o), size: b.readInt32LE(o + 24) }); }
+    }
 }
+if (CLIENT) openClient(CLIENT);
 function readEntry(e) { const fd = fds[e.pak] || (fds[e.pak] = fs.openSync(e.pak, 'r')); const buf = Buffer.alloc(e.size); fs.readSync(fd, buf, 0, e.size, e.off); return buf; }
 
 // ── .spr ─────────────────────────────────────────
@@ -121,8 +127,12 @@ function sigOf(w, h, alphaAt) {
     return (x1 - x0 + 1) + 'x' + (y1 - y0 + 1) + 'x' + n + 'x' + hs;
 }
 
-// ── 對象與編號 ─────────────────────────────────────
+function framesOf(s) { const out = []; for (let k = 0; k < s.frames.length; k++) out.push(render(s, k)); return out; }
 const animRoot = path.join(REPO, 'assets/anim');
+if (!MAIN) module.exports = { openClient, index, load, render, framesOf, alphaOf, sigOf, animRoot };
+else main();
+function main() {
+// ── 對象與編號 ─────────────────────────────────────
 const vfx = fs.readFileSync(path.join(REPO, 'js/09-vfx-render.js'), 'utf8');
 const morphs = [...new Set([...vfx.match(/const MORPH_BATTLE_ANIM = new Set\(\[([\s\S]*?)\]\)/)[1].matchAll(/'([^']+)'/g)].map(m => m[1]))];
 // 已經有八方向走路的就不動；--force 時重做本工具補過的（d0 只有 walk、沒有 idle），原本整套八方向的照樣不碰
@@ -146,7 +156,7 @@ for (const t of todo) {
     try { const { w, h, a } = alphaOf(fs.readFileSync(t.img)); const s = sigOf(w, h, (x, y) => a[y * w + x]); if (s) (wanted.get(s) || wanted.set(s, []).get(s)).push(t); } catch (e) {}
 }
 console.log('[gen-walk-anim] 對象', todo.length, '個，掃用戶端 .spr 找同一張圖…');
-for (const [name, e] of index) {   // 只算第 0 幀簽名，比到對象的就記下編號
+if (todo.some(t => !GFX_FIX[t.name])) for (const [name, e] of index) {   // 只算第 0 幀簽名，比到對象的就記下編號（全部都 --gfx 指定了就不用掃）
     const m = name.match(/^(\d+)-\d+\.spr$/); if (!m) continue;
     let s; try { s = parse(readEntry(e)); } catch (x) { continue; }
     if (!s.frames.length) continue;
@@ -185,7 +195,6 @@ if (DB) for (const r of sqlRows(fs.readFileSync(DB, 'utf8'), 'npc')) {
 }
 
 // ── 輸出 ─────────────────────────────────────────
-function framesOf(s) { const out = []; for (let k = 0; k < s.frames.length; k++) out.push(render(s, k)); return out; }
 function isShadow(body, sh) {
     if (!sh || sh.length !== body.length) return false;
     for (const r of sh) if (r) for (let i = 0; i < r.rgba.length; i += 4) if (r.rgba[i + 3]) { const R = r.rgba[i], G = r.rgba[i + 1], B = r.rgba[i + 2]; if (Math.max(R, G, B) > 110 || Math.abs(R - G) > 16 || Math.abs(G - B) > 16) return false; }
@@ -194,7 +203,7 @@ function isShadow(body, sh) {
 let done = 0, files = 0, bytes = 0; const miss = [], origins = {};
 for (const t of todo) {
     const db = [...(byName[t.name] || [])], sg = [...(t.sigG || [])];
-    const cands = [...new Set([...sg.filter(g => db.includes(g)), ...sg, ...db])];
+    const cands = GFX_FIX[t.name] ? [GFX_FIX[t.name]] : [...new Set([...sg.filter(g => db.includes(g)), ...sg, ...db])];
     let g = null;
     for (const c of cands) { let ok = 0; for (let d = 0; d < 8; d++) if (load(c, d)) ok++; if (ok >= 7) { g = c; break; } }
     if (g == null) { miss.push(t.name + (cands.length ? '（用戶端沒有八方向走路檔）' : '（找不到圖檔編號）')); continue; }
@@ -236,3 +245,4 @@ for (const t of todo) {
 }
 console.log('[gen-walk-anim] 完成 ' + done + ' / ' + todo.length + ' 個，' + files + ' 個檔，' + (bytes / 1e6).toFixed(1) + 'MB');
 if (miss.length) console.log('[gen-walk-anim] 略過：' + miss.join('、'));
+}

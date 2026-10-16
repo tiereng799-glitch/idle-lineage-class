@@ -255,7 +255,7 @@
         if (!L || L.kind === 'class') return false;
         var k = L.name; if (k in glowOf) return glowOf[k];
         if (k in GLOW_FIX) return (glowOf[k] = GLOW_FIX[k]);
-        var base = (L.kind === 'anim' ? 'assets/anim/' : 'assets/morphanim/') + k, pf = null;
+        var base = (L.kind === 'anim' || L.kind === 'root' ? 'assets/anim/' : 'assets/morphanim/') + k, pf = null;
         ['idle_', 'attack_', 'walk_'].some(function (p) { return mf(base, p) && (pf = p); });
         if (!pf) return (glowOf[k] = false);
         var im = img(base.replace(k, encodeURIComponent(k)) + '/' + pf + '0.png');
@@ -293,11 +293,20 @@
         if (!M[name]) return null;
         return { key: 'm:' + name, kind: 'morph', name: name, three: !!(M[name + '2'] && M[name + 'F']), walkN: 0, idleN: mf('assets/morphanim/' + name, 'idle_') || 1 };
     }
+    // 只有單方向戰鬥動作的怪（用戶端沒有八方向圖的新怪：底比斯、提卡爾、安塔瑞斯巢穴…）：站著、移動都畫單方向待機，角色在右邊就左右翻。
+    //   原本找不到八方向走路圖就整隻不畫（站長：檢查所有圖檔，查到 33 種怪在地圖上看不到）
+    function rootLook(name) {
+        var R = window.TOWNMAP_ANIMROOT && TOWNMAP_ANIMROOT[name]; if (!R || !R.idle) return null;
+        var n = mf('assets/anim/' + name, 'idle_'); if (!n) return null;
+        return { key: 'r:' + name, kind: 'root', name: name, walkN: 0, idleN: n };
+    }
+    function mobLook(name) { return animLook(name) || rootLook(name) || morphLook(name); }
     function morphFolder(L, dir) { return L.name + (L.three ? SFX3[dir] : ''); }
     function frameSrc(L, dir, act, k, shadow) {
         var s = (shadow ? '_s_' : '_') + k + '.png';
         if (L.kind === 'class') return 'assets/classanim/' + encodeURIComponent(L.av + DIR_SFX[dir]) + '/' + L.wk + '_' + act + s;
         if (L.kind === 'anim') return 'assets/anim/' + encodeURIComponent(L.name) + '/d' + dir + '/' + act + s;
+        if (L.kind === 'root') return 'assets/anim/' + encodeURIComponent(L.name) + '/' + act + s;
         return 'assets/morphanim/' + encodeURIComponent(morphFolder(L, dir)) + '/idle' + s;
     }
     // 落腳點＝影子中心在圖裡的位置；走路幀本身每幀往前挪，角色改成平滑移動，所以把這段扣掉，人才穩、地圖平順捲動
@@ -309,6 +318,7 @@
             var d = DIRS[dir], f = k / L.walkN;
             return [b[0] + 24 * (d[0] + d[1]) * f, b[1] + 12 * (d[1] - d[0]) * f];
         }
+        if (L.kind === 'root') return TOWNMAP_ANIMROOT[L.name].idle;
         return TOWNMAP_MORPH[morphFolder(L, dir)] || TOWNMAP_MORPH[L.name];
     }
     function preloadDir(L, dir) {
@@ -841,11 +851,12 @@
             n = mf(folder, name + '_');
             var at = L.at[a.dir]; an = (act === 'attack' && at.length > 11) ? [at[10], at[11]] : [at[8], at[9]];
             folder = 'assets/classanim/' + encodeURIComponent(L.av + DIR_SFX[a.dir]);
-        } else if (L.kind === 'anim') {
+        } else if (L.kind === 'anim' || L.kind === 'root') {   // root＝只有單方向圖的怪（見 rootLook）：走下面「單方向」那條
             var R = window.TOWNMAP_ANIMROOT && TOWNMAP_ANIMROOT[L.name];
             var has8 = a.pet && L.at && L.at[a.dir] && mf('assets/anim/' + L.name, 'd' + a.dir + '/' + (act === 'skill' ? 'attack' : act) + '_');   // 夥伴有八方向動作就用（面向目標），怪物照單方向
-            if (R && R[act] && !has8) {
-                name = act; n = mf('assets/anim/' + L.name, act + '_'); an = R[act];
+            var ract = (R && !R[act] && act === 'attack' && R.skill) ? 'skill' : act;   // 沒有攻擊圖、只有技能圖的（漂浮之眼）：出手播技能
+            if (R && R[ract] && !has8) {
+                name = ract; n = mf('assets/anim/' + L.name, ract + '_'); an = R[ract];
                 folder = 'assets/anim/' + encodeURIComponent(L.name);
                 flip = !!a.faceRight;
             } else {   // 八方向的動作（寵物）：d<方向>/<動作>，跟同方向待機同一張畫布 → 用待機落腳點；沒有 skill 幀就播 attack
@@ -911,22 +922,28 @@
         var pk = (L.key || L.name) + ':' + a.dir;
         if (a._pd !== pk) { a._pd = pk; preloadDir(L, a.dir); }   // 換方向／換外型：這個方向的走路、待機幀一次先抓
         var body = img(frameSrc(L, a.dir, act, k)), sh = img(frameSrc(L, a.dir, act, k, true));
+        var flip = L.kind === 'root' && !!a.faceRight;   // 單方向圖面向左：角色在右邊就翻過來（同戰鬥動作）
         if (body.complete && body.naturalWidth) {
+            ctx.save();
+            if (flip) { ctx.translate(Math.round(px * dpr) / dpr, 0); ctx.scale(-1, 1); ox = Math.round(-an[0] * dpr) / dpr; }
             if (alpha === 1 && sh.complete && sh.naturalWidth) { ctx.globalAlpha = 0.55; ctx.drawImage(sh, ox, oy); }
             var glow = glowLook(L);
             if (glow) ctx.globalCompositeOperation = 'screen';
             ctx.globalAlpha = alpha; ctx.drawImage(body, ox, oy);
-            if (glow) ctx.globalCompositeOperation = 'source-over';
-            a._lb = { im: body, an: an, glow: glow };
+            ctx.restore();
+            a._lb = { im: body, an: an, glow: glow, flip: flip };
         } else drawLast(ctx, cam, dpr, a, alpha);   // 這幀還沒下載完：先畫上一張成功畫過的（不然人物、怪物會一閃一閃不見）
         ctx.globalAlpha = 1;
     }
     function drawLast(ctx, cam, dpr, a, alpha) {
         var lb = a._lb; if (!lb) return;
         var d = S.t.d, px = 24 * (a.fx + a.fy) + d.ox - cam[0], py = 12 * (a.fy - a.fx) + d.oy - cam[1];
+        ctx.save();
+        var x = Math.round((px - lb.an[0]) * dpr) / dpr;
+        if (lb.flip) { ctx.translate(Math.round(px * dpr) / dpr, 0); ctx.scale(-1, 1); x = Math.round(-lb.an[0] * dpr) / dpr; }
         if (lb.glow) ctx.globalCompositeOperation = 'screen';
-        ctx.globalAlpha = alpha; ctx.drawImage(lb.im, Math.round((px - lb.an[0]) * dpr) / dpr, Math.round((py - lb.an[1]) * dpr) / dpr);
-        ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = alpha; ctx.drawImage(lb.im, x, Math.round((py - lb.an[1]) * dpr) / dpr);
+        ctx.restore(); ctx.globalAlpha = 1;
     }
     // 地圖上的 NPC／叫賣玩家：腳點釘在村裡的站位格，跟著鏡頭移（只在鏡頭動了才改位置）
     function placeNpcs(cam) {
@@ -1314,7 +1331,7 @@
         S.hunt.spawns.forEach(function (sp, si) {
             var base = DB.mobs[sp[0]]; if (!base) return;
             for (var i = 0; i < sp[1]; i++) {
-                var e = { mob: sp[0], name: base.n, look: animLook(base.n) || morphLook(base.n), sp: si, aggro: base.beh === '主動',
+                var e = { mob: sp[0], name: base.n, look: mobLook(base.n), sp: si, aggro: base.beh === '主動',
                     placed: false, alive: true, uid: null, fx: 0, fy: 0, tx: 0, ty: 0, sx: 0, sy: 0, t: 1, dir: Math.floor(Math.random() * 8), walking: false, step: 1, next: 0, phase: Math.random() * 8 };
                 pickHome(e); S.ents.push(e);
             }
@@ -1394,7 +1411,7 @@
         var m = mapState.mobs[i]; if (!m) return false;
         if (mapState.spawnAt) mapState.spawnAt[i] = null;
         e.uid = m.uid; S.entByUid[m.uid] = e;
-        if (m.n !== e.name) { var L = animLook(m.n) || morphLook(m.n); e.name = m.n; if (L) e.look = L; }   // 抽到頭目：外型跟著換
+        if (m.n !== e.name) { var L = mobLook(m.n); e.name = m.n; if (L) e.look = L; }   // 抽到頭目：外型跟著換
         if (typeof renderMobs === 'function') renderMobs();
         return true;
     }
@@ -1408,7 +1425,7 @@
             var me = S.me, c = null;
             for (var k = 0; k < 8 && !c; k++) { var x = me.tx + DIRS[(k + 3) % 8][0], y = me.ty + DIRS[(k + 3) % 8][1]; if (pass(x, y) === 3) c = [x, y]; }
             c = c || [me.tx + 1, me.ty];
-            var e = { mob: null, name: m.n, look: animLook(m.n) || morphLook(m.n), sp: -1, aggro: true, placed: true, alive: true, uid: m.uid, t: 1, dir: 6, walking: false, step: 1, next: 0, phase: 0 };
+            var e = { mob: null, name: m.n, look: mobLook(m.n), sp: -1, aggro: true, placed: true, alive: true, uid: m.uid, t: 1, dir: 6, walking: false, step: 1, next: 0, phase: 0 };
             putEnt(e, c[0], c[1]);
             S.ents.push(e); S.entByUid[m.uid] = e;
         });
@@ -1724,14 +1741,15 @@
     wrapCore('_pmCasterRect', function (orig) { return function () { return heroRect() || orig.apply(this, arguments); }; });
     wrapCore('_partyMemberRect', function (orig) { return function () { return heroRect() || orig.apply(this, arguments); }; });
     // 角色的戰鬥動作照核心：攻擊、施法，以及被打（核心 HP 一掉就叫 'hurt'；原本漏接 → 地圖上被打完全沒反應，看起來像「不太會被打到」，玩家回報）。
-    //   權重同核心 hurt＞skill＞attack：受傷那一下播完前，攻擊不打斷它
-    var HURT_MS = 260;
+    //   攻擊、施法優先：受傷只在「這一刀已經揮完」時才播。原本是受傷優先，被好幾隻圍著打時幾乎每一拍都在受傷，
+    //   攻擊動作一直被蓋掉＝站長回報「沒有攻擊動作」
     wrapCore('_playerMorphTrigger', function (orig) {
         return function (k) {
             try {
                 if (huntActive() && S.me.act !== 'death' && (k === 'attack' || k === 'skill' || k === 'hurt')) {
-                    var hurting = S.me.act === 'hurt' && performance.now() - S.me.actT < HURT_MS;
-                    if (!hurting || k === 'hurt') { S.me.act = k; S.me.actT = performance.now(); }
+                    var swingMs = (typeof playerAttackIntervalTicks === 'function') ? playerAttackIntervalTicks(true) * 100 : 800;
+                    var swinging = (S.me.act === 'attack' || S.me.act === 'skill') && performance.now() - S.me.actT < swingMs;
+                    if (k !== 'hurt' || !swinging) { S.me.act = k; S.me.actT = performance.now(); }
                 }
             } catch (e) {}
             return orig.apply(this, arguments);

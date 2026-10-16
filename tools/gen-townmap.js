@@ -828,7 +828,12 @@ function buildAnims() {
     // tools/gen-walk-anim.js 補的走路幀有 .spr 的基準點（tools/walk-origin.json）：比「猜最下面的像素」準（骷髏的彎刀比腳低會猜錯、每轉一個方向跳一下）
     let ORIGIN = {}; try { ORIGIN = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'tools', 'walk-origin.json'), 'utf8')); } catch (e) {}
     for (const n of fs.readdirSync(aroot)) {
-        if (!fs.existsSync(path.join(aroot, n, 'd0'))) continue;
+        if (!fs.existsSync(path.join(aroot, n, 'd0'))) {   // 只有單方向戰鬥動作（用戶端沒有八方向圖的新怪：底比斯、提卡爾…）：也記落腳點，地圖上用單方向圖畫（不然整隻看不到）
+            const r = {};
+            for (const act of ['idle', 'attack', 'hurt', 'death', 'skill']) { const a = anchor(path.join(aroot, n), act); if (a) r[act] = [r1(a[0]), r1(a[1])]; }
+            if (r.idle) root[n] = r;
+            continue;
+        }
         const dirs = [0, 1, 2, 3, 4, 5, 6, 7].map(d => {
             const dd = path.join(aroot, n, 'd' + d), og = ORIGIN[n] && ORIGIN[n][d];
             const w0 = (og && !fs.existsSync(path.join(dd, 'walk_s_0.png'))) ? og : anchor(dd, 'walk');   // 有影子照影子量（跟用戶端一致）、沒影子用基準點
@@ -847,11 +852,11 @@ function buildAnims() {
         if (dirs.some(r => r[4] === 0)) inPlace.push(n);
         // 單方向的戰鬥動作（狩獵區原本那套：待機/攻擊/受傷/死亡，面向左邊）：各自的落腳點
         const r = {};
-        for (const act of ['idle', 'attack', 'hurt', 'death']) { const a = anchor(path.join(aroot, n), act); if (a) r[act] = [r1(a[0]), r1(a[1])]; }
+        for (const act of ['idle', 'attack', 'hurt', 'death', 'skill']) { const a = anchor(path.join(aroot, n), act); if (a) r[act] = [r1(a[0]), r1(a[1])]; }
         // 跟八方向走路對齊：各動作各量影子會不一致（同一張畫布、骷髏待機跟攻擊差 12px）、也跟走路的落腳點對不上（蜘蛛差 22px、哈維 70px）
         //   → 走路換攻擊、待機換攻擊整隻跳一下。改成：待機第 0 幀跟走路圖最像的那個方向用身體重心疊起來，換算出整張畫布的一個落腳點，同大小的動作共用
         const al = alignRoot(path.join(aroot, n), dirs, aroot + '/' + n);
-        if (al) { for (const act of ['idle', 'attack', 'hurt', 'death']) if (r[act] && al.sameCanvas(act)) r[act] = [r1(al.x), r1(al.y)]; aligned++; }
+        if (al) { for (const act of ['idle', 'attack', 'hurt', 'death', 'skill']) if (r[act] && al.sameCanvas(act)) r[act] = [r1(al.x), r1(al.y)]; aligned++; }
         if (Object.keys(r).length) root[n] = r;
     }
     console.log('[gen-townmap] 單方向動作圖跟走路對齊 ' + aligned + ' 個');
