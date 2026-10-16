@@ -313,7 +313,16 @@
       /* ── 右欄面板（能力/魔法/背包/設定）拉高：從頭像列下方一路到工具列，蓋住戰鬥畫面下半與血條 ──
          #game-screen（捲動區）上緣改到頭像列下方；#col-center（戰鬥）照跑，只用 clip-path 裁成頭像列那一條當底圖（不動版面，切回狩獵場不會重排）。
          #col-right 抬到 #col-center（z:1）之上；血條（#lmui-hud 裡、z 比整個 #game-screen 高）直接收起。 */
-      ':root{--lmui-ptop:calc(var(--orig-bar-h,0px) + 90px);--lmui-ptabs-h:40px;}',
+      ':root{--lmui-ptop:calc(var(--orig-bar-h,0px) + 90px);--lmui-ptabs-h:40px;--lmui-whead-h:36px;}',
+      /* 魔法／背包做成視窗（站長）：面板最上面一條標題列＋右上角關閉鈕，內容（分頁列、魔法書、背包格）整片往下讓 */
+      '#lmui-whead{display:none;position:fixed;left:6px;right:6px;top:var(--lmui-ptop);height:var(--lmui-whead-h);box-sizing:border-box;z-index:9551;align-items:center;justify-content:center;background:linear-gradient(#4a4038,#221d19);border:1px solid #6b5a48;border-bottom-color:#2a241e;border-radius:6px 6px 0 0;box-shadow:0 -2px 6px rgba(0,0,0,.6);}',
+      '#lmui-whead b{font-size:17px;font-weight:700;letter-spacing:.3em;color:#f1e3c4;text-shadow:0 1px 2px #000;}',
+      '#lmui-whead button{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:32px;height:28px;padding:0;border:1px solid #8a6f52;border-radius:4px;background:linear-gradient(#6a3026,#2e140f);color:#fbe3d2;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;}',
+      '#lmui-whead button:active{background:linear-gradient(#8a3e30,#46201a);}',
+      'html body.lmui-battle.lmui-tall.lmui-whead #lmui-whead{display:flex;}',
+      'html body.lmui-battle.lmui-tall.lmui-whead #game-screen{padding-top:calc(var(--lmui-ptop) + var(--lmui-whead-h) + 6px) !important;}',
+      'html body.lmui-battle.lmui-tall.lmui-whead.lmui-ptabs #game-screen{padding-top:calc(var(--lmui-ptop) + var(--lmui-whead-h) + var(--lmui-ptabs-h) + 6px) !important;}',
+      'html body.lmui-battle.lmui-whead #lmui-bagtabs{top:calc(var(--lmui-ptop) + var(--lmui-whead-h));border-radius:0;border-top:0;}',
       /* ⚠️ #game-screen 本身要從畫面頂端開始、用 padding 把內容推到頭像列下方，不能直接把 top 拉低：
          iPhone 會把「可捲動容器」裡的 fixed 子元素裁在容器範圍內 → 內容一長到要捲（設定/背包/能力），#col-center 那條場景整個被裁掉、只剩底色
          （魔法頁不用捲所以沒事）。內容往上捲時改由 #col-center（z:3，已裁成頭像列那一條）蓋住，不會捲進場景區。 */
@@ -1506,9 +1515,8 @@
         // 再點一次同一顆＝關掉它開的畫面、回到戰鬥畫面（這些頁面本身沒有關閉鈕；狩獵場另有上面那條「開關地圖清單」）
         var again = (t.id === 'exit') ? document.body.classList.contains('lmui-exitwin') : (t.id !== 'battle' && currentTool() === t.id);
         if (again) {
-          closeAllWindows();
-          if (t.id !== 'exit') { var cb = navBtn('center'); if (cb) cb.click(); }
-          try { syncBag(); syncToolbar(); } catch (e) {}
+          if (t.id === 'exit') { closeAllWindows(); try { syncBag(); syncToolbar(); } catch (e) {} }
+          else closeTool();
           return;
         }
         closeAllWindows();
@@ -1518,6 +1526,12 @@
       bar.appendChild(b);
     });
     n.appendChild(bar);
+  }
+  // 收起目前開的功能頁、回到戰鬥畫面（工具列再點一次同一顆、視窗右上角 ✕）
+  function closeTool() {
+    closeAllWindows();
+    var cb = navBtn('center'); if (cb) cb.click();
+    try { syncBag(); syncToolbar(); } catch (e) {}
   }
   // 目前在哪一格：日誌開著＝聊天；戰鬥/隊伍看 mview-*；右欄看哪個分頁亮著（武器/防具算背包，裝備欄位算能力）
   var RIGHT_TAB_TOOL = { stats: 'stats', audit: 'stats', pvp: 'stats', clan: 'stats', equip: 'items', skill: 'skill', items: 'items', weapons: 'items', armors: 'items', automation: 'automation' };
@@ -1677,6 +1691,18 @@
     });
     host.innerHTML = html + '</div>';
   }
+  // 魔法／背包／裝備：視窗標題列（右上角 ✕＝收回狩獵場，跟再點一次底部同一顆按鈕一樣）
+  function syncWinHead(title) {
+    var h = $('lmui-whead');
+    if (!h && title) {
+      h = document.createElement('div'); h.id = 'lmui-whead';
+      h.innerHTML = '<b></b><button type="button" aria-label="關閉">✕</button>';
+      h.querySelector('button').addEventListener('click', function (e) { e.stopPropagation(); closeTool(); });
+      document.body.appendChild(h);
+    }
+    toggleCls('lmui-whead', !!title);
+    if (h && title) setTxt(h.querySelector('b'), title);
+  }
   function syncBag() {
     var game = document.body.classList.contains('lmui');
     var tab = game && document.body.classList.contains('mview-right') && !document.body.classList.contains('mlog-open') ? activeRightTab() : '';
@@ -1684,6 +1710,7 @@
     var bag = group === 'items' && tab !== 'equip';   // 裝備欄掛在背包分頁列，但不是背包格子
     toggleCls('lmui-tall', !!group || tab === 'skill');
     toggleCls('lmui-ptabs', !!SUB_GROUPS[group]);
+    syncWinHead(tab === 'skill' ? '魔法' : tab === 'equip' ? '裝備' : group === 'items' ? '背包' : '');
     toggleCls('lmui-bag', bag);
     toggleCls('lmui-bag-grid', bag && bagCat !== 'as');
     BAG_CATS.forEach(function (c) { toggleCls('lmui-cat-' + c, bag && bagCat === c); });
