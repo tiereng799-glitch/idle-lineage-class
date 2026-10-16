@@ -3076,6 +3076,36 @@ const DB = {
     }
 }; // DB 結尾在這裡
 
+// ===== 🎚️ 裝備／道具等級下限（2026-10-16 站長：照模擬器 weapon／armor／etcitem 的 min_lvl，照名字對到的才有）=====
+// 等級不到：不能裝備（checkCanEquip，背包紅底、裝備鈕、讀檔一起擋）、不能使用（useItem）；說明寫「等級限制」。模擬器沒有任何物品設等級上限
+const ITEM_MIN_LV = {
+    // 武器
+    "wpn_crimson_xbow": 40, /* 深紅之弩 */ "wpn_red_crystalwand": 40, /* 紅水晶魔杖 */ "wpn_chaos_thorn": 45, /* 混沌之刺 */ "wpn_old_greatsword": 45, /* 古老的巨劍 */
+    "wpn_old_sword": 45, /* 古老的劍 */ "wpn_old_xbow": 45, /* 古老的弩槍 */ "wpn_blackflame_sword": 50, /* 黑燄之劍 */ "wpn_cursed_emperor_blade": 50, /* 受詛咒的真．冥皇執行劍 */
+    "wpn_death_finger": 50, /* 死亡之指 */ "wpn_golden_scepter": 50, /* 黃金權杖 */ "wpn_redflame_bow": 50, /* 赤焰之弓 */ "wpn_redflame_sword": 50, /* 赤焰之劍 */
+    // 防具
+    "arm_88": 5, /* 隱身斗篷 */ "arm_110": 15, /* 銀騎士之盾 */ "arm_115": 15, /* 魔法能量之書 */ "arm_shadowmask": 15, /* 影子面具 */
+    "clk_royal_red": 15, /* 紅色斗篷 */ "arm_shadowglove": 30, /* 影子手套 */ "clk_royal_majesty": 30, /* 君主的威嚴 */ "shd_redknight": 30, /* 紅騎士盾牌 */
+    "amr_official": 40, /* 武官護鎧 */ "amr_priest": 40, /* 神官法袍 */ "arm_107": 40, /* 伊娃之盾 */ "arm_official_cloak": 40, /* 武官斗篷 */
+    "bot_official": 40, /* 武官長靴 */ "bot_priest": 40, /* 神官長靴 */ "clk_priest": 40, /* 神官斗篷 */ "glv_official": 40, /* 武官手套 */
+    "glv_priest": 40, /* 神官手套 */ "hlm_official": 40, /* 武官頭盔 */ "hlm_priest": 40, /* 神官頭飾 */ "shd_official": 40, /* 武官之盾 */
+    "shd_priest_book": 40, /* 神官魔法書 */ "amr_chaos": 45, /* 混沌法袍 */ "amr_death": 45, /* 死亡盔甲 */ "amr_fallen": 45, /* 墮落長袍 */
+    "amr_old_leather": 45, /* 古老的皮盔甲 */ "amr_old_plate": 45, /* 古老的金屬盔甲 */ "amr_old_robe": 45, /* 古老的長袍 */ "amr_old_scale": 45, /* 古老的鱗甲 */
+    "arm_102": 45, /* 保護者手套 */ "arm_89": 45, /* 瑪那斗篷 */ "arm_shadowboots": 45, /* 影子長靴 */ "clk_chaos": 45, /* 混沌斗篷 */
+    "clk_death": 45, /* 死亡斗篷 */ "clk_lich": 45, /* 巫妖斗篷 */ "glv_chaos": 45, /* 混沌手套 */ "glv_death": 45, /* 死亡手套 */
+    "hlm_chaos": 45, /* 混沌頭盔 */ "hlm_wind": 45, /* 風之頭盔 */ "shd_death": 45, /* 死亡之盾 */ "wpn_mana_orb": 50, /* 瑪那水晶球 */
+    "clk_flame_blood": 52, /* 炎魔的血光斗篷 */
+    // 飾品
+    "acc_130": 30, /* 精神腰帶 */ "acc_131": 30, /* 靈魂腰帶 */ "acc_135": 30, /* 光明身體腰帶 */ "acc_136": 30, /* 光明精神腰帶 */
+    "acc_137": 30, /* 光明靈魂腰帶 */ "blt_body": 30, /* 身體腰帶 */ "acc_134": 45, /* 勇敢皮帶 */ "acc_ear_dance": 45, /* 舞動耳環 */
+    "acc_royal_guard": 45, /* 守護者的戒指 */ "acc_ear_twin": 46, /* 雙子耳環 */ "acc_ear_festival": 47, /* 慶典耳環 */ "acc_ear_peak": 48, /* 絕頂耳環 */
+    "acc_ear_rampage": 49, /* 暴走耳環 */ "acc_ear_phantom": 50, /* 幻魔耳環 */ "acc_ear_clan": 51, /* 族群耳環 */ "acc_ear_slave": 52, /* 奴隸耳環 */
+    // 道具
+    "panacea_cha": 5, /* 萬能藥(魅力) */ "panacea_con": 5, /* 萬能藥(體質) */ "panacea_dex": 5, /* 萬能藥(敏捷) */ "panacea_str": 5, /* 萬能藥(力量) */
+    "panacea_wis": 5, /* 萬能藥(精神) */
+};
+for (const _id in ITEM_MIN_LV) if (DB.items[_id]) DB.items[_id].minLv = ITEM_MIN_LV[_id];
+
 // ===== Lv51+ 頭目基礎 HP 曲線 =====
 // 只提高低於同級下限的頭目，不降低既有高血量；卡瑞維持原始 3,000 HP。
 (function normalizeHighLevelBossHp() {

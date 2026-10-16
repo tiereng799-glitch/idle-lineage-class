@@ -512,6 +512,7 @@ function useItem(u, silent = false, keepModal = false) {   // 🔌 加掛版補�
     if (item.id === 'scroll_revive') { if (!silent && typeof petReviveChooser === 'function' && petReviveChooser()) return; if(!silent) logSys(`復活卷軸無法從道具欄使用，死亡時可於畫面下方點選『原地復活』。`); return; }   // 🐾 有倒下的寵物 → 選一隻用卷軸復活
     let d = DB.items[item.id];
     if (d.noUse) { if(!silent) logSys(`此物品無法直接使用。`); return; }
+    if (itemLvNeed(d)) { if(!silent) logSys(`等級 ${d.minLv} 以上才能使用「${d.n}」。`); return; }   // 🎚️ 等級下限（js/00 ITEM_MIN_LV）
     if (d.eff === 'pet_collar') { if (!silent && typeof petCallFromCollar === 'function') petCallFromCollar(item); return; }   // 🐾 項圈：叫出寵物
     if (d.eff === 'lantern') { if (!silent && typeof openLanternPanel === 'function') openLanternPanel(); return; }   // 🏮 燈籠：開關／補燈油
     if (d.eff === 'pet_evo') { if (!silent && typeof petEvoFromItem === 'function') petEvoFromItem(item); return; }   // 🐾 進化果實／勝利果實：選寵物進化
@@ -828,8 +829,14 @@ function royalEquipOk(d, id) {
     if (ROYAL_WHITELIST.has(d.n || '')) return true;   // 具名開放清單（特定職業限定→開放給王族）
     return false;
 }
-function checkCanEquip(item) {
+// 🎚️ 等級下限（2026-10-16 站長：照模擬器 min_lvl，資料 js/00 ITEM_MIN_LV）：等級不到回傳要求的等級，夠了回 0。
+//    傭兵裝備走 _withAllyEquipmentContext 時 player 暫時是傭兵 → 看的是傭兵自己的等級
+function itemLvNeed(d) {
+    return (d && d.minLv && typeof player !== 'undefined' && player && (player.lv || 0) < d.minLv) ? d.minLv : 0;
+}
+function checkCanEquip(item, ignoreLv) {   // ignoreLv：只看職業（商店販售清單：等級不到照樣買得到，同模擬器）
     let d = DB.items[item.id];
+    if (!ignoreLv && itemLvNeed(d)) return false;
     if (d && d.reqAvatar && player && ((d.strictAvatar && player.avatar !== d.reqAvatar) || (!d.strictAvatar && player.avatar && player.avatar !== d.reqAvatar))) return false;   // 👸 性別頭像限定；strictAvatar（純潔少女的憐愛）要求必須明確為女妖精，舊檔缺 avatar 亦不放行
     // 🏺 遺物：職業限制純以 req 白名單為準＝略過各職業專屬 *EquipOk 武器/防具清單（否則黑暗妖精等會被拒）。
     //    ⚠️ v3.7.83 修：原本這裡是 `return reqAllowsClass(...)` 直接早退，連帶把下方共用尾段的**劍術精通例外**也跳過了
@@ -876,7 +883,8 @@ function equipItem(item) {
     let slot = d.type === 'wpn' ? 'wpn' : d.slot;
     if (d.isArrow) slot = 'arrow'; // 如果是箭矢，強制分配到 arrow 欄位
 
-    // 職業/裝備資格統一走 checkCanEquip（含黑暗妖精規則、負重強化、劍術精通例外），與顯示用判定同一來源
+    // 職業/裝備資格統一走 checkCanEquip（含黑暗妖精規則、負重強化、劍術精通例外、等級下限），與顯示用判定同一來源
+    if (itemLvNeed(d)) { logSys(`等級 ${d.minLv} 以上才能裝備「${d.n}」。`); return; }
     if (!checkCanEquip(item)) {
         logSys(d.reqAvatar ? `無法裝備，「${d.n}」僅限${d.reqAvatar}。` : `無法裝備，職業不符。`);
         return;
@@ -925,16 +933,12 @@ function equipItem(item) {
     //    player.d 仍計入盾牌加成」的殘缺狀態（且不呼叫 calcStats/renderTabs/closeModal）。
     let invItem = player.inv.find(i => i.uid === item.uid);
     if (!invItem) { logSys('<span class="text-slate-400">該物品已不在背包中。</span>'); closeModal(); renderTabs(); return; }
-    // 雙手武器（弓 / w2h）無法與盾牌並存：裝雙手武器自動卸盾、裝盾自動卸雙手武器
-    // 🛡️ 臂甲（armguard）例外：可與雙手武器並用，故不互相卸下（仍與盾牌共用副手欄、自然互斥）
+    // 雙手武器（弓 / w2h）無法與盾牌並存——2026-10-16 站長：照模擬器（L1J 訊息 128／129）直接擋下，要先自己卸下另一件
+    //   （原本是自動卸下另一件）。🛡️ 臂甲（armguard）例外：可與雙手武器並用（仍與盾牌共用副手欄、自然互斥）
     if (slot === 'wpn' && isTwoHandedWpn(d) && player.eq.shield && !DB.items[player.eq.shield.id].armguard) {
-        if (isEquipCursed('shield')) { logSys('<span class="text-red-400 font-bold">被詛咒的盾牌無法卸下，無法裝備雙手武器！</span>'); return; }
-        returnEquipToInv('shield');
-        logSys(`雙手武器無法持盾，已卸下盾牌。`);
+        logSys('<span class="text-amber-300">裝備盾牌時不能拿雙手武器，請先卸下盾牌。</span>'); return;
     } else if (slot === 'shield' && !d.armguard && player.eq.wpn && isTwoHandedWpn(DB.items[player.eq.wpn.id])) {
-        if (isEquipCursed('wpn')) { logSys('<span class="text-red-400 font-bold">被詛咒的雙手武器無法卸下，無法裝備盾牌！</span>'); return; }
-        returnEquipToInv('wpn');
-        logSys(`裝備盾牌，已卸下雙手武器。`);
+        logSys('<span class="text-amber-300">拿著雙手武器時不能裝備盾牌，請先卸下武器。</span>'); return;
     }
 
     let isStackable = (slot === 'arrow'); // 箭矢支援整組堆疊裝備

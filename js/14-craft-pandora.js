@@ -1894,8 +1894,9 @@ window.onload = () => {
         let parts = [];
         parts.push(`<div class="font-bold text-base ${nameColor}" style="margin-bottom:2px;">${d.n}</div>`);
         let tl = TYPE_LABEL[d.type] || '道具';
-        if(d.type === 'wpn'){ if(d.isBow) tl += '（弓）'; else if(d.w2h) tl += '（雙手）'; }
+        if(d.type === 'wpn' && !d.isArrow) tl += '（' + (d.isBow ? '弓・' : '') + ((typeof isTwoHandedWpn === 'function' && isTwoHandedWpn(d)) ? '雙手' : '單手') + '）';   // ✋ 單手／雙手照裝備判定（單手弓也照實寫）
         parts.push(`<div class="text-slate-400" style="font-size:11px;margin-bottom:4px;">${tl}</div>`);
+        if(d.minLv) parts.push(`<div class="${(typeof itemLvNeed === 'function' && itemLvNeed(d)) ? 'text-red-400' : 'text-slate-300'}">等級限制：${d.minLv} 以上</div>`);   // 🎚️ js/00 ITEM_MIN_LV
         if(d.type === 'wpn'){
             let ranged = (d.ranged === true);
             parts.push(`<div class="text-orange-300">小型傷害 ${d.dmgS} / 大型傷害 ${d.dmgL}</div>`);

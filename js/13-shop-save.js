@@ -239,7 +239,7 @@ function getShopItemsForNpc(npcId) {
         // 🔧 武器/防具：不限職業，全部販售（買得到；能否裝備仍由 equipItem/checkCanEquip 白名單把關）。
         if (d.type === 'wpn' || d.type === 'arm') return true;
         // 飾品（acc）：仍以「實際可裝備」判定（涵蓋各職業白名單）。
-        if (d.type === 'acc') return checkCanEquip({ id });
+        if (d.type === 'acc') return checkCanEquip({ id }, true);   // 等級限制不影響買不買得到
         // 其餘（消耗品/技能書/材料等）：沿用職業白名單
         return reqAllowsClass(d, player.cls) || loadUpAllows(id);
     });
@@ -1990,7 +1990,8 @@ function loadGame() {
             if (!_ok) {
                 if (!invMergeBack(_e)) player.inv.push(_e);   // 🔒 v3.6.92 單一真相 invMergeBack（js/01）
                 player.eq[_sl] = null;
-                logSys(`<span class="text-amber-300">因負重強化改版，無法再裝備的 ${DB.items[_e.id] ? DB.items[_e.id].n : '裝備'} 已自動卸下至背包。</span>`);
+                let _need = (typeof itemLvNeed === 'function') ? itemLvNeed(DB.items[_e.id]) : 0;   // 🎚️ 等級下限（js/00 ITEM_MIN_LV）
+                logSys(`<span class="text-amber-300">${_need ? `等級 ${_need} 以上才能裝備，` : '因負重強化改版，無法再裝備的 '}${DB.items[_e.id] ? DB.items[_e.id].n : '裝備'} 已自動卸下至背包。</span>`);
             }
         });
         syncShahaArrow();   // 🏝️ 沙哈之弓：載入時校正無限箭狀態

@@ -939,7 +939,11 @@ function buildItemDescHTML(item) {
         desc = `<span class="c-sherine font-bold">✦ 席琳套裝效果：${_g}</span><br>${_lines}${_legacy}`
              + (desc ? `<br>${desc}` : '');
     }
+    // 🎚️ 等級限制（js/00 ITEM_MIN_LV）：等級不到標紅
+    if(d.minLv) desc += `<br><span class="${(typeof itemLvNeed === 'function' && itemLvNeed(d)) ? 'text-red-400' : 'text-slate-200'}">等級限制：${d.minLv} 以上</span>`;
     if(d.type === 'wpn') {
+        // ✋ 2026-10-16 站長：武器寫單手／雙手（雙手不能配盾；判定同裝備時的 isTwoHandedWpn，單手弓也照實寫單手）
+        if(!d.isArrow) desc += `<br><span class="text-slate-200">${(typeof isTwoHandedWpn === 'function' && isTwoHandedWpn(d)) ? '雙手武器（不能裝備盾牌）' : '單手武器'}</span>`;
         desc += `<br><span class="text-orange-300">小型傷害: ${d.dmgS} / 大型傷害: ${d.dmgL}</span>`;
         
         // 🌟 依照你的規則：根據 ranged: true 決定前綴
