@@ -149,7 +149,12 @@ function gainItem(id, cnt=1, silent=false, forceNormal=false, affixOld=false, de
     let ex = _gw ? null : (_fastGainIndex
         ? _findCatchupGainItemStack(_probe)
         : player.inv.find(i => !i.gw && (!_lockMergeOff || !i.lock) && sameItemSig(i, _probe)));   // 🔧 架構#3：統一簽章比對（itemSig 已含 en→+0 只併 +0、+3 只併 +3，永不誤併不同強化值）；⚠️ 巨靈願望戒指(gw)每只獨立·簽章不含 gw 故顯式排除
-    if(ex) ex.cnt += cnt;   // 僅加數量、不更動既有堆疊的廢品狀態
+    if(ex) {
+        ex.cnt += cnt;   // 僅加數量、不更動既有堆疊的廢品狀態
+        // 📦 2026-10-16 站長：背包照取得時間排，新拿到的在最後面——疊進舊的那一格也把它移到最後（按「整理」或開自動整理才重排）
+        //    離線補跑（state.ff）不搬：搬了會讓上面的堆疊索引每次重建，大量補跑會變慢
+        if (player.inventoryAutoSort !== true && !(typeof state !== 'undefined' && state && state.ff)) { let _k = player.inv.indexOf(ex); if (_k >= 0 && _k < player.inv.length - 1) { player.inv.splice(_k, 1); player.inv.push(ex); } }
+    }
     else { let _push = { id: id, uid: uid(), cnt: cnt, en: _tEn, bless: bless, anc: anc, attr: attr, seteff: seteff, lock: false, junk: !!(player.junkPrefs && player.junkPrefs[itemSig(_probe)]) && !(d && d.noJunk) }; if (_gw) _push.gw = _gw; player.inv.push(_push); if (_fastGainIndex) _rememberCatchupGainItemStack(_push); }   // 🔧 廢品記憶改以完整簽章比對：詞綴物品也可自動標記，但僅限「完全相同詞綴」者；🎴 noJunk(收集冊)永不自動標記
 
     // 紀錄這次產生的物品屬性

@@ -75,7 +75,9 @@
         '#battle-view.afk-hm > canvas.afk-tm-cv{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}' +
         // 選擇器刻意疊兩次 id：原作手機版（area-fit / mob-grid）的卡片規則也帶 !important、權重是兩個 id＋三個 class，不疊會輸（卡片被拉高、整排被推到右邊＝傷害數字跑到右下角）
         '#battle-view.afk-hm #mob-list#mob-list{position:absolute!important;inset:0!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;display:block!important;transform:none!important;pointer-events:none;z-index:2;}' +
-        '#battle-view.afk-hm #mob-list#mob-list .mob-target{position:absolute!important;width:48px!important;height:70px!important;min-height:0!important;max-height:none!important;opacity:0!important;pointer-events:auto;transform:none!important;margin:0!important;padding:0!important;right:auto!important;bottom:auto!important;}' +
+        // 卡片不接點擊：點怪一律由地圖判斷（huntPick：點在怪身上就走過去打）。卡片接點擊時，正在打的怪點下去是核心的換目標＋怪物素質視窗，
+        //   沒在打的怪又是地圖在管，兩邊行為不一樣，卡片還會蓋住後面別隻怪（站長：有些怪點不到）
+        '#battle-view.afk-hm #mob-list#mob-list .mob-target{position:absolute!important;width:48px!important;height:70px!important;min-height:0!important;max-height:none!important;opacity:0!important;pointer-events:none!important;transform:none!important;margin:0!important;padding:0!important;right:auto!important;bottom:auto!important;}' +
         '#battle-view.afk-hm #mob-list#mob-list .mob-target:not([data-uid]){visibility:hidden!important;pointer-events:none!important;}' +   // 空格子：沒有怪可以對位，別擋住點地圖
         '#battle-view.afk-hm #mob-list#mob-list .mob-target .mob-img-wrap{position:absolute!important;inset:0!important;}' +
         '#battle-view.afk-hm #mob-list#mob-list .mob-target .mob-img-inner{width:100%!important;height:100%!important;transform:none!important;}' +
@@ -1288,6 +1290,40 @@
         return true;
     }
     function stepToward(e, x, y, sec) { var k = dirTo(e.tx, e.ty, x, y); return k >= 0 && (entStep(e, k, sec) || entStep(e, (k + 1) % 8, sec) || entStep(e, (k + 7) % 8, sec)); }
+    // 打得到嗎（站長：不可以隔著牆打怪，要繞過去）：
+    //   相鄰＝這一步走得過去（斜角看旁邊兩格的邊，同 canStep；兩個方向任一條通就算）；
+    //   遠距（拿弓的角色、會射箭的怪）＝射程內、中間直線上的格子都能站（牆、懸崖擋住就打不到）
+    function canHit(ax, ay, bx, by, range) {
+        var dist = cheb(ax, ay, bx, by);
+        if (dist === 0) return true;
+        if (dist > range) return false;
+        if (dist === 1) { var k = dirTo(ax, ay, bx, by); return k >= 0 && (canStep(ax, ay, k) || canStep(bx, by, (k + 4) % 8)); }
+        var dx = Math.abs(bx - ax), dy = Math.abs(by - ay), sx = ax < bx ? 1 : -1, sy = ay < by ? 1 : -1, err = dx - dy, x = ax, y = ay;
+        for (;;) {
+            var e2 = 2 * err; if (e2 > -dy) { err -= dy; x += sx; } if (e2 < dx) { err += dx; y += sy; }
+            if (x === bx && y === by) return true;
+            if (!pass(x, y)) return false;
+        }
+    }
+    function mobRange(e) { var f = MOBF[e.mob]; return (f && f[4]) || 1; }   // 模擬器 npc ranged（hunts.json _mob 第 5 個）：弓箭手 10、長槍 2
+    // 怪走向角色：先直走（被擋就試左右斜），直走不動（隔著牆、懸崖）就找路繞過去，路記著照走；角色換位置才重找
+    function chase(e, sec) {
+        var me = S.me, goal = me.tx + ',' + me.ty;
+        if (e.path && e.path.length && e.pathGoal === goal) {
+            var n = e.path[0], k = dirTo(e.tx, e.ty, n[0], n[1]);
+            if (k >= 0 && entStep(e, k, sec)) { e.path.shift(); return true; }
+            e.path = null;
+        }
+        if (stepToward(e, me.tx, me.ty, sec)) { e.path = null; return true; }
+        if (S.ht < (e.repathAt || 0)) return false;
+        e.repathAt = S.ht + 10;
+        var p = findPath(e.tx, e.ty, me.tx, me.ty, { pad: 12, budget: 3000 }); if (p.length) p.pop();
+        e.path = p.length ? p : null; e.pathGoal = goal;
+        if (!e.path) return false;
+        var n2 = e.path[0], k2 = dirTo(e.tx, e.ty, n2[0], n2[1]);
+        if (k2 >= 0 && entStep(e, k2, sec)) { e.path.shift(); return true; }
+        return false;
+    }
     function freeSlot() { var n = (typeof mobSlotCount === 'function') ? mobSlotCount() : 3; for (var i = 0; i < n; i++) if (!mapState.mobs[i]) return i; return -1; }
     function slotOf(uid) { for (var i = 0; i < mapState.mobs.length; i++) if (mapState.mobs[i] && mapState.mobs[i].uid === uid) return i; return -1; }
     // 開打：用核心的 spawnMob 把這隻放進空的戰鬥格子（怪物池暫時換成「這隻＋這張圖的頭目」→ 頭目出現率、野外 PvP 照原本）
@@ -1354,11 +1390,24 @@
         if (idle && !pref) { if (S.goal) { S.path = []; S.goal = null; } return; }   // 自動暫停：玩家自己走，不自動找怪（點了怪就走到牠旁邊）
         if (!pref && S.ht < (S.autoAt || 0)) return;
         var range = heroRange(), tgt = (typeof getTarget === 'function') ? getTarget() : null, te = tgt && S.entByUid[tgt.uid];
-        if (!pref && te && cheb(me.tx, me.ty, te.tx, te.ty) <= range) { S.path = []; face(te); return; }   // 打得到：站著打
-        var e = pref || te || nearestEnt(20);
+        if (!pref && te && canHit(me.tx, me.ty, te.tx, te.ty, range)) { S.path = []; face(te); return; }   // 打得到（隔牆不算）：站著打
+        if (!pref) {   // 目前目標打不到、身邊卻有正在打我的怪：先換打身邊這隻（不要被圍著打還走去找遠的）
+            for (var uid in S.entByUid) {
+                var ae = S.entByUid[uid];
+                if (ae !== te && ae.placed && ae.alive && canHit(me.tx, me.ty, ae.tx, ae.ty, range)) {
+                    var ai = slotOf(ae.uid); if (ai >= 0 && typeof setTarget === 'function') setTarget(ai);
+                    S.path = []; face(ae); return;
+                }
+            }
+        }
+        // 找誰打：點的 → 目前目標 → 正在打我的 → 已經在走過去的那隻 → 最近的。
+        //   原本每拍都換「直線最近」的那隻：懸崖、步道地圖兩隻怪輪流變最近，角色就在中間來回繞圈（站長回報）→ 選定了就走到底
+        var ne = nearestEnt(20), g = S.goal;
+        var keep = (g && g.alive && g.placed && !g.gone && !((g.noPathUntil || 0) > S.ht) && cheb(me.tx, me.ty, g.tx, g.ty) <= 30) ? g : null;
+        var e = pref || te || (ne && ne.uid ? ne : null) || keep || ne;
         if (!e) { roam(); return; }
         S.roaming = false;
-        if (cheb(me.tx, me.ty, e.tx, e.ty) <= range) {
+        if (canHit(me.tx, me.ty, e.tx, e.ty, range)) {
             if (idle) { S.prefer = null; S.path = []; face(e); return; }   // 暫停中不開打：走到旁邊面向牠
             var fresh = !e.uid;
             if (engage(e)) { var idx = slotOf(e.uid); if (idx >= 0 && mapState.targetIdx !== idx && typeof setTarget === 'function') setTarget(idx); S.prefer = null; if (fresh) callFamily(e); }
@@ -1403,14 +1452,16 @@
         }
         var dist = cheb(e.tx, e.ty, me.tx, me.ty);
         e.faceRight = (me.fx + me.fy) > (e.fx + e.fy);   // 單方向的戰鬥動作面向左：角色在右邊就翻過來
-        if (e.uid) {
-            if (dist > 1 && heroRange() === 1) stepToward(e, me.tx, me.ty, 0.6);
+        if (e.uid) {   // 開打中：打不到角色（太遠、隔著牆）就繞過來；打得到就站著面向角色（核心只在打得到時讓牠出手，見 enemyAttackChooseVictim）
+            //   原本只有角色拿近戰武器時才靠過來：拿弓的角色身邊，怪站在原地（以前隔空照打，現在要打得到才出手）
+            if (!canHit(e.tx, e.ty, me.tx, me.ty, mobRange(e))) { if (S.ht >= (e.next || 0)) { chase(e, 0.6); e.next = S.ht + 1; } }
             else { var k = dirTo(e.tx, e.ty, me.tx, me.ty); if (k >= 0) e.dir = k; }
             return;
         }
         if (!idle && player && !player.dead && dist <= AGGRO && wantsHero(e)) {   // 自動暫停時不算戰鬥：主動怪也只閒晃；變身、隱身、同族互助見 wantsHero
-            if (dist <= 1) { engage(e); return; }
-            if (S.ht >= e.next) { stepToward(e, me.tx, me.ty, 0.7); e.next = S.ht + 1; }
+            if (canHit(e.tx, e.ty, me.tx, me.ty, mobRange(e)) && engage(e)) return;
+            if (freeSlot() < 0 && dist <= 2) { var k2 = dirTo(e.tx, e.ty, me.tx, me.ty); if (k2 >= 0) e.dir = k2; return; }   // 戰鬥格子滿了（一般狩獵同時 3 隻）：在外圈等，不貼上來站著不打
+            if (S.ht >= e.next) { chase(e, 0.7); e.next = S.ht + 1; }
             return;
         }
         if (S.ht >= e.next) {
@@ -1626,6 +1677,34 @@
                     if (!hurting || k === 'hurt') { S.me.act = k; S.me.actT = performance.now(); }
                 }
             } catch (e) {}
+            return orig.apply(this, arguments);
+        };
+    });
+    // 出手要打得到（站長：穿牆打怪、一邊揮刀一邊走路、怪有時候不打）：核心戰鬥只看戰鬥格子、不管距離，地圖上要對齊——
+    //   角色：走路中、或目前目標在地圖上打不到（太遠、隔牆）就先不出手；攻擊進度停在「下一拍就出手」，一走到位馬上打（不會連打補回來）
+    //   怪物：打不到角色就不出這一刀（照常倒數，打得到後下一輪出手）。魔法照舊（有射程，不管牆）
+    function heroCanSwing() {
+        var me = S.me; if (me.walking && me.t < 1) return false;
+        var t = typeof getTarget === 'function' ? getTarget() : null, e = t && S.entByUid[t.uid];
+        return !e || canHit(me.tx, me.ty, e.tx, e.ty, heroRange());   // 不在地圖上的目標（別的系統塞進格子的）照原本
+    }
+    wrapCore('playerAttack', function (orig) {
+        return function () {
+            try {
+                if (huntActive() && !heroCanSwing()) {
+                    if (typeof playerAttackIntervalTicks === 'function' && typeof state !== 'undefined') { var n = playerAttackIntervalTicks(true); state.pDmgTick = 2 * n - 1; }   // 核心呼叫完會扣一輪 → 剩 n-1，下一拍再試
+                    return;
+                }
+            } catch (e) {}
+            return orig.apply(this, arguments);
+        };
+    });
+    wrapCore('enemyAttackChooseVictim', function (orig) {
+        return function (m) {
+            try {
+                var e = huntActive() && m && S.entByUid[m.uid];
+                if (e && ((e.walking && e.t < 1) || !canHit(e.tx, e.ty, S.me.tx, S.me.ty, mobRange(e)))) return;
+            } catch (x) {}
             return orig.apply(this, arguments);
         };
     });

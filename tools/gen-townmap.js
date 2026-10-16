@@ -405,7 +405,8 @@ function planPortals(db, towns, hunts) {
 // ── 怪物行為旗標（模擬器 npc 表）：狩獵區地圖的主動判定用 ──────────────
 //   主動／被動照遊戲自己的 beh（作者設定、涵蓋全部怪）；這裡只補遊戲沒有的：
 //   agrososc＝看穿變身（角色變身中只有這些會主動打）、agrocoi＝看穿隱身、family＋agrofamily＝同族互助（打一隻，附近同族會一起上）。
-//   照名字對遊戲 DB.mobs，存進 hunts.json 的 _mob：{ 怪物 id: [看穿變身, 看穿隱身, 同族名, 會互助] }（全是 0／空的不存）
+//   ranged＝射程（弓箭手 10、長槍 2；1＝近戰）：地圖上隔多遠、中間沒牆才打得到角色。
+//   照名字對遊戲 DB.mobs，存進 hunts.json 的 _mob：{ 怪物 id: [看穿變身, 看穿隱身, 同族名, 會互助, 射程（近戰記 0）] }（全是 0／空的不存）
 function mobFlags(db) {
     const clean = s => String(s || '').replace(/\s/g, '');
     const mobs = gameData('mobs'), byName = new Map();
@@ -413,8 +414,8 @@ function mobFlags(db) {
     const out = {};
     for (const id in mobs) {
         const r = byName.get(clean(mobs[id].n)); if (!r) continue;
-        const f = [+r.agrososc === 1 ? 1 : 0, +r.agrocoi === 1 ? 1 : 0, r.family || '', +r.agrofamily === 1 ? 1 : 0];
-        if (f[0] || f[1] || (f[2] && f[3])) out[id] = f;
+        const f = [+r.agrososc === 1 ? 1 : 0, +r.agrocoi === 1 ? 1 : 0, r.family || '', +r.agrofamily === 1 ? 1 : 0, +r.ranged > 1 ? +r.ranged : 0];
+        if (f[0] || f[1] || (f[2] && f[3]) || f[4]) out[id] = f;
     }
     console.log('[gen-townmap] 怪物行為旗標 ' + Object.keys(out).length + ' 隻');
     return out;
@@ -506,7 +507,27 @@ function readMap(id, b, clientDir, emuDir) {
         if (walk && ghost / walk > 0.02) console.log('[gen-townmap] 地圖 ' + id + ' 模擬器 maps/' + id + '.txt 跟用戶端不是同一版（' + ghost + ' 格畫面上是牆卻能走），改照用戶端');
         else { console.log('[gen-townmap] 地圖 ' + id + ' 能不能走照模擬器 maps/' + id + '.txt（跟用戶端換算差 ' + diff + ' 格）'); pass = p; zone = z; }
     }
+    fillGround(ground, W, H);
     return { id, W, H, gameX0: b.startX, gameY0: b.startY, ground, pass, zone, objs, blocks };
+}
+// 第 0 組地磚＝這格沒有地板（海音地監 1 樓整張都是 0、地板全靠貼地物件畫）。當成一般地磚畫出來就是一塊塊橘色的（站長回報「地板怪怪的」）。
+//   → 用 3 格內最近、同一半（左／右半格）的真地板補；附近都沒有就留空（EMPTY_G，畫透明）
+const EMPTY_G = 0xFFFFFFFF;
+function fillGround(ground, W, H) {
+    const src = ground.slice(), W2 = W * 2;
+    for (let y = 0; y < H; y++) for (let hx = 0; hx < W2; hx++) {
+        const i = y * W2 + hx; if ((src[i] >> 8) !== 0) continue;
+        const x = hx >> 1, half = hx & 1;
+        let v = EMPTY_G;
+        for (let r = 1; r <= 3 && v === EMPTY_G; r++) for (let yy = y - r; yy <= y + r && v === EMPTY_G; yy++) {
+            if (yy < 0 || yy >= H) continue;
+            for (let xx = x - r; xx <= x + r; xx++) {
+                if (xx < 0 || xx >= W || Math.max(Math.abs(xx - x), Math.abs(yy - y)) !== r) continue;
+                const k = src[yy * W2 + xx * 2 + half]; if ((k >> 8) !== 0) { v = k; break; }
+            }
+        }
+        ground[i] = v;
+    }
 }
 // 安全區／戰鬥區（afk-townmap 地圖名旁邊顯示角色站的地方）：一列一列的連續段，上下列一樣的併成矩形，
 //   攤平成 [x 起, y 起, x 迄, y 迄, 1 安全區／2 戰鬥區, …]（一般區域不記；大陸逐列存 113KB、併成矩形小很多）
@@ -643,10 +664,11 @@ async function buildMapData(M, tilePak, webp) {
     const EMPTY = new Uint8Array(BW * BH * 4), entries = new Map();
     let missing = 0;
     for (const [t, list] of byTile) {
-        const buf = tilePak(t + '.til'), til = buf ? parseTil(buf) : null;
+        const buf = t < 0 ? null : tilePak(t + '.til'), til = buf ? parseTil(buf) : null;   // t < 0：沒有地板的格子（EMPTY_G，見 fillGround）
         for (const n of list) {
             let px = EMPTY;
-            if (til && (n.key & 255) < til.n) { try { px = decodeBlock(til, n.key & 255, n.kind === 'o'); } catch (e) { missing++; } } else missing++;
+            if (n.key === EMPTY_G) {}
+            else if (til && (n.key & 255) < til.n) { try { px = decodeBlock(til, n.key & 255, n.kind === 'o'); } catch (e) { missing++; } } else missing++;
             const h = crypto.createHash('md5').update(px).digest('hex');
             let e = entries.get(h);
             if (!e) entries.set(h, e = { px, sortKey: n.key, regs: new Set(), idx: -1 });

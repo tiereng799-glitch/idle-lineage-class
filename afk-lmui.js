@@ -214,10 +214,9 @@
       '#lmui-auto.off::after{content:none;}',
       /* AUTO 開著時從 AUTO 圓章往左上、右上彈出「掛機紀錄」「掛機設定」（站長）；暫停收回。放在地圖名那排上面，不壓到地圖名 */
       '#lmui-autopop{position:absolute;left:50%;bottom:calc(100% + 30px);width:0;height:0;z-index:5;}',
-      '#lmui-autopop button{position:absolute;bottom:0;left:-34px;width:68px;height:28px;padding:0;border-radius:14px;border:1px solid #c9a55a;background:linear-gradient(#4a3418,#1c1309);color:#f6e7bf;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,230,170,.25);text-shadow:0 1px 1px #000;cursor:pointer;opacity:0;pointer-events:none;transform:translate(0,40px) scale(.2);transition:transform .32s cubic-bezier(.2,1.5,.4,1),opacity .18s;}',
+      '#lmui-autopop button{position:absolute;bottom:0;left:-34px;width:68px;height:28px;padding:0;border-radius:14px;border:1px solid #c9a55a;background:linear-gradient(#4a3418,#1c1309);color:#f6e7bf;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,230,170,.25);text-shadow:0 1px 1px #000;cursor:pointer;opacity:0;pointer-events:none;transform:translate(0,40px) scale(.2);transition:transform .25s ease-out,opacity .18s;}',
       '#lmui-autopop.on button{opacity:1;pointer-events:auto;}',
-      '#lmui-autopop.on button.l{transform:translate(-44px,0) scale(1);}',
-      '#lmui-autopop.on button.r{transform:translate(44px,0) scale(1);transition-delay:.06s;}',
+      '#lmui-autopop.on button.l{transform:translate(0,0) scale(1);}',
       '#lmui-autopop button:active{filter:brightness(1.3);}',
 
       /* 提示訊息（afk-toast）：放在戰鬥畫面正中間，不壓到血條／聊天框 */
@@ -225,13 +224,16 @@
 
       /* ── 下方堆疊：血條 → 快捷列 → 聊天框 ── */
       '#lmui-vit{position:absolute;left:0;right:0;top:calc(var(--lmui-mtop) - var(--lmui-vit) - var(--orig-bar-h,0px));height:var(--lmui-vit);padding:3px 4px 0;display:flex;flex-direction:column;justify-content:center;gap:2px;background:none;pointer-events:auto;z-index:3;}',   /* 去背（站長）：後面就是場景 */
-      'body.lmui-compact{--lmui-stack:46px;--lmui-mtop:calc(100dvh - var(--m-nav-h,0px) - 46px - var(--lmui-btns));}',
+      /* 精簡版面留一排快捷列在聊天輸入列上面（2026-10-16 站長：原本整排收掉＝打怪時快捷鍵不能用）；切成兩排時再高一排 */
+      'body.lmui-compact{--lmui-stack:94px;--lmui-mtop:calc(100dvh - var(--m-nav-h,0px) - 94px - var(--lmui-btns));}',
+      'body.lmui-compact.lmui-hot2{--lmui-stack:134px;--lmui-mtop:calc(100dvh - var(--m-nav-h,0px) - 134px - var(--lmui-btns));}',
+      'body.lmui-compact .lmui-slot{max-height:44px;}',
       /* 精簡版面：聊天輸入列也去背（站長），場景一路鋪到工具列上緣；怪物／角色站在血條上緣（--lmui-stand＝場景底下被 HUD 蓋住的高度） */
       'body{--lmui-stand:var(--lmui-vit);}',
       'body.lmui-compact{--lmui-stand:calc(var(--lmui-vit) + var(--lmui-stack));}',
       'html body.lmui-compact.lmui-battle #col-center{height:calc(100dvh - var(--orig-bar-h,0px) - var(--m-nav-h,0px)) !important;}',
       'body.lmui-compact #lmui-bottom{background:none !important;border-top:0 !important;box-shadow:none !important;}',
-      'body.lmui-compact #lmui-hot,body.lmui-compact #lmui-tabs,body.lmui-compact #lmui-lines{display:none !important;}',
+      'body.lmui-compact #lmui-tabs,body.lmui-compact #lmui-lines{display:none !important;}',
       'html body.lmui-compact.lmui-battle #lmui-bottom{display:flex !important;}',   /* 村莊預設會藏下方聊天框（給 NPC 卡片），精簡時只留輸入列 */
       'html body.lmui-compact.lmui-town #afk-npclist{display:none !important;}',
       '#lmui-bottom{position:absolute;left:0;right:0;bottom:0;height:var(--lmui-stack);display:flex;flex-direction:column;gap:4px;padding:6px 4px 4px;background:linear-gradient(#1a1612,#0b0907);border-top:1px solid #4a3f30;box-shadow:0 -6px 14px rgba(0,0,0,.65);}',
@@ -721,7 +723,7 @@
         '<div id="lmui-exp"><i></i><span class="lv"><em>等級</em><b></b></span><span class="pc"></span></div>' +
         '<div id="lmui-bars"><div id="lmui-hp" class="lmui-bar"><i></i><span></span></div><div id="lmui-mp" class="lmui-bar"><i></i><span></span></div>' +
           '<button type="button" id="lmui-auto" class="lmui-hit" aria-label="AUTO">' + AUTO_SVG + '</button>' +
-          '<div id="lmui-autopop"><button type="button" class="lmui-hit l" data-a="log">掛機紀錄</button><button type="button" class="lmui-hit r" data-a="set">掛機設定</button></div></div>' +
+          '<div id="lmui-autopop"><button type="button" class="lmui-hit l" data-a="log">掛機紀錄</button></div></div>' +   // 「掛機設定」站長要求拿掉（2026-10-16）
       '</div>' +
       '<div id="lmui-bottom">' +
         '<div id="lmui-hot" data-mode="0">' + hot + '</div>' +
@@ -753,11 +755,13 @@
       if (!p) sessStart();   // 按 AUTO 開始：掛機紀錄從這一刻重算
       try { logSys(p ? '⏸ 已暫停，再按一次 AUTO 繼續' : '▶ 自動戰鬥繼續'); } catch (e) {}
     });
+    var popAt = 0;
     $('lmui-autopop').addEventListener('click', function (e) {
       var b = e.target.closest('button[data-a]'); if (!b) return;
       e.stopPropagation();
-      if (b.getAttribute('data-a') === 'log') showHuntLog();
-      else { closeAllWindows(); openTab('automation'); }
+      if (Date.now() - popAt < 400) return;   // 手機一次點擊偶爾送兩下：開了又關（站長：點開會彈兩下）
+      popAt = Date.now();
+      if (b.getAttribute('data-a') === 'log') { var open = $('lmui-huntlog'); if (open) open.remove(); else showHuntLog(); }   // 再點一次＝關閉
     });
     el.tabs.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-t]'); if (!b) return;
@@ -976,6 +980,7 @@
     var box = $('lmui-hot'), btn = $('lmui-hotmode'); if (!box || !btn) return;
     var m = hotMode();
     box.setAttribute('data-mode', String(m));
+    document.body.classList.toggle('lmui-hot2', m === 2);   // 精簡版面兩排快捷列要多留一排高度
     btn.innerHTML = '<b>▾</b>' + (m === 0 ? '1~6' : m === 1 ? '7~12' : '全部');
   }
   function bindHot() {
@@ -2617,7 +2622,8 @@
     injectCSS();
     build();
     watchChat();
-    bindMobClick();
+    // 點怪物不再彈出怪物素質（2026-10-16 站長：點怪就是要打它；地圖模式的點怪由 afk-townmap 走過去打）。showMobInfo 留著給之後要用的入口
+    // bindMobClick();
     // 道具卡片：有裝備比對內容時，在按鈕區最上面補一顆「與身上比較」（比對預設收起）。
     //   包核心 openModal：核心每次開啟都重畫 #modal-actions，所以每次都要補；收起狀態也每次重置。
     if (typeof window.openModal === 'function') {
