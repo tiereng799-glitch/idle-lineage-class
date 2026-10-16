@@ -1351,11 +1351,13 @@ const MAPSTATE_INIT_SNAPSHOT = JSON.stringify(mapState);
 function freshPlayerState() { return JSON.parse(PLAYER_INIT_SNAPSHOT); }
 function freshMapState() { return JSON.parse(MAPSTATE_INIT_SNAPSHOT); }
 let _mobBornSeq = 0;   // 🎯 全域單調遞增「出生序」（每隻怪生成時 +1；越小＝越早出生／在場上存活越久）→ getTarget 用來「優先打先出生的怪」
-let createBase = { 
-    knight: {str:16, dex:12, con:14, int:8, wis:9, cha:8, pts:8}, 
+// 各職業創角起始值＋可分配點數＝天堂官方（仿正模擬器 C_CreateChar ORIGINAL_*，2026-10-16 站長要求對齊；
+//   原本騎士/妖精/黑暗妖精的魅力被挪去當自由點數，黑暗妖精精神/智力也對調了）。只影響新創角色與回憶蠟燭重配。
+let createBase = {
+    knight: {str:16, dex:12, con:14, int:8, wis:9, cha:12, pts:4},
     mage: {str:8, dex:7, con:12, int:12, wis:12, cha:8, pts:16},
-    elf: {str:11, dex:12, con:12, int:12, wis:12, cha:8, pts:8}, // 妖精基底（可分配8點
-    dark: {str:12, dex:15, con:8, int:10, wis:11, cha:8, pts:11}, // 黑暗妖精基底（可分配11點，以0計）
+    elf: {str:11, dex:12, con:12, int:12, wis:12, cha:9, pts:7}, // 妖精基底（可分配7點）
+    dark: {str:12, dex:15, con:8, int:11, wis:10, cha:9, pts:10}, // 黑暗妖精基底（可分配10點，以0計）
     royal: {str:13, dex:10, con:10, int:10, wis:11, cha:13, pts:8} // 👑 王族基底（可分配8點，以0計）
 };
 let curCreate = { rawCls: 'm_royal', cls: 'royal', str:0, dex:0, con:0, int:0, wis:0, cha:0 };
