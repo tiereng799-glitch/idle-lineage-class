@@ -240,20 +240,22 @@
   //   點按鈕先開「更新內容」視窗(changelog.json,根目錄、SW 不攔):列出開頁那版之後的每一筆,裡面再按「點此更新」。
   //   changelog.json＝[{ at:'YYYY-MM-DD HH:MM', items:['玩家看得懂的一句', …] }, …] 新的在前;
   //   發布時新增一筆,at 寫發布當下(介於上一版與這一版的 buildAt 之間即可),只寫玩家有感的、白話(同 CLAUDE.md「玩家看得到的字」)。
+  //   另有「更新紀錄」(站長要求隨時能看):設定視窗最上排、登入畫面「其他功能」選單各一顆,同一個視窗列出全部紀錄;有新版本時底下才有「點此更新」。
   var VER_POLL_MS = 3 * 60 * 1000;
   var verBaseAt = '';   // 開頁那版的 buildAt:更新內容只列這之後的
+  var updAvail = false;   // 網站已經換版(上方按鈕出現了)
   function watchNewVersion() {
     if (!/^https?:$/.test(location.protocol)) return;
-    var base = null, shown = false, last = 0;
+    var base = null, last = 0;
     function check() {
-      if (shown || document.hidden) return;
+      if (updAvail || document.hidden) return;
       last = Date.now();
       fetch('version.json?t=' + last, { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (v) {
           var code = v && v.code; if (!code) return;
           if (base == null) { base = code; verBaseAt = v.buildAt || ''; return; }
-          if (code !== base && !shown) { shown = true; showUpdateBtn(); }
+          if (code !== base && !updAvail) { updAvail = true; showUpdateBtn(); }
         })
         .catch(function () {});
     }
@@ -263,6 +265,14 @@
   }
   function showUpdateBtn() {
     if (document.getElementById('afk-upd')) return;
+    updStyle();
+    var b = document.createElement('button');
+    b.type = 'button'; b.id = 'afk-upd'; b.textContent = '🔄 有新版本・點此更新';
+    b.addEventListener('click', function () { openUpdateWin(false); });
+    document.body.appendChild(b);
+  }
+  function updStyle() {
+    if (document.getElementById('afk-upd-style')) return;
     var st = document.createElement('style');
     st.id = 'afk-upd-style';
     // 頭像列下方置中(上緣那排左邊是頭像、右邊是狀態圖示);層級比工具列、視窗都高
@@ -286,18 +296,17 @@
       '#afk-updwin .go{min-width:60%;padding:10px 18px;border-radius:6px;border:1px solid #e0b04a;background:linear-gradient(#7a5a1e,#3f2c0c);color:#ffe6a8;font-size:16px;font-weight:700;letter-spacing:1px;cursor:pointer;font-family:inherit;}' +
       '#afk-updwin .go:active{filter:brightness(1.2);}';
     document.head.appendChild(st);
-    var b = document.createElement('button');
-    b.type = 'button'; b.id = 'afk-upd'; b.textContent = '🔄 有新版本・點此更新';
-    b.addEventListener('click', openUpdateWin);
-    document.body.appendChild(b);
   }
   function escHtml(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function openUpdateWin() {
+  // all＝更新紀錄(列全部、有新版本才有「點此更新」)；否則＝更新內容(列開頁那版之後的)
+  function openUpdateWin(all) {
     if (document.getElementById('afk-updwin')) return;
+    updStyle();
+    var title = all ? '更新紀錄' : '更新內容', canGo = !all || updAvail;
     var w = document.createElement('div');
     w.id = 'afk-updwin';
-    w.innerHTML = '<div class="box" role="dialog" aria-label="更新內容"><div class="hd">更新內容<button type="button" aria-label="關閉">✕</button></div>' +
-      '<div class="bd"></div><div class="ft"><button type="button" class="go">點此更新</button></div></div>';
+    w.innerHTML = '<div class="box" role="dialog" aria-label="' + title + '"><div class="hd">' + title + '<button type="button" aria-label="關閉">✕</button></div>' +
+      '<div class="bd"></div>' + (canGo ? '<div class="ft"><button type="button" class="go">點此更新</button></div>' : '') + '</div>';
     document.body.appendChild(w);
     function remove() { if (w.parentNode) w.parentNode.removeChild(w); }
     var layer = window.AFK_UI ? AFK_UI.openLayer(remove) : null;   // 手機返回鍵 / ESC 可關
@@ -305,16 +314,17 @@
     w.addEventListener('click', function (e) { if (e.target === w) close(); });
     w.querySelector('.hd button').addEventListener('click', close);
     var go = w.querySelector('.go');
-    go.addEventListener('click', function () { go.disabled = true; go.textContent = '更新中…'; location.reload(); });
+    if (go) go.addEventListener('click', function () { go.disabled = true; go.textContent = '更新中…'; location.reload(); });
     // 更新內容：讀不到就只留「點此更新」(不擋更新)
     fetch('changelog.json?t=' + Date.now(), { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (list) {
         if (!Array.isArray(list) || !w.parentNode) return;
-        var news = list.filter(function (e) { return e && e.at && Array.isArray(e.items) && (!verBaseAt || e.at > verBaseAt); });
-        if (!news.length) news = list.slice(0, 1).filter(function (e) { return e && Array.isArray(e.items); });
+        var ok = function (e) { return e && e.at && Array.isArray(e.items); };
+        var news = all ? list.filter(ok) : list.filter(function (e) { return ok(e) && (!verBaseAt || e.at > verBaseAt); });
+        if (!news.length) news = list.slice(0, 1).filter(ok);
         var days = [], byDay = {};   // 同一天的併成一組（一天常發好幾次）
-        news.slice(0, 12).forEach(function (e) {
+        news.slice(0, all ? 60 : 12).forEach(function (e) {
           var d = String(e.at).slice(0, 10);
           if (!byDay[d]) { byDay[d] = []; days.push(d); }
           byDay[d] = byDay[d].concat(e.items);
@@ -326,12 +336,29 @@
       .catch(function () {});
   }
 
+  // 更新紀錄按鈕：設定視窗最上排、回選角旁邊（#settings-top-row，原本「NPC AI 對話」的位置）＋登入畫面「其他功能」選單。直接開檔案(file://)讀不到紀錄 → 不放
+  function mountChangelogBtn() {
+    if (!/^https?:$/.test(location.protocol)) return;
+    window.AFK_SETTINGS = window.AFK_SETTINGS || { _items: [], add: function (it) { this._items.push(it); } };
+    AFK_SETTINGS.add({ label: '📜 更新紀錄', onClick: function () { openUpdateWin(true); } });
+    var row = document.getElementById('settings-top-row');
+    if (!row) { console.warn('[AFK-pwa] 找不到設定視窗的 #settings-top-row，遊戲內的更新紀錄按鈕停用。'); return; }
+    if (document.getElementById('afk-changelog-btn')) return;
+    var b = document.createElement('button');
+    b.type = 'button'; b.id = 'afk-changelog-btn';
+    b.className = 'btn py-1 px-3 text-sm font-bold bg-slate-700 hover:bg-slate-600 border-slate-500 text-slate-100';   // 同排「回選角」的樣式
+    b.textContent = '📜 更新紀錄';
+    b.addEventListener('click', function () { openUpdateWin(true); });
+    row.appendChild(b);
+  }
+
   function init() {
     injectHead();
     registerInstallSetting();
     bindInstallEvents();
     mountInstallFab();
     watchNewVersion();
+    mountChangelogBtn();
     if (pwaCapable()) {
       watchUpdates();
     }
