@@ -68,9 +68,6 @@
         '#town-npc-map > .afk-tm-load,#battle-view > .afk-tm-load{position:absolute;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(4,7,11,.86);transition:opacity .25s;}' +
         '.afk-tm-load > .afk-tm-txt{font-size:14px;font-weight:700;letter-spacing:2px;color:#e8cf8f;text-shadow:0 1px 2px #000,0 0 4px #000;}' +
         '#town-npc-map > .afk-tm-load.out,#battle-view > .afk-tm-load.out{opacity:0;}' +
-        // 動態村莊地圖載好時，NPC 一律站在地圖上給人點：NPC 條列式（afk-npclist）平常把地圖上的 NPC 藏起來改用清單，
-        //   天堂M 介面在動態地圖上又會收起那份清單 → 兩邊都沒有就選不到 NPC（踩過）。被其他外掛藏的（黑市、不顯示的 NPC）照樣藏
-        'html body.afk-npclist #town-npc-map.afk-tm-live .town-npc:not(.lmui-npc-off):not(.afk-bm-off):not(.hidden){display:block!important;}' +
         // 狩獵區（地圖模式）：地圖畫在最底層；原本的怪物卡片變透明、移到怪物站的位置（只留點擊與特效定位）；原本的角色／隊員／寵物圖藏起來（地圖上畫）
         '#battle-view.afk-hm{background-image:none!important;position:relative;}' +
         // 核心打死怪時會在特效層（#vfx-layer）另外複製一份怪物圖播倒地動畫；地圖上自己播了死亡動作 → 藏起來，不然同一隻怪倒兩次
@@ -884,7 +881,7 @@
             return Promise.all(wantRegions(mx - R0, my - R0, mx + R0, my + R0).map(function (r) { return r.p; })).then(function () {
                 if (S !== cur) return;
                 S.form = heroLook();   // 落腳點表(hero.js)跟地圖資料一起載，載好才查得到；之後每秒重查(換武器、變身會換動畫)
-                map.classList.add('afk-tm-live');   // NPC 站在地圖上點（NPC 條列式外掛平常會把它們藏起來，見樣式表）
+                map.classList.add('afk-tm-live');   // 動態地圖載好了：天堂M 介面看到這個就不把 NPC 重排成一排（NPC 照站位；開了 NPC 條列式則整批藏著、走下方清單）
                 attachNpcs();
                 syncPets();
                 preloadDir(S.form, S.me.dir);

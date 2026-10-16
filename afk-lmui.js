@@ -334,7 +334,8 @@
          ⚠️ 不可以改用「場景蓋在上面、clip-path 多邊形挖洞露出視窗」：手機判斷手指在滑哪一塊時不看非長方形的裁切，
             整片都當成場景 → 視窗完全滑不動（踩過）。
          外框＝#lmui-wborder（蓋在內容上面，內容再長下緣的框也看得到）；#lmui-wframe 不畫東西，只給魔法書量視窗下緣 */
-      ':root{--lmui-wbot:calc(100dvh - var(--m-nav-h,0px) - 46px - var(--lmui-btns) - 6px);}',   /* 視窗下緣＝精簡版面聊天輸入列上方 6px；寫死不跟 --lmui-mtop：角色死亡會切掉精簡版面，視窗不可以跟著縮 */
+      ':root{--lmui-wbot:calc(100dvh - var(--m-nav-h,0px) - 46px - var(--lmui-btns) - 6px);}',
+      'body.lmui-town{--lmui-wbot:calc(100dvh - var(--m-nav-h,0px) - var(--lmui-btns) - 6px);}',   /* 村莊下方沒有聊天輸入列：視窗拉到工具列上方 */   /* 視窗下緣＝精簡版面聊天輸入列上方 6px；寫死不跟 --lmui-mtop：角色死亡會切掉精簡版面，視窗不可以跟著縮 */
       'html body.lmui-battle.lmui-tall.lmui-whead #col-center{clip-path:none;z-index:1;}',
       'html body.lmui-battle.lmui-tall.lmui-whead #game-screen{overflow:hidden !important;}',
       'html body.lmui-battle.lmui-tall.lmui-whead #col-right{position:fixed !important;left:6px !important;right:6px !important;top:calc(var(--lmui-ptop) + var(--lmui-whead-h)) !important;bottom:auto !important;height:calc(var(--lmui-wbot) - var(--lmui-ptop) - var(--lmui-whead-h)) !important;min-height:0 !important;max-height:none !important;width:auto !important;max-width:none !important;margin:0 !important;padding:6px 6px 8px !important;box-sizing:border-box !important;overflow-x:hidden !important;overflow-y:auto !important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(#1f1813,#120d09);border-radius:0 0 6px 6px;z-index:2;}',
@@ -2138,10 +2139,10 @@
     //   按「聊天」才看訊息。村莊：NPC 站在動態地圖上點得到時才收 NPC 卡片（地圖沒載起來時卡片是唯一入口，不收）
     var bc = document.body.classList;
     //   開著魔法／背包／設定視窗也維持精簡（視窗浮在上面；切掉精簡會讓戰鬥畫面縮成一半＝站長說的「戰鬥畫面跳動」）
-    //   NPC 對話視窗是浮動視窗，開著也維持精簡（切掉會讓村莊地圖縮一半＝站長說的「NPC 視窗一出來畫面就跳走」）。
-    //   村莊要等動態地圖真的載好（NPC 站上地圖、afk-townmap 掛 .afk-tm-live）才收 NPC 卡片：載入中或失敗時卡片是唯一入口
-    toggleCls('lmui-compact', !dead && (bc.contains('mview-center') || bc.contains('lmui-whead')) && !bc.contains('lmui-chatbig') && !bc.contains('lmui-maps') && !bc.contains('lmui-map') &&
-      !bc.contains('lmui-townchat') && (!town || !!document.querySelector('#town-npc-map.afk-tm-live')));
+    //   村莊不精簡（站長 2026-10-16：NPC 先不站在地圖上，回村莊下方要有 NPC 清單；精簡會收掉清單）。
+    //   村莊因此一直是「地圖在上半、清單在下半」：開 NPC 對話視窗也不會切版面，畫面不跳。
+    toggleCls('lmui-compact', !dead && !town && (bc.contains('mview-center') || bc.contains('lmui-whead')) && !bc.contains('lmui-chatbig') && !bc.contains('lmui-maps') && !bc.contains('lmui-map') &&
+      !bc.contains('lmui-townchat'));
     if (dead) { try { placeDeadBtn(); buildDeathWin(); renderDeathStats(); } catch (e) {} }
     else toggleCls('lmui-deathx', false);
     try { pushWindowsBelow(); } catch (e) {}
