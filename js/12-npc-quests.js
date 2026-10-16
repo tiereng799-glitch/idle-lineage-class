@@ -152,6 +152,7 @@ function loadWarehouse(){
         let items = w.items || [];
         try { let tombs = _whTombsRead(); items = items.filter(it => !(it && it.uid != null && tombs[it.uid])); } catch(e){}   // 🪦 墓碑 uid＝已被領出（他分頁復活殘留）→ 隱藏；下次任一寫入時自桶清除
         _whLoadUids = new Set(items.map(it => it && it.uid).filter(u => u != null));
+        if (typeof isRemovedItem === 'function') items = items.filter(it => !isRemovedItem(it));   // 🗑️ 已刪除的物品（脛甲類、魔眼）：濾掉；放在 _whLoadUids 之後→下次寫入會記墓碑，他分頁舊快照不會復活
         items = _whConsolidate(items);   // 同一種東西分成好幾疊 → 合成一疊（_whLoadUids 刻意在合併前算：被併掉的 uid 下次寫入會記墓碑，他分頁的舊快照不會把它復活）
         return { items: items, gold: w.gold || 0 };
     } catch(e){ _whLoadOk = false; return { items: [], gold: 0 }; }   // JSON 毀損→不可當成空倉庫

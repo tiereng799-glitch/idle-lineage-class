@@ -533,7 +533,7 @@
       'html body.lmui-equip #lmui-doll{box-sizing:border-box;min-height:calc(var(--lmui-wbot) - var(--lmui-ptop) - var(--lmui-whead-h) - var(--lmui-ptabs-h) - 28px);}',
       '.ld2-body{position:relative;flex:1 1 auto;display:flex;gap:6px;align-items:stretch;}',
       '.ld2-fig{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:0;}',
-      '.ld2-col{position:relative;z-index:1;flex:0 0 auto;display:grid;grid-template-columns:repeat(2,var(--ld-c));grid-auto-rows:var(--ld-c);gap:5px;align-content:space-between;}',
+      '.ld2-col{position:relative;z-index:1;flex:0 0 auto;display:grid;grid-template-columns:repeat(2,var(--ld-c));grid-template-rows:repeat(5,var(--ld-c));gap:5px;align-content:space-between;}',
       '.ld2-mid{position:relative;z-index:1;flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;}',
       '.ld2-bar{position:relative;height:18px;border:1px solid #6b5636;border-radius:3px;background:#120a08;overflow:hidden;}',
       '.ld2-bar i{position:absolute;left:0;top:0;bottom:0;width:0;transition:width .25s;}',
@@ -2371,14 +2371,14 @@
   }
 
   // ── 裝備分頁（站長 2026-10-16 參考圖）：上方名字／等級／職業＋經驗，左右兩排裝備格夾著中間的角色（面向玩家的待機動作，變身就畫變身），
-  //   角色下方血／魔，最下面能力值。席琳遺骸那頁拿掉（席琳已關閉）；魔眼（地龍之魔眼，跟席琳無關）留在右排。
+  //   角色下方血／魔，最下面能力值。席琳遺骸那頁拿掉（席琳已關閉）；脛甲、魔眼整個部位已刪除（站長 2026-10-16）。
   //   部位與「副手武器佔盾牌格」(offwpn)、點一下開物品視窗、雙擊卸下，都照上游 js/19 的 PAGE_SLOTS / renderSlots。
-  //   格子一律同樣大（站長）：左右各 2 欄 × 5 排，由上往下、由左往右排
+  //   格子一律同樣大（站長）：左右各 2 欄 × 5 排（右排只有 4 排，最下排空著，列高跟左排對齊），由上往下、由左往右排
   var DOLL_L = ['helm', 'ear1', 'amulet', 'ear2', 'tshirt', 'armor', 'cloak', 'gloves', 'belt', 'boots'];
-  var DOLL_R = ['wpn', 'shield', 'arrow', 'eye', 'ring1', 'ring2', 'ring3', 'ring4', 'shin', 'doll'];
+  var DOLL_R = ['wpn', 'shield', 'arrow', 'doll', 'ring1', 'ring2', 'ring3', 'ring4'];
   var CLS_NAME = { royal: '王族', knight: '騎士', elf: '妖精', mage: '法師', dark: '黑暗妖精' };
   var SLOT_NAME = { helm: '頭盔', ear1: '耳環', ear2: '耳環', amulet: '項鍊', gloves: '手套', cloak: '斗篷', tshirt: 'T恤', wpn: '武器', shield: '盾牌', armor: '盔甲',
-    ring1: '戒指', ring2: '戒指', ring3: '戒指', ring4: '戒指', belt: '腰帶', shin: '脛甲', boots: '長靴', doll: '娃娃', arrow: '箭', eye: '魔眼' };
+    ring1: '戒指', ring2: '戒指', ring3: '戒指', ring4: '戒指', belt: '腰帶', boots: '長靴', doll: '娃娃', arrow: '箭' };
   var dollSig = '';
   function dollKey(k) { return (k === 'shield' && player.eq.offwpn) ? 'offwpn' : k; }   // 副手武器顯示在盾牌格（同上游 alt）
   function dollCell(k) {

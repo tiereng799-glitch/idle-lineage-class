@@ -3239,7 +3239,7 @@ function dismissAlly(slotN) {
     toggleAlly(slotN);
 }
 const ALLY_EQUIP_SLOT_NAME = {
-    wpn:'主手武器', offwpn:'副手武器', arrow:'箭矢', helm:'頭盔', armor:'盔甲', shin:'脛甲', tshirt:'T恤',
+    wpn:'主手武器', offwpn:'副手武器', arrow:'箭矢', helm:'頭盔', armor:'盔甲', tshirt:'T恤',
     cloak:'斗篷', gloves:'手套', shield:'盾牌／臂甲', boots:'長靴', belt:'腰帶', amulet:'項鍊',
     ear:'耳環', ear1:'耳環 1', ear2:'耳環 2', ring:'戒指', ring1:'戒指 1', ring2:'戒指 2', ring3:'戒指 3', ring4:'戒指 4',
     doll:'魔法娃娃'
@@ -3697,7 +3697,6 @@ function hasSummonCtrlRing(owner) {
     let eq = owner.eq || {};
     let r1 = eq.ring1, r2 = eq.ring2, r3 = eq.ring3, r4 = eq.ring4;
     if ((r1 && r1.id === 'acc_summon_ctrl') || (r2 && r2.id === 'acc_summon_ctrl') || (r3 && r3.id === 'acc_summon_ctrl') || (r4 && r4.id === 'acc_summon_ctrl')) return true;
-    if (eq.shin && DB.items[eq.shin.id] && DB.items[eq.shin.id].summonCtrl) return true;   // 🏺 遺物 召喚儀式的魔術布（脛甲）：等同召喚控制戒指
     return false;
 }
 // 🏺 遺物 巨靈的承諾（耳環）：裝備於耳飾欄時，傭兵/寵物死亡立即自動使用復活卷軸（跳過復活冷卻·仍消耗卷軸）。純看玩家裝備。

@@ -302,10 +302,14 @@
         });
         delete st.wanderer;
         if (!Array.isArray(st.boards)) st.boards = [];
+        let _gone = id => typeof isRemovedItem === 'function' && isRemovedItem({ id: id });   // 🗑️ 已刪除的物品（脛甲類、魔眼）：收購 NPC／懸賞合約碰到就作廢
+        st.wanderers = st.wanderers.filter(w => !_gone(w.itemId));
         st.boards = [0, 1, 2].map(i => {
             let b = st.boards[i] && typeof st.boards[i] === 'object' ? st.boards[i] : {};
+            let c = b.contract && typeof b.contract === 'object' ? b.contract : null;
+            if (c && (_gone(c.relicId) || (Array.isArray(c.requirements) && c.requirements.some(r => r && _gone(r.id))))) c = null;
             return {
-                contract: b.contract && typeof b.contract === 'object' ? b.contract : null,
+                contract: c,
                 cooldownUntil: Math.max(0, Math.floor(Number(b.cooldownUntil) || 0))
             };
         });

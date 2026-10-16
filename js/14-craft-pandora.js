@@ -375,9 +375,8 @@ const CRAFT_RECIPES = {
     'npc_keluya': [
         { result: 'wpn_ancient_spear', req: [{ id: 'item_unknown_spear', cnt: 1 }, { id: 'item_ancient_scroll', cnt: 10 }, { id: 'new_item_153', cnt: 10 }, { id: 'new_phoenix_heart', cnt: 1 }, { id: 'new_item_178', cnt: 50 }, { id: 'mat_soulstone_shard', cnt: 500 }] }
     ],
-    // 🐉 v3.7.57 威頓村・米米：地龍之魔眼解封＋4 古代龍鱗盔甲＋4 安塔瑞斯系列盔甲（規格書配方）
+    // 🐉 v3.7.57 威頓村・米米：4 古代龍鱗盔甲＋4 安塔瑞斯系列盔甲（規格書配方）
     'npc_mimi': [
-        { result: 'acc_earth_dragon_eye', req: [{ id: 'item_sealed_earth_eye', cnt: 1 }, { id: 'gold', cnt: 1000000 }] },
         { result: 'arm_ancient_dragonscale_earth', req: [{ id: 'arm_81', cnt: 1 }, { id: 'mat_blackmithril_plate', cnt: 3 }, { id: 'new_item_152', cnt: 30 }, { id: 'mat_golem_heart', cnt: 5 }, { id: 'gold', cnt: 500000 }] },
         { result: 'arm_ancient_dragonscale_water', req: [{ id: 'arm_80', cnt: 1 }, { id: 'mat_blackmithril_plate', cnt: 3 }, { id: 'new_item_155', cnt: 30 }, { id: 'mat_icequeen_heart', cnt: 5 }, { id: 'gold', cnt: 500000 }] },
         { result: 'arm_ancient_dragonscale_fire', req: [{ id: 'arm_82', cnt: 1 }, { id: 'mat_blackmithril_plate', cnt: 3 }, { id: 'new_item_158', cnt: 30 }, { id: 'new_phoenix_heart', cnt: 5 }, { id: 'gold', cnt: 500000 }] },
