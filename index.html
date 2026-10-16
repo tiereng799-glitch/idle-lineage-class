@@ -30,7 +30,7 @@
            (CSS 另有 60 秒自動消失的保底)。data-scripts / data-script-kb 是本頁 <script src> 的數量與總大小，由 scripts/stamp-code-versions.mjs 自動對齊。
            無痕模式／第一次開沒有快取，光下載程式就要十幾秒；以前這段進度條停在 0% 不動，看起來像卡死。
            主要照「已下載的位元組」算(檔案大小差很多，00-data 一支就 640KB，只數檔數會一卡好幾秒)；瀏覽器不給大小時退回數檔數。 -->
-      <div id="boot-loader" aria-live="polite" data-scripts="110" data-script-kb="6470">
+      <div id="boot-loader" aria-live="polite" data-scripts="110" data-script-kb="6489">
         <div class="boot-box"><div class="boot-label">載入中 <span class="boot-pct">0%</span></div><div class="boot-bar"><div class="boot-bar-fill"></div></div></div>
       </div>
       <script>
@@ -556,25 +556,25 @@
     </script>
 
     <script src="js/anim-manifest.js?v=3fc6fd4b93.8.12-necro-relics"></script>
-    <script src="js/00-data.js?v=53e722574b.8.34-merc-trial-class-loot"></script>
+    <script src="js/00-data.js?v=873ae29bf0.8.34-merc-trial-class-loot"></script>
     <!-- 試算表的修改(Google 試算表 → GitHub「更新遊戲」產生 00y;00z 把它套進 DB 與首頁) -->
     <script src="js/00y-my-tweaks-data.js?v=5f313547b4"></script>
     <script src="js/00z-my-tweaks.js?v=dc4ecd5b4f"></script>
 <script src="js/01-drops-config.js?v=a7be79c0e9.8.26-flywing-relics"></script>
     <script src="js/01z-my-tweaks-drops.js?v=305132abe5"></script>
 <script src="js/02-stats-recompute.js?v=07eecf39ec.8.26-flywing-relics"></script>
-    <script src="js/03-combat-core.js?v=c7aad8e15e.8.26-flywing-relics"></script>
+    <script src="js/03-combat-core.js?v=98dfcf9fd0.8.26-flywing-relics"></script>
     <script src="js/04-combat-attack.js?v=083217e752.8.26-flywing-relics"></script>
 <script src="js/05-kill-progression.js?v=7c910ed863.8.34-merc-trial-class-loot"></script>
     <script src="js/06-status-allies.js?v=1a3e500b74.8.34-merc-trial-class-loot"></script>
     <script src="js/07-skills-cast.js?v=f52b594041.8.26-flywing-relics"></script>
-<script src="js/08-items-equip.js?v=a9dfeca216.8.16-wis-regen-interval"></script>
+<script src="js/08-items-equip.js?v=a06e17f33a.8.16-wis-regen-interval"></script>
 <script src="js/09-vfx-render.js?v=c50c5fb1ea.8.32-merc-vfx-origin"></script>
-    <script src="js/10-ui-tabs.js?v=9f210bad80.8.14-merc-guild"></script>
+    <script src="js/10-ui-tabs.js?v=92b7515b8b.8.14-merc-guild"></script>
 <script src="js/11-world-map.js?v=f57d729e5c.8.17-item-stack-source"></script>
 <script src="js/12-npc-quests.js?v=28348085c4.8.34-merc-trial-class-loot"></script>
-<script src="js/13-shop-save.js?v=443432ee0d.8.18-desktop-save-isolation"></script>
-<script src="js/14-craft-pandora.js?v=63416b66fc.8.17-item-stack-source"></script>
+<script src="js/13-shop-save.js?v=e33adb3bd7.8.18-desktop-save-isolation"></script>
+<script src="js/14-craft-pandora.js?v=33b23d9262.8.17-item-stack-source"></script>
 <script src="js/15-cards.js?v=9f3f5ca582.7.66"></script>
 <script src="js/16-equip-book.js?v=d98f7f80ad.8.15-legacy-import-smooth"></script>
 <script src="js/18-misc-book.js?v=e3c0995919.8.15-legacy-import-smooth"></script>
@@ -670,7 +670,7 @@
     <!-- afk-npclabel：村莊 NPC 名牌不要跑出畫面 -->
     <script src="afk-npclabel.js?v=21861a88d8"></script>
     <!-- afk-townmap：說話之島村莊換成會動的地圖、角色自己走（包 renderTownNPCMap；排在 npclist 之後＝最外層，NPC 藏不藏已定） -->
-    <script src="afk-townmap.js?v=03ecfc6669"></script>
+    <script src="afk-townmap.js?v=466cbf767b"></script>
     <script src="afk-mobname.js?v=d74c25c2c9"></script>
     <script src="afk-trackinfo.js?v=52621852bd"></script>
     <!-- afk-trackmaps：追蹤選單補上選不到的圖（黑暗妖精聖地＝地獄奴隸唯一產地、傲慢之塔2~10樓、六張隱藏區域）；三批來歷不同,檔頭有表 -->
@@ -691,7 +691,7 @@
     <!-- 手機戰鬥框下方的主動技能列：排在 afk-battlebuffs 之後 → 插入時看得到 #m-battle-buffs，才排得到它上面（那支關掉就直接接戰鬥框） -->
     <script src="afk-skillbar.js?v=496ea95617"></script>
     <!-- afk-lmui：天堂M風格介面（afk-mobile 子選項）——戰鬥滿版＋浮動 HUD／技能列／聊天框、導覽列圖示化；排在 afk-skillbar 之後 -->
-    <script src="afk-lmui.js?v=d2d7aec484"></script>
+    <script src="afk-lmui.js?v=3410b48d9b"></script>
     <script src="afk-toast.js?v=630211acf0"></script>
     <!-- 點視窗外空白處＝關閉最上面那個視窗（走視窗自己的關閉路徑） -->
     <script src="afk-tapclose.js?v=ee4a380580"></script>
