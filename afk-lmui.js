@@ -2218,7 +2218,7 @@
       var x = $('m-log-close'); if (x) x.click();
       chatTab = 'sys'; lastChatSig = ''; chatDirty = true;
     }
-    if (game) { try { syncToolbar(); } catch (e) {} }
+    if (game) { try { syncToolbar(); } catch (e) {} try { fixPageShift(); } catch (e) {} }
     try { syncBag(); } catch (e) {}
     try { fitSkillBook(); } catch (e) {}
     try { toggleCls('lmui-sktab', game && activeRightTab() === 'skill' && document.body.classList.contains('mview-right')); } catch (e) {}
@@ -2353,6 +2353,14 @@
     if (!cur && cells.length) cur = cells[0].getAttribute('data-grp');
     var btns = document.querySelectorAll('#tab-skill .lsk2-side button');
     for (var j = 0; j < btns.length; j++) btns[j].classList.toggle('on', btns[j].getAttribute('data-grp') === cur);
+  }
+  // iPhone：點聊天輸入叫出鍵盤時整頁會被往上推，鍵盤收起後有時停在推上去的位置 → 頭像列躲到狀態列底下、下面空一條（站長 2026-10-16「上方又遮住了」）。
+  //   天堂M 版面整頁固定、整頁本來就不該捲：沒在打字時發現整頁有位移就拉回頂端（鍵盤收起時看一次，tick 也順手看）
+  function fixPageShift() {
+    var ae = document.activeElement;
+    if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return;
+    var se = document.scrollingElement || document.documentElement;
+    if (window.scrollY || (se && se.scrollTop)) { try { window.scrollTo(0, 0); } catch (e) {} if (se) se.scrollTop = 0; }
   }
   // 魔法書高度＝從自己頂端到底部導覽列上緣（分頁藏著時量不到 → 由 tick 在顯示時補量）
   function fitSkillBook() {
@@ -2669,6 +2677,7 @@
     var ms = $('map-select'); if (ms) ms.addEventListener('change', closeMap);
     var hd = document.querySelector('#map-view-panel>.panel-header');
     if (hd) hd.addEventListener('click', function (e) { if (e.target.closest('button')) setTimeout(closeMap, 0); });
+    document.addEventListener('focusout', function () { setTimeout(function () { if (document.body.classList.contains('lmui')) fixPageShift(); }, 300); }, true);   // 鍵盤收起
     setInterval(tick, TICK_MS);
     tick();
     console.log('[AFK-lmui] hooks OK — 天堂M風格介面已啟用。');

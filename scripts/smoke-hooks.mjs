@@ -203,7 +203,8 @@ const toggleOffProblems = await opage.evaluate(async () => {
   // 橫幅讓位:必須由 afk-banner(不可停用)提供 → 關掉「手機版面」後依然要生效。
   //   歷史成因:讓位整組寫在 afk-mobile 裡,平板玩家為了換回三欄把它關掉 → 頂端(冒險地圖標題/黑市/瞬移/右欄分頁)
   //   全被橫幅蓋住(2026-07-23 回報)。
-  const barH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--orig-bar-h')) || 0;
+  //   --orig-bar-h 現在是 calc(橫幅px + env(safe-area-inset-top)) → 讀數字走 AFK_BANNER.bottom()
+  const barH = window.AFK_BANNER ? AFK_BANNER.bottom() : 0;
   const barBottom = document.getElementById('_orig_pbar').getBoundingClientRect().bottom;
   if (barH < barBottom) bad.push(`--orig-bar-h(${barH}px) 沒讓開橫幅(底端 ${barBottom}px)`);
   for (const id of ['app-stage', 'creation-screen']) {
