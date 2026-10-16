@@ -16,7 +16,7 @@
  *     對不到的(遊戲自己加的 NPC)站村莊起點附近的空位；跟著地圖捲動，點擊照舊
  *   - 前後遮擋：房子、樹會擋住走到後面的角色；被整個擋住時再疊一層半透明身影
  *   - 進村莊／換村莊(所有村莊)：地圖上先跑一段載入條，至少 1.5 秒，地圖還在載就等載好
- *   - 狩獵區(子開關 huntmap，hunts.json 有的地圖；目前樣本＝說話之島周邊)：怪物照模擬器重生表站在地圖上，
+ *   - 狩獵區(子開關 huntmap，hunts.json 有的地圖：對得到用戶端地圖、有一般怪的狩獵地圖都有，約 200 張)：怪物照模擬器重生表站在地圖上，
  *     角色自己走過去打；戰鬥計算沿用核心，只換「怪從哪來」(細節見下方「狩獵區」段落)。開發時網址帶 ?tmlocal 讀本機資料
  *
  * 資料：assets/townmap/towns.json(各村莊在哪張圖、起點、NPC 站位)、m<圖>.json(每張圖的總表)、
@@ -110,6 +110,7 @@
     // 地圖資料放在 Cloudflare R2（tools/upload-r2.mjs 上傳，檔名帶內容雜湊、快取一年）；入口 remote.json 跟遊戲一起發佈。
     //   沒有 remote.json（本機開發剛產完資料）就讀 assets/townmap/ 底下原檔名。
     var REMOTE = null, remoteP = null;
+    if (/[?&]tmlocal\b/.test(location.search)) window.__tmTEST = function () { return S; };   // 開發用：測試腳本看地圖狀態（玩家的網址不會帶 ?tmlocal）
     function loadRemote() {
         if (/[?&]tmlocal\b/.test(location.search)) return remoteP || (remoteP = Promise.resolve(REMOTE = null));   // 開發用：網址帶 ?tmlocal 讀本機剛產的資料
         return remoteP || (remoteP = fetch(BASE + 'remote.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })

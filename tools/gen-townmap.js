@@ -7,7 +7,7 @@
 //     遊戲的 js/00-data.js（各村莊 NPC 名字）→
 //     assets/townmap/towns.js（各村莊在哪張圖、起點、NPC 站位）
 //     assets/townmap/m<圖>.js（每張圖的總表）＋ assets/townmap/m<圖>/（各區 r<x>_<y>.js、拼圖 p<頁>.png）
-//     --maps：只重產這幾張圖的圖檔（towns.js 一律重產）
+//     --maps：只重產這幾張圖的圖檔（towns.json、hunts.json 一律重產）；--no-build：只重算 towns.json、hunts.json，不產圖檔
 //     能不能走照模擬器地圖檔（伺服器實際用的；說話之島村莊附近有 131 格跟用戶端不同，是伺服器那邊修過的）；
 //       沒有地圖檔就從用戶端第 3 層換算（跟模擬器檔比對過，說話之島 512×512 格只差 142 格）。
 //   node tools/gen-townmap.js --hero-only
@@ -187,43 +187,172 @@ function gameData(key) {
 const gameTowns = () => gameData('towns');
 
 // ── 狩獵地圖 → 用戶端地圖、怪物重生點 ─────────────────────────
-// 遊戲的狩獵地圖（DB.maps）對到哪張用戶端地圖：野外的怪（妖魔、狼）到處都有，自動判斷常認錯，一張一張指定。
-//   重生點＝模擬器 spawnlist 在那張圖上、怪物名字對得到這張遊戲地圖怪物池的那些（名字對不到的不出現）。
+// 遊戲的狩獵地圖（DB.maps）對到哪張用戶端地圖：野外的怪（妖魔、狼）到處都有，自動判斷常認錯，一張一張指定
+//   （照地名對模擬器 mapids；地名對不上的看怪物池在模擬器重生表上集中在哪張圖）。
+//   數字＝整張圖照模擬器重生表放怪；A(圖)＝大地圖（大陸、島）只取這張遊戲地圖的怪最集中的一塊（AREA 格見方）。
+//   重生點＝模擬器 spawnlist 在那張圖上、怪物名字對得到這張遊戲地圖怪物池的那些；
+//   怪物池裡模擬器沒放的（或整張圖都沒資料）在角色走得到的地方補上（placeHunt）。
+//   沒列的＝對不到用戶端地圖（日出之國、隱藏區域）或沒有一般怪（攻城、純頭目房），照原本畫面。
+const A = map => ({ map, area: 1 });
 const HUNT_MAPS = {
-    talking_island: 0,   // 說話之島周邊（樣本）
+    talking_island: 0, training: A(0), talking_island_port: A(0),
+    silver_knight: A(4), zone_01: A(4), elf_forest: A(4), gludio: A(4), windwood: A(4), desert: A(4), kent: A(4),
+    dragon_valley: A(4), fire_dragon: A(4), giran: A(4), heine: A(4), twilight_mt: A(4), mirror_forest: A(4),
+    zone_02: A(4), zone_03: A(4), zone_04: A(4), zone_05: A(4),
+    pirate_wild: 440, pirate_dungeon: 441, silent_outer: 304, elf_grave: 430, hidden_cave: 400, giant_tomb: A(400), demon_temple: 410,
+    shadow_temple: 522, dream_island: 303, windwood_dungeon: 23,
+    crystal_cave1: 72, crystal_cave2: 73, crystal_cave3: 74,
+    zone_06: 7, zone_07: 8, zone_08: 9, zone_09: 10, zone_10: 11, zone_11: 12, zone_12: 13,   // 古魯丁地監＝模擬器「大陸地監」
+    zone_13: 1, zone_14: 2,                                                                 // 說話之島地監＝「冒險洞窟」
+    zone_15: 19, zone_16: 20, zone_17: 21, zone_18: 53, zone_19: 54, zone_20: 55, zone_21: 56,
+    zone_22: 25, zone_23: 26, zone_24: 27, zone_25: 28,
+    zone_26: 30, zone_27: 31, zone_28: 32, zone_29: 33, zone_30: 35, zone_31: 36,
+    zone_32: 49, zone_33: 50, hidden_antqueen: 51,                                          // 巨蟻洞穴：照怪物分佈
+    zone_34: 59, zone_35: 60, zone_36: 61, eva_kingdom: 253,
+    zone_37: 78, zone_38: 79, zone_39: 80, zone_40: 81, zone_41: 82,
+    rastabad_cave1: 307, rastabad_cave2: 308, rastabad_cave3: 309, rastabad_gate: 450, rastabad_beast: 455,
+    dark_magic_lab: 461, necro_training: 473, elder_room: 530, dark_elf_sanctuary: 535,
+    thebes_desert: 780, thebes_pyramid: 781, tikal_area: 783, tikal_deep: 783,
+    oblivion_travel: 83, oblivion_island: 70, antharas_nest_1: 37, antharas_nest_2: 37, antharas_nest_3: 37,
 };
+for (let f = 2; f <= 100; f++) HUNT_MAPS['pride_f' + f] = 100 + f;                       // 傲慢之塔 N 樓＝100+N
+['2_10', '11_20', '21_30', '31_40', '41_50', '51_60', '61_70', '71_80', '81_90', '91_100']   // 2~10 樓、11~20 樓…：用那一段的第一層
+    .forEach(r => { HUNT_MAPS['pride_' + r] = 100 + +r.split('_')[0]; });
+const AREA = 160;         // 大地圖取怪最集中的一塊：邊長（格）
+const SYN_N = [10, 6];    // 補上的怪每種幾隻：[整張圖都沒資料, 只是缺幾種]
 function planHunts(db) {
     const clean = s => String(s || '').replace(/\s/g, '');
     const mobs = gameData('mobs'), maps = gameData('maps');
     const npcName = new Map(db.npc.map(n => [n.npcid, clean(n.name)]));
     const plan = {};
     for (const id in HUNT_MAPS) {
+        const cfg = typeof HUNT_MAPS[id] === 'number' ? { map: HUNT_MAPS[id] } : HUNT_MAPS[id];
         const pool = (maps[id] || []).filter(m => mobs[m] && !mobs[m].boss);   // 頭目照遊戲原本的出現率，不放地圖
+        if (!pool.length) { console.log('[gen-townmap] 狩獵 ' + id + ' 沒有一般怪，略過'); continue; }
         const byName = new Map(pool.map(m => [clean(mobs[m].n), m]));
-        const rows = db.spawnAll.filter(s => +s.mapid === HUNT_MAPS[id] && +s.count > 0 && byName.has(npcName.get(s.npc_templateid)));
+        const rows = db.spawnAll.filter(s => +s.mapid === cfg.map && +s.count > 0 && byName.has(npcName.get(s.npc_templateid)));
         plan[id] = {
-            name: id, map: HUNT_MAPS[id],
+            name: id, map: cfg.map, area: !!cfg.area, pool, mobName: m => mobs[m].n,
             rows: rows.map(s => ({ mob: byName.get(npcName.get(s.npc_templateid)), n: +s.count, x: +s.locx, y: +s.locy, rx: +s.randomx, ry: +s.randomy,
                 x1: +s.locx1, y1: +s.locy1, x2: +s.locx2, y2: +s.locy2, r0: +s.min_respawn_delay, r1: +s.max_respawn_delay })),
-            missing: pool.filter(m => !rows.some(s => byName.get(npcName.get(s.npc_templateid)) === m)).map(m => mobs[m].n),
         };
     }
     return plan;
 }
+// 一步能不能走：照 afk-townmap canStep（＝模擬器 L1V1Map.isPassable），不含 NPC 佔位、鏡頭範圍
+const STEP8 = [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]];
+function canStepAt(P, x, y, k) {
+    const nx = x + STEP8[k][0], ny = y + STEP8[k][1];
+    if (!P(nx, ny)) return false;
+    switch (k) {
+        case 0: return !!(P(x, y) & 2);
+        case 1: return !!((P(x, y - 1) & 1) || (P(x + 1, y) & 2));
+        case 2: return !!(P(x, y) & 1);
+        case 3: return !!(P(x, y + 1) & 1);
+        case 4: return !!(P(nx, ny) & 2);
+        case 5: return true;
+        case 6: return !!(P(nx, ny) & 1);
+        default: return !!(P(x - 1, y) & 2);
+    }
+}
+// 從 (sx,sy) 走得到的格子（限 box 範圍內）；回傳 Uint8Array（1＝到得了）與格數
+function reachFrom(M, sx, sy, box) {
+    const { W, H, pass } = M, P = (x, y) => (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) ? 0 : pass[y * W + x] & 3;
+    const [bx0, by0, bx1, by1] = box || [0, 0, W - 1, H - 1];
+    const seen = new Uint8Array(W * H), q = new Int32Array(W * H); let h = 0, t = 0;
+    seen[sy * W + sx] = 1; q[t++] = sy * W + sx;
+    while (h < t) {
+        const c = q[h++], x = c % W, y = (c - x) / W;
+        for (let k = 0; k < 8; k++) {
+            const nx = x + STEP8[k][0], ny = y + STEP8[k][1];
+            if (nx < bx0 || ny < by0 || nx > bx1 || ny > by1 || seen[ny * W + nx] || !canStepAt(P, x, y, k)) continue;
+            seen[ny * W + nx] = 1; q[t++] = ny * W + nx;
+        }
+    }
+    return { seen, n: t };
+}
 // 狩獵地圖存成地圖格座標：重生點 [怪物 id, 數量, 中心 x, y, 隨機範圍 rx, ry, 方框 x1, y1, x2, y2（沒有就 0）, 重生秒數 最短, 最長]；
-//   起點＝怪最多那組重生點的中心附近、四周都能走的格子（一進來附近就有怪打）
+//   起點＝怪最多那組重生點的中心附近、四周都能走的格子（一進來附近就有怪打）；角色從起點走不到的重生點不要（隔著牆、要傳送的房間）；
+//   怪物池缺的種類補在走得到的地方。隨機用固定種子（同一份資料重跑結果一樣）。
 function placeHunt(M, p) {
     const { W, H, pass } = M, at = (x, y) => (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) ? 0 : pass[y * W + x];
     const open3 = (x, y) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (at(x + dx, y + dy) !== 3) return false; return true; };
+    let seed = [...p.name].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+    const rnd = () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 4294967296);
     const L = (v, o) => v ? v - o : 0;
-    const spawns = p.rows.map(s => [s.mob, s.n, s.x - M.gameX0, s.y - M.gameY0, s.rx, s.ry, L(s.x1, M.gameX0), L(s.y1, M.gameY0), L(s.x2, M.gameX0), L(s.y2, M.gameY0), s.r0, s.r1]);
-    if (!spawns.length) return null;
-    const big = spawns.reduce((a, s) => (s[1] > a[1] ? s : a)), cx = big[2], cy = big[3];
-    let home = null;
-    for (let r = 0; r <= 40 && !home; r++) for (let y = cy - r; y <= cy + r && !home; y++) for (let x = cx - r; x <= cx + r; x++) {
-        if (Math.max(Math.abs(x - cx), Math.abs(y - cy)) === r && open3(x, y)) { home = [x, y]; break; }
+    let spawns = p.rows.map(s => [s.mob, s.n, s.x - M.gameX0, s.y - M.gameY0, s.rx, s.ry, L(s.x1, M.gameX0), L(s.y1, M.gameY0), L(s.x2, M.gameX0), L(s.y2, M.gameY0), s.r0, s.r1]);
+    // 大地圖：只取這張遊戲地圖的怪最集中的一塊（種類最多、同種類數再比隻數），方框夾進這塊
+    let box = null;
+    if (p.area && spawns.length) {
+        let best = null;
+        for (const c of spawns) {
+            const inW = spawns.filter(s => Math.abs(s[2] - c[2]) <= AREA / 2 && Math.abs(s[3] - c[3]) <= AREA / 2);
+            const kinds = new Set(inW.map(s => s[0])).size, n = inW.reduce((a, s) => a + s[1], 0);
+            if (!best || kinds > best.kinds || (kinds === best.kinds && n > best.n)) best = { c, kinds, n, inW };
+        }
+        box = [Math.max(1, best.c[2] - AREA / 2), Math.max(1, best.c[3] - AREA / 2), Math.min(W - 2, best.c[2] + AREA / 2), Math.min(H - 2, best.c[3] + AREA / 2)];
+        spawns = best.inW.map(s => {
+            if (!(s[6] && s[8])) return s;
+            const t = s.slice();
+            t[6] = Math.max(box[0], Math.min(s[6], s[8])); t[8] = Math.min(box[2], Math.max(s[6], s[8]));
+            t[7] = Math.max(box[1], Math.min(s[7], s[9])); t[9] = Math.min(box[3], Math.max(s[7], s[9]));
+            return t;
+        });
     }
-    return home ? { map: M.id, home, spawns } : null;
+    // 起點：怪最多那組重生點附近；沒有重生點（或那裡走不開）→ 整張圖（或那一塊）最大的一片能走的地方、靠它的中間
+    const near = (cx, cy, ok, R) => {
+        for (let r = 0; r <= R; r++) for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) {
+            if (Math.max(Math.abs(x - cx), Math.abs(y - cy)) === r && ok(x, y)) return [x, y];
+        }
+        return null;
+    };
+    let home = null, reach = null;
+    if (spawns.length) {
+        const big = spawns.reduce((a, s) => (s[1] > a[1] ? s : a));
+        home = near(big[2], big[3], open3, 40);
+        if (home) { reach = reachFrom(M, home[0], home[1], box); if (reach.n < 400) home = reach = null; }
+    }
+    if (!home) {   // 找最大的一片：從方格上的種子點一個個灌
+        const [x0, y0, x1, y1] = box || [1, 1, W - 2, H - 2], done = new Uint8Array(W * H);
+        let best = null;
+        for (let y = y0; y <= y1; y += 4) for (let x = x0; x <= x1; x += 4) {
+            if (done[y * W + x] || !open3(x, y)) continue;
+            const r = reachFrom(M, x, y, box);
+            for (let i = 0; i < r.seen.length; i++) if (r.seen[i]) done[i] = 1;
+            if (!best || r.n > best.r.n) best = { r, x, y };
+        }
+        if (!best) return null;
+        let sx = 0, sy = 0; for (let i = 0; i < best.r.seen.length; i++) if (best.r.seen[i]) { sx += i % W; sy += (i / W) | 0; }
+        reach = best.r;
+        home = near(Math.round(sx / reach.n), Math.round(sy / reach.n), (x, y) => reach.seen[y * W + x] && open3(x, y), 200) || [best.x, best.y];
+    }
+    const ok = (x, y) => x >= 0 && y >= 0 && x < W && y < H && reach.seen[y * W + x];
+    // 走不到的重生點不要；方框縮成「方框裡走得到的格子」的範圍
+    spawns = spawns.filter(s => {
+        let x0, y0, x1, y1;
+        if (s[6] && s[8]) { x0 = Math.min(s[6], s[8]); x1 = Math.max(s[6], s[8]); y0 = Math.min(s[7], s[9]); y1 = Math.max(s[7], s[9]); }
+        else { const rx = Math.max(s[4], 3), ry = Math.max(s[5], 3); x0 = s[2] - rx; x1 = s[2] + rx; y0 = s[3] - ry; y1 = s[3] + ry; }
+        let a = Infinity, b = Infinity, c = -1, d = -1;
+        for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (ok(x, y)) { if (x < a) a = x; if (x > c) c = x; if (y < b) b = y; if (y > d) d = y; }
+        if (c < 0) return false;
+        if (s[6] && s[8]) { s[6] = a; s[8] = c; s[7] = b; s[9] = d; }
+        else if (!ok(s[2], s[3])) { const q = near(s[2], s[3], ok, Math.max(s[4], s[5], 3)); if (!q) return false; s[2] = q[0]; s[3] = q[1]; }
+        return true;
+    });
+    // 補上缺的種類：有重生點就挑一組的中心附近，沒有就在起點周圍 8~40 格走得到的地方
+    const cells = [];
+    for (let y = Math.max(1, home[1] - 40); y <= Math.min(H - 2, home[1] + 40); y++) for (let x = Math.max(1, home[0] - 40); x <= Math.min(W - 2, home[0] + 40); x++) {
+        if (ok(x, y) && Math.max(Math.abs(x - home[0]), Math.abs(y - home[1])) >= 8) cells.push([x, y]);
+    }
+    const have = new Set(spawns.map(s => s[0])), real = spawns.length, missing = p.pool.filter(m => !have.has(m));
+    for (const m of missing) {
+        let c = null;
+        if (real) { const s = spawns[Math.floor(rnd() * real)]; c = near(s[2], s[3], ok, 20); }
+        if (!c && cells.length) c = cells[Math.floor(rnd() * cells.length)];
+        if (!c) c = home;
+        spawns.push([m, SYN_N[real ? 1 : 0], c[0], c[1], 10, 10, 0, 0, 0, 0, 60, 120]);
+    }
+    return { map: M.id, home, spawns, missing: missing.map(p.mobName), real };
 }
 
 // ── 村莊 → 地圖、中心、NPC 位置 ───────────────────────────
@@ -578,7 +707,8 @@ function buildHero() {
 }
 
 if (require.main === module) main().catch(e => { console.error(e); process.exit(1); });
-else module.exports = { readMap, planTowns, sqlTable, openPak, parseTil, decodeBlock, morton, MARGIN, RS, PER };   // 分析用
+else module.exports = { readMap, planTowns, planHunts, placeHunt, sqlTable, openPak, parseTil, decodeBlock, morton, MARGIN, RS, PER };   // 分析用
+const NO_BUILD = process.argv.includes('--no-build');   // 只重算 towns.json／hunts.json，不產圖檔
 async function main() {
 fs.mkdirSync(OUT_DIR, { recursive: true });
 buildHero();
@@ -605,12 +735,12 @@ if (!process.argv.includes('--hero-only')) {
         for (const hid in hplan) {
             if (hplan[hid].map !== id) continue;
             const h = placeHunt(M, hplan[hid]);
-            if (!h) { console.log('[gen-townmap] 狩獵 ' + hid + ' 沒有重生點／起點，略過'); continue; }
-            huntsOut[hid] = h;
+            if (!h) { console.log('[gen-townmap] 狩獵 ' + hid + ' 找不到能站的起點，略過'); continue; }
+            huntsOut[hid] = { map: h.map, home: h.home, spawns: h.spawns };
             console.log('[gen-townmap] 狩獵 ' + hid + '：地圖 ' + id + '、重生點 ' + h.spawns.length + ' 組 ' + h.spawns.reduce((a, s) => a + s[1], 0) + ' 隻' +
-                (hplan[hid].missing.length ? '（模擬器沒有：' + hplan[hid].missing.join('、') + '）' : ''));
+                (h.missing.length ? '（' + (h.real ? '補上' : '模擬器沒資料，全部補上') + '：' + h.missing.join('、') + '）' : ''));
         }
-        if (!only || only.has(id)) total += await buildMapData(M, tilePak, webp);
+        if (!NO_BUILD && (!only || only.has(id))) total += await buildMapData(M, tilePak, webp);
     }
     await webp.close();
     // towns.json：{ 村莊 id: { map 用戶端地圖, home 起點, npc { NPC 名字: 站的格子 }, spots 對不到的 NPC 用的空位 } }（地圖格座標）
