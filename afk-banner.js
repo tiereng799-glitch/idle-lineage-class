@@ -67,10 +67,25 @@
         (document.head || document.documentElement).appendChild(st);
     }
 
+    // iPhone 有瀏海／動態島、從主畫面打開（viewport-fit=cover）：畫面延伸到狀態列底下，頂端一排（頭像、名字、金幣）被狀態列蓋住（玩家回報「有些手機上方切到了」）。
+    //   跟橫幅是同一件事（頂端被蓋住、要往下讓），所以把 env(safe-area-inset-top) 一起算進 --orig-bar-h，所有讓位規則照用。
+    //   一般瀏覽器、沒有瀏海的手機量到 0 → 不變。用一個看不見的探針元素量（CSS 的 env() 值 JS 讀不到）；轉向時 resize 會重量
+    var _safeProbe = null;
+    function safeTop() {
+        if (!document.body) return 0;
+        if (!_safeProbe) {
+            _safeProbe = document.createElement('div');
+            _safeProbe.id = 'afk-safe-probe'; _safeProbe.setAttribute('aria-hidden', 'true');
+            _safeProbe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:env(safe-area-inset-top, 0px);visibility:hidden;pointer-events:none;';
+            document.body.appendChild(_safeProbe);
+        }
+        return Math.ceil(_safeProbe.getBoundingClientRect().height) || 0;
+    }
     var _barRO = null, _barEl = null;
     function applyBarH() {
         var h = _barEl ? Math.ceil(_barEl.getBoundingClientRect().height) : 0;
         if (h > 0) h += 6;   // 安全邊距：橫幅換行/字重/邊距量測誤差，多讓一點確保完全不被蓋
+        h += safeTop();
         document.documentElement.style.setProperty('--orig-bar-h', h + 'px');
         // 有橫幅才掛：讓位規則全掛在 body.afk-bar 之下，官方站(無橫幅)整組不生效。
         if (document.body) document.body.classList.toggle('afk-bar', h > 0);
