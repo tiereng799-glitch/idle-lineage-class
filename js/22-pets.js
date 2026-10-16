@@ -1137,9 +1137,10 @@ function enemyAttackPet(mob, p) {
     if (typeof ironGuardTauntWeakensAttack === 'function' && ironGuardTauntWeakensAttack(mob)) dmg = Math.floor(dmg * 0.9);   // 🔮 鐵衛 5/5：受嘲諷目標的一般攻擊傷害 -10%
     dmg = Math.max(1, Math.floor(dmg * riftDamageMult() * ((typeof evilDmgMult === 'function') ? evilDmgMult(mob) : 1)));   // 🌙 夜晚不死／惡魔 ×1.2
     if (petDevotionGuardOn(p)) dmg = 0;   // 🏺 v3.6.44 珍愛夥伴的執念：復活後 8 秒受到傷害 −100%
+    dmg = mobHitScale(dmg);   // ⏱️ 份量（js/03 _mobHitW）：照模擬器加快的怪，每下傷害按比例縮
     p.hp -= dmg;
     _petAnimAct(p, 'hurt');
-    if (!p._stunCycle) { p._atkCd = (p._atkCd || 0) + d.stunTicks; p._stunCycle = true; }   // 硬直：延後下次攻擊
+    if (!p._stunCycle && mobHitProc()) { p._atkCd = (p._atkCd || 0) + d.stunTicks; p._stunCycle = true; }   // 硬直：延後下次攻擊（⏱️ 照份量觸發）
     logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 攻擊寵物 <span class="text-sky-300 font-bold">${p.form}</span>，造成 ${dmg} 點傷害。`, 'enemy-attack', 'enemy');
     if (p.hp <= 0) {
         _petDown(p);

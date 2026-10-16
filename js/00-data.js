@@ -3128,6 +3128,87 @@ const SKILL_CD_MS = {
 };
 for (const _id in SKILL_CD_MS) if (DB.skills[_id]) DB.skills[_id].cdMs = SKILL_CD_MS[_id];
 
+// ===== ⏱️ 怪物一般攻擊間隔（2026-10-16 站長：照模擬器 npc.atkspeed，毫秒；只收比原本快的）=====
+// 出手變快、每下「份量」按同比例縮小（atkItvMul＝新間隔÷原間隔）→ 每秒傷害、硬直、受擊觸發都跟原本一樣，職業平衡不變。
+//   atkSpd 欄位不動（頭目傷害曲線、離線估算都照舊讀它）；計時與份量見 js/03 mobAtkTicks／_mobHitW
+// ⏱️ MOB_EMU_ATK_MS:BEGIN（tools/gen-mob-atkspd.js 產生，勿手改）
+const MOB_EMU_ATK_MS = {
+    "侏儒": 1480, /* 侏儒 2s */ "abyss_archer": 840, /* 深淵弓箭手 1s */ "abyss_earth": 1360, /* 深淵地靈 3s */ "abyss_fire": 1200, /* 深淵火靈 2s */
+    "abyss_ghoul": 1040, /* 深淵食屍鬼 2s */ "abyss_lord": 720, /* 深淵之主 2s */ "ant": 880, /* 巨蟻 2s */ "ant_assault": 760, /* 巨大突擊螞蟻 2s */
+    "ant_enh": 880, /* 強化巨蟻 2s */ "ant_enh_white": 880, /* 強化白螞蟻群 1s */ "ant_giant_enh_white": 880, /* 巨大強化白螞蟻 2s */ "ant_giant_white": 880, /* 巨大白螞蟻 2s */
+    "ant_guard": 1200, /* 巨大守護螞蟻 2s */ "ant_queen": 800, /* 巨蟻女皇 1.5s */ "ant_white": 880, /* 白螞蟻群 2s */ "antaras": 500, /* 安塔瑞斯 1.5s */
+    "arian": 1040, /* 亞力安 1.2s */ "armadillo": 1440, /* 犰狳 2s */ "aruba": 1160, /* 阿魯巴 1.5s */ "ashitakio": 1000, /* 阿西塔基奧 1.5s */
+    "atuba_orc": 1040, /* 阿吐巴妖魔 2s */ "b_knight": 1120, /* 黑騎士 2s */ "baless": 760, /* 巴列斯 1.5s */ "bandit": 1000, /* 強盜 1.7s */
+    "bandit_boss": 1160, /* 強盜頭目 1.5s */ "baphomet": 760, /* 巴風特 1.5s */ "batus": 1480, /* 巴土瑟 2s */ "bear": 1080, /* 歐熊 3s */
+    "beast_tamer": 1120, /* 馴獸師 2s */ "beholder": 1120, /* 多眼怪 1.5s */ "blackelder": 900, /* 黑長者 2s */ "bomb_flower": 1000, /* 爆彈花 2s */
+    "cerberus": 1040, /* 地獄犬 2s */ "chaos_boss": 1047, /* 混沌 2s */ "crabman": 1000, /* 蟹人 2s */ "croc": 1480, /* 鱷魚 2s */
+    "crustacean": 1800, /* 奎斯坦修 2.5s */ "cyclops": 1160, /* 獨眼巨人 2s */ "dark_spirit_caller": 1520, /* 黑暗精靈使 2s */ "darkdweller": 1720, /* 黑暗棲林者 2s */
+    "de_elder_follower": 1080, /* 長老隨從 2s */ "de_elder_guard": 1000, /* 拉斯塔巴德近衛隊 3s */ "de_gate_apprentice": 1560, /* 黑暗妖精魔法學徒 2s */ "de_gate_general": 1000, /* 黑暗妖精將軍 2s */
+    "de_gate_soldier": 960, /* 黑暗妖精士兵 2s */ "de_lab_blackmage": 1280, /* 黑法師 2s */ "de_lab_earth": 1280, /* 地元素守護者 3s */ "de_lab_fire": 1280, /* 火元素守護者 3s */
+    "de_lab_mage": 1560, /* 黑暗妖精法師 2s */ "de_lab_water": 1280, /* 水元素守護者 3s */ "de_lab_wind": 1280, /* 風元素守護者 3s */ "de_necro_bloodknight": 1200, /* 血騎士 1.5s */
+    "de_necro_darklord": 1080, /* 闇黑君王 2s */ "de_necro_omheavy": 1800, /* 重裝歐姆戰士 2s */ "de_necro_omwarrior": 1280, /* 歐姆戰士 2s */ "de_thief": 1440, /* 黑暗妖精盜賊 2s */
+    "de_train_summoner": 1560, /* 喚獸師 2s */ "de_train_tamer": 1120, /* 拉斯塔巴德馴獸師 2s */ "demon_bat": 1560, /* 魔蝙蝠 2s */ "demon_bear": 840, /* 魔熊 3s */
+    "dk": 600, /* 死亡騎士 0.8s */ "doberman": 960, /* 杜賓狗 1s */ "doppelganger": 1000, /* 變形怪 2s */ "dragon_fly": 1200, /* 龍蠅 1.5s */
+    "dragon_turtle": 1320, /* 龍龜 3s */ "duda_orc": 1160, /* 都達瑪拉妖魔 3s */ "electon": 1240, /* 伊萊克頓 2s */ "elf_earthfang": 1120, /* 地之牙 2s */
+    "elf_earthlord": 1760, /* 地靈之主 3s */ "elf_firefang": 1120, /* 火之牙 2s */ "elf_firelord": 1080, /* 火靈之主 2s */ "elf_waterfang": 1120, /* 水之牙 2s */
+    "elf_waterlord": 1440, /* 水靈之主 2s */ "elf_windlord": 920, /* 風靈之主 1s */ "evil_lizard": 1240, /* 邪惡蜥蜴 2s */ "fafurion": 500, /* 法利昂 2s */
+    "fallen_boss": 960, /* 墮落 1s */ "fighter": 880, /* 妖魔鬥士 2s */ "fire_beast": 1000, /* 烈炎獸 1.2s */ "fire_egg": 880, /* 火炎蛋 2s */
+    "flame_avatar": 1520, /* 炎魔的分身 3s */ "flame_baless": 760, /* 炎魔的巴列斯 1.5s */ "flame_baphomet": 760, /* 炎魔的巴風特 2s */ "flame_demon": 720, /* 炎魔的惡魔 1s */
+    "flame_imp": 720, /* 炎魔的小惡魔 2s */ "flame_skba": 800, /* 炎魔的思克巴 2s */ "flame_skba_queen": 800, /* 炎魔的思克巴女皇 2s */ "gaster": 640, /* 卡司特 1s */
+    "gaster_king": 680, /* 卡司特王 1s */ "ghoul": 720, /* 食屍鬼 2s */ "giant_ancient": 1200, /* 古代巨人 2s */ "giant_ant": 760, /* 巨大兵蟻 2s */
+    "giant_croc": 1600, /* 巨大鱷魚 2.5s */ "gnome_warrior": 1160, /* 侏儒戰士 2s */ "goblin": 920, /* 哥布林 2s */ "gremlin": 1080, /* 地靈 2s */
+    "griffon": 1280, /* 格利芬 1.8s */ "harpy": 1240, /* 哈維 1.5s */ "hobgoblin": 960, /* 哈柏哥布林 2s */ "ice_demon": 720, /* 冰魔 2s */
+    "ice_maid": 1320, /* 冰之女王侍女 2s */ "ice_queen": 1320, /* 冰之女王 2s */ "ice_wolf": 880, /* 冰原狼人 2s */ "iv_blackelder": 900, /* 象牙塔黑長者 2s */
+    "iv_chimera": 1440, /* 象牙塔奇美拉 2s */ "iv_elder": 1800, /* 象牙塔長者 2s */ "iv_imp": 720, /* 象牙塔小惡魔 2s */ "iv_iron_golem": 1760, /* 象牙塔鋼鐵高崙 3s */
+    "iv_jelly": 1280, /* 象牙塔果凍怪 2s */ "iv_lamia": 1880, /* 象牙塔蛇女 2s */ "iv_lightball": 920, /* 象牙塔閃電球 1s */ "iv_mimi": 1120, /* 象牙塔密密 2s */
+    "iv_paper": 960, /* 象牙塔紙人 2s */ "iv_shadow": 1920, /* 象牙塔影魔 2s */ "iv_wing": 1240, /* 象牙塔翼魔 2s */ "kurt": 680, /* 克特 1s */
+    "lamia": 1880, /* 蛇女 2s */ "lindvior": 500, /* 林德拜爾 1s */ "lizardman": 920, /* 蜥蜴人 2s */ "lycan": 800, /* 萊肯 2s */
+    "mambo_rabbit": 700, /* 曼波兔 2s */ "marcus": 1480, /* 馬庫爾 2s */ "mermaid": 1360, /* 人魚 2s */ "metal_centipede": 1480, /* 金屬蜈蚣 2s */
+    "monia": 720, /* 莫妮亞 1.5s */ "neruga_orc": 1160, /* 那魯加妖魔 2s */ "nm_002": 1480, /* 蘑菇 2s */ "nm_003": 1000, /* 狼 2s */
+    "nm_004": 1040, /* 哈士奇 2s */ "nm_005": 2000, /* 熊 3s */ "nm_006": 960, /* 安普長老 2s */ "nm_007": 840, /* 污染的安特 3s */
+    "nm_009": 840, /* 污染的潘 2s */ "nm_011": 1120, /* 黑騎士搜索隊 2s */ "nm_012": 1080, /* 雪人 2s */ "nm_013": 960, /* 紙人 2s */
+    "nm_014": 1040, /* 艾爾摩士兵 2s */ "nm_015": 1920, /* 艾爾摩法師 2s */ "nm_016": 1120, /* 密密 2s */ "nm_019": 1360, /* 冰原老虎 1.5s */
+    "nm_020": 1400, /* 雪怪 3s */ "nm_021": 1200, /* 艾爾摩將軍 3s */ "nm_022": 1760, /* 鋼鐵高崙 3s */ "nm_023": 920, /* 夢幻之島閃電球 1s */
+    "nm_026": 1000, /* 鬼魂 2s */ "nm_028": 1200, /* 夢幻之島火精靈王 2s */ "nm_034": 720, /* 惡魔 1s */ "nm_035": 960, /* 牧羊犬 2s */
+    "nm_036": 1600, /* 夢幻之島冰人 2s */ "nm_039": 1120, /* 夢幻之島鬼火 2s */ "nm_040": 1080, /* 夢幻之島火蜥蜴 1.5s */ "nm_043": 880, /* 夢幻之島火炎蛋 2s */
+    "nm_046": 1600, /* 冰人 2s */ "obli_arian": 1040, /* 遺忘之島亞力安 1.2s */ "obli_aruba": 1160, /* 遺忘之島阿魯巴 1.5s */ "obli_axetaurus": 860, /* 遺忘之島巨斧牛人 3s */
+    "obli_bear": 1080, /* 遺忘之島歐熊 3s */ "obli_bigcroc": 1600, /* 遺忘之島巨大鱷魚 2.5s */ "obli_bigtaurus": 1000, /* 遺忘之島巨大牛人 3s */ "obli_croc": 1480, /* 遺忘之島鱷魚 2s */
+    "obli_cyclops": 1160, /* 遺忘之島獨眼巨人 2s */ "obli_doro": 1200, /* 遺忘之島多羅 2s */ "obli_evillizard": 1240, /* 遺忘之島邪惡蜥蜴 2s */ "obli_griffon": 1280, /* 遺忘之島格利芬 1.8s */
+    "obli_harpy": 1240, /* 遺忘之島哈維 1.5s */ "obli_kasta": 640, /* 遺忘之島卡司特 1s */ "obli_kastaking": 680, /* 遺忘之島卡司特王 1s */ "obli_lamia": 1880, /* 遺忘之島蛇女 2s */
+    "obli_lizardman": 920, /* 遺忘之島蜥蜴人 2s */ "obli_lycan": 800, /* 遺忘之島萊肯 2s */ "obli_shapeshifter": 1000, /* 遺忘之島變形怪 2s */ "obli_sharlob": 880, /* 遺忘之島夏洛伯 1s */
+    "obli_troll": 840, /* 遺忘之島食人妖精 2s */ "obli_trollking": 720, /* 遺忘之島食人妖精王 2s */ "obli_ungoliant": 840, /* 遺忘之島楊果里恩 1s */ "obli_werewolf": 840, /* 遺忘之島狼人 2s */
+    "obli_wyvern": 960, /* 遺忘之島飛龍 1s */ "ogre": 840, /* 食人妖精 2s */ "ogre_king": 720, /* 食人妖精王 1.7s */ "ogre_warrior": 1200, /* 歐吉 3s */
+    "ohm": 1520, /* 歐姆 2s */ "ohm_armor": 1800, /* 歐姆裝甲兵 3s */ "ohm_militia": 1520, /* 歐姆民兵 2s */ "orc": 1320, /* 妖魔 2s */
+    "orc_archer": 1880, /* 妖魔弓箭手 2s */ "orc_mage": 1240, /* 妖魔法師 2s */ "orc_zombie": 1800, /* 妖魔殭屍 2s */ "pirate_bluetail": 1200, /* 藍尾蜥蜴 2s */
+    "pirate_drake": 700, /* 德雷克 2s */ "pirate_lizardheavy": 1200, /* 重裝蜥蜴人 2s */ "pirate_lizardhigh": 1000, /* 高等蜥蜴人 2s */ "pirate_lizardrage": 960, /* 狂暴蜥蜴人 2s */
+    "pirate_parrot": 1360, /* 奇異鸚鵡 2s */ "pirate_skelblade": 1200, /* 海賊骷髏刀手 3s */ "pirate_skelchief": 1200, /* 海賊骷髏首領 2s */ "pirate_skeleton": 1120, /* 海賊骷髏 2s */
+    "pirate_skelsoldier": 1400, /* 海賊骷髏士兵 2s */ "pirate_wilddemon": 880, /* 狂野之魔 1s */ "pirate_wildfang": 920, /* 狂野毒牙 1s */ "pirate_wildpoison": 680, /* 狂野之毒 2s */
+    "pride_beholder": 1120, /* 邪惡多眼怪 2s */ "pride_bonedragon": 1280, /* 骨龍 2s */ "pride_chimera": 1440, /* 奇美拉 2s */ "pride_curse_general": 1200, /* 受詛咒的艾爾摩將軍 3s */
+    "pride_curse_mage": 1920, /* 受詛咒的艾爾摩法師 3s */ "pride_curse_soldier": 1040, /* 受詛咒的艾爾摩士兵 2s */ "pride_curse_zombie": 1800, /* 受詛咒的妖魔殭屍 2s */ "pride_dark_blackknight": 1120, /* 暗黑黑騎士 1.5s */
+    "pride_dark_flamewarrior": 1520, /* 暗黑火焰戰士 2s */ "pride_dark_lycan": 800, /* 暗黑萊肯 1.5s */ "pride_dark_succubus_queen": 800, /* 暗黑思克巴女皇 1.8s */ "pride_drake": 1360, /* 幼龍 2s */
+    "pride_earth_king": 1360, /* 土精靈王 2s */ "pride_fire_king": 1200, /* 火精靈王 3s */ "pride_fireegg": 1000, /* 恐怖的火炎蛋 2s */ "pride_flame_atki": 1000, /* 火焰阿西塔基奧 2s */
+    "pride_flame_beast": 1000, /* 火焰烈炎獸 2s */ "pride_ghoul2": 720, /* 殘暴的食屍鬼 2s */ "pride_hellhound": 1040, /* 恐怖的地獄犬 2s */ "pride_imp": 720, /* 小惡魔 2s */
+    "pride_irongolem": 1760, /* 恐怖的鋼鐵高崙 3s */ "pride_lamia": 1880, /* 變種蛇女 2s */ "pride_marcus_vampire": 1040, /* 馬昆斯吸血鬼 2s */ "pride_medusa": 1200, /* 梅杜莎 2s */
+    "pride_mimic": 1120, /* 邪惡密密 1.5s */ "pride_mummy_king_mob": 440, /* 木乃伊王 3s */ "pride_proud_jenis": 1480, /* 傲慢的潔尼斯女王 2s */ "pride_skel_archer": 920, /* 殘暴的骷髏神射手 1s */
+    "pride_skel_axe": 840, /* 殘暴的骷髏斧兵 1s */ "pride_skel_fighter": 840, /* 殘暴的骷髏鬥士 2s */ "pride_skel_spear": 880, /* 殘暴的骷髏槍兵 1.5s */ "pride_small_phantom": 1440, /* 小幻象眼魔 2s */
+    "pride_sparto": 920, /* 殘暴的史巴托 2s */ "pride_terror_zombie_king": 1880, /* 恐怖的殭屍王 3s */ "pride_ungoliant": 840, /* 變種楊果里恩 1s */ "pride_vampire_boss": 1040, /* 恐怖的吸血鬼 2s */
+    "pride_vander_mob": 640, /* 騎士范德 1s */ "ratman": 1520, /* 鼠人 2s */ "roach": 1160, /* 蟑螂人 2s */ "rova_orc": 1040, /* 羅孚妖魔 2s */
+    "salamander": 1080, /* 火蜥蜴 1.5s */ "sanct_cursed_mage": 1160, /* 受詛咒的黑暗妖精法師 2s */ "sanct_hellslave": 960, /* 地獄奴隸 2s */ "sanct_tethys": 1320, /* 特提斯 2s */
+    "sanct_wyvern": 1200, /* 翼龍 1.5s */ "scorpion": 800, /* 毒蠍 1.8s */ "sema": 900, /* 西瑪 2s */ "sildeis": 500, /* 希爾黛斯 2s */
+    "skel_archer": 1120, /* 骷髏弓箭手 1.5s */ "skel_axe": 840, /* 骷髏斧手 1s */ "skel_fighter": 840, /* 骷髏鬥士 2s */ "skel_guard": 880, /* 骷髏警衛 2s */
+    "skel_sniper": 920, /* 骷髏神射手 1.5s */ "skel_spear": 880, /* 骷髏槍兵 2s */ "skeleton": 920, /* 骷髏 1.8s */ "sparto": 920, /* 史巴托 2s */
+    "spider": 880, /* 夏洛伯 1s */ "starfish": 1480, /* 海星 2s */ "succubus": 800, /* 思克巴 1.8s */ "succubus_queen": 800, /* 思克巴女皇 1.8s */
+    "thebes_bas": 920, /* 底比斯 巴斯 2s */ "thebes_mandra": 1600, /* 底比斯 曼陀羅草 2s */ "thebes_scarab": 920, /* 底比斯 聖甲蟲 2s */ "thebes_sphinx": 1240, /* 底比斯 斯芬克斯 2s */
+    "tomb_guardian": 1000, /* 墳墓守護者 3s */ "tomb_guardian_giant": 1040, /* 巨大墳墓守護者 4s */ "tomb_guardian_knight": 1080, /* 墳墓守護者騎士 3s */ "tomb_guardian_mage": 960, /* 墳墓守護者法師 3s */
+    "troglodyte": 1080, /* 穴居人 2s */ "troll": 1200, /* 多羅 2.5s */ "ungoliant": 840, /* 楊果里恩 1s */ "valakas": 500, /* 巴拉卡斯 4s */
+    "wild_beagle": 960, /* 小獵犬 2s */ "wild_cat": 1040, /* 貓 2s */ "wild_collie": 960, /* 柯利 2s */ "wild_fox": 1200, /* 狐狸 2s */
+    "wild_kangaroo": 1040, /* 袋鼠 2s */ "wild_koreapup": 1000, /* 高麗幼犬 2s */ "wild_monkey": 480, /* 猴子 2s */ "wild_panda": 1040, /* 熊貓 2s */
+    "wild_rabbit": 1040, /* 暴走兔 2s */ "wild_raccoon": 960, /* 浣熊 2s */ "wild_stbernard": 1440, /* 聖伯納犬 2s */ "wild_tiger": 720, /* 老虎 2s */
+    "wolf": 840, /* 狼人 2s */ "wyvern": 960, /* 飛龍 1s */ "zombie": 1040, /* 人形殭屍 2s */
+};
+// ⏱️ MOB_EMU_ATK_MS:END
+for (const _id in MOB_EMU_ATK_MS) { const _m = DB.mobs[_id]; if (_m && _m.atkSpd > 0) _m.atkItvMul = Math.min(1, MOB_EMU_ATK_MS[_id] / (_m.atkSpd * 1000)); }
+
 // ===== Lv51+ 頭目基礎 HP 曲線 =====
 // 只提高低於同級下限的頭目，不降低既有高血量；卡瑞維持原始 3,000 HP。
 (function normalizeHighLevelBossHp() {

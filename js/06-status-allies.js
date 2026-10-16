@@ -1924,8 +1924,8 @@ function allyOnHitEffects(ally, t, res) {
     if (getWeaponTags(wpnInst.id).includes('單手鈍器') && t.curHp > 0 && !t._dead && !ally.classicMode) {   // 鈍擊：延遲目標攻擊 1 秒；🎮 經典模式：傭兵停用鈍擊
         t._bluntShow = state.ticks + 30;
         if (!t._bluntDelayed) {
-            if (t._atkCd === undefined) t._atkCd = Math.max(1, Math.floor((t.atkSpd || 2) * 10));
-            t._atkCd += 10;
+            if (t._atkCd === undefined) t._atkCd = mobAtkTicks(t, 0);
+            t._atkCd += mobAtkDelayTicks(t, 10);   // 照模擬器加快的怪按比例縮（js/03 mobAtkTicks）
             t._bluntDelayed = true;
         }
         wearHardSkin(t, wpnInst.id, false, true);   // 🔧 硬皮消磨：傭兵單手鈍器鈍擊 -1

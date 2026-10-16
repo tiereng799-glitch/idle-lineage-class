@@ -524,6 +524,24 @@ function applyPlayerHitstun() {
     state.pDmgTick = (state.pDmgTick || 0) - hs;   // 攻擊累加器倒退 → 下次攻擊延後 hs tick
     state._pStunCycle = true;
 }
+// ⏱️ 怪物一般攻擊照模擬器的間隔（js/00 MOB_EMU_ATK_MS → mob.atkItvMul＝新間隔÷原間隔）：出手變快，每一下的「份量」_mobHitW 按同比例縮小——
+//   最終傷害 ×W（mobHitScale·機率進位，平均不變）；每下觸發一次的固定效果（硬直、反擊、居合、荊棘、爆彈、受擊施法／自癒、上毒、重擊觸發、腐蝕外皮、迴避精通累積、冰凍消退）
+//   只在「累積滿原本的一下」那次出手觸發（mobHitProc）：每隻怪自己累加 W，滿 1 那下才帶齊觸發效果；有冷卻的「擋下一下」（暗隱術、十字墓碑盾、火熱愛意、祭祀陶罐）也只在那下才進冷卻。
+//   ⚠ 不可改成「每下各自抽 W 的機率」：硬直每次出手最多一次，被圍毆時各自抽會比原本少硬直 6～10%（五職業實測），物理職業平白變強。
+//   → 每秒受到的傷害、被硬直的次數、受擊觸發的次數都跟原本一樣，職業平衡不變；看得到的只有怪打得比較快、每下比較輕。
+//   _mobHitW 只在 tick() 的一般攻擊期間 <1；怪物技能（連擊、法術）、其他路徑呼叫一律是 1＝完全照舊。
+let _mobHitW = 1, _mobHitFull = true;
+function mobHitProc() { return _mobHitW >= 1 || _mobHitFull; }
+function mobHitScale(dmg) { return (_mobHitW >= 1 || !(dmg > 0)) ? dmg : Math.floor(dmg * _mobHitW + Math.random()); }
+function mobAtkTicks(m, slowAdd) {   // 下一次一般攻擊的間隔 tick，順便記這一輪的份量 m._atkW
+    let base = Math.max(1, Math.floor((m.atkSpd || 2) * 10)) + (slowAdd || 0);
+    let mul = m.atkItvMul || 1;
+    if (!(mul < 1)) { m._atkW = 1; return base; }
+    let t = Math.max(1, Math.round(base * mul));
+    m._atkW = t / base;
+    return t;
+}
+function mobAtkDelayTicks(m, ticks) { return Math.max(1, Math.round(ticks * Math.min(1, (m && m.atkItvMul) || 1))); }   // 延後怪物出手（鈍擊）：照比例縮，每秒延後的總量不變
 // 🔌 加掛版補丁(apply-core-patches)：出怪排程抽成具名函式，供 afk-offline 離線快速結算與 tick() 共用同一份排程。
 function maybeSpawnMobs() {
         let isPureBossMap = PURE_BOSS_MAPS.includes(mapState.current) && !KING_ROOMS[mapState.current];   // 🔧 軍王之室仍屬純BOSS房(免自動瞬移/追蹤)，但四軍王房改用五格
@@ -827,14 +845,17 @@ function tick() {
 
         // 🏰 v3.1.79 稽核修 noAttack（攻城塔/城門/藏寶箱）：不攻擊也不施法（原欄位無消費點→被打醒後會以 dmg[0,0]→1D1 戳 1 點）；置於狀態/回復處理之後、攻擊排程之前
         if (m.noAttack) continue;
-        if(m._atkCd === undefined) m._atkCd = Math.max(1, Math.floor(m.atkSpd * 10));
+        if(m._atkCd === undefined) m._atkCd = mobAtkTicks(m, 0);
         m._atkCd--;
         // ... (下方保留原有的怪物攻擊與魔法邏輯)
 
-        let slowAdd = (m.st && m.st.slow > 0) ? 10 : 0; // 緩速：攻擊間隔 +1 秒
+        let slowAdd = (m.st && m.st.slow > 0) ? 10 : 0; // 緩速：攻擊間隔 +1 秒（照模擬器加快的怪一起按比例縮，見 mobAtkTicks）
         if(m._atkCd <= 0) {
-            _dpsReactWrap(() => enemyAttackChooseVictim(m, i));   // 🤝 Phase 3：一般物理攻擊可能改打非倒地傭兵（加權隨機）；魔法/狀態仍只打玩家；🎯 DPS：受擊反應(反擊/居合/反射/荊棘/爆彈/受傷施法)歸玩家，傭兵反應由 _allyDamageMob/_dpsAllyReact 扣除
-            m._atkCd = Math.max(1, Math.floor(m.atkSpd * 10)) + slowAdd;
+            _mobHitW = m._atkW || 1;   // ⏱️ 這一下的份量（見 mobAtkTicks）；累積滿原本的一下才帶觸發效果（見 mobHitProc）
+            if (_mobHitW < 1) { if (m._wAcc === undefined) m._wAcc = Math.random(); m._wAcc += _mobHitW; _mobHitFull = m._wAcc >= 0.999; if (_mobHitFull) m._wAcc -= 1; }
+            try { _dpsReactWrap(() => enemyAttackChooseVictim(m, i)); }   // 🤝 Phase 3：一般物理攻擊可能改打非倒地傭兵（加權隨機）；魔法/狀態仍只打玩家；🎯 DPS：受擊反應(反擊/居合/反射/荊棘/爆彈/受傷施法)歸玩家，傭兵反應由 _allyDamageMob/_dpsAllyReact 扣除
+            finally { _mobHitW = 1; _mobHitFull = true; }
+            m._atkCd = mobAtkTicks(m, slowAdd);
             m._bluntDelayed = false;   // 攻擊後重置鈍擊延遲標記，下一週期可再被延遲一次
         }
 

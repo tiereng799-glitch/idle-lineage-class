@@ -243,8 +243,8 @@ function playerAttack() {
         if (player.eq.wpn && target.curHp > 0 && _isBlunt1h) {
             target._bluntShow = state.ticks + 30;   // 圖示顯示計時器：每次命中刷新（穩定亮著不閃），停手約 3 秒後熄滅
             if (!target._bluntDelayed) {
-                if (target._atkCd === undefined) target._atkCd = Math.max(1, Math.floor((target.atkSpd || 2) * 10));
-                target._atkCd += 10;   // 延遲 1 秒（10 ticks）
+                if (target._atkCd === undefined) target._atkCd = mobAtkTicks(target, 0);
+                target._atkCd += mobAtkDelayTicks(target, 10);   // 延遲 1 秒（10 ticks；照模擬器加快的怪按比例縮，見 js/03 mobAtkTicks）
                 target._bluntDelayed = true;
             }
         }
@@ -1063,22 +1063,23 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
     let _stealthDodge = !!(player.buffs && player.buffs.sk_dark_stealth > 0);
     if (!mob.magicMelee && !_asleep && !(player.d && player.d.noEvade && !_stealthDodge) && (_stealthDodge || roll(1, 100) <= effResistPct(player.d.er))) {   // 😤 magicMelee：一般攻擊視為魔法·必定命中不可迴避   // 🏺 笨重的鋼鐵石盾 noEvade：無法迴避（暗隱術 100% 迴避不受限）
         logCombat(`${player.name || '你'} 成功迴避攻擊。`, 'evade');
-        if (hasMastery('d_evade')) { let _s = player._darkEvadeStack || 0; player._darkEvadeStack = 0; if (player.d) player.d.er -= _s; player._darkEvadeSure = true; player._darkEvadeCrit = true; }   // 🔧 迴避精通：清空累積ER，下次一般攻擊必中且必爆
+        let _evProc = mobHitProc();   // ⏱️ 份量（js/03 _mobHitW）：迴避換來的獎勵、暗隱術的消耗、居合都照份量觸發
+        if (_evProc && hasMastery('d_evade')) { let _s = player._darkEvadeStack || 0; player._darkEvadeStack = 0; if (player.d) player.d.er -= _s; player._darkEvadeSure = true; player._darkEvadeCrit = true; }   // 🔧 迴避精通：清空累積ER，下次一般攻擊必中且必爆
         // 🔧 暗隱術：消耗該次 100% 迴避後失效，並進入 5 秒冷卻
-        if (_stealthDodge) {
+        if (_stealthDodge && _evProc) {
             player.buffs.sk_dark_stealth = 0; player._darkStealthCd = state.ticks + 50; calcStats();
             logCombat('<span class="text-fuchsia-300">暗影隱蔽消散了。</span>', 'magic');
         }
         // 武士刀居合：無「真盾牌」（臂甲可發動）且敵人攻擊被迴避時，50% 對攻擊者打一次必定命中的一般攻擊（🏅 反擊精通：100%）
-        if (!player.dead && (!player.eq.shield || _isArmguard(player.eq.shield)) && mob.curHp > 0 && player.eq.wpn && getWeaponTags(player.eq.wpn.id).includes('武士刀') && (hasMastery('k_counter') || Math.random() < 0.50)) {
+        if (_evProc && !player.dead && (!player.eq.shield || _isArmguard(player.eq.shield)) && mob.curHp > 0 && player.eq.wpn && getWeaponTags(player.eq.wpn.id).includes('武士刀') && (hasMastery('k_counter') || Math.random() < 0.50)) {
             procIai(mob);
         }
-        if (!player.dead) { _combatSrc = 'mercenary'; allyReactIai(mob); _combatSrc = null; }   // 🔧 傭兵居合：判定主玩家迴避成功
+        if (_evProc && !player.dead) { _combatSrc = 'mercenary'; allyReactIai(mob); _combatSrc = null; }   // 🔧 傭兵居合：判定主玩家迴避成功
         return;
     }
 
     // 🔧 迴避精通：未觸發迴避（受到敵人攻擊）→ 累積 ER+1，提高下次迴避機率，直到觸發迴避才清空
-    if (hasMastery('d_evade')) { player._darkEvadeStack = (player._darkEvadeStack || 0) + 1; if (player.d) player.d.er += 1; }
+    if (hasMastery('d_evade') && mobHitProc()) { player._darkEvadeStack = (player._darkEvadeStack || 0) + 1; if (player.d) player.d.er += 1; }
 
     let st = mob.st || newMobStatus();
     if (st.terror > 0 && !_asleep && Math.random() < 0.90) { logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 陷入恐懼，攻擊落空。`, 'miss'); return; }   // 🐉 恐懼無助：90% 攻擊落空
@@ -1098,7 +1099,7 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
         if (mob.un && player.eq && player.eq.shield) {
             let _tsd = DB.items[player.eq.shield.id];
             if (_tsd && _tsd.undeadImmune && (player._tombImmuneAt || 0) <= state.ticks) {
-                player._tombImmuneAt = state.ticks + (_tsd.undeadImmune.cdSec || 5) * 10;
+                if (mobHitProc()) player._tombImmuneAt = state.ticks + (_tsd.undeadImmune.cdSec || 5) * 10;   // ⏱️ 份量：擋下後照份量才進冷卻
                 logCombat(`<span class="font-bold" style="color:#e7d2a7;">【${_tsd.n}】</span>十字聖印閃耀，<span class="${getMobColor(mob.lv)}">${mob.n}</span> 的攻擊被完全無效化！`, 'player-special');
                 return;
             }
@@ -1110,7 +1111,7 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
         }
         // 🏺 v3.1.77 稽核中#9 火熱愛意：火屬性怪物的一般攻擊也免疫（原僅攔火法術·與魔法路徑共用 10 秒節流 _fireNullCd；灼燒等持續傷害不在免疫範圍）
         if (mob.e === 'fire' && player.d.fireNullify && state.ticks >= (player._fireNullCd || 0)) {
-            player._fireNullCd = state.ticks + 100;
+            if (mobHitProc()) player._fireNullCd = state.ticks + 100;   // ⏱️ 份量：擋下後照份量才進冷卻
             logCombat(`<span class="font-bold" style="color:#fca5a5;">【火熱愛意】</span>你化解了 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 的火屬性攻擊。`, 'magic');
             return;
         }
@@ -1147,11 +1148,11 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
         totalDmg -= player.d.dr; // 傷害減免（已含增幅防禦）
         totalDmg -= randomDr;    // 隨機減免
         totalDmg -= stoneEssenceDr();   // 🏺 v3.6.44 石化魔法的精髓：石化精髓 buff 期間傷害減免 +50
-        if ((player._hardSkinPool || 0) > 0) { totalDmg -= 2; player._hardSkinPool--; }   // 🏺 v3.6.44 守護獸的難題：有硬皮值時受到一般攻擊傷害 -2 並消耗 1 點（每5秒回1·上限20·js/03 tick）
+        if ((player._hardSkinPool || 0) > 0) { totalDmg -= 2; if (mobHitProc()) player._hardSkinPool--; }   // 🏺 v3.6.44 守護獸的難題（⏱️ 份量：照份量才消耗）：有硬皮值時受到一般攻擊傷害 -2 並消耗 1 點（每5秒回1·上限20·js/03 tick）
         // 🔧 百分比受傷「增加」效果（冰凍/破壞盔甲）：仍各自相乘
         if(player.statuses.freeze > 0) {
             totalDmg = Math.floor(totalDmg * 1.5);                              // 冰凍中：受到物理傷害 +50%
-            player.statuses.freeze = Math.max(0, player.statuses.freeze - 10); // 並使冰凍剩餘時間 -1 秒(10 ticks)
+            if (mobHitProc()) player.statuses.freeze = Math.max(0, player.statuses.freeze - 10); // 並使冰凍剩餘時間 -1 秒(10 ticks)（⏱️ 份量）
         }
         if(player.statuses.armorBreak > 0) totalDmg = Math.floor(totalDmg * (1 + (player.statuses.armorBreakPct || 50) / 100));   // 破壞盔甲：一般攻擊受傷 +50%（😤 v3.6.20 %數參數化·二模板黑妖 58%·armorBreakPct 施放時寫入）
         // 🔧 百分比受傷「減免」統一乘算（多層疊加採乘算：例 鐵衛20%×聖結界30%＝1−0.8×0.7＝44%，非相加 50%）
@@ -1161,7 +1162,7 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
           if (player.buffs.sk_set_dragonscion > 0) _drMult *= 0.85;      // 🐉 龍血·龍裔：-15%
           if (player._setFury5) _drMult *= (1 - furyRageRatio());        // 😡 狂怒 5/5：依失血最多 -15%
           if (heavy && player.d.crushDr > 0) _drMult *= (1 - Math.min(80, player.d.crushDr) / 100);   // 🏺 遺物 妖魔的兜襠布：受到重擊(敵人骰20)時傷害 -crushDr%（上限 80%）
-          if (player.d.physDrGated > 0 && state.ticks >= (player._physDrCd || 0)) { _drMult *= (1 - Math.min(90, player.d.physDrGated) / 100); player._physDrCd = state.ticks + 30; }   // 🐍 祭祀儀式陶罐：受一般攻擊傷害 -physDrGated%，每 3 秒(30 ticks)最多觸發 1 次
+          if (player.d.physDrGated > 0 && state.ticks >= (player._physDrCd || 0)) { _drMult *= (1 - Math.min(90, player.d.physDrGated) / 100); if (mobHitProc()) player._physDrCd = state.ticks + 30; }   // 🐍 祭祀儀式陶罐（⏱️ 份量：照份量才進冷卻）：受一般攻擊傷害 -physDrGated%，每 3 秒(30 ticks)最多觸發 1 次
           totalDmg = Math.max(0, Math.floor(totalDmg * _drMult)); }
 
         // 常駐被動：看破（敵人版）— 命中時依機率造成兩倍傷害（5 + 等級/10 %）
@@ -1209,17 +1210,19 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
         totalDmg = shieldDmgReduceProc(player, totalDmg);   // 🌑 v3.3.33 反叛者的盾牌：受傷 1%(+2%/強化) 機率傷害 -50（物理）
         // 🏺 v3.1.80 魅魔女皇的誘惑：受到一般攻擊時 dmgReflect% 機率使攻擊者受到相同傷害，自身免疫此次傷害
         if (player.d.dmgReflect > 0 && totalDmg > 0 && mob && mob.curHp > 0 && Math.random() * 100 < player.d.dmgReflect) {
-            let _rf = Math.max(1, Math.floor(totalDmg * fragileMult(mob)));
+            let _rf = Math.max(1, mobHitScale(Math.floor(totalDmg * fragileMult(mob))));   // ⏱️ 份量：反射跟傷害一起縮
             mob.curHp -= _rf; mob.justHit = 'magic'; mobWake(mob);
             logCombat(`<span class="font-bold" style="color:#f0abfc;text-shadow:0 0 6px #d946ef;">【魅魔女皇的誘惑】</span>魅惑反噬！<span class="${getMobColor(mob.lv)}">${mob.n}</span> 承受了 ${_rf} 點傷害，你免疫了此次攻擊。`, 'magic');
             if (mob.curHp <= 0) killMob(idx);
             updateUI();
             return;
         }
-        player.hp -= totalDmg;
-        if (isBasicAttack && totalDmg > 0) corrosiveJellySkinOnBasicHit(mob, player);
+        // ⏱️ 份量（js/03 _mobHitW）：實際扣血與顯示用縮過的 _hpDmg；下面「有沒有受傷」的判斷照原本的 totalDmg，觸發與否另由 _proc 決定（每種效果各自照份量觸發）
+        let _hpDmg = mobHitScale(totalDmg), _proc = () => mobHitProc();
+        player.hp -= _hpDmg;
+        if (isBasicAttack && totalDmg > 0 && _proc()) corrosiveJellySkinOnBasicHit(mob, player);
         // 🏺 v3.7.20 長老的黑曜水晶球（crushTornado）：被重擊時 → 對敵方全體施放龍捲風（procFreeMagicSkill target:'all' 自動掃全場·免費施放）
-        if (heavy && player.hp > 0 && player.eq && player.eq.shield) {
+        if (heavy && player.hp > 0 && player.eq && player.eq.shield && _proc()) {
             let _ctd = DB.items[player.eq.shield.id];
             if (_ctd && _ctd.crushTornado) {
                 logCombat(`<span class="font-bold" style="color:#86efac;text-shadow:0 0 6px #16a34a;">【${_ctd.n}】</span>球心風暴掙脫束縛，龍捲風席捲敵陣！`, 'player-special');
@@ -1228,7 +1231,7 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
             }
         }
         // 🏺 v3.7.52 高崙的生命印記（golemMarkDebuff）：受到重擊時 MR-100·持續 3 秒（js/02 消費入 d.mr·js/03 到期重算）
-        if (heavy && player.eq && player.eq.helm) {
+        if (heavy && player.eq && player.eq.helm && _proc()) {
             let _gmd = DB.items[player.eq.helm.id];
             if (_gmd && _gmd.golemMarkDebuff) {
                 let _gmWas = (player._golemMrDebuffUntil || 0) > state.ticks;
@@ -1236,23 +1239,23 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
                 if (!_gmWas) { calcStats(); logCombat(`<span class="text-rose-300">【${_gmd.n}】重擊震裂了印記，MR-100（3 秒）！</span>`, 'enemy'); }
             }
         }
-        if (totalDmg > 0 && typeof applyPlayerHitstun === 'function') applyPlayerHitstun();   // ⚔️ 天堂職業硬直：被物理直接命中→延遲下次攻擊
+        if (totalDmg > 0 && typeof applyPlayerHitstun === 'function' && _proc()) applyPlayerHitstun();   // ⚔️ 天堂職業硬直：被物理直接命中→延遲下次攻擊
         if (totalDmg > 0) { try { playSfx('hurt'); } catch(e){} }   // 🔊 音效：玩家受到物理傷害
-        try { vfxPlayerHit(totalDmg); } catch(e){}   // ✨ VFX：較大一擊→戰場震動＋HP條紅閃
-        if(player.d.thornsDmg > 0 && mob && mob.curHp > 0 && totalDmg > 0) {   // 🦔 遺物 犰狳尖刺頭盔：受擊時對攻擊者造成固定反傷（不乘脆弱·固定值）
+        try { vfxPlayerHit(_hpDmg); } catch(e){}   // ✨ VFX：較大一擊→戰場震動＋HP條紅閃
+        if(player.d.thornsDmg > 0 && mob && mob.curHp > 0 && totalDmg > 0 && _proc()) {   // 🦔 遺物 犰狳尖刺頭盔：受擊時對攻擊者造成固定反傷（不乘脆弱·固定值）
             let _th = player.d.thornsDmg;
             mob.curHp -= _th; mob.justHit = 'magic'; mobWake(mob);
             logCombat(`<span class="font-bold" style="color:#a3a3a3;">【尖刺】</span>尖刺回擊，對 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 造成 ${_th} 點傷害。`, 'magic');
             if(mob.curHp <= 0) { killMob(idx); if(player.hp <= 0) killPlayer(); return; }
         }
-        if(player.d.hurtExplode > 0 && totalDmg > 0) { bombFlowerExplode(); if(player.hp <= 0) { killPlayer(); return; } }   // 💥 遺物 爆彈花蕊：受物理傷害時爆裂（自傷可致死→補死亡結算）
-        if(totalDmg > 0) _relicOnDamageHeal();   // 🏺 遺物 白螞蟻蛋殼：受擊自癒（5 秒節流·可救回 <=0 血）
-        if(totalDmg > 0) _relicOnHurtCast(mob);   // 🏺 遺物 法師的護身短刀：受物理傷害時 20% 免費施放自動攻擊法術
-        if(totalDmg > 0 && player.hp > 0) hurtRapidfireProc();   // 🏺 地精靈王的抗拒：受物理傷害時強制連射（經典亦可）
+        if(player.d.hurtExplode > 0 && totalDmg > 0 && _proc()) { bombFlowerExplode(); if(player.hp <= 0) { killPlayer(); return; } }   // 💥 遺物 爆彈花蕊：受物理傷害時爆裂（自傷可致死→補死亡結算）
+        if(totalDmg > 0 && _proc()) _relicOnDamageHeal();   // 🏺 遺物 白螞蟻蛋殼：受擊自癒（5 秒節流·可救回 <=0 血）
+        if(totalDmg > 0 && _proc()) _relicOnHurtCast(mob);   // 🏺 遺物 法師的護身短刀：受物理傷害時 20% 免費施放自動攻擊法術
+        if(totalDmg > 0 && player.hp > 0 && _proc()) hurtRapidfireProc();   // 🏺 地精靈王的抗拒：受物理傷害時強制連射（經典亦可）
 
-        let atkMsg = `${mobInsightPrefix}<span class="${getMobColor(mob.lv)}">${mob.n}</span> 擊中你，造成 ${totalDmg} 點傷害。`;
+        let atkMsg = `${mobInsightPrefix}<span class="${getMobColor(mob.lv)}">${mob.n}</span> 擊中你，造成 ${_hpDmg} 點傷害。`;
         if(heavy) atkMsg += " (重擊!)";
-        if(blocked) atkMsg += ` <span class="text-cyan-300 font-bold">(格檔！減少 ${blockReduced} 點傷害)</span>`;
+        if(blocked) atkMsg += ` <span class="text-cyan-300 font-bold">(格檔！減少 ${mobHitScale(blockReduced)} 點傷害)</span>`;
         logCombat(atkMsg, 'enemy');
         if (_asleep && player.statuses.sleep > 0) { player.statuses.sleep = 0; logCombat('<span class="text-sky-200">你從沉睡中驚醒！</span>', 'magic'); }   // 🗼 沉睡：受擊即醒
 
@@ -1264,7 +1267,7 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
         else updateUI();
 
         // 🌅 onHitPoison（牛鬼之子·毒素／牛鬼·猛毒）：一般攻擊命中時 ((pbase − 玩家MR)/2)% 機率使玩家中毒（每 tick 秒 d 點固定傷害·持續 dur 秒·刷新）
-        if (!player.dead && mob.onHitPoison && !player.d.immPoison) {
+        if (!player.dead && mob.onHitPoison && !player.d.immPoison && _proc()) {
             let _ohp = mob.onHitPoison;
             let _ohc = Math.max(0, ((_ohp.pbase !== undefined ? _ohp.pbase : 150) - player.d.mr) / 2);
             if (Math.random() * 100 < _ohc) {
@@ -1282,16 +1285,16 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
         // 單手劍反擊：受到敵人一般攻擊命中時觸發。一般 50% 機率；若裝備盾牌且本次觸發格檔(blocked)則必定反擊
         // 🏅 反擊精通：100% 觸發
         if (!player.dead && mob.curHp > 0 && player.eq.wpn && (getWeaponTags(player.eq.wpn.id).includes('單手劍') || (player.buffs.sk_counter_barrier > 0 && DB.items[player.eq.wpn.id].w2h)) && !(getWeaponTags(player.eq.wpn.id).includes('武士刀') && !(player.eq.shield && !_isArmguard(player.eq.shield)))) {   // 🔧 反擊屏障：雙手武器亦可反擊；🛡️ 反擊/居合雙標籤武器「無真盾牌(空手或臂甲)」時→改走居合、不發動反擊（唯獨裝真盾牌才反擊）
-            if (blocked || hasMastery('k_counter') || Math.random() < 0.50) procCounter(mob);
+            if ((blocked || hasMastery('k_counter') || Math.random() < 0.50) && _proc()) procCounter(mob);
         }
-        if (!player.dead) { _combatSrc = 'mercenary'; allyReactCounter(mob, blocked); _combatSrc = null; }   // 🔧 傭兵反擊：判定主玩家受擊（玩家格檔則必定反擊）
+        if (!player.dead && _proc()) { _combatSrc = 'mercenary'; allyReactCounter(mob, blocked); _combatSrc = null; }   // 🔧 傭兵反擊：判定主玩家受擊（玩家格檔則必定反擊）
     } else {
         logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 的攻擊未命中。`, 'miss', 'enemy');   // ⚔️ 敵人攻擊未命中（miss色，但歸入「敵人」來源）
         // 武士刀居合：無「真盾牌」（臂甲可發動）且敵人攻擊未命中時，50% 對攻擊者打一次必定命中的一般攻擊（🏅 反擊精通：100%）
-        if (!player.dead && (!player.eq.shield || _isArmguard(player.eq.shield)) && mob.curHp > 0 && player.eq.wpn && getWeaponTags(player.eq.wpn.id).includes('武士刀') && (hasMastery('k_counter') || Math.random() < 0.50)) {
+        if (!player.dead && (!player.eq.shield || _isArmguard(player.eq.shield)) && mob.curHp > 0 && player.eq.wpn && getWeaponTags(player.eq.wpn.id).includes('武士刀') && (hasMastery('k_counter') || Math.random() < 0.50) && mobHitProc()) {
             procIai(mob);
         }
-        _combatSrc = 'mercenary'; allyReactIai(mob); _combatSrc = null;   // 🔧 傭兵居合：判定敵人未命中主玩家
+        if (mobHitProc()) { _combatSrc = 'mercenary'; allyReactIai(mob); _combatSrc = null; }   // 🔧 傭兵居合：判定敵人未命中主玩家（⏱️ 份量）
     }
 }
 
@@ -1428,11 +1431,12 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
         let _stealthDodge = !!(ally.buffs && ally.buffs.sk_dark_stealth > 0);   // 🖤 v2.7.92 暗隱術（傭兵）：100% 迴避一次物理攻擊（迴避後失效並進入 5 秒冷卻·鏡像玩家 enemyPhysicalAttack）
         if (!(d.noEvade && !_stealthDodge) && (_stealthDodge || roll(1, 100) <= effResistPct((d.er || 0) + _evStack))) {   // 🏺 笨重的鋼鐵石盾 noEvade：無法一般迴避（鏡像玩家 enemyPhysicalAttack；暗隱術 100% 迴避不受限）
             logCombat(`<span class="text-sky-300 font-bold">協力·${ally._allyName}</span> 迴避了 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 的攻擊。`, 'evade', 'enemy');
-            if (allyHasMastery(ally, 'd_evade')) { ally._darkEvadeStack = 0; ally._darkEvadeSure = true; ally._darkEvadeCrit = true; }   // 迴避精通：清空累積·下次一般攻擊必中必爆
-            if (_stealthDodge) { ally.buffs.sk_dark_stealth = 0; ally._darkStealthCd = state.ticks + 50; logCombat(`<span class="text-fuchsia-300">協力·${ally._allyName} 的暗影隱蔽消散了。</span>`, 'magic', 'mercenary'); }   // 🖤 v2.7.92 消耗該次 100% 迴避後失效＋5 秒冷卻（allyMaintainBuffs 冷卻閘讀 _darkStealthCd）
+            let _evProc = mobHitProc();   // ⏱️ 份量（js/03 _mobHitW）：同玩家路徑
+            if (_evProc && allyHasMastery(ally, 'd_evade')) { ally._darkEvadeStack = 0; ally._darkEvadeSure = true; ally._darkEvadeCrit = true; }   // 迴避精通：清空累積·下次一般攻擊必中必爆
+            if (_stealthDodge && _evProc) { ally.buffs.sk_dark_stealth = 0; ally._darkStealthCd = state.ticks + 50; logCombat(`<span class="text-fuchsia-300">協力·${ally._allyName} 的暗影隱蔽消散了。</span>`, 'magic', 'mercenary'); }   // 🖤 v2.7.92 消耗該次 100% 迴避後失效＋5 秒冷卻（allyMaintainBuffs 冷卻閘讀 _darkStealthCd）
             return;
         }
-        if (allyHasMastery(ally, 'd_evade')) ally._darkEvadeStack = (ally._darkEvadeStack || 0) + 1;   // 未迴避→累積 ER（下次更易閃）
+        if (allyHasMastery(ally, 'd_evade') && mobHitProc()) ally._darkEvadeStack = (ally._darkEvadeStack || 0) + 1;   // 未迴避→累積 ER（下次更易閃）
     }
     let st = mob.st || newMobStatus();
     if (st.terror > 0 && Math.random() < 0.90) { logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 陷入恐懼，攻擊落空。`, 'miss', 'enemy'); return; }
@@ -1446,7 +1450,7 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
     if (mob.un && ally.eq && ally.eq.shield) {
         let _tsd = DB.items[ally.eq.shield.id];
         if (_tsd && _tsd.undeadImmune && (ally._tombImmuneAt || 0) <= state.ticks) {
-            ally._tombImmuneAt = state.ticks + (_tsd.undeadImmune.cdSec || 5) * 10;
+            if (mobHitProc()) ally._tombImmuneAt = state.ticks + (_tsd.undeadImmune.cdSec || 5) * 10;   // ⏱️ 份量
             logCombat(`<span class="font-bold" style="color:#e7d2a7;">【協力·${ally._allyName}·${_tsd.n}】</span>十字聖印閃耀，<span class="${getMobColor(mob.lv)}">${mob.n}</span> 的攻擊被完全無效化！`, 'player-special', 'mercenary');
             return;
         }
@@ -1458,7 +1462,7 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
     }
     // 🏺 v3.2.40 稽核修 火熱愛意（傭兵鏡像·物理）：火屬性怪物的一般攻擊免疫·每傭兵獨立 10 秒節流（鏡像玩家 js/04:797·同批 wearerEle 已有鏡像唯此欄漏接）
     if (mob.e === 'fire' && d.fireNullify && state.ticks >= (ally._fireNullCd || 0)) {
-        ally._fireNullCd = state.ticks + 100;
+        if (mobHitProc()) ally._fireNullCd = state.ticks + 100;   // ⏱️ 份量
         logCombat(`<span class="font-bold" style="color:#fca5a5;">【火熱愛意】</span>協力·${ally._allyName} 化解了 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 的火屬性攻擊。`, 'magic');
         return;
     }
@@ -1481,7 +1485,7 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
     if (ally._setIron3) totalDmg = Math.floor(totalDmg * 0.8);   // 🔮 鐵衛 3/5：-20%（傭兵套裝旗標·常數，不讀玩家狀態）
     totalDmg = Math.floor(totalDmg * allyBuffDmgReduceMult(ally));   // 🆕 v2.6.12 #5a：傭兵聖結界-30%/龍裔-15%/狂怒5-15%（讀傭兵自身 buff/套裝）
     if (heavy && (d.crushDr || 0) > 0) totalDmg = Math.floor(totalDmg * (1 - Math.min(80, d.crushDr) / 100));   // 🏺 v3.1.76 妖魔的兜襠布（傭兵）：受重擊傷害 -crushDr%（上限80%·鏡像玩家 js/04:811）
-    if ((d.physDrGated || 0) > 0 && state.ticks >= (ally._physDrCd || 0)) { totalDmg = Math.floor(totalDmg * (1 - Math.min(90, d.physDrGated) / 100)); ally._physDrCd = state.ticks + 30; }   // 🐍 v3.1.76 祭祀儀式陶罐（傭兵）：受一般攻擊傷害 -%·每 3 秒 1 次（每傭兵獨立節流·鏡像玩家 js/04:812）
+    if ((d.physDrGated || 0) > 0 && state.ticks >= (ally._physDrCd || 0)) { totalDmg = Math.floor(totalDmg * (1 - Math.min(90, d.physDrGated) / 100)); if (mobHitProc()) ally._physDrCd = state.ticks + 30; }   // ⏱️ 份量   // 🐍 v3.1.76 祭祀儀式陶罐（傭兵）：受一般攻擊傷害 -%·每 3 秒 1 次（每傭兵獨立節流·鏡像玩家 js/04:812）
     // 盾牌/臂甲格檔（同玩家公式；經典模式停用·🏺 v3.5.27 長槍＋塔盾成對＝100%且經典亦可·鏡像玩家）
     { let _alp = ally.eq && ally.eq.shield && ally.eq.shield.id === 'relic_guard_towershield' && ally.eq.wpn && ally.eq.wpn.id === 'relic_bk_lance';
       if (ally.eq && ally.eq.shield && (!player.classicMode || _alp)) { let _sh = DB.items[ally.eq.shield.id]; let _bc = _alp ? 100 : ((_sh && _sh.block) ? (heavy ? _sh.block : _sh.block * 0.3) : 0); if (_bc > 0 && Math.random() * 100 < _bc) totalDmg = Math.floor(totalDmg * 0.5); } }
@@ -1493,7 +1497,7 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
     totalDmg = shieldDmgReduceProc(ally, totalDmg);   // 🌑 v3.3.33 反叛者的盾牌（傭兵鏡像·物理）
     // 🏺 v3.1.80 魅魔女皇的誘惑（傭兵）：受一般攻擊 dmgReflect% 機率反射相同傷害＋免疫（鏡像玩家 enemyPhysicalAttack）
     if ((d.dmgReflect || 0) > 0 && totalDmg > 0 && mob.curHp > 0 && Math.random() * 100 < d.dmgReflect) {
-        let _rf = Math.max(1, Math.floor(totalDmg * fragileMult(mob)));
+        let _rf = Math.max(1, mobHitScale(Math.floor(totalDmg * fragileMult(mob))));   // ⏱️ 份量：反射跟傷害一起縮
         let _rfBf = mob.curHp;
         mob.curHp -= _rf; mob.justHit = 'magic'; mobWake(mob);
         _dpsAllyReact(ally, _rfBf, _rf);   // 🎯 DPS：反射傷害歸該傭兵（並供玩家反應視窗扣除）
@@ -1501,10 +1505,12 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
         if (mob.curHp <= 0) { let _mi = mapState.mobs.findIndex(m => m && m.uid === mob.uid); if (_mi !== -1) killMob(_mi); }
         return;
     }
-    ally.curHp -= totalDmg;
-    if (isBasicAttack && totalDmg > 0) corrosiveJellySkinOnBasicHit(mob, ally);
+    // ⏱️ 份量（js/03 _mobHitW）：扣血與顯示用縮過的 _hpDmg；觸發與否各自照份量（同玩家路徑）
+    let _hpDmg = mobHitScale(totalDmg), _proc = () => mobHitProc();
+    ally.curHp -= _hpDmg;
+    if (isBasicAttack && totalDmg > 0 && _proc()) corrosiveJellySkinOnBasicHit(mob, ally);
     // 🏺 v3.7.52 高崙的生命印記（傭兵）：受到重擊時 MR-100·3 秒（js/02 通用消費·js/03 到期重算）
-    if (heavy && ally.eq && ally.eq.helm) {
+    if (heavy && ally.eq && ally.eq.helm && _proc()) {
         let _gmda = DB.items[ally.eq.helm.id];
         if (_gmda && _gmda.golemMarkDebuff) {
             let _gmaWas = (ally._golemMrDebuffUntil || 0) > state.ticks;
@@ -1513,7 +1519,7 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
         }
     }
     // 🏺 長老的黑曜水晶球（傭兵）：承受重擊後免費對敵方全體施放龍捲風。
-    if (heavy && ally.curHp > 0 && ally.eq && ally.eq.shield) {
+    if (heavy && ally.curHp > 0 && ally.eq && ally.eq.shield && _proc()) {
         let _ctd = DB.items[ally.eq.shield.id];
         if (_ctd && _ctd.crushTornado) {
             logCombat(`<span class="font-bold" style="color:#86efac;text-shadow:0 0 6px #16a34a;">【協力·${ally._allyName}·${_ctd.n}】</span>球心風暴掙脫束縛，龍捲風席捲敵陣！`, 'player-special', 'mercenary');
@@ -1521,10 +1527,10 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
             if (_ctm && typeof allyProcFreeMagicSkill === 'function') allyProcFreeMagicSkill(ally, _ctm, 'sk_tornado', 0, false, _ctd);
         }
     }
-    if (totalDmg > 0 && !ally._stunCycle) { ally._atkCd = (ally._atkCd || 0) + ((ally.d && ally.d.hitstun) || 0); ally._stunCycle = true; }   // ⚔️ 天堂職業硬直（傭兵·物理）：延遲下次攻擊·每週期一次
-    logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 攻擊 <span class="text-sky-300 font-bold">協力·${ally._allyName}</span>，造成 ${totalDmg} 點傷害。`, 'enemy', 'enemy');
-    allyReflectOnHit(ally, mob, totalDmg, false);   // 🆕 v2.6.14 #5c：受物理反射（疼痛歡愉/致命身軀/泰坦岩石）
-    if ((d.thornsDmg || 0) > 0 && mob.curHp > 0 && totalDmg > 0) {   // 🦔 v3.1.76 犰狳尖刺頭盔（傭兵）：受擊固定反傷（鏡像玩家 js/04:875）
+    if (totalDmg > 0 && !ally._stunCycle && _proc()) { ally._atkCd = (ally._atkCd || 0) + ((ally.d && ally.d.hitstun) || 0); ally._stunCycle = true; }   // ⚔️ 天堂職業硬直（傭兵·物理）：延遲下次攻擊·每週期一次
+    logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 攻擊 <span class="text-sky-300 font-bold">協力·${ally._allyName}</span>，造成 ${_hpDmg} 點傷害。`, 'enemy', 'enemy');
+    allyReflectOnHit(ally, mob, _hpDmg, false);   // 🆕 v2.6.14 #5c：受物理反射（疼痛歡愉/致命身軀/泰坦岩石）
+    if ((d.thornsDmg || 0) > 0 && mob.curHp > 0 && totalDmg > 0 && _proc()) {   // 🦔 v3.1.76 犰狳尖刺頭盔（傭兵）：受擊固定反傷（鏡像玩家 js/04:875）
         let _th = d.thornsDmg;
         let _thBf = mob.curHp;
         mob.curHp -= _th; mob.justHit = 'magic'; mobWake(mob);
@@ -1532,10 +1538,10 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
         logCombat(`<span class="font-bold" style="color:#a3a3a3;">【尖刺】</span>協力·${ally._allyName} 的尖刺回擊，對 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 造成 ${_th} 點傷害。`, 'magic');
         if (mob.curHp <= 0) { let _mi = mapState.mobs.findIndex(m => m && m.uid === mob.uid); if (_mi !== -1) killMob(_mi); }
     }
-    if ((d.hurtExplode || 0) > 0 && totalDmg > 0) _dpsAllyReactWrap(ally, () => bombFlowerExplode(ally));   // 💥 v3.1.76 爆彈花蕊（傭兵）：受物理傷害爆裂（自傷扣 curHp·倒地由下方檢查結算）；🎯 DPS 歸該傭兵
-    if (totalDmg > 0) _allyRelicOnDamageHeal(ally);   // 🏺 v3.1.76 白螞蟻蛋殼（傭兵）：受擊自癒（每傭兵獨立冷卻·可救回 <=0 血）
+    if ((d.hurtExplode || 0) > 0 && totalDmg > 0 && _proc()) _dpsAllyReactWrap(ally, () => bombFlowerExplode(ally));   // 💥 v3.1.76 爆彈花蕊（傭兵）：受物理傷害爆裂（自傷扣 curHp·倒地由下方檢查結算）；🎯 DPS 歸該傭兵
+    if (totalDmg > 0 && _proc()) _allyRelicOnDamageHeal(ally);   // 🏺 v3.1.76 白螞蟻蛋殼（傭兵）：受擊自癒（每傭兵獨立冷卻·可救回 <=0 血）
     // 🌅 牛鬼之子／牛鬼：一般攻擊命中傭兵時，以該傭兵自己的 MR、毒免疫與異常抵抗判定中毒。
-    if (ally.curHp > 0 && mob.onHitPoison && !d.immPoison) {
+    if (ally.curHp > 0 && mob.onHitPoison && !d.immPoison && _proc()) {
         let _ohp = mob.onHitPoison;
         let _ohc = Math.max(0, ((_ohp.pbase !== undefined ? _ohp.pbase : 150) - (d.mr || 0)) / 2);
         if (Math.random() * 100 < _ohc) {
@@ -1549,7 +1555,7 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
             }
         }
     }
-    if (totalDmg > 0 && ally.curHp > 0 && typeof allyRapidfire === 'function') _dpsAllyReactWrap(ally, () => allyRapidfire(ally, true, true));   // 🏺 地精靈王的抗拒（傭兵）：受擊強制連射，經典亦可；🎯 DPS 歸該傭兵
+    if (totalDmg > 0 && ally.curHp > 0 && typeof allyRapidfire === 'function' && _proc()) _dpsAllyReactWrap(ally, () => allyRapidfire(ally, true, true));   // 🏺 地精靈王的抗拒（傭兵）：受擊強制連射，經典亦可；🎯 DPS 歸該傭兵
     if (ally.curHp <= 0) { ally.curHp = 0; ally._downed = true; ally._reviveCd = 150; logCombat(`<span class="text-amber-400 font-bold">協力傭兵 ${ally._allyName} 倒下了！（可用返生術立即復活，或 15 秒後自動使用復活卷軸，或回村免費復活）</span>`, 'enemy', 'enemy'); try { renderSquadPanel(); } catch (e) {} }
 }
 
@@ -2206,7 +2212,7 @@ function _applyMobMagicInner(mob, sk) {
         if(mob._baseAtkSpd === undefined) mob._baseAtkSpd = mob.atkSpd;
         mob.atkSpd = sk.spd;
         mob._hasteTicks = (sk.dur || 8) * 10;   // 持續時間(秒)→ticks
-        mob._atkCd = Math.max(1, Math.floor(mob.atkSpd * 10));
+        mob._atkCd = mobAtkTicks(mob, 0);
         logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 對自己施放了 ${sk.skn || '加速術'}，攻擊速度提升！`, 'enemy');
         return;
     }
