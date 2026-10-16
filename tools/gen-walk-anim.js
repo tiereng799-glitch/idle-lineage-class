@@ -126,7 +126,9 @@ const animRoot = path.join(REPO, 'assets/anim');
 const vfx = fs.readFileSync(path.join(REPO, 'js/09-vfx-render.js'), 'utf8');
 const morphs = [...new Set([...vfx.match(/const MORPH_BATTLE_ANIM = new Set\(\[([\s\S]*?)\]\)/)[1].matchAll(/'([^']+)'/g)].map(m => m[1]))];
 // 已經有八方向走路的就不動；--force 時重做本工具補過的（d0 只有 walk、沒有 idle），原本整套八方向的照樣不碰
-const FORCE = process.argv.includes('--force');
+//   --origin＝對象同 --force，但不重寫圖，只補每個方向的基準點 walk-origin.json（見下方輸出段）
+const ORIGIN_ONLY = process.argv.includes('--origin');
+const FORCE = process.argv.includes('--force') || ORIGIN_ONLY;
 const hasWalk = n => fs.existsSync(path.join(animRoot, n, 'd0', 'walk_0.png')) && (!FORCE || fs.existsSync(path.join(animRoot, n, 'd0', 'idle_0.png')));
 function firstPng(dir, prefer) {
     for (const f of prefer) if (fs.existsSync(path.join(dir, f))) return path.join(dir, f);
@@ -189,13 +191,17 @@ function isShadow(body, sh) {
     for (const r of sh) if (r) for (let i = 0; i < r.rgba.length; i += 4) if (r.rgba[i + 3]) { const R = r.rgba[i], G = r.rgba[i + 1], B = r.rgba[i + 2]; if (Math.max(R, G, B) > 110 || Math.abs(R - G) > 16 || Math.abs(G - B) > 16) return false; }
     return true;
 }
-let done = 0, files = 0, bytes = 0; const miss = [];
+let done = 0, files = 0, bytes = 0; const miss = [], origins = {};
 for (const t of todo) {
     const db = [...(byName[t.name] || [])], sg = [...(t.sigG || [])];
     const cands = [...new Set([...sg.filter(g => db.includes(g)), ...sg, ...db])];
     let g = null;
     for (const c of cands) { let ok = 0; for (let d = 0; d < 8; d++) if (load(c, d)) ok++; if (ok >= 7) { g = c; break; } }
     if (g == null) { miss.push(t.name + (cands.length ? '（用戶端沒有八方向走路檔）' : '（找不到圖檔編號）')); continue; }
+    // 基準點：.spr 每幀的小塊位置是相對「角色站的那一格中心」，裁成 PNG 後那一點在 (-minX, -minY)＝腳底落點。
+    //   存進 tools/walk-origin.json { 名: [[x, y] ×8 方向] }，tools/gen-townmap.js 量落腳點時優先用它
+    //   （沒影子的走路幀以前只能猜「最下面的像素」，骷髏的彎刀比腳低就猜錯，每轉一個方向就跳一下：玩家回報「骷髏跟史巴托圖檔怪怪的」）
+    const origin = [];   // → origins（存 tools/walk-origin.json，見最後）
     for (let d = 0; d < 8; d++) {
         let s = load(g, d), dd = d;
         if (!s) { dd = (d + 7) % 8; s = load(g, dd); }   // 少數方向檔壞掉：借隔壁方向
@@ -205,6 +211,8 @@ for (const t of todo) {
         for (const r of body.concat(useSh ? sh : [])) if (r) { minX = Math.min(minX, r.minX); minY = Math.min(minY, r.minY); maxX = Math.max(maxX, r.minX + r.w); maxY = Math.max(maxY, r.minY + r.h); }
         minX--; minY--; maxX++; maxY++;
         const W = maxX - minX, H = maxY - minY, dir = path.join(animRoot, t.name, 'd' + d);
+        origin[d] = [-minX, -minY];
+        if (ORIGIN_ONLY) continue;
         fs.mkdirSync(dir, { recursive: true });
         const put = (r, file) => {
             const img = new Uint8Array(W * H * 4);
@@ -214,7 +222,17 @@ for (const t of todo) {
         body.forEach((r, k) => put(r, 'walk_' + k + '.png'));
         if (useSh) sh.forEach((r, k) => put(r, 'walk_s_' + k + '.png'));
     }
+    if (origin.filter(Boolean).length === 8) origins[t.name] = origin;
     done++;
+}
+// 基準點集中存一個檔（工具用，不跟遊戲發佈）：{ 名: [[x, y] ×8] }，跟舊的合併
+{
+    const f = path.join(REPO, 'tools', 'walk-origin.json');
+    let all = {}; try { all = JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) {}
+    Object.assign(all, origins);
+    const sorted = {}; Object.keys(all).sort().forEach(k => { sorted[k] = all[k]; });
+    fs.writeFileSync(f, JSON.stringify(sorted, null, 0).replace(/\],"/g, '],\n"') + '\n');
+    console.log('[gen-walk-anim] 基準點 ' + Object.keys(origins).length + ' 個 → tools/walk-origin.json');
 }
 console.log('[gen-walk-anim] 完成 ' + done + ' / ' + todo.length + ' 個，' + files + ' 個檔，' + (bytes / 1e6).toFixed(1) + 'MB');
 if (miss.length) console.log('[gen-walk-anim] 略過：' + miss.join('、'));

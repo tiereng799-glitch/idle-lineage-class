@@ -706,15 +706,54 @@ function walkMoves(dd, d) {
     const ex = 24 * (D[0] + D[1]) * f, ey = 12 * (D[1] - D[0]) * f, len = Math.hypot(ex, ey);
     return ((b[0] - a[0]) * ex + (b[1] - a[1]) * ey) / len > len * 0.3;
 }
+// 單方向動作圖（根目錄，面向左）對齊八方向：根目錄 idle_0 跟 d4~d7 的待機（沒有就走路）第 0 幀比身形——
+//   身體重心疊起來算重疊比例，最像的方向（≥0.12）用它的落腳點換算 → 單方向圖的落腳點；同大小畫布的動作共用。對不上回 null（照舊各量影子）
+function maskOf(file) {
+    if (!fs.existsSync(file)) return null;
+    const { w, h, a } = decodePNG(fs.readFileSync(file));
+    let sx = 0, sy = 0, n = 0;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (a[y * w + x] > 128) { sx += x; sy += y; n++; }
+    return n ? { w, h, a, cx: sx / n, cy: sy / n, n } : null;
+}
+function overlap(A, B, dx, dy) {   // B 平移 (dx,dy) 疊到 A 上的 IoU
+    let inter = 0;
+    for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) {
+        if (B.a[y * B.w + x] <= 128) continue;
+        const X = Math.round(x + dx), Y = Math.round(y + dy);
+        if (X >= 0 && Y >= 0 && X < A.w && Y < A.h && A.a[Y * A.w + X] > 128) inter++;
+    }
+    return inter / (A.n + B.n - inter);
+}
+function pngSize(file) { if (!fs.existsSync(file)) return null; const b = fs.readFileSync(file); return b.readUInt32BE(16) + 'x' + b.readUInt32BE(20); }
+function alignRoot(rootDir, dirs) {
+    const R = maskOf(path.join(rootDir, 'idle_0.png')); if (!R) return null;
+    let best = null;
+    for (const d of [4, 5, 6, 7]) {
+        const dd = path.join(rootDir, 'd' + d), hasIdle = fs.existsSync(path.join(dd, 'idle_0.png'));
+        const W = maskOf(path.join(dd, hasIdle ? 'idle_0.png' : 'walk_0.png')); if (!W) continue;
+        const dx = R.cx - W.cx, dy = R.cy - W.cy, s = overlap(R, W, dx, dy);
+        const an = hasIdle ? [dirs[d][2], dirs[d][3]] : [dirs[d][0], dirs[d][1]];
+        if (!best || s > best.s) best = { s, x: an[0] + dx, y: an[1] + dy };
+    }
+    if (!best || best.s < 0.12) return null;   // 蜘蛛腳細、重疊比例低，但用重心疊身體照樣對得上；太低的（姿勢完全不同）才放棄
+    const size0 = pngSize(path.join(rootDir, 'idle_0.png'));
+    best.sameCanvas = act => pngSize(path.join(rootDir, act + '_0.png')) === size0;
+    return best;
+}
 // 變身動畫(assets/morphanim/<名>{,2,F})：只有待機/攻擊沒有走路幀 → 每個資料夾 [待機落腳 x,y]
 function buildAnims() {
     const r1 = v => Math.round(v * 10) / 10;
     const anim = {}, morph = {}, root = {}, inPlace = [];
+    let aligned = 0;
     const aroot = path.join(REPO_ROOT, 'assets', 'anim');
+    // tools/gen-walk-anim.js 補的走路幀有 .spr 的基準點（tools/walk-origin.json）：比「猜最下面的像素」準（骷髏的彎刀比腳低會猜錯、每轉一個方向跳一下）
+    let ORIGIN = {}; try { ORIGIN = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'tools', 'walk-origin.json'), 'utf8')); } catch (e) {}
     for (const n of fs.readdirSync(aroot)) {
         if (!fs.existsSync(path.join(aroot, n, 'd0'))) continue;
         const dirs = [0, 1, 2, 3, 4, 5, 6, 7].map(d => {
-            const dd = path.join(aroot, n, 'd' + d), w0 = anchor(dd, 'walk'), i = anchor(dd, 'idle') || w0, w = w0 || i;   // 只有走路幀(tools/gen-walk-anim.js 補的)：待機落腳點用走路的
+            const dd = path.join(aroot, n, 'd' + d), og = ORIGIN[n] && ORIGIN[n][d];
+            const w0 = (og && !fs.existsSync(path.join(dd, 'walk_s_0.png'))) ? og : anchor(dd, 'walk');   // 有影子照影子量（跟用戶端一致）、沒影子用基準點
+            const i = anchor(dd, 'idle') || w0, w = w0 || i;   // 只有走路幀(tools/gen-walk-anim.js 補的)：待機落腳點用走路的
             if (!(i && w)) return null;
             const row = [r1(w[0]), r1(w[1]), r1(i[0]), r1(i[1])];
             if (w0 && !walkMoves(dd, d)) row.push(0);
@@ -730,8 +769,13 @@ function buildAnims() {
         // 單方向的戰鬥動作（狩獵區原本那套：待機/攻擊/受傷/死亡，面向左邊）：各自的落腳點
         const r = {};
         for (const act of ['idle', 'attack', 'hurt', 'death']) { const a = anchor(path.join(aroot, n), act); if (a) r[act] = [r1(a[0]), r1(a[1])]; }
+        // 跟八方向走路對齊：各動作各量影子會不一致（同一張畫布、骷髏待機跟攻擊差 12px）、也跟走路的落腳點對不上（蜘蛛差 22px、哈維 70px）
+        //   → 走路換攻擊、待機換攻擊整隻跳一下。改成：待機第 0 幀跟走路圖最像的那個方向用身體重心疊起來，換算出整張畫布的一個落腳點，同大小的動作共用
+        const al = alignRoot(path.join(aroot, n), dirs, aroot + '/' + n);
+        if (al) { for (const act of ['idle', 'attack', 'hurt', 'death']) if (r[act] && al.sameCanvas(act)) r[act] = [r1(al.x), r1(al.y)]; aligned++; }
         if (Object.keys(r).length) root[n] = r;
     }
+    console.log('[gen-townmap] 單方向動作圖跟走路對齊 ' + aligned + ' 個');
     const mroot = path.join(REPO_ROOT, 'assets', 'morphanim');
     for (const n of fs.readdirSync(mroot)) { const i = anchor(path.join(mroot, n), 'idle'); if (i) morph[n] = [r1(i[0]), r1(i[1])]; }
     console.log('[gen-townmap] 原地踏步的走路幀 ' + inPlace.length + ' 個：' + inPlace.slice(0, 40).join('、') + (inPlace.length > 40 ? '…' : ''));
@@ -777,7 +821,7 @@ function buildHero() {
 }
 
 if (require.main === module) main().catch(e => { console.error(e); process.exit(1); });
-else module.exports = { readMap, planTowns, planHunts, placeHunt, sqlTable, openPak, parseTil, decodeBlock, morton, MARGIN, RS, PER };   // 分析用
+else module.exports = { readMap, planTowns, planHunts, placeHunt, sqlTable, openPak, parseTil, decodeBlock, morton, MARGIN, RS, PER, maskOf, overlap, alignRoot };   // 分析用
 const NO_BUILD = process.argv.includes('--no-build');   // 只重算 towns.json／hunts.json，不產圖檔
 async function main() {
 fs.mkdirSync(OUT_DIR, { recursive: true });
