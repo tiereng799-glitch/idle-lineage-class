@@ -21,9 +21,10 @@
  * 另有「程式桶對帳」(reconcileCode)：程式桶桶名固定、換版不倒桶(改動的檔靠 ?v= 換 URL 自然抓新),
  *   每次載入把「本頁實際引用的 js/css 清單」送進 SW,清掉舊 ?v= 殘留,桶不會越長越肥。
  *
- * 沒有「程式更新」UI 的原因：
+ * 程式更新：
  *   sw.js 已把導覽文件改 network-first——線上開頁一律最新「殼」,JS 帶 ?v= 換版即換 URL,
- *   「線上＝永遠最新」自動且無條件,不需頁面端偵測落後/強制刷新/讓使用者選自動更新。離線退快取照常。
+ *   「線上＝永遠最新」自動且無條件,不需強制刷新。離線退快取照常。
+ *   但「一直開著沒重新開頁」的玩家拿不到新版 → 畫面上方的「有新版本」按鈕(watchNewVersion,站長 2026-10-16)。
  *
  * 設計重點：
  *   - SW 註冊沿用 afk-sw.js;本檔只負責「安裝 UI / 圖桶對帳」。
@@ -232,11 +233,53 @@
     }).catch(function () {});
   }
 
+  // ----- 有新版本：畫面上方一顆按鈕，點了重新載入 -----------------------------------
+  //   每 3 分鐘、切回前景時讀一次 version.json(SW 不攔、走網路),code 跟這次開頁時讀到的不同＝網站換版了。
+  //   重新載入＝跟關掉再開一樣:核心在 pagehide/beforeunload 會先把存檔寫好(js/13 _flushSaveNow、js/27 離線結算),這裡不碰存檔。
+  //   開頁基準也取自 version.json(頁面沒有內嵌版本碼);讀不到(file://、離線)就整個不做,不打擾遊戲。
+  var VER_POLL_MS = 3 * 60 * 1000;
+  function watchNewVersion() {
+    if (!/^https?:$/.test(location.protocol)) return;
+    var base = null, shown = false, last = 0;
+    function check() {
+      if (shown || document.hidden) return;
+      last = Date.now();
+      fetch('version.json?t=' + last, { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (v) {
+          var code = v && v.code; if (!code) return;
+          if (base == null) { base = code; return; }
+          if (code !== base && !shown) { shown = true; showUpdateBtn(); }
+        })
+        .catch(function () {});
+    }
+    check();
+    setInterval(check, VER_POLL_MS);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - last > 30000) check(); });
+  }
+  function showUpdateBtn() {
+    if (document.getElementById('afk-upd')) return;
+    var st = document.createElement('style');
+    st.id = 'afk-upd-style';
+    // 頭像列下方置中(上緣那排左邊是頭像、右邊是狀態圖示);層級比工具列、視窗都高
+    st.textContent = '#afk-upd{position:fixed;top:calc(var(--orig-bar-h,0px) + 70px);left:50%;transform:translateX(-50%);z-index:99990;display:flex;align-items:center;gap:6px;padding:8px 18px;' +
+      'border-radius:999px;border:1px solid #e0b04a;background:linear-gradient(#5a3d12,#2a1b07);color:#ffe6a8;font-size:15px;font-weight:700;letter-spacing:1px;white-space:nowrap;' +
+      'box-shadow:0 2px 10px rgba(0,0,0,.7),0 0 12px rgba(240,190,80,.45);cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:inherit;animation:afkUpdGlow 1.6s ease-in-out infinite;}' +
+      '#afk-upd:active{filter:brightness(1.2);}' +
+      '@keyframes afkUpdGlow{50%{box-shadow:0 2px 10px rgba(0,0,0,.7),0 0 20px rgba(255,210,110,.85);}}';
+    document.head.appendChild(st);
+    var b = document.createElement('button');
+    b.type = 'button'; b.id = 'afk-upd'; b.textContent = '🔄 有新版本・點此更新';
+    b.addEventListener('click', function () { b.disabled = true; b.textContent = '更新中…'; location.reload(); });
+    document.body.appendChild(b);
+  }
+
   function init() {
     injectHead();
     registerInstallSetting();
     bindInstallEvents();
     mountInstallFab();
+    watchNewVersion();
     if (pwaCapable()) {
       watchUpdates();
     }
