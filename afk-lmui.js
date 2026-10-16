@@ -524,7 +524,7 @@
       'html body.lmui-equip #lmui-doll{display:flex;flex-direction:column;gap:6px;padding:8px;background:radial-gradient(ellipse at 50% 35%,#2a2520,#0f0c09 75%);border:1px solid #6b5636;border-radius:6px;box-shadow:inset 0 0 18px #000;color:#e9dcc0;}',
       'html body.lmui-equip #tab-equip,html body.lmui-equip #equipment-window{display:none !important;}',
       /* 格子邊長（全部同樣大）：高度＝5 排＋間距，扣掉名字／經驗／能力值表／內距約 220px；寬度＝左右共 4 欄，中間角色至少留約 140px。兩者取小，上限 58px */
-      '#lmui-doll{--ld-c:clamp(36px,min(calc((var(--lmui-wbot) - var(--lmui-ptop) - var(--lmui-whead-h) - var(--lmui-ptabs-h) - 240px) / 5.4),calc((100vw - 200px) / 4)),58px);}',
+      '#lmui-doll{--ld-c:clamp(36px,min(calc((var(--lmui-wbot) - var(--lmui-ptop) - var(--lmui-whead-h) - var(--lmui-ptabs-h) - 240px) / 5.4),calc((100vw - 180px) / 4)),58px);}',
       '.ld2-title{display:flex;align-items:baseline;justify-content:center;gap:10px;font-size:20px;font-weight:700;color:#f1e3c4;text-shadow:0 1px 2px #000;letter-spacing:1px;}',
       '.ld2-title .lv,.ld2-title .cl{font-size:17px;color:#e8cf8f;}',
       '.ld2-xp{margin-top:-4px;text-align:center;font-size:13px;color:#c9b88f;}',
@@ -533,7 +533,7 @@
       'html body.lmui-equip #lmui-doll{box-sizing:border-box;min-height:calc(var(--lmui-wbot) - var(--lmui-ptop) - var(--lmui-whead-h) - var(--lmui-ptabs-h) - 28px);}',
       '.ld2-body{position:relative;flex:1 1 auto;display:flex;gap:6px;align-items:stretch;}',
       '.ld2-fig{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:0;}',
-      '.ld2-col{position:relative;z-index:1;flex:0 0 auto;display:grid;grid-template-columns:repeat(2,var(--ld-c));grid-template-rows:repeat(5,var(--ld-c));gap:5px;align-content:space-between;}',
+      '.ld2-col{position:relative;z-index:1;flex:0 0 auto;display:grid;grid-template-columns:repeat(2,var(--ld-c));grid-template-rows:repeat(5,var(--ld-c));gap:6px;align-content:center;}',   /* 格子緊靠（站長：縫隙太大），多出來的高度留在上下 */
       '.ld2-mid{position:relative;z-index:1;flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;}',
       '.ld2-bar{position:relative;height:18px;border:1px solid #6b5636;border-radius:3px;background:#120a08;overflow:hidden;}',
       '.ld2-bar i{position:absolute;left:0;top:0;bottom:0;width:0;transition:width .25s;}',
@@ -2373,9 +2373,10 @@
   // ── 裝備分頁（站長 2026-10-16 參考圖）：上方名字／等級／職業＋經驗，左右兩排裝備格夾著中間的角色（面向玩家的待機動作，變身就畫變身），
   //   角色下方血／魔，最下面能力值。席琳遺骸那頁拿掉（席琳已關閉）；脛甲、魔眼整個部位已刪除（站長 2026-10-16）。
   //   部位與「副手武器佔盾牌格」(offwpn)、點一下開物品視窗、雙擊卸下，都照上游 js/19 的 PAGE_SLOTS / renderSlots。
-  //   格子一律同樣大（站長）：左右各 2 欄 × 5 排（右排只有 4 排，最下排空著，列高跟左排對齊），由上往下、由左往右排
-  var DOLL_L = ['helm', 'ear1', 'amulet', 'ear2', 'tshirt', 'armor', 'cloak', 'gloves', 'belt', 'boots'];
-  var DOLL_R = ['wpn', 'shield', 'arrow', 'doll', 'ring1', 'ring2', 'ring3', 'ring4'];
+  //   格子一律同樣大（站長）：左右各 2 欄 × 5 排，由上往下、由左往右排；武器防具在左、飾品在右（站長），各 9 格，
+  //   最下排單出來的那格靠外側（null＝空位），內側留給角色腳下的光圈與血魔條
+  var DOLL_L = ['wpn', 'shield', 'helm', 'armor', 'tshirt', 'cloak', 'gloves', 'boots', 'arrow'];
+  var DOLL_R = ['ear1', 'ear2', 'amulet', 'belt', 'ring1', 'ring2', 'ring3', 'ring4', null, 'doll'];
   var CLS_NAME = { royal: '王族', knight: '騎士', elf: '妖精', mage: '法師', dark: '黑暗妖精' };
   var SLOT_NAME = { helm: '頭盔', ear1: '耳環', ear2: '耳環', amulet: '項鍊', gloves: '手套', cloak: '斗篷', tshirt: 'T恤', wpn: '武器', shield: '盾牌', armor: '盔甲',
     ring1: '戒指', ring2: '戒指', ring3: '戒指', ring4: '戒指', belt: '腰帶', boots: '長靴', doll: '娃娃', arrow: '箭' };
@@ -2391,7 +2392,7 @@
     return '<div class="ld-cell is-filled tip-host" data-k="' + key + '" data-tip-uid="' + item.uid + '" data-tip-src="eq" title="' + (data.n || '') + '">' +
       '<img src="' + getIconUrl(data) + '" alt="" draggable="false" class="' + glow + '" onerror="this.style.display=\'none\'">' + badge + '</div>';
   }
-  function dollCol(list) { return list.map(dollCell).join(''); }
+  function dollCol(list) { return list.map(function (k) { return k ? dollCell(k) : '<div></div>'; }).join(''); }
   var DOLL_STATS = [['str', '力量'], ['dex', '敏捷'], ['con', '體質'], ['int', '智力'], ['wis', '精神'], ['cha', '魅力'], ['ac', '防禦'], ['mr', '魔防'], ['al', '']];
   function ensureDoll() {
     var d = $('lmui-doll'); if (d) return d;
