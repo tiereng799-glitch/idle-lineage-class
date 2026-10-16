@@ -272,7 +272,7 @@ function reachFrom(M, sx, sy, box) {
     }
     return { seen, n: t };
 }
-// 狩獵地圖存成地圖格座標：重生點 [怪物 id, 數量, 中心 x, y, 隨機範圍 rx, ry, 方框 x1, y1, x2, y2（沒有就 0）, 重生秒數 最短, 最長]；
+// 狩獵地圖存成地圖格座標：重生點 [怪物 id, 數量, 中心 x, y, 隨機範圍 rx, ry, 方框 x1, y1, x2, y2（沒有就 0）, 重生秒數 最短, 最長, 出生格（見下）]；
 //   起點＝怪最多那組重生點的中心附近、四周都能走的格子（一進來附近就有怪打）；角色從起點走不到的重生點不要（隔著牆、要傳送的房間）；
 //   怪物池缺的種類補在走得到的地方。隨機用固定種子（同一份資料重跑結果一樣）。
 function placeHunt(M, p) {
@@ -362,6 +362,17 @@ function placeHunt(M, p) {
             if (s[6] && s[8]) { s[6] = Math.max(1, s[6] - 1); s[7] = Math.max(1, s[7] - 1); s[8] = Math.min(W - 2, s[8] + 1); s[9] = Math.min(H - 2, s[9] + 1); }
             else { s[4] = Math.max(s[4], 3) + 1; s[5] = Math.max(s[5], 3) + 1; }
         }
+    }
+    // 出生格：範圍裡「角色走得到」的格子先挑好一批（隻數的兩倍、至少 8 格），afk-townmap 只從這些挑。
+    //   ⚠ 只給範圍的話執行時是在範圍裡亂挑再找最近能站的格子——懸崖、步道一層一層的地圖（眠龍洞穴）會挑到看得到走不過去的那層，
+    //   角色一直找不到路、在原地繞圈不打怪（玩家回報）。存成 y×寬＋x 的數字
+    for (const s of spawns) {
+        const [x0, y0, x1, y1] = areaOf(s), cells = [], loose = [];
+        for (let y = Math.max(1, y0); y <= Math.min(H - 2, y1); y++) for (let x = Math.max(1, x0); x <= Math.min(W - 2, x1); x++) if (ok(x, y)) (at(x, y) === 3 ? cells : loose).push(y * W + x);
+        if (!cells.length) cells.push(...loose);   // 範圍裡沒有四邊都通的格子：能站就好
+        const want = Math.max(8, s[1] * 2);
+        for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = cells[i]; cells[i] = cells[j]; cells[j] = t; }
+        if (cells.length) s.push(cells.slice(0, want));
     }
     return { map: M.id, home, spawns, missing: missing.map(p.mobName), real };
 }

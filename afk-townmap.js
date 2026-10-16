@@ -360,17 +360,11 @@
     }
     // 站得上去：至少一條邊能過（模擬器「修正怪物穿牆」）、沒有 NPC 站著
     function blocked(x, y) { return !pass(x, y) || S.occ[y * S.t.d.cw + x] === 1; }
-    // 角色可走範圍：鏡頭以角色為中心時整個畫面還在地圖資料裡的格子（S.lim 依畫面大小算，見 draw）。
-    //   在範圍外（例如畫面剛變大）只准往裡走，不會卡住。回傳離範圍幾格（0＝範圍內）。
-    function outside(x, y) {
-        var L = S.lim; if (!L) return 0;
-        return Math.max(L.x0 - x, x - L.x1, L.y0 - y, y - L.y1, 0);
-    }
-    // 從 (x,y) 往方向 k 走一步：照抄模擬器 L1V1Map.isPassable（斜走看旁邊那兩格的邊）
+    // 從 (x,y) 往方向 k 走一步：照抄模擬器 L1V1Map.isPassable（斜走看旁邊那兩格的邊）。
+    //   ⚠ 以前另限「鏡頭置中時畫面不超出地圖」的範圍（離邊約 22 格不准走）：地監常貼著地圖邊，出入口（83 個傳送點）、靠邊的怪都走不到 → 拿掉，鏡頭改成角色太靠邊才跟過去（見 camera）
     function canStep(x, y, k) {
         var nx = x + DIRS[k][0], ny = y + DIRS[k][1];
         if (blocked(nx, ny)) return false;
-        var o = outside(nx, ny); if (o && o >= outside(x, y)) return false;
         switch (k) {
             case 0: return !!(pass(x, y) & 2);
             case 1: return !!((pass(x, y - 1) & 1) || (pass(x + 1, y) & 2));
@@ -384,9 +378,9 @@
     }
     // A* 八方向；很多條路一樣短時加一點「離起點終點直線多遠」，挑最直的，不會東、北、東、北鋸齒走。
     //   只在起點終點外框再多 24 格的範圍裡找（整張圖 512×512，每次都開整張的陣列太浪費；點地面、寵物跟隨都在畫面內）
-    function findPath(sx, sy, gx, gy) {
+    function findPath(sx, sy, gx, gy, opt) {   // opt.full＝整張圖找（傳送點導航：地監的路常要繞遠）、opt.budget＝最多展開幾格
         if ((sx === gx && sy === gy) || blocked(gx, gy)) return [];
-        var d = S.t.d, P = 24, X0 = Math.max(0, Math.min(sx, gx) - P), Y0 = Math.max(0, Math.min(sy, gy) - P);
+        var d = S.t.d, P = (opt && opt.full) ? 1e6 : ((opt && opt.pad) || 24), X0 = Math.max(0, Math.min(sx, gx) - P), Y0 = Math.max(0, Math.min(sy, gy) - P);
         var W = Math.min(d.cw - 1, Math.max(sx, gx) + P) - X0 + 1, H = Math.min(d.ch - 1, Math.max(sy, gy) + P) - Y0 + 1;
         sx -= X0; sy -= Y0; gx -= X0; gy -= Y0;
         var S0 = sy * W + sx, G = gy * W + gx;
@@ -396,7 +390,7 @@
         function push(i, f) { heap.push(i); hf.push(f); var k = heap.length - 1; while (k > 0) { var p = (k - 1) >> 1; if (hf[p] <= hf[k]) break; var t = heap[p]; heap[p] = heap[k]; heap[k] = t; t = hf[p]; hf[p] = hf[k]; hf[k] = t; k = p; } }
         function pop() { var top = heap[0], lt = heap.pop(), lf = hf.pop(); if (heap.length) { heap[0] = lt; hf[0] = lf; var k = 0; for (;;) { var l = 2 * k + 1, r = l + 1, m = k; if (l < heap.length && hf[l] < hf[m]) m = l; if (r < heap.length && hf[r] < hf[m]) m = r; if (m === k) break; var t = heap[m]; heap[m] = heap[k]; heap[k] = t; t = hf[m]; hf[m] = hf[k]; hf[k] = t; k = m; } } return top; }
         g[S0] = 0; push(S0, h(S0));
-        var budget = 8000;
+        var budget = (opt && opt.budget) || 8000;
         while (heap.length && budget-- > 0) {
             var c = pop(); if (c === G) break; if (closed[c]) continue; closed[c] = 1;
             var cx = c % W, cy = c / W | 0;
@@ -413,9 +407,8 @@
     }
     // 點到不能走的地方（牆、房子、樹）：改走到附近最近能站的格子
     function nearestWalkable(gx, gy) {
-        var L = S.lim;   // 點到可走範圍外：先拉回範圍邊上
-        if (L) { gx = Math.max(L.x0, Math.min(L.x1, gx)); gy = Math.max(L.y0, Math.min(L.y1, gy)); }
-        var ok = function (x, y) { return !blocked(x, y) && !outside(x, y); };
+        var d = S.t.d; gx = Math.max(1, Math.min(d.cw - 2, gx)); gy = Math.max(1, Math.min(d.ch - 2, gy));   // 點到地圖外：拉回地圖邊上
+        var ok = function (x, y) { return !blocked(x, y); };
         if (ok(gx, gy)) return [gx, gy];
         var best = null, bd = 1e9;
         for (var r = 1; r <= 6 && !best; r++) for (var y = gy - r; y <= gy + r; y++) for (var x = gx - r; x <= gx + r; x++) {
@@ -659,6 +652,10 @@
         xc = (d.cw - 1 < 2 * m) ? (d.cw - 1) / 2 : Math.max(m, Math.min(d.cw - 1 - m, xc));
         yc = (d.ch - 1 < 2 * m) ? (d.ch - 1) / 2 : Math.max(m, Math.min(d.ch - 1 - m, yc));
         var px = 24 * (xc + yc) + d.ox - W / 2, py = 12 * (yc - xc) + d.oy - H / 2;
+        // 平常鏡頭夾在地圖裡（畫面不露出地圖外）；角色走到很靠邊（地監出入口常貼著邊）離畫面中心超過三成就跟過去，邊外露一點黑，角色不會跑出畫面
+        var hx = 24 * (me.fx + me.fy) + d.ox - px - W / 2, hy = 12 * (me.fy - me.fx) + d.oy - py - H / 2, lx = W * 0.3, ly = H * 0.3;
+        if (hx > lx) px += hx - lx; else if (hx < -lx) px += hx + lx;
+        if (hy > ly) py += hy - ly; else if (hy < -ly) py += hy + ly;
         return [Math.round(px * dpr) / dpr, Math.round(py * dpr) / dpr];
     }
     var vis = [];
@@ -667,9 +664,6 @@
         // 畫圖倍率一律取整數（1 或 2）：倍率帶小數（瀏覽器縮放 107%、手機 2.6 倍）時，各分塊會落在半個像素上、接縫露出細線
         var W = map.clientWidth, H = map.clientHeight, dpr = Math.max(1, Math.min(2, Math.round(window.devicePixelRatio || 1)));
         if (!W || !H) return;
-        // 角色可走範圍：鏡頭置中時畫面不超出地圖資料（同 camera 的夾邊公式）；畫面大到放不下就不限（交給 camera 夾邊）
-        var mm = Math.ceil((W / 2 / 24 + H / 2 / 12) / 2), L = { x0: mm, x1: d.cw - 1 - mm, y0: mm, y1: d.ch - 1 - mm };
-        S.lim = (L.x0 < L.x1 && L.y0 < L.y1) ? L : null;
         if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
         var ctx = S.ctx, cam = camera(W, H, dpr), cx0 = cam[0], cy0 = cam[1];
         S.cam = cam;   // 點地面換算格子要用同一個鏡頭
@@ -930,6 +924,7 @@
     function unmount(restoreBg) {
         if (!S) return;
         if (S.cv && S.cv.parentNode) S.cv.parentNode.removeChild(S.cv);
+        var pb = document.getElementById('afk-tm-portals'); if (pb && pb.parentNode) pb.parentNode.removeChild(pb);
         if (restoreBg && S.bg != null) S.map.style.backgroundImage = S.bg;
         S.npcs && S.npcs.forEach(function (n) { n.el.style.removeProperty('left'); n.el.style.removeProperty('top'); });
         if (S.kind !== 'hunt' && S.map) S.map.classList.remove('afk-tm-live');
@@ -1069,6 +1064,7 @@
             if (S !== cur) return;
             var idx = {}; ((PORTALS && PORTALS[mapId]) || []).forEach(function (p) { idx[p[0] + ',' + p[1]] = p; });
             S.portals = idx; dirty = true;
+            portalBar();
         });
     }
     function takeArrive(gameId) {   // 剛從傳送點過來：從終點出發（20 秒內有效，換圖被擋或載很久就作廢）
@@ -1119,6 +1115,50 @@
             var nm = portalName(v.p[2]); if (!nm) return;
             ctx.strokeText('▶ ' + nm, v.x, v.y - 14); ctx.fillText('▶ ' + nm, v.x, v.y - 14);
         });
+    }
+    // 狩獵區的傳送點清單（大陸地圖除外，站長 2026-10-16）：左上（頭像那排下面）一個目的地一顆，點了自動找路走到最近的那個傳送點，走到就傳送。
+    //   找路前先把路上的區載好（地監小，整張載；大地圖載角色到傳送點那一塊），整張圖找、放寬展開上限（迷宮要繞遠）
+    var NAV_MAX = 6, navStyled = false;
+    function portalBar() {
+        var old = document.getElementById('afk-tm-portals'); if (old && old.parentNode) old.parentNode.removeChild(old);
+        if (!S || S.kind !== 'hunt' || !S.ready || !S.portals || S.hunt.map === 4) return;
+        var dests = [], seen = {};
+        for (var k in S.portals) { var g = S.portals[k][2]; if (!seen[g] && g !== mapState.current && portalName(g)) { seen[g] = 1; dests.push(g); } }   // 同一層裡互傳的不列（列出「目前這張圖」看不懂）
+        if (!dests.length) return;
+        if (!navStyled) {
+            navStyled = true;
+            var st = document.createElement('style'); st.id = 'afk-tm-portals-css';
+            st.textContent = '#afk-tm-portals{position:absolute;left:6px;top:122px;z-index:7;display:flex;flex-direction:column;align-items:flex-start;gap:4px;pointer-events:none;}' +
+                '#afk-tm-portals button{pointer-events:auto;padding:3px 9px;border:1px solid rgba(140,225,255,.6);border-radius:4px;background:rgba(8,18,28,.72);color:#bfefff;font:700 13px/1.4 sans-serif;text-shadow:0 1px 2px #000;cursor:pointer;-webkit-tap-highlight-color:transparent;}' +
+                '#afk-tm-portals button:active{filter:brightness(1.3);}';
+            document.head.appendChild(st);
+        }
+        var box = document.createElement('div'); box.id = 'afk-tm-portals';
+        dests.slice(0, NAV_MAX).forEach(function (g) {
+            var b = document.createElement('button'); b.type = 'button'; b.textContent = '▶ ' + portalName(g);
+            b.addEventListener('click', function (e) { e.stopPropagation(); navPortal(g); });
+            box.appendChild(b);
+        });
+        S.map.appendChild(box);
+    }
+    function navPortal(g) {
+        if (!S || S.kind !== 'hunt' || !S.ready || S.me.act === 'death') return;
+        var cur = S, me = S.me, d = S.t.d, list = [];
+        for (var k in S.portals) if (S.portals[k][2] === g) list.push(S.portals[k]);
+        if (!list.length) return;
+        list.sort(function (a, b) { return cheb(a[0], a[1], me.tx, me.ty) - cheb(b[0], b[1], me.tx, me.ty); });
+        if (list[0][0] === me.tx && list[0][1] === me.ty) { usePortal(list[0]); return; }   // 已經站在上面
+        var x0 = me.tx, y0 = me.ty, x1 = me.tx, y1 = me.ty;
+        list.forEach(function (p) { x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); });
+        var regs = (d.cw * d.ch <= 256 * 256) ? wantRegions(0, 0, d.cw - 1, d.ch - 1) : wantRegions(x0 - 24, y0 - 24, x1 + 24, y1 + 24);
+        Promise.all(regs.map(function (r) { return r.p; })).then(function () {
+            if (S !== cur || S.me.act === 'death') return;
+            for (var i = 0; i < list.length; i++) {
+                var p = list[i], path = findPath(S.me.tx, S.me.ty, p[0], p[1], { full: true, budget: 150000 });
+                if (path.length) { S.path = path; S.manual = true; S.prefer = null; S.goal = null; S.marker = { x: p[0], y: p[1], t: clock }; dirty = true; kick(); return; }
+            }
+            try { logSys('<span class="text-amber-300">那裡走不過去。</span>'); } catch (e) {}
+        }, function () {});
     }
     var huntsP = null, huntWait = null, HUNTS = null, AGGRO = 7;
     function loadHunts() {
@@ -1175,7 +1215,7 @@
             if (S === cur) unmount(true);
         });
     }
-    // 重生點 [怪物 id, 數量, 中心 x, y, 隨機範圍 rx, ry, 方框 x1, y1, x2, y2, 重生秒數 最短, 最長]
+    // 重生點 [怪物 id, 數量, 中心 x, y, 隨機範圍 rx, ry, 方框 x1, y1, x2, y2, 重生秒數 最短, 最長, 出生格（y×寬＋x，可能沒有）]
     function buildEnts() {
         S.ents = []; S.entByUid = {};
         S.hunt.spawns.forEach(function (sp, si) {
@@ -1189,7 +1229,11 @@
     }
     // 每隻怪在重生範圍（方框，或中心±隨機範圍）裡分到自己的出生點：分布照模擬器，不會全擠到角色附近
     function pickHome(e) {
-        var sp = S.hunt.spawns[e.sp];
+        var sp = S.hunt.spawns[e.sp], cells = sp[12];
+        if (cells && cells.length) {   // 產資料時挑好的出生格（角色走得到；懸崖一層一層的地圖才不會生在走不過去的那層）
+            var c = cells[Math.floor(Math.random() * cells.length)], w = S.t.d.cw;
+            e.hx = c % w; e.hy = (c - e.hx) / w; return;
+        }
         if (sp[6] && sp[8]) { var x0 = Math.min(sp[6], sp[8]), x1 = Math.max(sp[6], sp[8]), y0 = Math.min(sp[7], sp[9]), y1 = Math.max(sp[7], sp[9]); e.hx = x0 + Math.floor(Math.random() * (x1 - x0 + 1)); e.hy = y0 + Math.floor(Math.random() * (y1 - y0 + 1)); }
         else { var rx = Math.max(sp[4], 3), ry = Math.max(sp[5], 3); e.hx = sp[2] + Math.round((Math.random() * 2 - 1) * rx); e.hy = sp[3] + Math.round((Math.random() * 2 - 1) * ry); }
     }
@@ -1283,7 +1327,7 @@
         }
         if (S.goal !== e || S.ht >= (S.repath || 0) || !S.path.length) {   // 怪會動：每 0.5 秒重找一次路
             S.goal = e; S.repath = S.ht + 5;
-            var p = findPath(me.tx, me.ty, e.tx, e.ty);
+            var p = findPath(me.tx, me.ty, e.tx, e.ty, { pad: 40, budget: 16000 });   // 懸崖、步道一層層的地圖要繞遠，找路範圍放寬一點
             if (p.length) p.pop(); else e.noPathUntil = S.ht + 50;   // 不走到怪身上；走不到的先換別隻
             S.path = p;
         }
