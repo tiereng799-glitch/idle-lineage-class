@@ -30,7 +30,7 @@
            (CSS 另有 60 秒自動消失的保底)。data-scripts / data-script-kb 是本頁 <script src> 的數量與總大小，由 scripts/stamp-code-versions.mjs 自動對齊。
            無痕模式／第一次開沒有快取，光下載程式就要十幾秒；以前這段進度條停在 0% 不動，看起來像卡死。
            主要照「已下載的位元組」算(檔案大小差很多，00-data 一支就 640KB，只數檔數會一卡好幾秒)；瀏覽器不給大小時退回數檔數。 -->
-      <div id="boot-loader" aria-live="polite" data-scripts="110" data-script-kb="6465">
+      <div id="boot-loader" aria-live="polite" data-scripts="110" data-script-kb="6470">
         <div class="boot-box"><div class="boot-label">載入中 <span class="boot-pct">0%</span></div><div class="boot-bar"><div class="boot-bar-fill"></div></div></div>
       </div>
       <script>
@@ -607,7 +607,7 @@
     <!-- afk-forcemobile：一律使用手機版面(已鎖定、無開關)——寬螢幕導去 phone.html（手機寬 iframe 包 index.html）；緊接 afk-toggles，越早導走外層白跑越少 -->
     <script src="afk-forcemobile.js?v=de0117561e"></script>
     <!-- afk-banner：非官方轉載橫幅讓位（基礎設施、無開關；不可掛在 afk-mobile 裡，玩家關掉手機版面就會整個頂端被蓋住） -->
-    <script src="afk-banner.js?v=29fa2d5746"></script>
+    <script src="afk-banner.js?v=45b3b54a8e"></script>
     <!-- afk-nobanner：隱藏非官方橫幅（已鎖定一律隱藏、無開關） -->
     <script src="afk-nobanner.js?v=f0311569de"></script>
     <!-- 存檔解壓快取：必須排在所有會讀 localStorage 的外掛之前（核心每殺一隻怪都重解壓一次血盟狀態） -->
@@ -670,7 +670,7 @@
     <!-- afk-npclabel：村莊 NPC 名牌不要跑出畫面 -->
     <script src="afk-npclabel.js?v=21861a88d8"></script>
     <!-- afk-townmap：說話之島村莊換成會動的地圖、角色自己走（包 renderTownNPCMap；排在 npclist 之後＝最外層，NPC 藏不藏已定） -->
-    <script src="afk-townmap.js?v=85b1c6608e"></script>
+    <script src="afk-townmap.js?v=344f84d328"></script>
     <script src="afk-mobname.js?v=d74c25c2c9"></script>
     <script src="afk-trackinfo.js?v=52621852bd"></script>
     <!-- afk-trackmaps：追蹤選單補上選不到的圖（黑暗妖精聖地＝地獄奴隸唯一產地、傲慢之塔2~10樓、六張隱藏區域）；三批來歷不同,檔頭有表 -->
