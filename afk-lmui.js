@@ -63,7 +63,7 @@
   function injectCSS() {
     if ($('afk-lmui-style')) return;
     var B = 'body.lmui-battle ';
-    var STAND = '0px';   // 戰鬥框已縮在上半（#col-center 釘住），怪物/角色直接站在框底
+    var STAND = 'var(--lmui-vit)';   // 場景往下鋪到血條後面（血條去背，站長），怪物/角色站在血條上緣
     var css = [
       /* 戰鬥場景只佔上半（玩家要求「縮到一半、下方留空間」）：下方 HUD 面板＝可用高度的一半扣掉 AUTO 那條 */
       ':root{--lmui-btns:0px;--lmui-vit:50px;--lmui-stack:calc((100dvh - var(--orig-bar-h,0px) - var(--m-nav-h,0px)) / 2 - var(--lmui-vit));--lmui-gold:#d9bf86;--lmui-line:rgba(214,190,140,.45);--lmui-glass:rgba(8,8,10,.42);}',
@@ -73,7 +73,7 @@
          分頁內容、嵌入式裝備視窗（js/19 跟著 #game-screen 捲動對位）、afk-mobile 的觸控捲動轉發都還是同一個捲動容器。
          html 前綴＝壓過 afk-mobile 的 body.m-mobile #game-screen{padding-bottom:…!important}、#col-center{display:none!important}。 */
       'html ' + B + '#game-screen{top:var(--lmui-mtop) !important;height:auto !important;bottom:0 !important;padding:8px 8px calc(var(--m-nav-h,0px) + 8px) !important;overflow-y:auto !important;}',
-      'html ' + B + '#col-center{display:flex !important;position:fixed !important;top:var(--orig-bar-h,0px) !important;left:0 !important;right:0 !important;width:auto !important;height:calc(var(--lmui-mtop) - var(--lmui-vit) - var(--orig-bar-h,0px)) !important;gap:0 !important;margin:0 !important;z-index:1;}',
+      'html ' + B + '#col-center{display:flex !important;position:fixed !important;top:var(--orig-bar-h,0px) !important;left:0 !important;right:0 !important;width:auto !important;height:calc(var(--lmui-mtop) - var(--orig-bar-h,0px)) !important;gap:0 !important;margin:0 !important;z-index:1;}',   /* 含血條那一列：血條去背，後面是場景 */
       B + '#map-view-panel{flex:1 1 auto !important;height:100% !important;min-height:0 !important;display:flex !important;flex-direction:column !important;background:none !important;border:0 !important;border-radius:0 !important;box-shadow:none !important;padding:0 !important;margin:0 !important;position:relative !important;}',
       B + '#map-view-panel::before,' + B + '#map-view-panel::after{display:none !important;}',
       B + '#map-view-panel>.panel-header{display:none !important;}',
@@ -214,7 +214,7 @@
       'html body.lmui-battle #m-toast-wrap{top:calc((var(--lmui-bar) + var(--lmui-mtop) - var(--lmui-vit)) / 2);}',
 
       /* ── 下方堆疊：血條 → 快捷列 → 聊天框 ── */
-      '#lmui-vit{position:absolute;left:0;right:0;top:calc(var(--lmui-mtop) - var(--lmui-vit) - var(--orig-bar-h,0px));height:var(--lmui-vit);padding:3px 4px 0;display:flex;flex-direction:column;justify-content:center;gap:2px;background:linear-gradient(#1d1711,#0e0b08);border-top:1px solid #4a3f30;box-shadow:0 -3px 8px rgba(0,0,0,.6);pointer-events:auto;z-index:3;}',
+      '#lmui-vit{position:absolute;left:0;right:0;top:calc(var(--lmui-mtop) - var(--lmui-vit) - var(--orig-bar-h,0px));height:var(--lmui-vit);padding:3px 4px 0;display:flex;flex-direction:column;justify-content:center;gap:2px;background:none;pointer-events:auto;z-index:3;}',   /* 去背（站長）：後面就是場景 */
       'body.lmui-compact{--lmui-stack:46px;--lmui-mtop:calc(100dvh - var(--m-nav-h,0px) - 46px - var(--lmui-btns));}',
       'body.lmui-compact #lmui-hot,body.lmui-compact #lmui-tabs,body.lmui-compact #lmui-lines{display:none !important;}',
       'html body.lmui-compact.lmui-battle #lmui-bottom{display:flex !important;}',   /* 村莊預設會藏下方聊天框（給 NPC 卡片），精簡時只留輸入列 */
@@ -320,6 +320,11 @@
       '#lmui-whead button{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:32px;height:28px;padding:0;border:1px solid #8a6f52;border-radius:4px;background:linear-gradient(#6a3026,#2e140f);color:#fbe3d2;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;}',
       '#lmui-whead button:active{background:linear-gradient(#8a3e30,#46201a);}',
       'html body.lmui-battle.lmui-tall.lmui-whead #lmui-whead{display:flex;}',
+      /* 視窗後面露出遊戲畫面（站長：左右不要漏底色）：場景（#col-center）拉到整個畫面高、墊在視窗後面，用 evenodd 多邊形把視窗那塊挖掉，
+         四周 6px 與視窗下緣露出（被 lmui-tall 壓暗的）場景；往上捲的內容照樣被場景蓋住。視窗本身的底是 #lmui-wframe（z:-1，墊在 #game-screen 下面），內容不夠長也不露底色 */
+      'html body.lmui-battle.lmui-tall.lmui-whead #col-center{height:calc(100dvh - var(--orig-bar-h,0px) - var(--m-nav-h,0px)) !important;clip-path:polygon(evenodd,0 0,100% 0,100% 100%,0 100%,0 0,6px calc(var(--lmui-ptop) - var(--orig-bar-h,0px)),6px calc(100% - 6px),calc(100% - 6px) calc(100% - 6px),calc(100% - 6px) calc(var(--lmui-ptop) - var(--orig-bar-h,0px)),6px calc(var(--lmui-ptop) - var(--orig-bar-h,0px)));}',
+      '#lmui-wframe{display:none;position:fixed;left:6px;right:6px;top:var(--lmui-ptop);bottom:calc(var(--m-nav-h,0px) + 6px);z-index:-1;box-sizing:border-box;background:linear-gradient(#1f1813,#120d09);border:1px solid #4a3c29;border-radius:6px;pointer-events:none;}',
+      'html body.lmui-battle.lmui-tall.lmui-whead #lmui-wframe{display:block;}',
       'html body.lmui-battle.lmui-tall.lmui-whead #game-screen{padding-top:calc(var(--lmui-ptop) + var(--lmui-whead-h) + 6px) !important;}',
       'html body.lmui-battle.lmui-tall.lmui-whead.lmui-ptabs #game-screen{padding-top:calc(var(--lmui-ptop) + var(--lmui-whead-h) + var(--lmui-ptabs-h) + 6px) !important;}',
       'html body.lmui-battle.lmui-whead #lmui-bagtabs{top:calc(var(--lmui-ptop) + var(--lmui-whead-h));border-radius:0;border-top:0;}',
@@ -1701,6 +1706,8 @@
       h.innerHTML = '<b></b><button type="button" aria-label="關閉">✕</button>';
       h.querySelector('button').addEventListener('click', function (e) { e.stopPropagation(); closeTool(); });
       document.body.appendChild(h);
+      var f = document.createElement('div'); f.id = 'lmui-wframe'; f.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(f);
     }
     toggleCls('lmui-whead', !!title);
     if (h && title) setTxt(h.querySelector('b'), title);
