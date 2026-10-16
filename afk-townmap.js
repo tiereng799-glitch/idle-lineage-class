@@ -234,6 +234,35 @@
         if (!im) { im = imgCache[src] = new Image(); im.src = src; }
         return im;
     }
+    // 發光的怪（鬼火、閃電球、火炎蛋、鬼魂、各種精靈…）：天堂用加亮疊加畫，圖檔是「半透明的暗色光暈」，照一般方式畫會把地面蓋暗成一團黑影（玩家回報）。
+    //   每個外型量一次它的原始待機圖（資料夾根目錄 idle_0，核心戰鬥畫面用的那套）：半透明像素過半是暗的、不透明的部分幾乎沒有暗色 → 改用 screen 畫。
+    //   ⚠ 不能量地圖當下畫的那張：八方向走路幀（tools/gen-walk-anim）把光暈存成不透明的深藍色，量了會認不出來。screen 畫時深色幾乎看不見，兩套都適用。
+    //   數字分不乾淨的幾隻照名字指定（熔岩高崙的岩石身體就是半透明深色；火精靈王光暈比例低但也是發光的）。量小張的離屏畫布
+    var GLOW_FIX = { '熔岩高崙': false, '火精靈王': true, '夢幻之島火精靈王': true, '強力火屬性精靈': true }, glowOf = {};
+    function glowLook(L) {
+        if (!L || L.kind === 'class') return false;
+        var k = L.name; if (k in glowOf) return glowOf[k];
+        if (k in GLOW_FIX) return (glowOf[k] = GLOW_FIX[k]);
+        var base = (L.kind === 'anim' ? 'assets/anim/' : 'assets/morphanim/') + k, pf = null;
+        ['idle_', 'attack_', 'walk_'].some(function (p) { return mf(base, p) && (pf = p); });
+        if (!pf) return (glowOf[k] = false);
+        var im = img(base.replace(k, encodeURIComponent(k)) + '/' + pf + '0.png');
+        if (!im.complete) return false;   // 還在下載：先照一般畫，下載好再定
+        if (!im.naturalWidth) return (glowOf[k] = false);
+        var v = false;
+        try {
+            var w = Math.min(im.naturalWidth, 256), h = Math.min(im.naturalHeight, 256), c = document.createElement('canvas'); c.width = w; c.height = h;
+            var x = c.getContext('2d'); x.drawImage(im, 0, 0);
+            var p = x.getImageData(0, 0, w, h).data, vis = 0, semiDark = 0, opq = 0, opqDark = 0;
+            for (var i = 0; i < p.length; i += 4) {
+                var a = p[i + 3], hi = Math.max(p[i], p[i + 1], p[i + 2]); if (a < 8) continue;
+                vis++;
+                if (a < 230) { if (hi < 110) semiDark++; } else { opq++; if (hi < 90) opqDark++; }
+            }
+            v = vis > 50 && semiDark / vis > 0.5 && (!opq || opqDark / opq < 0.2);
+        } catch (e) {}
+        return (glowOf[k] = v);
+    }
     function mf(folder, pfx) { try { return (ANIM_MANIFEST[folder] || {})[pfx] || 0; } catch (e) { return 0; } }
     var SFX3 = ['2', 'F', '', '', '', '', '2', '2'];   // 三方向變身：右半邊→東北那夾、左半邊→西北那夾（同 js/09 ANIM_DIR_SFX3）
     function classLook(av, wk) {
@@ -484,9 +513,20 @@
         me.walking = false;
     }
     // ── 寵物：沿著角色走過的格子跟在後面（第 i 隻落後 2+2i 格），離太遠就直接跳到那格 ──────
+    // 跟著角色的夥伴：出戰寵物；狩獵區再加召喚物（召喚術、造屍術骷髏，js/23 summonRenderList）與迷魅的怪——
+    //   核心把牠們畫在 #pet-layer，地圖模式那層藏起來了，不在這裡畫就整個看不到（玩家回報）。四種都用同一套欄位（form/hp/_animAct/_downed）
     function petsOut() {
-        try { return (typeof petsOutList === 'function' && typeof player !== 'undefined' && player && player.cls) ? (petsOutList() || []) : []; } catch (e) { return []; }
+        try {
+            if (typeof petsOutList !== 'function' || typeof player === 'undefined' || !player || !player.cls) return [];
+            var out = (petsOutList() || []).slice();
+            if (S && S.kind === 'hunt') {
+                if (typeof summonRenderList === 'function') out = out.concat(summonRenderList() || []);
+                var c = player.charmed; if (c && c._charm && !c._downed && c.form) out.push(c);
+            }
+            return out;
+        } catch (e) { return []; }
     }
+    function compKey(p) { return p.uid || ('charm:' + p.form); }   // 迷魅的怪沒有 uid
     function spawnNear(x, y, taken) {
         for (var r = 1; r <= 3; r++) for (var dy = -r; dy <= r; dy++) for (var dx = -r; dx <= r; dx++) {
             var nx = x + dx, ny = y + dy;
@@ -500,30 +540,54 @@
         outs.forEach(function (p) {
             var L = animLook(p.formGfx || p.form) || morphLook(p.formGfx || p.form);
             if (!L) return;
-            var a = null;
-            for (var j = 0; j < S.pets.length; j++) if (S.pets[j].uid === p.uid) a = S.pets[j];
+            var a = null, key = compKey(p);
+            for (var j = 0; j < S.pets.length; j++) if (S.pets[j].uid === key) a = S.pets[j];
             if (!a) {
                 var c = spawnNear(S.me.tx, S.me.ty, taken.concat(keep.map(function (q) { return [q.tx, q.ty]; })));
-                a = { uid: p.uid, fx: c[0], fy: c[1], sx: c[0], sy: c[1], tx: c[0], ty: c[1], t: 1, dir: S.me.dir, walking: false, path: [], step: STEP, phase: Math.random() * 8 };
+                a = { uid: key, fx: c[0], fy: c[1], sx: c[0], sy: c[1], tx: c[0], ty: c[1], t: 1, dir: S.me.dir, walking: false, path: [], step: STEP, phase: Math.random() * 8 };
             }
             if (!a.look || a.look.key !== L.key) { a.look = L; preloadDir(L, a.dir); }
             keep.push(a);
         });
         S.pets = keep;
     }
-    function petTick(a, i, dt) {
+    // 狩獵區：寵物的戰鬥動作照核心（js/22 _petAnimAct 記在寵物身上的 _animAct／_faceMobUid）——
+    //   出手、被打播一輪動作並面向目標怪；倒地停在死亡最後一格、不跟著走；打怪時走到目標旁邊（不然站在角色後面空揮，被打也看不出來：玩家回報）
+    function petSyncAct(a, p) {
+        a.pet = true;
+        if (p._downed) { if (a.act !== 'death') { a.act = 'death'; a.actT = performance.now(); } a.tgt = null; return; }
+        if (a.act === 'death') a.act = null;   // 復活了
+        var aa = p._animAct;
+        if (aa && aa.t !== a._aT) {
+            a._aT = aa.t;
+            if (aa.k === 'attack' || aa.k === 'skill' || aa.k === 'hurt') { a.act = aa.k; a.actT = performance.now(); }
+        }
+        var e = p._faceMobUid != null ? S.entByUid[p._faceMobUid] : null;
+        a.tgt = (e && e.alive && e.placed) ? e : null;
+        if (a.tgt && !a.walking) { var k = dirTo(a.tx, a.ty, a.tgt.tx, a.tgt.ty); if (k >= 0) a.dir = k; }
+    }
+    function petTick(a, i, dt, cp) {
+        if (cp) petSyncAct(a, cp);
+        if (a.act === 'death') { a.walking = false; return; }
         var left = 0;
         if (a.t < 1) {
             var t = a.t + dt / a.step;
             if (t < 1) { a.t = t; a.fx = a.sx + (a.tx - a.sx) * t; a.fy = a.sy + (a.ty - a.sy) * t; return; }
             left = t - 1; a.t = 1; a.fx = a.tx; a.fy = a.ty;
         }
-        var tr = S.trail, gap = 2 + 2 * i, g = tr.length > gap ? tr[tr.length - 1 - gap] : null;
-        if (!g || (g[0] === a.tx && g[1] === a.ty)) { a.walking = false; return; }
-        if (Math.max(Math.abs(g[0] - a.tx), Math.abs(g[1] - a.ty)) > 12) {   // 跟丟了：直接到位
-            a.fx = a.sx = a.tx = g[0]; a.fy = a.sy = a.ty = g[1]; a.path = []; a.walking = false; return;
+        var e = a.tgt, g;
+        if (e && cheb(e.tx, e.ty, S.me.tx, S.me.ty) <= 10) {   // 有目標：走到它旁邊
+            if (cheb(a.tx, a.ty, e.tx, e.ty) <= 1) { a.walking = false; var kf = dirTo(a.tx, a.ty, e.tx, e.ty); if (kf >= 0) a.dir = kf; return; }
+            g = [e.tx, e.ty];
+        } else {
+            var tr = S.trail, gap = 2 + 2 * i; g = tr.length > gap ? tr[tr.length - 1 - gap] : null;
+            if (!g || (g[0] === a.tx && g[1] === a.ty)) { a.walking = false; return; }
+            if (Math.max(Math.abs(g[0] - a.tx), Math.abs(g[1] - a.ty)) > 12) {   // 跟丟了：直接到位
+                a.fx = a.sx = a.tx = g[0]; a.fy = a.sy = a.ty = g[1]; a.path = []; a.walking = false; return;
+            }
         }
-        if (!a.path.length || a.goal !== g) { a.path = findPath(a.tx, a.ty, g[0], g[1]); a.goal = g; }
+        var gk = g[0] + ',' + g[1];
+        if (!a.path.length || a.goal !== gk) { a.path = findPath(a.tx, a.ty, g[0], g[1]); a.goal = gk; }
         var n = a.path.shift();
         if (!n) { a.walking = false; return; }
         for (var k = 0; k < 8; k++) if (DIRS[k][0] === n[0] - a.tx && DIRS[k][1] === n[1] - a.ty) { a.dir = k; break; }
@@ -533,8 +597,9 @@
         preloadDir(a.look, a.dir);
     }
     function tick(dt) {
-        var me = S.me;
-        S.pets.forEach(function (a, i) { petTick(a, i, dt); });
+        var me = S.me, cps = {};
+        if (S.kind === 'hunt') petsOut().forEach(function (p) { cps[compKey(p)] = p; });
+        S.pets.forEach(function (a, i) { petTick(a, i, dt, cps[a.uid]); });
         if (me.t < 1) {
             var t = me.t + dt / (me.step || STEP);
             if (t >= 1) {
@@ -693,7 +758,7 @@
         return ACT_MS[act] || 125;
     }
     function actionFrame(a, L, now) {
-        var act = a.act, el = now - a.actT, ms, folder, name, n, an, flip = false;
+        var act = a.act, el = now - a.actT, ms, folder, name, n, an, flip = false, dir8 = false;
         if (L.kind === 'class') {
             folder = 'assets/classanim/' + L.av + DIR_SFX[a.dir];
             name = (act === 'death' || act === 'skill') ? act : L.wk + '_' + act;
@@ -702,15 +767,25 @@
             folder = 'assets/classanim/' + encodeURIComponent(L.av + DIR_SFX[a.dir]);
         } else if (L.kind === 'anim') {
             var R = window.TOWNMAP_ANIMROOT && TOWNMAP_ANIMROOT[L.name];
-            if (!R || !R[act]) return null;
-            name = act; n = mf('assets/anim/' + L.name, act + '_'); an = R[act];
-            folder = 'assets/anim/' + encodeURIComponent(L.name);
-            flip = !!a.faceRight;
+            var has8 = a.pet && L.at && L.at[a.dir] && mf('assets/anim/' + L.name, 'd' + a.dir + '/' + (act === 'skill' ? 'attack' : act) + '_');   // 夥伴有八方向動作就用（面向目標），怪物照單方向
+            if (R && R[act] && !has8) {
+                name = act; n = mf('assets/anim/' + L.name, act + '_'); an = R[act];
+                folder = 'assets/anim/' + encodeURIComponent(L.name);
+                flip = !!a.faceRight;
+            } else {   // 八方向的動作（寵物）：d<方向>/<動作>，跟同方向待機同一張畫布 → 用待機落腳點；沒有 skill 幀就播 attack
+                var b = L.at && L.at[a.dir]; if (!b) return null;
+                var base = 'assets/anim/' + L.name, dp = 'd' + a.dir + '/';
+                name = act; n = mf(base, dp + act + '_');
+                if (!n && act === 'skill') { name = 'attack'; n = mf(base, dp + 'attack_'); }
+                an = [b[2], b[3]]; dir8 = true;
+                folder = 'assets/anim/' + encodeURIComponent(L.name) + '/d' + a.dir;
+            }
         } else return null;
         if (!n) return null;
+        var withSh = L.kind === 'class' || dir8;
         if (a.msFor !== a.actT) {   // 每次出手算一次就好；整組動作圖先下載，第一次往這個方向打才不會跳幀
             a.msFor = a.actT; a.ms = actMs(a, act, n);
-            for (var pi = 0; pi < n; pi++) { img(folder + '/' + name + '_' + pi + '.png'); if (L.kind === 'class') img(folder + '/' + name + '_s_' + pi + '.png'); }
+            for (var pi = 0; pi < n; pi++) { img(folder + '/' + name + '_' + pi + '.png'); if (withSh) img(folder + '/' + name + '_s_' + pi + '.png'); }
         }
         ms = a.ms;
         var k = Math.floor(el / ms), fade = 1;
@@ -719,10 +794,10 @@
             else if (act !== 'death') { a.act = null; return null; }
             else {
                 k = n - 1;
-                if (a !== S.me) { fade = Math.max(0, 1 - (el - n * ms) / 600); if (!fade) return { gone: true }; }
+                if (a !== S.me && !a.pet) { fade = Math.max(0, 1 - (el - n * ms) / 600); if (!fade) return { gone: true }; }   // 寵物倒地：躺著等復活
             }
         }
-        return { src: folder + '/' + name + '_' + k + '.png', sh: L.kind === 'class' ? folder + '/' + name + '_s_' + k + '.png' : null, an: an, flip: flip, fade: fade };
+        return { src: folder + '/' + name + '_' + k + '.png', sh: withSh ? folder + '/' + name + '_s_' + k + '.png' : null, an: an, flip: flip, fade: fade };
     }
     function drawActor(ctx, cam, dpr, it, alpha) {
         var a = it.a, L = it.L, d = S.t.d;
@@ -740,6 +815,7 @@
                 var oxx = Math.round((fx - fa.an[0]) * dpr) / dpr;
                 if (bimg.complete && bimg.naturalWidth) {
                     if (alpha === 1 && simg && simg.complete && simg.naturalWidth) { ctx.globalAlpha = 0.55 * fa.fade; ctx.drawImage(simg, oxx, oyy); }
+                    if (glowLook(L)) ctx.globalCompositeOperation = 'screen';
                     ctx.globalAlpha = alpha * fa.fade; ctx.drawImage(bimg, oxx, oyy);
                     ctx.restore();
                 } else { ctx.restore(); drawLast(ctx, cam, dpr, a, alpha * fa.fade); }   // 這幀還沒下載完：先畫上一張，不要整個不見
@@ -761,16 +837,20 @@
         var body = img(frameSrc(L, a.dir, act, k)), sh = img(frameSrc(L, a.dir, act, k, true));
         if (body.complete && body.naturalWidth) {
             if (alpha === 1 && sh.complete && sh.naturalWidth) { ctx.globalAlpha = 0.55; ctx.drawImage(sh, ox, oy); }
+            var glow = glowLook(L);
+            if (glow) ctx.globalCompositeOperation = 'screen';
             ctx.globalAlpha = alpha; ctx.drawImage(body, ox, oy);
-            a._lb = { im: body, an: an };
+            if (glow) ctx.globalCompositeOperation = 'source-over';
+            a._lb = { im: body, an: an, glow: glow };
         } else drawLast(ctx, cam, dpr, a, alpha);   // 這幀還沒下載完：先畫上一張成功畫過的（不然人物、怪物會一閃一閃不見）
         ctx.globalAlpha = 1;
     }
     function drawLast(ctx, cam, dpr, a, alpha) {
         var lb = a._lb; if (!lb) return;
         var d = S.t.d, px = 24 * (a.fx + a.fy) + d.ox - cam[0], py = 12 * (a.fy - a.fx) + d.oy - cam[1];
+        if (lb.glow) ctx.globalCompositeOperation = 'screen';
         ctx.globalAlpha = alpha; ctx.drawImage(lb.im, Math.round((px - lb.an[0]) * dpr) / dpr, Math.round((py - lb.an[1]) * dpr) / dpr);
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     }
     // 地圖上的 NPC／叫賣玩家：腳點釘在村裡的站位格，跟著鏡頭移（只在鏡頭動了才改位置）
     function placeNpcs(cam) {
@@ -1280,6 +1360,16 @@
             ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.fillStyle = m.boss ? '#f87171' : '#fff';
             ctx.strokeText(m.n, px, top - 3); ctx.fillText(m.n, px, top - 3);
         }
+        // 寵物頭上的血條：被打扣血看得到（核心只在隊伍面板顯示寵物血量）
+        var cps = {}; petsOut().forEach(function (p) { cps[compKey(p)] = p; });
+        S.pets.forEach(function (a) {
+            var p = cps[a.uid]; if (!p || !a.look || p._downed) return;
+            var px = 24 * (a.fx + a.fy) + d.ox - cam[0], py = 12 * (a.fy - a.fx) + d.oy - cam[1];
+            var an = anchorOf(a.look, a.dir, false, 0) || [0, 40], top = py - an[1] - 4;
+            var mhp = (p.outOwner && typeof petMhpEff === 'function') ? petMhpEff(p) : (p.mhp || 1), r = Math.max(0, Math.min(1, (p.hp || 0) / (mhp || 1)));   // 寵物另有光環加的血量上限
+            ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillRect(px - 14, top, 28, 5);
+            ctx.fillStyle = r > 0.5 ? '#38bdf8' : r > 0.2 ? '#facc15' : '#ef4444'; ctx.fillRect(px - 13, top + 1, 26 * r, 3);
+        });
         placeCards();
     }
     // 核心的透明怪物卡片移到怪物身上。核心重畫怪物時會換掉卡片元素、緊接著照卡片位置噴傷害數字／未命中／死亡特效，
@@ -1335,6 +1425,14 @@
     wrapCore('_playerMorphTrigger', function (orig) {
         return function (k) {
             try { if (huntActive() && S.me.act !== 'death' && (k === 'attack' || k === 'skill')) { S.me.act = k; S.me.actT = performance.now(); } } catch (e) {}
+            return orig.apply(this, arguments);
+        };
+    });
+    wrapCore('summonAttack', function (orig) {   // 迷魅的怪出手：核心沒記動作（舊制召喚流程），補記一筆攻擊＋目標，地圖上才會揮動、面向怪
+        return function (sm) {
+            try {
+                if (huntActive() && sm && sm._charm && typeof _petAnimAct === 'function') { var t = typeof getTarget === 'function' ? getTarget() : null; _petAnimAct(sm, 'attack', t ? t.uid : undefined); }
+            } catch (e) {}
             return orig.apply(this, arguments);
         };
     });

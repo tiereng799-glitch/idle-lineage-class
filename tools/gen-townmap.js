@@ -220,6 +220,7 @@ for (let f = 2; f <= 100; f++) HUNT_MAPS['pride_f' + f] = 100 + f;              
     .forEach(r => { HUNT_MAPS['pride_' + r] = 100 + +r.split('_')[0]; });
 const AREA = 160;         // 大地圖取怪最集中的一塊：邊長（格）
 const SYN_N = [10, 6];    // 補上的怪每種幾隻：[整張圖都沒資料, 只是缺幾種]
+const SPREAD = 25;        // 每隻怪至少分到幾格走得到的地方（重生範圍太小就撐開）
 function planHunts(db) {
     const clean = s => String(s || '').replace(/\s/g, '');
     const mobs = gameData('mobs'), maps = gameData('maps');
@@ -279,7 +280,8 @@ function placeHunt(M, p) {
     const open3 = (x, y) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (at(x + dx, y + dy) !== 3) return false; return true; };
     let seed = [...p.name].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
     const rnd = () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 4294967296);
-    const L = (v, o) => v ? v - o : 0;
+    // 方框座標：模擬器的「整張圖隨機」方框從地圖邊（換算後＝0）開始，0 會被當成「沒方框」→ 整層的怪擠在中心 ±3 格（玩家回報），所以至少 1
+    const L = (v, o) => v ? Math.max(1, v - o) : 0;
     let spawns = p.rows.map(s => [s.mob, s.n, s.x - M.gameX0, s.y - M.gameY0, s.rx, s.ry, L(s.x1, M.gameX0), L(s.y1, M.gameY0), L(s.x2, M.gameX0), L(s.y2, M.gameY0), s.r0, s.r1]);
     // 大地圖：只取這張遊戲地圖的怪最集中的一塊（種類最多、同種類數再比隻數），方框夾進這塊
     let box = null;
@@ -351,6 +353,15 @@ function placeHunt(M, p) {
         if (!c && cells.length) c = cells[Math.floor(rnd() * cells.length)];
         if (!c) c = home;
         spawns.push([m, SYN_N[real ? 1 : 0], c[0], c[1], 10, 10, 0, 0, 0, 0, 60, 120]);
+    }
+    // 太擠的撐開：每隻至少 SPREAD 格走得到的地方（模擬器有些是「一個點、好幾十隻」，照原樣會疊成一團）
+    const areaOf = s => (s[6] && s[8]) ? [s[6], s[7], s[8], s[9]] : [s[2] - Math.max(s[4], 3), s[3] - Math.max(s[5], 3), s[2] + Math.max(s[4], 3), s[3] + Math.max(s[5], 3)];
+    const room = ([x0, y0, x1, y1]) => { let n = 0; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (ok(x, y)) n++; return n; };
+    for (const s of spawns) {
+        for (let g = 0; g < 60 && room(areaOf(s)) < s[1] * SPREAD; g++) {
+            if (s[6] && s[8]) { s[6] = Math.max(1, s[6] - 1); s[7] = Math.max(1, s[7] - 1); s[8] = Math.min(W - 2, s[8] + 1); s[9] = Math.min(H - 2, s[9] + 1); }
+            else { s[4] = Math.max(s[4], 3) + 1; s[5] = Math.max(s[5], 3) + 1; }
+        }
     }
     return { map: M.id, home, spawns, missing: missing.map(p.mobName), real };
 }
