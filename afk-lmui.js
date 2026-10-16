@@ -212,6 +212,13 @@
       '#lmui-auto:active{filter:brightness(1.25);}',
       '#lmui-auto.off{border-color:#9a9184;background:radial-gradient(circle at 45% 35%,#4b4b4b,#262626 55%,#0d0d0d 90%);color:#e5e5e5;}',
       '#lmui-auto.off::after{content:none;}',
+      /* AUTO 開著時從 AUTO 圓章往左上、右上彈出「掛機紀錄」「掛機設定」（站長）；暫停收回。放在地圖名那排上面，不壓到地圖名 */
+      '#lmui-autopop{position:absolute;left:50%;bottom:calc(100% + 30px);width:0;height:0;z-index:5;}',
+      '#lmui-autopop button{position:absolute;bottom:0;left:-34px;width:68px;height:28px;padding:0;border-radius:14px;border:1px solid #c9a55a;background:linear-gradient(#4a3418,#1c1309);color:#f6e7bf;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,230,170,.25);text-shadow:0 1px 1px #000;cursor:pointer;opacity:0;pointer-events:none;transform:translate(0,40px) scale(.2);transition:transform .32s cubic-bezier(.2,1.5,.4,1),opacity .18s;}',
+      '#lmui-autopop.on button{opacity:1;pointer-events:auto;}',
+      '#lmui-autopop.on button.l{transform:translate(-44px,0) scale(1);}',
+      '#lmui-autopop.on button.r{transform:translate(44px,0) scale(1);transition-delay:.06s;}',
+      '#lmui-autopop button:active{filter:brightness(1.3);}',
 
       /* 提示訊息（afk-toast）：放在戰鬥畫面正中間，不壓到血條／聊天框 */
       'html body.lmui-battle #m-toast-wrap{top:calc((var(--lmui-bar) + var(--lmui-mtop) - var(--lmui-vit)) / 2);}',
@@ -259,14 +266,15 @@
       '#lmui-hotpick .box{width:100%;max-width:380px;max-height:80vh;display:flex;flex-direction:column;background:#0f0c09;border:1px solid #b7791f;border-radius:10px;overflow:hidden;color:#eee;}',
       '#lmui-hotpick .hd{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #4a3f30;color:#fbbf24;font-weight:700;font-size:17px;}',
       '#lmui-hotpick .hd button{background:none;border:0;color:#aaa;font-size:19px;cursor:pointer;}',
-      '#lmui-hotpick .bd,#lmui-mapdrops .bd{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:8px;display:flex;flex-direction:column;gap:6px;}',
+      '#lmui-hotpick .bd,#lmui-mapdrops .bd,#lmui-huntlog .bd{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:8px;display:flex;flex-direction:column;gap:6px;}',
       '#lmui-hotpick .tabs{display:flex;gap:4px;padding:6px 8px 0;}',
       '#lmui-hotpick .tabs button{flex:1;padding:7px;border:1px solid #5a4630;border-radius:6px 6px 0 0;background:#17120c;color:#b9ad98;font-weight:700;font-size:14px;cursor:pointer;}',
       '#lmui-hotpick .tabs button.on{background:#3a2c1a;color:#fde68a;border-color:#b7791f;}',
-      '#lmui-mapdrops{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:12px;}',
-      '#lmui-mapdrops .box{width:100%;max-width:420px;max-height:84vh;display:flex;flex-direction:column;background:#0f0c09;border:1px solid #b7791f;border-radius:10px;overflow:hidden;color:#eee;}',
-      '#lmui-mapdrops .hd{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #4a3f30;color:#fbbf24;font-weight:700;font-size:16px;}',
-      '#lmui-mapdrops .hd button{background:none;border:0;color:#aaa;font-size:18px;cursor:pointer;}',
+      '#lmui-mapdrops,#lmui-huntlog{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:12px;}',
+      '#lmui-mapdrops .box,#lmui-huntlog .box{width:100%;max-width:420px;max-height:84vh;display:flex;flex-direction:column;background:#0f0c09;border:1px solid #b7791f;border-radius:10px;overflow:hidden;color:#eee;}',
+      '#lmui-mapdrops .hd,#lmui-huntlog .hd{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #4a3f30;color:#fbbf24;font-weight:700;font-size:16px;}',
+      '#lmui-mapdrops .hd button,#lmui-huntlog .hd button{background:none;border:0;color:#aaa;font-size:18px;cursor:pointer;}',
+      '#lmui-huntlog .mi-stats{grid-template-columns:repeat(2,1fr);gap:6px 16px;font-size:15px;padding:4px 2px 8px;margin:0;}',
       '#lmui-mapdrops .md-mob{border:1px solid #4a3f30;border-radius:8px;background:#17120c;padding:8px;}',
       '#lmui-mapdrops .md-mob .mi-stats{margin:4px 0;}',
       '#lmui-hotpick .sec{color:#d9bf86;font-size:14px;margin-top:4px;}',
@@ -712,7 +720,8 @@
         '<div id="lmui-comp"></div><div id="lmui-comp-pop" class="hidden"></div>' +
         '<div id="lmui-exp"><i></i><span class="lv"><em>等級</em><b></b></span><span class="pc"></span></div>' +
         '<div id="lmui-bars"><div id="lmui-hp" class="lmui-bar"><i></i><span></span></div><div id="lmui-mp" class="lmui-bar"><i></i><span></span></div>' +
-          '<button type="button" id="lmui-auto" class="lmui-hit" aria-label="AUTO">' + AUTO_SVG + '</button></div>' +
+          '<button type="button" id="lmui-auto" class="lmui-hit" aria-label="AUTO">' + AUTO_SVG + '</button>' +
+          '<div id="lmui-autopop"><button type="button" class="lmui-hit l" data-a="log">掛機紀錄</button><button type="button" class="lmui-hit r" data-a="set">掛機設定</button></div></div>' +
       '</div>' +
       '<div id="lmui-bottom">' +
         '<div id="lmui-hot" data-mode="0">' + hot + '</div>' +
@@ -741,7 +750,14 @@
     el.mini.addEventListener('click', toggleMap);
     $('lmui-auto').addEventListener('click', function () {
       var p = !isPaused(); setPaused(p);
+      if (!p) sessStart();   // 按 AUTO 開始：掛機紀錄從這一刻重算
       try { logSys(p ? '⏸ 已暫停，再按一次 AUTO 繼續' : '▶ 自動戰鬥繼續'); } catch (e) {}
+    });
+    $('lmui-autopop').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-a]'); if (!b) return;
+      e.stopPropagation();
+      if (b.getAttribute('data-a') === 'log') showHuntLog();
+      else { closeAllWindows(); openTab('automation'); }
     });
     el.tabs.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-t]'); if (!b) return;
@@ -775,7 +791,81 @@
     try { if (v) localStorage.setItem(pauseKey(), '1'); else localStorage.removeItem(pauseKey()); } catch (e) {}
     renderAuto();
   }
-  function renderAuto() { var b = $('lmui-auto'); if (b) b.classList.toggle('off', hasP() && isPaused()); }
+  function renderAuto() {
+    var b = $('lmui-auto'); if (b) b.classList.toggle('off', hasP() && isPaused());
+    // AUTO 開著：旁邊彈出「掛機紀錄」「掛機設定」（站長：開始掛機時動畫跳出兩個按鈕）；暫停就收回去
+    var run = hasP() && !isPaused(), pop = $('lmui-autopop'); if (pop) pop.classList.toggle('on', run);
+    if (run && (!sess || sess.who !== player)) sessStart();   // 讀檔時 AUTO 本來就開著、換了角色
+    else if (!run && sess && !sess.end) sess.end = Date.now();
+  }
+
+  // ── 掛機紀錄：按 AUTO 開始那一刻起打到的物品、經驗、金幣、擊殺數 ──────────
+  //   只在記憶體（關掉遊戲就沒了）；換角色、重新按 AUTO 開始都重算；暫停時時間停住。
+  //   「打到的」＝核心 killMob 裡面同步給的（掉寶都在那裡給），商店買的、做的不算；離線結算（state.ff）不算，那是離線紀錄的事
+  var sess = null, inKill = 0;
+  function sessStart() { sess = { who: player, t0: Date.now(), end: 0, kills: 0, exp: 0, gold: 0, items: {}, order: [] }; }
+  function sessLive() { return !!(sess && !sess.end && hasP() && sess.who === player && !(typeof state !== 'undefined' && state && state.ff)); }
+  function expGain(l0, e0, l1, e1) {   // 升級時核心扣掉該級需求、經驗歸到新等級：跨級要把中間每級的需求加回來
+    if (l1 === l0) return Math.max(0, e1 - e0);
+    if (l1 < l0 || typeof getExpReq !== 'function') return 0;
+    var s = getExpReq(l0) - e0; for (var l = l0 + 1; l < l1; l++) s += getExpReq(l);
+    return Math.max(0, s + e1);
+  }
+  function hookHuntLog() {
+    if (typeof window.killMob === 'function') {
+      var _km = window.killMob;
+      window.killMob = function (idx) {
+        var live = sessLive(), m = live && typeof mapState !== 'undefined' && mapState.mobs ? mapState.mobs[idx] : null, was = !!(m && !m._dead), l0 = live ? player.lv : 0, e0 = live ? player.exp : 0;
+        inKill++;
+        try { return _km.apply(this, arguments); }
+        finally {
+          inKill--;
+          try { if (live && sessLive()) { if (was && m._dead) sess.kills++; sess.exp += expGain(l0, e0, player.lv, player.exp); } } catch (e) {}
+        }
+      };
+    }
+    if (typeof window.gainItem === 'function') {
+      var _gi = window.gainItem;
+      window.gainItem = function (id, cnt) {
+        var r = _gi.apply(this, arguments);
+        try {
+          if (inKill && r !== false && sessLive() && typeof DB !== 'undefined' && DB.items[id]) {
+            if (!sess.items[id]) { sess.items[id] = 0; sess.order.push(id); }
+            sess.items[id] += (cnt == null ? 1 : +cnt || 1);
+          }
+        } catch (e) {}
+        return r;
+      };
+    }
+  }
+  function showHuntLog() {
+    var old = $('lmui-huntlog'); if (old) old.remove();
+    var ov = document.createElement('div'); ov.id = 'lmui-huntlog';
+    ov.innerHTML = '<div class="box"><div class="hd">掛機紀錄<button type="button" data-x="1" aria-label="關閉">✕</button></div><div class="bd"></div></div>';
+    var bd = ov.querySelector('.bd'), timer = 0;
+    function close() { clearInterval(timer); ov.remove(); }
+    ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('[data-x]')) close(); });
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var lastSig = '';
+    function draw() {
+      if (!ov.isConnected) { clearInterval(timer); return; }
+      var s = sess && sess.who === player ? sess : null;
+      var sec = s ? Math.floor(((s.end || Date.now()) - s.t0) / 1000) : 0, two = function (n) { return (n < 10 ? '0' : '') + n; };
+      var stat = function (k, v) { return '<span><i>' + k + '</i><b>' + v + '</b></span>'; };
+      var head = '<div class="mi-stats">' + stat('時間', Math.floor(sec / 3600) + ':' + two(Math.floor(sec / 60) % 60) + ':' + two(sec % 60)) + stat('擊殺', s ? s.kills.toLocaleString() : 0) +
+        stat('經驗', '+' + (s ? s.exp.toLocaleString() : 0)) + stat('金幣', '+' + (s ? s.gold.toLocaleString() : 0)) + '</div>';
+      var sig = s ? s.order.length + ':' + s.order.map(function (id) { return s.items[id]; }).join(',') : '';
+      if (sig === lastSig && bd.firstChild) { bd.firstChild.outerHTML = head; return; }   // 物品沒變：只換上面的數字（清單不重畫，捲動位置留著）
+      lastSig = sig;
+      var rows = s && s.order.length ? s.order.slice().reverse().map(function (id) {
+        var it = DB.items[id], cls = typeof getItemColor === 'function' ? getItemColor({ id: id }) : '', icon = typeof getIconUrl === 'function' ? getIconUrl(it) : '';
+        return '<div class="mi-drop tip-host" data-tip-id="' + id + '"><img src="' + icon + '" alt="" onerror="this.style.visibility=\'hidden\'"><span class="nm ' + cls + '">' + esc(it.n) + '</span><span class="rt">×' + s.items[id].toLocaleString() + '</span></div>';
+      }).join('') : '<div class="mi-none">還沒打到東西。</div>';
+      bd.innerHTML = head + '<div class="mi-sub">打到的物品</div>' + rows;
+    }
+    document.body.appendChild(ov);
+    draw(); timer = setInterval(draw, 1000);
+  }
   function hookPause() {
     if (typeof window.tick !== 'function') { console.warn('[AFK-lmui] 找不到核心 tick，AUTO 暫停停用。'); return; }
     var _origTick = window.tick;
@@ -817,6 +907,7 @@
       };
     }
     window.onMobGoldDrop = function (mob, g) {
+      try { if (g > 0 && sessLive()) sess.gold += g; } catch (e) {}   // 掛機紀錄的金幣
       try {
         if (!on() || !mob || !(g > 0) || (typeof state !== 'undefined' && state && state.ff)) return;
         var mc = (typeof getMobColor === 'function') ? getMobColor(mob.lv) : '';
@@ -2542,6 +2633,7 @@
     try { hookHunt(); } catch (e) {}
     try { hookPause(); } catch (e) { console.warn('[AFK-lmui] AUTO 暫停掛不上', e); }
     try { hookDrops(); } catch (e) { console.warn('[AFK-lmui] 掉落分頁掛不上', e); }
+    try { hookHuntLog(); } catch (e) { console.warn('[AFK-lmui] 掛機紀錄掛不上', e); }
     //   包 _renderMobsImpl（真正寫 DOM 的那支）：戰鬥 tick 中 renderMobs 只標記 dirty，之後由 flushTickRender 直呼 _renderMobsImpl，包外層會漏掉
     var MOB_RENDER = typeof window._renderMobsImpl === 'function' ? '_renderMobsImpl' : 'renderMobs';
     if (typeof window[MOB_RENDER] === 'function') {
