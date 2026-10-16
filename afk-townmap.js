@@ -297,6 +297,19 @@
             return classLook(av, wkOf(typeof CLASS_ANIM_SETS !== 'undefined' ? CLASS_ANIM_SETS : null));
         } catch (e) { return null; }
     }
+    // 給裝備欄（afk-lmui）畫「面向玩家的待機（呼吸）」：目前外型（含變身）某方向的待機幀。
+    //   外型表(hero.js)要等第一次進村莊／狩獵區才載到，還沒載到回 null → 裝備欄自己退回頭像圖（本外掛關掉時同理）
+    window.AFK_TM_HERO_IDLE = function (dir) {
+        var L = heroLook(); if (!L) return null;
+        var d = dir == null ? 5 : dir, IL = L.idle || L, act = 'idle', walk = false, n = IL.idleN || 0;
+        if (!n) { act = 'walk'; walk = true; n = 1; }   // 只有走路幀的外型：停在走路第 0 幀
+        return {
+            key: L.key + '@' + d, n: n, fps: IDLE_FPS,
+            src: function (k) { return frameSrc(IL, d, act, k); },
+            shadow: function (k) { return frameSrc(IL, d, act, k, true); },
+            anchor: function (k) { return anchorOf(IL, d, walk, k); }
+        };
+    };
     // 走一格的秒數：官方未變身每格 16/24 秒 × 遊戲自己的移速倍率（變身走速、加速／勇敢／疾走／餅乾／行走加速、裝備移速，js/02）
     function stepSec() {
         var m = 1;

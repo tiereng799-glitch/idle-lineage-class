@@ -521,25 +521,39 @@
 
       /* ── 裝備分頁（紙娃娃）：上游嵌入式裝備視窗與 afk-eqlist 的清單都先藏起來，改顯示 #lmui-doll ── */
       '#lmui-doll{display:none;}',
-      'html body.lmui-equip #lmui-doll{display:block;padding:6px 8px 8px;background:radial-gradient(ellipse at 50% 40%,#2a2a2a,#121212 75%);border:1px solid #4a4a4a;border-radius:4px;box-shadow:inset 0 0 18px #000;}',
+      'html body.lmui-equip #lmui-doll{display:flex;flex-direction:column;gap:6px;padding:8px;background:radial-gradient(ellipse at 50% 35%,#2a2520,#0f0c09 75%);border:1px solid #6b5636;border-radius:6px;box-shadow:inset 0 0 18px #000;color:#e9dcc0;}',
       'html body.lmui-equip #tab-equip,html body.lmui-equip #equipment-window{display:none !important;}',
-      '.ld-weight{font-size:14px;color:#cfcfcf;}',
-      /* 格子邊長跟著面板可用高度走（5 排＋底排＝6 列，扣掉上方分頁列/負重字/間距約 150px），上限 64px，盡量一屏放完不用捲 */
-      '#lmui-doll{--ld-c:clamp(36px,calc((100dvh - var(--lmui-ptop) - var(--m-nav-h,0px) - var(--lmui-ptabs-h) - 120px) / 6),64px);}',
-      '.ld-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}',
-      '.ld-head .ld-weight{margin:0 !important;}',
-      '.ld-grid{display:grid;grid-template-columns:repeat(3,var(--ld-c));justify-content:center;gap:6px calc(var(--ld-c) * .45);}',
-      '.ld-bottom{display:grid;grid-template-columns:repeat(4,var(--ld-c));justify-content:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid #333;}',
-      '.ld-cell{position:relative;aspect-ratio:1;border:1px solid #5c5c5c;border-radius:3px;background:radial-gradient(circle at 50% 40%,#2c2c2c,#0e0e0e 75%);box-shadow:inset 0 0 0 1px #000,inset 0 0 10px rgba(0,0,0,.9),0 1px 2px #000;display:flex;align-items:center;justify-content:center;cursor:pointer;}',
+      /* 格子邊長跟著視窗可用高度走：右排最高（5 大格＋3 排小格＋間距 ≈ 7 格高），扣掉名字／經驗／能力值表／內距約 220px；上限 62px，盡量一屏放完 */
+      '#lmui-doll{--ld-c:clamp(38px,calc((var(--lmui-wbot) - var(--lmui-ptop) - var(--lmui-whead-h) - var(--lmui-ptabs-h) - 220px) / 7),62px);}',
+      '.ld2-title{display:flex;align-items:baseline;justify-content:center;gap:10px;font-size:20px;font-weight:700;color:#f1e3c4;text-shadow:0 1px 2px #000;letter-spacing:1px;}',
+      '.ld2-title .lv,.ld2-title .cl{font-size:17px;color:#e8cf8f;}',
+      '.ld2-xp{margin-top:-4px;text-align:center;font-size:13px;color:#c9b88f;}',
+      '.ld2-body{display:flex;gap:6px;align-items:stretch;}',
+      '.ld2-col{flex:0 0 var(--ld-c);display:flex;flex-direction:column;gap:5px;}',
+      '.ld2-pair{display:flex;gap:4px;}',
+      '.ld2-pair .ld-cell{flex:1 1 0;min-width:0;}',
+      '.ld2-mid{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;}',
+      '.ld2-fig{flex:1;min-height:120px;width:100%;display:block;}',
+      '.ld2-bar{position:relative;height:18px;border:1px solid #6b5636;border-radius:3px;background:#120a08;overflow:hidden;}',
+      '.ld2-bar i{position:absolute;left:0;top:0;bottom:0;width:0;transition:width .25s;}',
+      '.ld2-bar.hp i{background:linear-gradient(#ff7a6a,#c81e1e 40%,#6a0b0b);}',
+      '.ld2-bar.mp i{background:linear-gradient(#7aa8ff,#2453c8 40%,#0c2468);}',
+      '.ld2-bar span{position:relative;z-index:1;display:block;text-align:center;font:700 13px/18px Consolas,"Courier New",monospace;color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;}',
+      '.ld2-stats{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #4a3c29;border-radius:4px;background:rgba(0,0,0,.35);}',
+      '.ld2-stats>div{display:flex;align-items:center;justify-content:space-between;padding:5px 9px;border-bottom:1px solid rgba(110,90,60,.3);}',
+      '.ld2-stats>div:nth-child(3n+2){border-left:1px solid rgba(110,90,60,.3);border-right:1px solid rgba(110,90,60,.3);}',
+      '.ld2-stats>div:nth-last-child(-n+3){border-bottom:0;}',
+      '.ld2-stats em{font-style:normal;font-size:14px;color:#c9b88f;}',
+      '.ld2-stats b{font-size:16px;color:#fff;}',
+      '.ld-cell{position:relative;aspect-ratio:1;border:1px solid #4a3c29;border-radius:3px;background:radial-gradient(circle at 50% 40%,#2a241c,#0e0b08 75%);box-shadow:inset 0 0 0 1px #000,inset 0 0 10px rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;cursor:pointer;}',
+      '.ld-cell.is-filled{border-color:#c9a463;box-shadow:inset 0 0 0 1px #000,inset 0 0 10px rgba(0,0,0,.8),0 0 6px rgba(230,180,90,.45);}',   /* 有裝東西的格子金框（同參考圖） */
       '.ld-cell img{width:78%;height:78%;object-fit:contain;filter:drop-shadow(0 1px 2px #000);}',
-      '.ld-cell.is-empty{cursor:default;color:rgba(255,255,255,.16);}',
-      '.ld-cell.is-empty svg{width:62%;height:62%;}',
+      '.ld-cell.is-empty{cursor:default;}',
+      '.ld-cell.is-empty span{font-size:12px;color:rgba(230,210,170,.45);white-space:nowrap;}',
+      '.ld2-pair .ld-cell.is-empty span{font-size:10px;}',
       '.ld-en{position:absolute;left:2px;top:1px;font:800 15px/1 Arial,sans-serif;color:#39a9ff;text-shadow:0 0 3px #0b4f99,1px 1px 1px #000;}',
+      '.ld2-pair .ld-en{font-size:12px;}',
       '.ld-cnt{position:absolute;right:2px;bottom:1px;font:800 13px/1 Arial,sans-serif;color:#d5a94f;text-shadow:1px 1px 1px #000;}',
-      '.ld-tabs{display:flex;gap:3px;}',
-      '.ld-tabs button{flex:0 0 44px;height:26px;display:flex;align-items:center;justify-content:center;border:1px solid #4a4a4a;border-radius:3px;background:linear-gradient(#3a3a3a,#1a1a1a);color:#8f8f8f;}',
-      '.ld-tabs button svg{width:18px;height:18px;}',
-      '.ld-tabs button.on{color:#f2f2f2;background:linear-gradient(#5e5e5e,#2a2a2a);border-color:#8a8a8a;}',
 
       /* ── 技能分頁（魔法書）：上方書籤（全體魔法／職業／裝備）、左側階數鈕、4 欄圖示、底部魔攻／魔法防禦 ── */
       '.lsk2{display:flex;flex-direction:column;gap:6px;padding:6px;background:linear-gradient(#2a2622,#1c1916);border:1px solid #4d443b;border-radius:6px;color:#d8cfc2;box-sizing:border-box;}',
@@ -2357,42 +2371,20 @@
     }
   }
 
-  // ── 裝備分頁：天堂紙娃娃版面（3×5＋底排 4 格＝上游第 1 頁的 19 格；第 2 頁＝魔眼＋席琳遺骸） ──
-  //   部位清單與「副手武器佔盾牌格」(offwpn)、點一下開物品視窗、雙擊卸下，都照上游 js/19 的 PAGE_SLOTS / renderSlots。
-  var DOLL_PAGES = [
-    { grid: ['ear1', 'helm', 'ear2', 'gloves', 'amulet', 'cloak', 'ring1', 'tshirt', 'ring2', 'ring3', 'armor', 'ring4', 'shield', 'wpn', 'arrow'],
-      bottom: ['belt', 'shin', 'boots', 'doll'] },
-    { grid: ['eye', 'rem_eye', 'rem_blood', 'rem_bone', 'rem_scale', 'rem_fang', 'rem_claw', 'rem_heart', 'rem_flesh'], bottom: [] }
-  ];
+  // ── 裝備分頁（站長 2026-10-16 參考圖）：上方名字／等級／職業＋經驗，左右兩排裝備格夾著中間的角色（面向玩家的待機動作，變身就畫變身），
+  //   角色下方血／魔，最下面能力值。席琳遺骸那頁拿掉（席琳已關閉）；魔眼（地龍之魔眼，跟席琳無關）留在右排。
+  //   部位與「副手武器佔盾牌格」(offwpn)、點一下開物品視窗、雙擊卸下，都照上游 js/19 的 PAGE_SLOTS / renderSlots。
+  //   陣列裡的陣列＝兩格並排的小格（耳環、戒指這類小東西）
+  var DOLL_L = ['helm', ['ear1', 'ear2'], 'tshirt', 'armor', 'gloves', ['belt', 'shin'], 'boots'];
+  var DOLL_R = ['wpn', 'shield', 'cloak', 'amulet', ['ring1', 'ring2'], ['ring3', 'ring4'], ['arrow', 'eye'], 'doll'];
+  var CLS_NAME = { royal: '王族', knight: '騎士', elf: '妖精', mage: '法師', dark: '黑暗妖精' };
   var SLOT_NAME = { helm: '頭盔', ear1: '耳環', ear2: '耳環', amulet: '項鍊', gloves: '手套', cloak: '斗篷', tshirt: 'T恤', wpn: '武器', shield: '盾牌', armor: '盔甲',
-    ring1: '戒指', ring2: '戒指', ring3: '戒指', ring4: '戒指', belt: '腰帶', shin: '脛甲', boots: '長靴', doll: '魔法娃娃', arrow: '箭', eye: '魔眼',
-    rem_eye: '遺骸·眼', rem_blood: '遺骸·血', rem_bone: '遺骸·骨', rem_scale: '遺骸·鱗', rem_fang: '遺骸·牙', rem_claw: '遺骸·爪', rem_heart: '遺骸·心', rem_flesh: '遺骸·肉' };
-  var RING = '<circle cx="12" cy="14.5" r="5"/><path d="M10 9.5l2-4 2 4"/>', EAR = '<path d="M9 7a3 3 0 0 1 6 0c0 3-3 3.5-3 7a2 2 0 0 1-4 0"/><circle cx="12" cy="19" r="1.5"/>';
-  var RELIC = '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>';
-  var SLOT_SVG = {
-    helm: '<path d="M5 14a7 7 0 0 1 14 0v4h-4v-4H9v4H5z"/><path d="M12 7v7"/>', ear1: EAR, ear2: EAR,
-    amulet: '<path d="M6 4c0 6 3 8.5 6 8.5S18 10 18 4"/><circle cx="12" cy="16" r="3"/>',
-    gloves: '<path d="M8 21v-6L5.5 11l1.2-1.2L9 12V5.5h1.6V11V4.5h1.6V11V5.5h1.6V11l1.2-3h1.5l-1.1 6.5V21z"/>',
-    cloak: '<path d="M8.5 4h7L19 20H5z"/><path d="M12 4v16"/>',
-    tshirt: '<path d="M8.5 4L4 7l2 3 2-1v11h8V9l2 1 2-3-4.5-3c-.5 1.3-1.8 2-3.5 2S9 5.3 8.5 4z"/>',
-    wpn: '<path d="M19 5l-9 9M19 5h-3.5M19 5v3.5M7 13l4 4M5 19l3-3"/>',
-    shield: '<path d="M12 3l7 3v6c0 5-3 8-7 9-4-1-7-4-7-9V6z"/>',
-    armor: '<path d="M7.5 4h9l2.5 4-2 2v10H7V10L5 8z"/><path d="M10 4v3h4V4"/>',
-    ring1: RING, ring2: RING, ring3: RING, ring4: RING,
-    belt: '<path d="M3 10h18v4H3z"/><path d="M10 9h4v6h-4z"/>',
-    shin: '<path d="M9 3h6v12l1.5 6h-7.5l-1-6z"/>',
-    boots: '<path d="M8 3h5v10l6 3v5H6v-6z"/>',
-    doll: '<circle cx="12" cy="7" r="3"/><path d="M8 21v-6l-2-3 3-2h6l3 2-2 3v6z"/>',
-    arrow: '<path d="M4 20L18 6M14 6h4v4M4 20l3-1M4 20l1-3"/>',
-    eye: '<path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'
-  };
-  var dollPage = 0, dollSig = '';
+    ring1: '戒指', ring2: '戒指', ring3: '戒指', ring4: '戒指', belt: '腰帶', shin: '脛甲', boots: '長靴', doll: '娃娃', arrow: '箭', eye: '魔眼' };
+  var dollSig = '';
   function dollKey(k) { return (k === 'shield' && player.eq.offwpn) ? 'offwpn' : k; }   // 副手武器顯示在盾牌格（同上游 alt）
   function dollCell(k) {
     var key = dollKey(k), item = player.eq[key], data = item && DB.items[item.id];
-    if (!item || !data) {
-      return '<div class="ld-cell is-empty" title="' + (SLOT_NAME[k] || k) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + (SLOT_SVG[k] || RELIC) + '</svg></div>';
-    }
+    if (!item || !data) return '<div class="ld-cell is-empty" title="' + (SLOT_NAME[k] || k) + '"><span>' + (SLOT_NAME[k] || '') + '</span></div>';   // 空格寫部位名（同參考圖）
     var glow = (typeof getGlowClass === 'function') ? (getGlowClass(item, data) || '') : '';
     var en = Number(item.en) || 0, badge = '';
     if (en > 0) badge = '<span class="ld-en' + (en > ((data && data.safe) || 0) ? ' en-over' : '') + '"><b>+' + (typeof capEn === 'function' ? capEn(item.en, data) : en) + '</b></span>';   // 左上角；超過安定值閃（css .en-over）
@@ -2400,14 +2392,20 @@
     return '<div class="ld-cell is-filled tip-host" data-k="' + key + '" data-tip-uid="' + item.uid + '" data-tip-src="eq" title="' + (data.n || '') + '">' +
       '<img src="' + getIconUrl(data) + '" alt="" draggable="false" class="' + glow + '" onerror="this.style.display=\'none\'">' + badge + '</div>';
   }
+  function dollCol(list) { return list.map(function (k) { return Array.isArray(k) ? '<div class="ld2-pair">' + k.map(dollCell).join('') + '</div>' : dollCell(k); }).join(''); }
+  var DOLL_STATS = [['str', '力量'], ['dex', '敏捷'], ['con', '體質'], ['int', '智力'], ['wis', '精神'], ['cha', '魅力'], ['ac', '防禦'], ['mr', '魔防'], ['al', '']];
   function ensureDoll() {
     var d = $('lmui-doll'); if (d) return d;
     var panel = $('tab-content-panel'); if (!panel) return null;
     d = document.createElement('div'); d.id = 'lmui-doll';
+    d.innerHTML = '<div class="ld2-title"><b class="nm"></b><span class="lv"></span><span class="cl"></span></div><div class="ld2-xp"></div>' +
+      '<div class="ld2-body"><div class="ld2-col ld2-L"></div>' +
+        '<div class="ld2-mid"><canvas class="ld2-fig" aria-hidden="true"></canvas>' +
+          '<div class="ld2-bar hp"><i></i><span></span></div><div class="ld2-bar mp"><i></i><span></span></div></div>' +
+        '<div class="ld2-col ld2-R"></div></div>' +
+      '<div class="ld2-stats">' + DOLL_STATS.map(function (s) { return '<div><em>' + s[1] + '</em><b data-s="' + s[0] + '"></b></div>'; }).join('') + '</div>';
     panel.appendChild(d);
     d.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-page]');
-      if (t) { dollPage = +t.getAttribute('data-page'); dollSig = ''; renderDoll(); return; }
       var c = e.target.closest('.ld-cell.is-filled'); if (!c) return;
       var k = c.getAttribute('data-k'), item = player.eq[k];
       if (item && typeof openModal === 'function') openModal(item, true, k);
@@ -2422,16 +2420,71 @@
   function renderDoll() {
     if (!hasP() || !player.eq || typeof DB === 'undefined') return;
     var d = ensureDoll(); if (!d) return;
-    var pg = DOLL_PAGES[dollPage];
-    var sig = dollPage + '|' + pg.grid.concat(pg.bottom).map(function (k) { var it = player.eq[dollKey(k)]; return it ? it.uid + ':' + (it.en || 0) + ':' + (it.cnt || 1) : '-'; }).join(',') + '|' + ((player.d && player.d.weightPct) || 0);
-    if (sig === dollSig) return;
-    dollSig = sig;
+    var all = [].concat.apply([], DOLL_L.concat(DOLL_R));
+    var sig = all.map(function (k) { var it = player.eq[dollKey(k)]; return it ? it.uid + ':' + (it.en || 0) + ':' + (it.cnt || 1) : '-'; }).join(',');
+    if (sig !== dollSig) { dollSig = sig; d.querySelector('.ld2-L').innerHTML = dollCol(DOLL_L); d.querySelector('.ld2-R').innerHTML = dollCol(DOLL_R); }
+    // 名字／等級／職業／經驗、血魔、能力值：每次都對一下（setTxt 只在變了才寫）
+    var fmt = function (n) { return Math.floor(Number(n) || 0).toLocaleString(); };
+    setTxt(d.querySelector('.ld2-title .nm'), player.name || '');
+    setTxt(d.querySelector('.ld2-title .lv'), 'Lv.' + player.lv);
+    setTxt(d.querySelector('.ld2-title .cl'), CLS_NAME[player.cls] || '');
+    var req = (typeof getExpReq === 'function') ? getExpReq(player.lv) : 0;
     var w = Math.max(0, Math.round(Number(player.d && player.d.weightPct) || 0));
-    d.innerHTML = '<div class="ld-head"><div class="ld-tabs"><button type="button" data-page="0" class="' + (dollPage === 0 ? 'on' : '') + '" aria-label="裝備"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-4.5 3-7.5 7-7.5s7 3 7 7.5"/></svg></button>' +
-      '<button type="button" data-page="1" class="' + (dollPage === 1 ? 'on' : '') + '" aria-label="席琳遺骸" title="席琳遺骸"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + RELIC + '</svg></button></div>' +
-      '<div class="ld-weight">負重 ' + w + ' %</div></div>' +
-      '<div class="ld-grid">' + pg.grid.map(dollCell).join('') + '</div>' +
-      (pg.bottom.length ? '<div class="ld-bottom">' + pg.bottom.map(dollCell).join('') + '</div>' : '');
+    setTxt(d.querySelector('.ld2-xp'), (player.lv >= 100 || !(req > 0) || !isFinite(req) ? 'EXP MAX' : 'EXP ' + fmt(player.exp) + ' / ' + fmt(req)) + '　負重 ' + w + '%');
+    setTxt(d.querySelector('.ld2-bar.hp span'), 'HP ' + txt('txt-hp').replace('/', ' / '));
+    setTxt(d.querySelector('.ld2-bar.mp span'), 'MP ' + txt('txt-mp').replace('/', ' / '));
+    setStyle(d.querySelector('.ld2-bar.hp i'), 'width', pct('bar-hp'));
+    setStyle(d.querySelector('.ld2-bar.mp i'), 'width', pct('bar-mp'));
+    var pd = player.d || {};
+    ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(function (s) { setTxt(d.querySelector('.ld2-stats [data-s="' + s + '"]'), String(Math.floor(Number(pd[s]) || 0))); });
+    setTxt(d.querySelector('.ld2-stats [data-s="ac"]'), txt('st-ac') || '--');
+    setTxt(d.querySelector('.ld2-stats [data-s="mr"]'), txt('st-mr') || '--');
+    var al = (typeof pvpClampAlignment === 'function') ? pvpClampAlignment(player.alignmentValue) : Math.round(+player.alignmentValue || 0);
+    var alB = d.querySelector('.ld2-stats [data-s="al"]');
+    setTxt(alB.previousElementSibling, al > 0 ? '正義' : al < 0 ? '邪惡' : '中立');
+    setTxt(alB, String(Math.abs(al)));
+    var alC = (typeof pvpAlignmentColor === 'function') ? pvpAlignmentColor(al) : '';
+    if (alB.style.color !== alC) alB.style.color = alC;
+    figStart();
+  }
+  // 中間的角色：面向玩家（方向 5＝正南）的待機（呼吸）動作，變身就畫變身。外型與幀由 afk-townmap 提供（AFK_TM_HERO_IDLE）；
+  //   拿不到（地圖外掛關掉、外型表還沒載）就畫頭像。只在裝備欄看得到時跑，每 80ms 看一次、換幀才重畫（省電）
+  var fig = { timer: 0, key: '', frame: -1, imgs: {} };
+  function figImg(src) { var im = fig.imgs[src]; if (!im) { im = fig.imgs[src] = new Image(); im.src = src; } return im; }
+  function figStart() { if (!fig.timer) fig.timer = setTimeout(figTick, 0); }
+  function figTick() {
+    fig.timer = 0;
+    var d = $('lmui-doll');
+    if (!d || !document.body.classList.contains('lmui-equip') || document.hidden) { fig.frame = -1; return; }   // 看不到就停，下次 renderDoll 再開
+    fig.timer = setTimeout(figTick, 80);
+    var cv = d.querySelector('.ld2-fig'), W = cv.clientWidth, H = cv.clientHeight; if (!W || !H) return;
+    var dpr = Math.max(1, Math.min(3, Math.round(window.devicePixelRatio || 1)));
+    if (cv.width !== W * dpr || cv.height !== H * dpr) { cv.width = W * dpr; cv.height = H * dpr; fig.frame = -1; }
+    var A = null; try { A = (typeof window.AFK_TM_HERO_IDLE === 'function') ? window.AFK_TM_HERO_IDLE(5) : null; } catch (e) {}
+    var key = A ? A.key : 'face', k = A ? Math.floor(Date.now() / 1000 * A.fps) % A.n : 0;
+    if (key !== fig.key) { fig.key = key; fig.frame = -1; if (A) for (var i = 0; i < A.n; i++) figImg(A.src(i)); }
+    if (k === fig.frame) return;
+    var body = A ? figImg(A.src(k)) : el.face, an = A ? A.anchor(k) : null;
+    if (!body || !body.complete || !body.naturalWidth) return;   // 這幀還沒下載完：下一輪再畫
+    var ctx = cv.getContext('2d'), fx = W / 2, fy = H * 0.9;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    // 腳下的光圈台座
+    ctx.save(); ctx.translate(fx, fy); ctx.scale(1, 0.3);
+    var g = ctx.createRadialGradient(0, 0, 4, 0, 0, W * 0.4); g.addColorStop(0, 'rgba(255,214,140,.32)'); g.addColorStop(1, 'rgba(255,214,140,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, W * 0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(214,170,90,.55)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, W * 0.28, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+    if (A && an) {
+      ctx.imageSmoothingEnabled = false;   // 點陣圖放大不糊；倍率取 0.5 的倍數，像素才整齊
+      var s = Math.max(1, Math.min(3, Math.floor(H * 0.8 / Math.max(40, an[1]) * 2) / 2)), ox = fx - an[0] * s, oy = fy - an[1] * s;
+      var sh = figImg(A.shadow(k));
+      if (sh.complete && sh.naturalWidth) { ctx.globalAlpha = 0.55; ctx.drawImage(sh, ox, oy, sh.naturalWidth * s, sh.naturalHeight * s); ctx.globalAlpha = 1; }
+      ctx.drawImage(body, ox, oy, body.naturalWidth * s, body.naturalHeight * s);
+    } else {
+      ctx.imageSmoothingEnabled = true;
+      var sz = Math.min(W * 0.8, H * 0.7); ctx.drawImage(body, fx - sz / 2, fy - sz, sz, sz);
+    }
+    fig.frame = k;
   }
 
   function addCompareBtn() {
