@@ -8,7 +8,9 @@
 <!--
   update.html — 管理員用:按一下觸發 GitHub Actions「更新遊戲」(.github/workflows/apply-sheet.yml),
   把 Google 試算表的修改套進遊戲。試算表「使用說明」分頁第一列連到這裡(scripts/sheet-export.mjs)。
-  · 需要 GitHub 細粒度通行碼(只給這個 repo 的 Actions 讀寫)，存在「這台裝置的瀏覽器」localStorage，不進 repo、不送到別處。
+  · 需要 GitHub 細粒度通行碼(只給這個 repo 的 Actions 讀寫)，只放 sessionStorage(關掉分頁就忘)，不進 repo、不送到別處。
+    🚨 不可放回 localStorage：<帳號>.github.io 底下所有專案頁共用同一份 localStorage，放進去＝每個頁面(和它們載入的腳本)都讀得到、而且永久留著。
+    舊版存過 localStorage → 載入時刪掉。
   · 不是遊戲的一部分：index.html 不載入它，玩家不會看到。頁面公開但沒有通行碼什麼都做不了。
   · owner/repo 從網址推(<owner>.github.io/<repo>/update.html)；本機測試時用 FALLBACK。
 -->
@@ -34,7 +36,7 @@
   <h1>🎮 更新遊戲</h1>
   <div class="box">
     <div id="token-row" class="hidden">
-      <div>貼上 GitHub 通行碼（這台裝置只要貼一次）</div>
+      <div>貼上 GitHub 通行碼（關掉這頁就會忘記）</div>
       <input id="token" type="password" autocomplete="off" placeholder="github_pat_…">
     </div>
     <button id="go" type="button">更新遊戲</button>
@@ -47,15 +49,16 @@
   'use strict';
   var FALLBACK = { owner: 'tiereng799-glitch', repo: 'idle-lineage-class' };
   var WORKFLOW = 'apply-sheet.yml';
-  var KEY = 'update_page_token';   // 跟遊戲同網域 → afk-fullsave.js 的 LOCAL_ONLY 把它排除在備份/轉移碼外;改名要兩邊一起改
+  var KEY = 'update_page_token';   // 舊版存在 localStorage(跟遊戲同網域)→ afk-fullsave.js 的 LOCAL_ONLY 仍排除它;改名要兩邊一起改
   var m = location.hostname.match(/^([\w-]+)\.github\.io$/);
   var OWNER = m ? m[1] : FALLBACK.owner;
   var REPO = (m && location.pathname.split('/')[1]) || FALLBACK.repo;
   var API = 'https://api.github.com/repos/' + OWNER + '/' + REPO + '/actions/workflows/' + WORKFLOW;
 
   var $ = function (id) { return document.getElementById(id); };
-  function getToken() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
-  function setToken(t) { try { if (t) localStorage.setItem(KEY, t); else localStorage.removeItem(KEY); } catch (e) {} }
+  try { localStorage.removeItem(KEY); } catch (e) {}
+  function getToken() { try { return sessionStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  function setToken(t) { try { if (t) sessionStorage.setItem(KEY, t); else sessionStorage.removeItem(KEY); } catch (e) {} }
   function say(text, cls, link) {
     var s = $('status'); s.className = cls || ''; s.textContent = text;
     if (link) { s.appendChild(document.createTextNode(' ')); var a = document.createElement('a'); a.href = link; a.target = '_blank'; a.rel = 'noopener'; a.textContent = '看是哪一格'; s.appendChild(a); }

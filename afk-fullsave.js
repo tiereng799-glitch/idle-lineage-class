@@ -79,7 +79,8 @@
 
   // 🔒 只留在這台裝置、不進備份檔也不進轉移碼的 key——全是本專案自己存的祕密,不是遊戲資料:
   //   lineage_login_saved:登入畫面「記住帳號」(js/00z-my-tweaks.js;舊版連玩家的明文密碼一起存)
-  //   update_page_token  :update.html 存的站長 GitHub 通行碼(同網域,所以也在這台的 localStorage 裡)
+  //   update_page_token  :舊版 update.html 存在 localStorage 的站長 GitHub 通行碼(同網域)。現在改放 sessionStorage、
+  //                       開頁就刪舊的,但還沒打開過新版 update.html 的裝置上舊的那份還在 → 照樣排除
   //   備份檔會被傳給作者查問題、轉移碼整包上傳到公開的 Litterbox,這兩個一出去就收不回來。
   //   這不違反檔頭「整包搬、不挑 key」:那條防的是對**上游遊戲資料**做假設——作者改名我們不會知道,漏搬是安靜失效;
   //   這兩個名字是我們自己取的,而且漏掉的後果只是換裝置後要重新勾一次記住帳號/重貼一次通行碼。
