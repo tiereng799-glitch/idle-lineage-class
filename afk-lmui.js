@@ -523,17 +523,18 @@
       '#lmui-doll{display:none;}',
       'html body.lmui-equip #lmui-doll{display:flex;flex-direction:column;gap:6px;padding:8px;background:radial-gradient(ellipse at 50% 35%,#2a2520,#0f0c09 75%);border:1px solid #6b5636;border-radius:6px;box-shadow:inset 0 0 18px #000;color:#e9dcc0;}',
       'html body.lmui-equip #tab-equip,html body.lmui-equip #equipment-window{display:none !important;}',
-      /* 格子邊長跟著視窗可用高度走：右排最高（5 大格＋3 排小格＋間距 ≈ 7 格高），扣掉名字／經驗／能力值表／內距約 220px；上限 62px，盡量一屏放完 */
-      '#lmui-doll{--ld-c:clamp(38px,calc((var(--lmui-wbot) - var(--lmui-ptop) - var(--lmui-whead-h) - var(--lmui-ptabs-h) - 220px) / 7),62px);}',
+      /* 格子邊長（全部同樣大）：高度＝5 排＋間距，扣掉名字／經驗／能力值表／內距約 220px；寬度＝左右共 4 欄，中間角色至少留約 140px。兩者取小，上限 58px */
+      '#lmui-doll{--ld-c:clamp(36px,min(calc((var(--lmui-wbot) - var(--lmui-ptop) - var(--lmui-whead-h) - var(--lmui-ptabs-h) - 240px) / 5.4),calc((100vw - 200px) / 4)),58px);}',
       '.ld2-title{display:flex;align-items:baseline;justify-content:center;gap:10px;font-size:20px;font-weight:700;color:#f1e3c4;text-shadow:0 1px 2px #000;letter-spacing:1px;}',
       '.ld2-title .lv,.ld2-title .cl{font-size:17px;color:#e8cf8f;}',
       '.ld2-xp{margin-top:-4px;text-align:center;font-size:13px;color:#c9b88f;}',
-      '.ld2-body{display:flex;gap:6px;align-items:stretch;}',
-      '.ld2-col{flex:0 0 var(--ld-c);display:flex;flex-direction:column;gap:5px;}',
-      '.ld2-pair{display:flex;gap:4px;}',
-      '.ld2-pair .ld-cell{flex:1 1 0;min-width:0;}',
-      '.ld2-mid{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;}',
-      '.ld2-fig{flex:1;min-height:120px;width:100%;display:block;}',
+      /* 角色畫布鋪滿整個中段、墊在格子後面：身體在正中間，長武器可以伸到兩邊格子後面，人才放得大 */
+      /* 裝備欄長滿視窗：中段吃掉剩下的高度、兩邊格子上下撐開，角色有空間放大 */
+      'html body.lmui-equip #lmui-doll{box-sizing:border-box;min-height:calc(var(--lmui-wbot) - var(--lmui-ptop) - var(--lmui-whead-h) - var(--lmui-ptabs-h) - 28px);}',
+      '.ld2-body{position:relative;flex:1 1 auto;display:flex;gap:6px;align-items:stretch;}',
+      '.ld2-fig{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:0;}',
+      '.ld2-col{position:relative;z-index:1;flex:0 0 auto;display:grid;grid-template-columns:repeat(2,var(--ld-c));grid-auto-rows:var(--ld-c);gap:5px;align-content:space-between;}',
+      '.ld2-mid{position:relative;z-index:1;flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;}',
       '.ld2-bar{position:relative;height:18px;border:1px solid #6b5636;border-radius:3px;background:#120a08;overflow:hidden;}',
       '.ld2-bar i{position:absolute;left:0;top:0;bottom:0;width:0;transition:width .25s;}',
       '.ld2-bar.hp i{background:linear-gradient(#ff7a6a,#c81e1e 40%,#6a0b0b);}',
@@ -550,9 +551,7 @@
       '.ld-cell img{width:78%;height:78%;object-fit:contain;filter:drop-shadow(0 1px 2px #000);}',
       '.ld-cell.is-empty{cursor:default;}',
       '.ld-cell.is-empty span{font-size:12px;color:rgba(230,210,170,.45);white-space:nowrap;}',
-      '.ld2-pair .ld-cell.is-empty span{font-size:10px;}',
-      '.ld-en{position:absolute;left:2px;top:1px;font:800 15px/1 Arial,sans-serif;color:#39a9ff;text-shadow:0 0 3px #0b4f99,1px 1px 1px #000;}',
-      '.ld2-pair .ld-en{font-size:12px;}',
+      '.ld-en{position:absolute;left:2px;top:1px;font:800 14px/1 Arial,sans-serif;color:#39a9ff;text-shadow:0 0 3px #0b4f99,1px 1px 1px #000;}',
       '.ld-cnt{position:absolute;right:2px;bottom:1px;font:800 13px/1 Arial,sans-serif;color:#d5a94f;text-shadow:1px 1px 1px #000;}',
 
       /* ── 技能分頁（魔法書）：上方書籤（全體魔法／職業／裝備）、左側階數鈕、4 欄圖示、底部魔攻／魔法防禦 ── */
@@ -2374,9 +2373,9 @@
   // ── 裝備分頁（站長 2026-10-16 參考圖）：上方名字／等級／職業＋經驗，左右兩排裝備格夾著中間的角色（面向玩家的待機動作，變身就畫變身），
   //   角色下方血／魔，最下面能力值。席琳遺骸那頁拿掉（席琳已關閉）；魔眼（地龍之魔眼，跟席琳無關）留在右排。
   //   部位與「副手武器佔盾牌格」(offwpn)、點一下開物品視窗、雙擊卸下，都照上游 js/19 的 PAGE_SLOTS / renderSlots。
-  //   陣列裡的陣列＝兩格並排的小格（耳環、戒指這類小東西）
-  var DOLL_L = ['helm', ['ear1', 'ear2'], 'tshirt', 'armor', 'gloves', ['belt', 'shin'], 'boots'];
-  var DOLL_R = ['wpn', 'shield', 'cloak', 'amulet', ['ring1', 'ring2'], ['ring3', 'ring4'], ['arrow', 'eye'], 'doll'];
+  //   格子一律同樣大（站長）：左右各 2 欄 × 5 排，由上往下、由左往右排
+  var DOLL_L = ['helm', 'ear1', 'amulet', 'ear2', 'tshirt', 'armor', 'cloak', 'gloves', 'belt', 'boots'];
+  var DOLL_R = ['wpn', 'shield', 'arrow', 'eye', 'ring1', 'ring2', 'ring3', 'ring4', 'shin', 'doll'];
   var CLS_NAME = { royal: '王族', knight: '騎士', elf: '妖精', mage: '法師', dark: '黑暗妖精' };
   var SLOT_NAME = { helm: '頭盔', ear1: '耳環', ear2: '耳環', amulet: '項鍊', gloves: '手套', cloak: '斗篷', tshirt: 'T恤', wpn: '武器', shield: '盾牌', armor: '盔甲',
     ring1: '戒指', ring2: '戒指', ring3: '戒指', ring4: '戒指', belt: '腰帶', shin: '脛甲', boots: '長靴', doll: '娃娃', arrow: '箭', eye: '魔眼' };
@@ -2392,16 +2391,15 @@
     return '<div class="ld-cell is-filled tip-host" data-k="' + key + '" data-tip-uid="' + item.uid + '" data-tip-src="eq" title="' + (data.n || '') + '">' +
       '<img src="' + getIconUrl(data) + '" alt="" draggable="false" class="' + glow + '" onerror="this.style.display=\'none\'">' + badge + '</div>';
   }
-  function dollCol(list) { return list.map(function (k) { return Array.isArray(k) ? '<div class="ld2-pair">' + k.map(dollCell).join('') + '</div>' : dollCell(k); }).join(''); }
+  function dollCol(list) { return list.map(dollCell).join(''); }
   var DOLL_STATS = [['str', '力量'], ['dex', '敏捷'], ['con', '體質'], ['int', '智力'], ['wis', '精神'], ['cha', '魅力'], ['ac', '防禦'], ['mr', '魔防'], ['al', '']];
   function ensureDoll() {
     var d = $('lmui-doll'); if (d) return d;
     var panel = $('tab-content-panel'); if (!panel) return null;
     d = document.createElement('div'); d.id = 'lmui-doll';
     d.innerHTML = '<div class="ld2-title"><b class="nm"></b><span class="lv"></span><span class="cl"></span></div><div class="ld2-xp"></div>' +
-      '<div class="ld2-body"><div class="ld2-col ld2-L"></div>' +
-        '<div class="ld2-mid"><canvas class="ld2-fig" aria-hidden="true"></canvas>' +
-          '<div class="ld2-bar hp"><i></i><span></span></div><div class="ld2-bar mp"><i></i><span></span></div></div>' +
+      '<div class="ld2-body"><canvas class="ld2-fig" aria-hidden="true"></canvas><div class="ld2-col ld2-L"></div>' +
+        '<div class="ld2-mid"><div class="ld2-bar hp"><i></i><span></span></div><div class="ld2-bar mp"><i></i><span></span></div></div>' +
         '<div class="ld2-col ld2-R"></div></div>' +
       '<div class="ld2-stats">' + DOLL_STATS.map(function (s) { return '<div><em>' + s[1] + '</em><b data-s="' + s[0] + '"></b></div>'; }).join('') + '</div>';
     panel.appendChild(d);
@@ -2420,7 +2418,7 @@
   function renderDoll() {
     if (!hasP() || !player.eq || typeof DB === 'undefined') return;
     var d = ensureDoll(); if (!d) return;
-    var all = [].concat.apply([], DOLL_L.concat(DOLL_R));
+    var all = DOLL_L.concat(DOLL_R);
     var sig = all.map(function (k) { var it = player.eq[dollKey(k)]; return it ? it.uid + ':' + (it.en || 0) + ':' + (it.cnt || 1) : '-'; }).join(',');
     if (sig !== dollSig) { dollSig = sig; d.querySelector('.ld2-L').innerHTML = dollCol(DOLL_L); d.querySelector('.ld2-R').innerHTML = dollCol(DOLL_R); }
     // 名字／等級／職業／經驗、血魔、能力值：每次都對一下（setTxt 只在變了才寫）
@@ -2454,13 +2452,15 @@
   var FIG_DIR = 4;
   var fig = { timer: 0, key: '', frame: -1, imgs: {}, cx: null };
   function figImg(src) { var im = fig.imgs[src]; if (!im) { im = fig.imgs[src] = new Image(); im.src = src; } return im; }
-  function figMassX(im) {   // 不透明像素的平均 x（劍細、身體寬，平均會落在身上）；讀不到像素（file:// 等）回 null
+  function figMassX(im) {   // 不透明像素的平均 x（劍細、身體寬，平均會落在身上）＋左右最遠到哪；讀不到像素（file:// 等）回 null
     try {
       var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
       var x = c.getContext('2d'); x.drawImage(im, 0, 0);
-      var px = x.getImageData(0, 0, c.width, c.height).data, sum = 0, n = 0;
-      for (var i = 3, p = 0; i < px.length; i += 4, p++) if (px[i] > 128) { sum += p % c.width; n++; }
-      return n ? sum / n : null;
+      var px = x.getImageData(0, 0, c.width, c.height).data, sum = 0, n = 0, lo = c.width, hi = 0;
+      for (var i = 3, p = 0; i < px.length; i += 4, p++) if (px[i] > 128) { var cx = p % c.width; sum += cx; n++; if (cx < lo) lo = cx; if (cx > hi) hi = cx; }
+      if (!n) return null;
+      var m = sum / n;
+      return { cx: m, half: Math.max(m - lo, hi - m) };
     } catch (e) { return null; }
   }
   function figStart() { if (!fig.timer) fig.timer = setTimeout(figTick, 0); }
@@ -2478,19 +2478,23 @@
     if (k === fig.frame) return;
     var body = A ? figImg(A.src(k)) : el.face, an = A ? A.anchor(k) : null;
     if (!body || !body.complete || !body.naturalWidth) return;   // 這幀還沒下載完：下一輪再畫
-    var ctx = cv.getContext('2d'), fx = W / 2, fy = H * 0.9;
+    // 畫布＝整個中段；腳踩在血條上方、左右正中間；光圈大小跟著中間那欄的寬度
+    var mid = d.querySelector('.ld2-mid'), hpBar = d.querySelector('.ld2-bar.hp');
+    var mw = mid ? mid.clientWidth : W * 0.4, ctx = cv.getContext('2d'), fx = W / 2, fy = (hpBar ? hpBar.offsetTop : H) - Math.max(14, H * 0.06);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
     // 腳下的光圈台座
     ctx.save(); ctx.translate(fx, fy); ctx.scale(1, 0.3);
-    var g = ctx.createRadialGradient(0, 0, 4, 0, 0, W * 0.4); g.addColorStop(0, 'rgba(255,214,140,.32)'); g.addColorStop(1, 'rgba(255,214,140,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, W * 0.4, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = 'rgba(214,170,90,.55)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, W * 0.28, 0, Math.PI * 2); ctx.stroke();
+    var g = ctx.createRadialGradient(0, 0, 4, 0, 0, mw * 0.6); g.addColorStop(0, 'rgba(255,214,140,.32)'); g.addColorStop(1, 'rgba(255,214,140,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, mw * 0.6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(214,170,90,.55)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, mw * 0.42, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
     if (A && an) {
       ctx.imageSmoothingEnabled = false;   // 點陣圖放大不糊；倍率取 0.5 的倍數，像素才整齊
-      if (fig.cx == null) fig.cx = figMassX(body);   // 每個外型量一次（同一套待機幀左右不會差太多，量一次人才不會跟著晃）
-      var cx = fig.cx != null ? fig.cx : an[0];
-      var s = Math.max(1, Math.min(3, Math.floor(H * 0.8 / Math.max(40, an[1]) * 2) / 2)), ox = fx - cx * s, oy = fy - an[1] * s;
+      if (fig.cx == null) fig.cx = figMassX(body) || false;   // 每個外型量一次（同一套待機幀左右不會差太多，量一次人才不會跟著晃）
+      var cx = fig.cx ? fig.cx.cx : an[0];
+      // 倍率：高度放得下（腳到頂約 85%）、寬度也放得下（劍最多伸到兩邊格子後面、不出框），取 0.5 的倍數讓像素整齊，1～3 倍
+      var sH = fy * 0.85 / Math.max(40, an[1]), sW = fig.cx ? (W / 2 * 0.95) / Math.max(10, fig.cx.half) : sH;
+      var s = Math.max(1, Math.min(3, Math.floor(Math.min(sH, sW) * 2) / 2)), ox = fx - cx * s, oy = fy - an[1] * s;
       var sh = figImg(A.shadow(k));
       if (sh.complete && sh.naturalWidth) { ctx.globalAlpha = 0.55; ctx.drawImage(sh, ox, oy, sh.naturalWidth * s, sh.naturalHeight * s); ctx.globalAlpha = 1; }
       ctx.drawImage(body, ox, oy, body.naturalWidth * s, body.naturalHeight * s);
