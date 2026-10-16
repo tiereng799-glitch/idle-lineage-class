@@ -787,7 +787,7 @@
 
   // ── 按鈕動作（全部是遊戲既有功能）──────────────────────
   // ── AUTO＝暫停／繼續 ──────────────────────────────────
-  // 暫停＝核心 tick 整個不跑（怪物、回血、增益倒數一起凍結），不是「人站著被打」。
+  // 暫停＝核心 tick 整個不跑（怪物、回血、增益倒數一起凍結；只有手動動作的冷卻照走，見 pausedCooldowns），不是「人站著被打」。
   //   狀態按角色存 localStorage（my_autopause_<slot>）→ 重開遊戲照樣暫停；
   //   afk-offline 讀同一個鍵（且本外掛開著）時不結算離線收益——暫停中關掉瀏覽器不該還在掛機賺。
   //   本外掛被關掉時 wrapper 透明放行，暫停自然失效（按鈕也不在了，不能留一個解不開的暫停）。
@@ -881,9 +881,17 @@
     if (typeof window.tick !== 'function') { console.warn('[AFK-lmui] 找不到核心 tick，AUTO 暫停停用。'); return; }
     var _origTick = window.tick;
     window.tick = function () {
-      if (on() && hasP() && isPaused()) return;
+      if (on() && hasP() && isPaused()) { pausedCooldowns(); return; }
       return _origTick.apply(this, arguments);
     };
+    // 暫停時只讓「手動動作的冷卻」照走（同核心 tick 開頭那三行）：不然 AUTO 關著放一次傳送術、喝一次水，
+    //   冷卻就永遠停在那裡、一直「技能冷卻中」（站長 2026-10-16「瞬移魔法卡住」：地圖上關 AUTO 自己走時最常遇到）。增益、怪物照樣凍結
+    function pausedCooldowns() {
+      if (player.dead) return;
+      var m = player.manualCd; if (m) for (var k in m) if (m[k] > 0) m[k]--;
+      if (player.cds && player.cds.potTick > 0) player.cds.potTick--;
+      var s = player.skillCd; if (s) for (var j in s) { if (s[j] > 0) s[j]--; if (!s[j]) delete s[j]; }
+    }
     // 玩家自己換到另一個獵場 → AUTO 先關，到了再按開始；回村、復活、載入（force）不動
     if (typeof window.changeMap === 'function') {
       var _origCM = window.changeMap;
@@ -2252,7 +2260,8 @@
     //   開著魔法／背包／設定視窗也維持精簡（視窗浮在上面；切掉精簡會讓戰鬥畫面縮成一半＝站長說的「戰鬥畫面跳動」）
     //   村莊不精簡（站長 2026-10-16：NPC 先不站在地圖上，回村莊下方要有 NPC 清單；精簡會收掉清單）。
     //   村莊因此一直是「地圖在上半、清單在下半」：開 NPC 對話視窗也不會切版面，畫面不跳。
-    toggleCls('lmui-compact', !dead && !town && (bc.contains('mview-center') || bc.contains('lmui-whead')) && !bc.contains('lmui-chatbig') && !bc.contains('lmui-maps') && !bc.contains('lmui-map') &&
+    //   死亡也維持精簡：原本死亡切回「地圖上半＋下方聊天」，但下方聊天在死亡時是藏起來的 → 下半一大片黑、地圖縮一半（站長 2026-10-16）
+    toggleCls('lmui-compact', !town && (bc.contains('mview-center') || bc.contains('lmui-whead')) && !bc.contains('lmui-chatbig') && !bc.contains('lmui-maps') && !bc.contains('lmui-map') &&
       !bc.contains('lmui-townchat'));
     if (dead) { try { placeDeadBtn(); buildDeathWin(); renderDeathStats(); } catch (e) {} }
     else toggleCls('lmui-deathx', false);
