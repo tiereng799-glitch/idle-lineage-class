@@ -2373,10 +2373,10 @@
   // ── 裝備分頁（站長 2026-10-16 參考圖）：上方名字／等級／職業＋經驗，左右兩排裝備格夾著中間的角色（面向玩家的待機動作，變身就畫變身），
   //   角色下方血／魔，最下面能力值。席琳遺骸那頁拿掉（席琳已關閉）；脛甲、魔眼整個部位已刪除（站長 2026-10-16）。
   //   部位與「副手武器佔盾牌格」(offwpn)、點一下開物品視窗、雙擊卸下，都照上游 js/19 的 PAGE_SLOTS / renderSlots。
-  //   格子一律同樣大（站長）：左右各 2 欄 × 5 排，由上往下、由左往右排；武器防具在左、飾品在右（站長），各 9 格，
-  //   最下排單出來的那格靠外側（null＝空位），內側留給角色腳下的光圈與血魔條
-  var DOLL_L = ['wpn', 'shield', 'helm', 'armor', 'tshirt', 'cloak', 'gloves', 'boots', 'arrow'];
-  var DOLL_R = ['ear1', 'ear2', 'amulet', 'belt', 'ring1', 'ring2', 'ring3', 'ring4', null, 'doll'];
+  //   格子一律同樣大（站長）：左右各 2 欄 × 5 排，由上往下、由左往右排（null＝空位）。
+  //   左＝身上穿戴，照頭到腳排（頭盔項鍊→T恤盔甲→斗篷手套→武器盾牌→腰帶長靴）；右＝耳環、戒指，箭跟娃娃一排，最下排空著（站長）
+  var DOLL_L = ['helm', 'amulet', 'tshirt', 'armor', 'cloak', 'gloves', 'wpn', 'shield', 'belt', 'boots'];
+  var DOLL_R = ['ear1', 'ear2', 'ring1', 'ring2', 'ring3', 'ring4', 'arrow', 'doll'];
   var CLS_NAME = { royal: '王族', knight: '騎士', elf: '妖精', mage: '法師', dark: '黑暗妖精' };
   var SLOT_NAME = { helm: '頭盔', ear1: '耳環', ear2: '耳環', amulet: '項鍊', gloves: '手套', cloak: '斗篷', tshirt: 'T恤', wpn: '武器', shield: '盾牌', armor: '盔甲',
     ring1: '戒指', ring2: '戒指', ring3: '戒指', ring4: '戒指', belt: '腰帶', boots: '長靴', doll: '娃娃', arrow: '箭' };
@@ -2448,9 +2448,9 @@
   }
   // 中間的角色：面向玩家的待機（呼吸）動作，變身就畫變身。外型與幀由 afk-townmap 提供（AFK_TM_HERO_IDLE）；
   //   拿不到（地圖外掛關掉、外型表還沒載）就畫頭像。只在裝備欄看得到時跑，每 80ms 看一次、換幀才重畫（省電）
-  //   方向用 4：八方向裡肩膀正對鏡頭的那張（5 是程式裡的「正南」，畫面上其實往左轉；站長要「面向玩家」）
+  //   方向用 5（正南＝正對鏡頭、兩肩對稱；4 是斜側面，站長回報「沒有面對畫面」）。雙手劍那組劍往左伸，看起來像轉身，其實身體是正面
   //   水平置中用「身體實際畫到的像素」的重心（落腳點是斜投影子的中心，人身會偏一邊）；腳的高度照落腳點，站在光圈正中間
-  var FIG_DIR = 4;
+  var FIG_DIR = 5;
   var fig = { timer: 0, key: '', frame: -1, imgs: {}, cx: null };
   function figImg(src) { var im = fig.imgs[src]; if (!im) { im = fig.imgs[src] = new Image(); im.src = src; } return im; }
   function figMassX(im) {   // 不透明像素的平均 x（劍細、身體寬，平均會落在身上）＋左右最遠到哪；讀不到像素（file:// 等）回 null
