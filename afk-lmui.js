@@ -884,7 +884,8 @@
         var prev = (typeof mapState !== 'undefined' && mapState) ? mapState.current : null;
         var r = _origCM.apply(this, arguments);
         try {
-          if (force !== true && on() && hasP() && mapState.current && mapState.current !== prev && !inTownView()) setPaused(true);
+          // 走傳送點（樓梯、洞口：afk-townmap 換圖時設 AFK_TM_PORTAL_HOP）不算自己換獵場，AUTO 維持原狀
+          if (force !== true && !window.AFK_TM_PORTAL_HOP && on() && hasP() && mapState.current && mapState.current !== prev && !inTownView()) setPaused(true);
         } catch (e) {}
         return r;
       };

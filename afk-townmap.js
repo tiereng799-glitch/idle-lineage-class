@@ -74,7 +74,9 @@
         'body.afk-hm-on #vfx-layer > .vfx-ghost{display:none!important;}' +
         '#battle-view.afk-hm > canvas.afk-tm-cv{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}' +
         // 選擇器刻意疊兩次 id：原作手機版（area-fit / mob-grid）的卡片規則也帶 !important、權重是兩個 id＋三個 class，不疊會輸（卡片被拉高、整排被推到右邊＝傷害數字跑到右下角）
-        '#battle-view.afk-hm #mob-list#mob-list{position:absolute!important;inset:0!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;display:block!important;transform:none!important;pointer-events:none;z-index:2;}' +
+        // 高度固定 221px（不撐滿戰鬥畫面）：核心的魔法特效大小照 #mob-list 的高度換算（舊畫面的怪物站立帶 242），撐滿整個畫面時特效放大兩倍多
+        //   （站長：有些魔法特效圖示很大）；221＝換算後特效跟地圖上的人物同比例（js/09 _fxBandRefH：帶高×112/242≈102 → 投射型 1.0 倍）。卡片照樣可以放到帶子外面
+        '#battle-view.afk-hm #mob-list#mob-list{position:absolute!important;left:0!important;top:0!important;right:0!important;bottom:auto!important;width:auto!important;height:221px!important;min-height:0!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important;display:block!important;transform:none!important;pointer-events:none;z-index:2;}' +
         // 卡片不接點擊：點怪一律由地圖判斷（huntPick：點在怪身上就走過去打）。卡片接點擊時，正在打的怪點下去是核心的換目標＋怪物素質視窗，
         //   沒在打的怪又是地圖在管，兩邊行為不一樣，卡片還會蓋住後面別隻怪（站長：有些怪點不到）
         '#battle-view.afk-hm #mob-list#mob-list .mob-target{position:absolute!important;width:48px!important;height:70px!important;min-height:0!important;max-height:none!important;opacity:0!important;pointer-events:none!important;transform:none!important;margin:0!important;padding:0!important;right:auto!important;bottom:auto!important;}' +
@@ -475,12 +477,12 @@
     function tapTo(px, py) {
         if (!S || !S.ready || !S.cam) return;
         if (S.kind === 'hunt' && S.me.act === 'death') return;
-        if (S.kind === 'hunt') { var pe = huntPick(px, py); if (pe) { S.prefer = pe; S.manual = false; S.path = []; dirty = true; return; } }   // 點到怪：走過去打牠
+        if (S.kind === 'hunt') { var pe = huntPick(px, py); if (pe) { S.prefer = pe; S.lock = pe; S.manual = false; S.path = []; dirty = true; return; } }   // 點到怪：鎖定、走過去打牠（打死前不換，見 heroAI）
         var d = S.t.d, s = (px + S.cam[0] - d.ox) / 24, dd = (py + S.cam[1] - d.oy) / 12;
         var c = nearestWalkable(Math.round((s - dd) / 2), Math.round((s + dd) / 2));
         if (!c) return;
         S.path = findPath(S.me.tx, S.me.ty, c[0], c[1]);
-        if (S.path.length) { S.marker = { x: c[0], y: c[1], t: clock }; if (S.kind === 'hunt') { S.manual = true; S.prefer = null; } }   // 狩獵區點地面：先走過去，到了再自己找怪
+        if (S.path.length) { S.marker = { x: c[0], y: c[1], t: clock }; if (S.kind === 'hunt') { S.manual = true; S.prefer = null; S.lock = null; } }   // 狩獵區點地面：解除鎖定、先走過去，到了再自己找怪
         dirty = true;
     }
     function bindInput(cv) {
@@ -1181,7 +1183,10 @@
         S.path = []; S.manual = false; S.prefer = null; S.goal = null;
         if (g === cur || (S.kind !== 'hunt' && g === S.townId)) { jumpHero(x, y); return; }
         ARRIVE = { game: g, x: x, y: y, t: Date.now() };
+        // 走樓梯、洞口換圖不是「玩家自己換獵場」：afk-lmui 看到這個旗標就不自動暫停 AUTO（站長：走下樓後怪物都不會攻擊了＝AUTO 被關掉、整個戰鬥停住）
+        window.AFK_TM_PORTAL_HOP = true;
         try { setMapSelectors(g); changeMap(); } catch (e) { try { console.warn('[AFK-townmap] 傳送點換地圖失敗：', e); } catch (x2) {} }
+        finally { window.AFK_TM_PORTAL_HOP = false; }
         if (mapState.current !== g) ARRIVE = null;   // 進入條件不夠：核心已擋下並提示，原地不動
     }
     function jumpHero(x, y) {
@@ -1379,7 +1384,13 @@
         var dist = cheb(ax, ay, bx, by);
         if (dist === 0) return true;
         if (dist > range) return false;
-        if (dist === 1) { var k = dirTo(ax, ay, bx, by); return k >= 0 && (canStep(ax, ay, k) || canStep(bx, by, (k + 4) % 8)); }
+        // 相鄰：兩格都能站就打得到；斜角不能穿過牆角（旁邊兩格至少一格能站）。
+        //   ⚠ 不要用 canStep（走路的單向邊）：有些格子邊只能單向走，怪貼著角色卻判成打不到、又走不過去 → 卡在旁邊不打（站長：怪物都不會攻擊）。
+        //   模擬器的近戰看的是視線（glanceCheck），不是走不走得過去
+        if (dist === 1) {
+            if (!pass(ax, ay) || !pass(bx, by)) return false;
+            return ax === bx || ay === by || !!(pass(ax, by) || pass(bx, ay));
+        }
         var dx = Math.abs(bx - ax), dy = Math.abs(by - ay), sx = ax < bx ? 1 : -1, sy = ay < by ? 1 : -1, err = dx - dy, x = ax, y = ay;
         for (;;) {
             var e2 = 2 * err; if (e2 > -dy) { err -= dy; x += sx; } if (e2 < dx) { err += dx; y += sy; }
@@ -1442,6 +1453,7 @@
         var e = S.entByUid[m.uid]; if (!e) return;
         delete S.entByUid[m.uid]; e.uid = null; e.alive = false; e.walking = false; e.act = 'death'; e.actT = performance.now();
         if (S.prefer === e) S.prefer = null;
+        if (S.lock === e) S.lock = null;
         if (e.sp < 0) { e.gone = true; return; }   // 收養來的不重生
         var sp = S.hunt.spawns[e.sp], r0 = sp[10] || 60, r1 = Math.max(r0, sp[11] || r0);
         e.respawnAt = S.ht + Math.round((r0 + Math.random() * (r1 - r0)) * 10);
@@ -1464,11 +1476,14 @@
         if (!pass(me.tx, me.ty) && regionReadyAt(me.tx, me.ty)) {   // 瞬移到牆裡：拉到旁邊能站的地方
             var c = nearestWalkable(me.tx, me.ty); if (c) { me.fx = me.sx = me.tx = c[0]; me.fy = me.sy = me.ty = c[1]; }
         }
-        if (wantDir() >= 0) { S.prefer = null; return; }
+        // 鎖定（站長：手動點怪物可以鎖定）：點了哪隻就打哪隻，打死前不會被「身邊正在打我的」「最近的」換掉；搖桿／方向鍵、點地面、瞬移解除
+        var lk = (S.lock && S.lock.alive && S.lock.placed && !S.lock.gone) ? S.lock : null;
+        if (!lk) S.lock = null;
+        if (wantDir() >= 0) { S.prefer = null; S.lock = null; return; }
         if (S.manual) { if (!S.path.length && !me.walking) { S.manual = false; S.autoAt = S.ht + 20; } return; }
         // 玩家點的那隻怪（S.prefer）最優先：原本「現在的目標打得到就站著打」排在前面，點別隻完全沒反應（站長回報）
-        var pref = (S.prefer && S.prefer.alive && S.prefer.placed) ? S.prefer : null;
-        if (!pref) S.prefer = null;
+        var pref = lk || ((S.prefer && S.prefer.alive && S.prefer.placed) ? S.prefer : null);
+        if (!S.prefer || !S.prefer.alive || !S.prefer.placed) S.prefer = null;
         if (idle && !pref) { if (S.goal) { S.path = []; S.goal = null; } return; }   // 自動暫停：玩家自己走，不自動找怪（點了怪就走到牠旁邊）
         if (!pref && S.ht < (S.autoAt || 0)) return;
         var range = heroRange(), tgt = (typeof getTarget === 'function') ? getTarget() : null, te = tgt && S.entByUid[tgt.uid];
@@ -1498,7 +1513,7 @@
         if (S.goal !== e || S.ht >= (S.repath || 0) || !S.path.length) {   // 怪會動：每 0.5 秒重找一次路
             S.goal = e; S.repath = S.ht + 5;
             var p = findPath(me.tx, me.ty, e.tx, e.ty, { pad: 40, budget: 16000 });   // 懸崖、步道一層層的地圖要繞遠，找路範圍放寬一點
-            if (p.length) p.pop(); else e.noPathUntil = S.ht + 50;   // 不走到怪身上；走不到的先換別隻
+            if (p.length) p.pop(); else { e.noPathUntil = S.ht + 50; if (S.lock === e) S.lock = null; }   // 不走到怪身上；走不到的先換別隻（鎖定的走不到也解除）
             S.path = p;
         }
     }
@@ -1597,7 +1612,7 @@
     function huntTeleport() {   // 瞬移卷軸／自動瞬移：跳到隨機一個重生點
         var sp = S.hunt.spawns[Math.floor(Math.random() * S.hunt.spawns.length)], me = S.me, x = sp[2], y = sp[3];
         me.fx = me.sx = me.tx = x; me.fy = me.sy = me.ty = y; me.t = 1; me.walking = false; me.p0x = me.p1x = x; me.p0y = me.p1y = y;
-        S.path = []; S.prefer = null; S.goal = null; S.manual = false; S.trail = [[x, y]];
+        S.path = []; S.prefer = null; S.lock = null; S.goal = null; S.manual = false; S.trail = [[x, y]];
         for (var uid in S.entByUid) S.entByUid[uid].uid = null;
         S.entByUid = {};
         S.pets.forEach(function (p) { p.fx = p.sx = p.tx = x; p.fy = p.sy = p.ty = y; p.t = 1; p.walking = false; p.path = []; p.p0x = p.p1x = x; p.p0y = p.p1y = y; });
@@ -1671,12 +1686,23 @@
     function huntOverlay(ctx, cam) {
         var d = S.t.d, tm = mapState.mobs[mapState.targetIdx];
         ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+        // 鎖定的怪（玩家點的，見 heroAI）：腳下紅圈；還沒開打的也寫名字（開打的下面那段會寫名字＋血條）
+        var lk = S.lock;
+        if (lk && lk.alive && lk.placed) {
+            var lx = 24 * (lk.fx + lk.fy) + d.ox - cam[0], ly = 12 * (lk.fy - lk.fx) + d.oy - cam[1];
+            ctx.strokeStyle = 'rgba(248,90,80,.95)'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.ellipse(lx, ly, 20, 10, 0, 0, Math.PI * 2); ctx.stroke();
+            if (!lk.uid) {
+                var la = (lk.look && anchorOf(lk.look, lk.dir, false, 0)) || [0, 50];
+                ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.fillStyle = '#fca5a5';
+                ctx.strokeText(lk.name, lx, ly - la[1] - 9); ctx.fillText(lk.name, lx, ly - la[1] - 9);
+            }
+        }
         for (var uid in S.entByUid) {
             var e = S.entByUid[uid], m = mapState.mobs[slotOf(e.uid)];
             if (!m || !e.placed) continue;
             var px = 24 * (e.fx + e.fy) + d.ox - cam[0], py = 12 * (e.fy - e.fx) + d.oy - cam[1];
             var an = (e.look && anchorOf(e.look, e.dir, false, 0)) || [0, 50], top = py - an[1] - 6;
-            if (tm && tm.uid === m.uid) { ctx.strokeStyle = 'rgba(255,214,90,.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(px, py, 18, 9, 0, 0, Math.PI * 2); ctx.stroke(); }
+            if (tm && tm.uid === m.uid && e !== lk) { ctx.strokeStyle = 'rgba(255,214,90,.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(px, py, 18, 9, 0, 0, Math.PI * 2); ctx.stroke(); }
             var r = Math.max(0, Math.min(1, (m.curHp || 0) / (m.hp || 1)));
             ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillRect(px - 17, top, 34, 5);
             ctx.fillStyle = r > 0.5 ? '#4ade80' : r > 0.2 ? '#facc15' : '#ef4444'; ctx.fillRect(px - 16, top + 1, 32 * r, 3);
