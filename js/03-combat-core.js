@@ -797,7 +797,8 @@ function tick() {
         if (mobActDisabled(m)) continue;
         
         // --- 隱身術 / 隱身斗篷：非BOSS且滿血的怪物停止行動 (一旦受傷就會反擊) ---
-        if(!m.boss && isInvisible() && m.curHp === m.hp) continue;
+        //   seeInvis＝看穿隱身（模擬器 agrocoi，afk-townmap 載狩獵區資料時寫進 DB.mobs）：照打
+        if(!m.boss && isInvisible() && m.curHp === m.hp && !m.seeInvis) continue;
         
         // 👇 新增這行：無所遁形術限定「史巴托」滿血時停止行動 ---
         if(m.n === "史巴托" && (player.buffs.sk_reveal > 0 || player.buffs.sk_helm_str2 > 0) && m.curHp === m.hp) continue;

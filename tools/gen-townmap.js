@@ -126,13 +126,13 @@ function readS32(file) {
     }
     return { l1, attr, pass, objs };
 }
-// 模擬器地圖檔：一列一個 y、逗號分隔每個 x 的值
+// 模擬器地圖檔：一列一個 y、逗號分隔每個 x 的值（0x03 能不能走；0x30：0x10 安全區、0x20 戰鬥區，同 L1J V1Map）
 function readPassTxt(file, W, H) {
     const rows = fs.readFileSync(file, 'utf8').split(/\r?\n/).filter(l => l.trim() && l[0] !== '#');
     if (rows.length < H) throw new Error(file + ' 只有 ' + rows.length + ' 列，要 ' + H);
-    const pass = new Uint8Array(W * H);
-    rows.slice(0, H).forEach((l, y) => l.split(',').slice(0, W).forEach((v, x) => { pass[y * W + x] = +v & 3; }));
-    return pass;
+    const pass = new Uint8Array(W * H), zone = new Uint8Array(W * H);
+    rows.slice(0, H).forEach((l, y) => l.split(',').slice(0, W).forEach((v, x) => { pass[y * W + x] = +v & 3; zone[y * W + x] = (+v & 0x30) >> 4; }));
+    return { pass, zone };
 }
 
 
@@ -385,7 +385,7 @@ function planPortals(db, towns, hunts) {
     const box = new Map(db.mapids.map(m => [+m.mapid, { x0: +m.startX, y0: +m.startY, w: +m.endX - +m.startX + 1, h: +m.endY - +m.startY + 1 }]));
     const games = {};
     for (const id in towns) (games[towns[id].map] = games[towns[id].map] || []).push({ id, home: towns[id].home });
-    for (const id in hunts) (games[hunts[id].map] = games[hunts[id].map] || []).push({ id, home: hunts[id].home });
+    for (const id in hunts) if (id[0] !== '_') (games[hunts[id].map] = games[hunts[id].map] || []).push({ id, home: hunts[id].home });
     const out = {}, seen = new Set(); let n = 0;
     for (const r of db.dungeon) {
         const s = +r.src_mapid, dm = +r.new_mapid, sb = box.get(s), tb = box.get(dm);
@@ -399,6 +399,24 @@ function planPortals(db, towns, hunts) {
         (out[s] = out[s] || []).push([sx, sy, g.id, dx, dy]); n++;
     }
     console.log('[gen-townmap] 傳送點 ' + n + ' 個，分在 ' + Object.keys(out).length + ' 張地圖');
+    return out;
+}
+
+// ── 怪物行為旗標（模擬器 npc 表）：狩獵區地圖的主動判定用 ──────────────
+//   主動／被動照遊戲自己的 beh（作者設定、涵蓋全部怪）；這裡只補遊戲沒有的：
+//   agrososc＝看穿變身（角色變身中只有這些會主動打）、agrocoi＝看穿隱身、family＋agrofamily＝同族互助（打一隻，附近同族會一起上）。
+//   照名字對遊戲 DB.mobs，存進 hunts.json 的 _mob：{ 怪物 id: [看穿變身, 看穿隱身, 同族名, 會互助] }（全是 0／空的不存）
+function mobFlags(db) {
+    const clean = s => String(s || '').replace(/\s/g, '');
+    const mobs = gameData('mobs'), byName = new Map();
+    for (const r of db.npc) if (/Monster/i.test(r.impl || '') && !byName.has(clean(r.name))) byName.set(clean(r.name), r);
+    const out = {};
+    for (const id in mobs) {
+        const r = byName.get(clean(mobs[id].n)); if (!r) continue;
+        const f = [+r.agrososc === 1 ? 1 : 0, +r.agrocoi === 1 ? 1 : 0, r.family || '', +r.agrofamily === 1 ? 1 : 0];
+        if (f[0] || f[1] || (f[2] && f[3])) out[id] = f;
+    }
+    console.log('[gen-townmap] 怪物行為旗標 ' + Object.keys(out).length + ' 隻');
     return out;
 }
 
@@ -459,7 +477,7 @@ function readMap(id, b, clientDir, emuDir) {
     if (nbx % 1 || nby % 1 || (b.startX - 32768) % B || (b.startY - 32768) % B) throw new Error('地圖 ' + id + ' 範圍沒對齊 64 格');
     const W = nbx * B, H = nby * B, bx0 = 0x8000 + (b.startX - 32768) / B, by0 = 0x8000 + (b.startY - 32768) / B;
     const ground = new Uint32Array(W * 2 * H), has = new Uint8Array(nbx * nby), objs = [];
-    let pass = new Uint8Array(W * H), rank = 0, blocks = 0;
+    let pass = new Uint8Array(W * H), zone = new Uint8Array(W * H), rank = 0, blocks = 0;
     for (let by = 0; by < nby; by++) for (let bx = 0; bx < nbx; bx++) {
         const base = path.join(clientDir, 'map', String(id), (bx0 + bx).toString(16) + (by0 + by).toString(16));
         const f = fs.existsSync(base + '.s32') ? base + '.s32' : base + '.seg';   // 兩種都有就用新的 .s32
@@ -468,23 +486,62 @@ function readMap(id, b, clientDir, emuDir) {
         const m = readS32(f);
         for (let y = 0; y < B; y++) {
             for (let hx = 0; hx < B * 2; hx++) ground[(by * B + y) * W * 2 + bx * B * 2 + hx] = m.l1[y * B * 2 + hx];
-            for (let x = 0; x < B; x++) pass[(by * B + y) * W + bx * B + x] = m.pass[y * B + x];
+            for (let x = 0; x < B; x++) {
+                const i = (by * B + y) * W + bx * B + x, a = m.attr[y * B + x];
+                pass[i] = m.pass[y * B + x];
+                zone[i] = a & 4 ? 1 : a & 8 ? 2 : 0;   // 用戶端屬性 0x04 安全區、0x08 戰鬥區（說話之島對模擬器：3857 格對 3796 格）
+            }
         }
         for (const o of m.objs) objs.push({ hx: bx * B * 2 + o.x, gy: by * B + o.y, layer: o.layer, key: o.key, rank: rank++ });
     }
     const txt = path.join(emuDir, 'maps', id + '.txt');
     if (blocks && fs.existsSync(txt)) {
-        const p = readPassTxt(txt, W, H);
+        const { pass: p, zone: z } = readPassTxt(txt, W, H);
         // 用戶端沒有圖的區塊（大陸有幾十塊）模擬器卻標能走：當牆，免得角色走進一片空白
         for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!has[(y / B | 0) * nbx + (x / B | 0)]) p[y * W + x] = 0;
         let diff = 0, ghost = 0, walk = 0;
         for (let i = 0; i < W * H; i++) { if (p[i] !== pass[i]) diff++; if (pass[i]) walk++; if (p[i] && !pass[i]) ghost++; }
         // 模擬器的檔跟用戶端是不同版本的地圖（水晶洞穴、巨蟻洞穴：「模擬器說能走、畫面上是牆」超過一成）→ 照模擬器會穿牆（玩家回報），改用用戶端。
-        //   正常的只差伺服器修過的零星幾格（大陸 0.1%、說話之島 28 格），照模擬器
+        //   正常的只差伺服器修過的零星幾格（大陸 0.1%、說話之島 28 格），照模擬器（安全區、戰鬥區也一起照模擬器）
         if (walk && ghost / walk > 0.02) console.log('[gen-townmap] 地圖 ' + id + ' 模擬器 maps/' + id + '.txt 跟用戶端不是同一版（' + ghost + ' 格畫面上是牆卻能走），改照用戶端');
-        else { console.log('[gen-townmap] 地圖 ' + id + ' 能不能走照模擬器 maps/' + id + '.txt（跟用戶端換算差 ' + diff + ' 格）'); pass = p; }
+        else { console.log('[gen-townmap] 地圖 ' + id + ' 能不能走照模擬器 maps/' + id + '.txt（跟用戶端換算差 ' + diff + ' 格）'); pass = p; zone = z; }
     }
-    return { id, W, H, gameX0: b.startX, gameY0: b.startY, ground, pass, objs, blocks };
+    return { id, W, H, gameX0: b.startX, gameY0: b.startY, ground, pass, zone, objs, blocks };
+}
+// 安全區／戰鬥區（afk-townmap 地圖名旁邊顯示角色站的地方）：一列一列的連續段，上下列一樣的併成矩形，
+//   攤平成 [x 起, y 起, x 迄, y 迄, 1 安全區／2 戰鬥區, …]（一般區域不記；大陸逐列存 113KB、併成矩形小很多）
+function zoneRuns(M) {
+    const { W, H, zone } = M, out = [];
+    let open = new Map();   // 上一列還在延伸的矩形：'x0,x1,z' → 矩形
+    for (let y = 0; y < H; y++) {
+        const next = new Map();
+        for (let x = 0; x < W; x++) {
+            const z = zone[y * W + x]; if (!z) continue;
+            let x1 = x; while (x1 + 1 < W && zone[y * W + x1 + 1] === z) x1++;
+            const k = x + ',' + x1 + ',' + z, r = open.get(k);
+            if (r) { r[3] = y; next.set(k, r); open.delete(k); } else { const n = [x, y, x1, y, z]; out.push(n); next.set(k, n); }
+            x = x1;
+        }
+        open = next;
+    }
+    return [].concat(...out);
+}
+// 死亡回村、重新登入的落點：模擬器 getback 表的回城座標（每個區域三個點）落在這個村莊附近的，各自找最近能站的格子
+function townBack(M, p, rows) {
+    const { W, H, pass } = M, pts = new Map();
+    const open = (x, y) => x > 0 && y > 0 && x < W - 1 && y < H - 1 && pass[y * W + x] === 3;
+    for (const r of rows) {
+        if (+r.getback_mapid !== M.id) continue;
+        for (const k of [1, 2, 3]) {
+            const gx = +r['getback_x' + k], gy = +r['getback_y' + k];
+            if (Math.max(Math.abs(gx - p.center[0]), Math.abs(gy - p.center[1])) > TOWN_R) continue;
+            const cx = gx - M.gameX0, cy = gy - M.gameY0;
+            let c = null;
+            for (let d = 0; d <= 6 && !c; d++) for (let y = cy - d; y <= cy + d && !c; y++) for (let x = cx - d; x <= cx + d; x++) if (Math.max(Math.abs(x - cx), Math.abs(y - cy)) === d && open(x, y)) { c = [x, y]; break; }
+            if (c) pts.set(c.join(','), c);
+        }
+    }
+    return [...pts.values()];
 }
 
 // ── 村莊起點、NPC 站位（地圖格座標）─────────────────────────
@@ -641,7 +698,7 @@ async function buildMapData(M, tilePak, webp) {
     const data = {
         v: 5, id, cw: W, ch: H, gameX0: M.gameX0, gameY0: M.gameY0,
         ox: OX, oy: OY, ww: WW, wh: WH, cs: CS, cx: CX, cy: CY, off: OFF, per: PER, cols: COLS, cellW: CELL_W, cellH: CELL_H,
-        rs: RS, rnx: nbx, rny: nby, pages, regions,
+        rs: RS, rnx: nbx, rny: nby, pages, regions, zone: zoneRuns(M),
     };
     const js = JSON.stringify(data);
     fs.writeFileSync(path.join(OUT_DIR, name + '.json'), js); bytes += js.length;
@@ -830,7 +887,7 @@ if (!process.argv.includes('--hero-only')) {
     const client = arg('client'), emu = arg('emu');
     if (!client || !emu) { console.error('用法：node tools/gen-townmap.js --client <天堂用戶端資料夾> --emu <模擬器資料夾> [--maps 0,4]（或 --hero-only）'); process.exit(1); }
     const sql = fs.readFileSync(path.join(emu, 'db', 'l1jdb.sql'), 'utf8');
-    const db = { mapids: sqlTable(sql, 'mapids'), npc: sqlTable(sql, 'npc'), spawn: sqlTable(sql, 'spawnlist_npc'), spawnAll: sqlTable(sql, 'spawnlist'), dungeon: sqlTable(sql, 'dungeon') };
+    const db = { mapids: sqlTable(sql, 'mapids'), npc: sqlTable(sql, 'npc'), spawn: sqlTable(sql, 'spawnlist_npc'), spawnAll: sqlTable(sql, 'spawnlist'), dungeon: sqlTable(sql, 'dungeon'), getback: sqlTable(sql, 'getback') };
     const plan = planTowns(db), hplan = planHunts(db), only = arg('maps') ? new Set(arg('maps').split(',').map(Number)) : null;
     const tilePak = openPak(client, 'Tile'), townsOut = {}, huntsOut = {}, webp = await webpEncoder();
     let total = 0;
@@ -843,8 +900,10 @@ if (!process.argv.includes('--hero-only')) {
             if (plan[tid].map !== id) continue;
             const t = placeTown(M, plan[tid]);
             if (!t) { console.log('[gen-townmap] ' + tid + ' 找不到能站的起點，略過'); continue; }
+            t.back = townBack(M, plan[tid], db.getback);
             townsOut[tid] = t;
-            console.log('[gen-townmap] ' + tid + ' ' + plan[tid].name + '：地圖 ' + id + '、起點 ' + (t.home[0] + M.gameX0) + ',' + (t.home[1] + M.gameY0) + '、NPC 對到位置 ' + Object.keys(t.npc).length + '/' + plan[tid].total);
+            console.log('[gen-townmap] ' + tid + ' ' + plan[tid].name + '：地圖 ' + id + '、起點 ' + (t.home[0] + M.gameX0) + ',' + (t.home[1] + M.gameY0) + '、NPC 對到位置 ' + Object.keys(t.npc).length + '/' + plan[tid].total +
+                '、回城點 ' + (t.back.length ? t.back.map(c => (c[0] + M.gameX0) + ',' + (c[1] + M.gameY0)).join(' ') : '沒有（用起點）'));
         }
         for (const hid in hplan) {
             if (hplan[hid].map !== id) continue;
@@ -855,11 +914,17 @@ if (!process.argv.includes('--hero-only')) {
                 (h.missing.length ? '（' + (h.real ? '補上' : '模擬器沒資料，全部補上') + '：' + h.missing.join('、') + '）' : ''));
         }
         if (!NO_BUILD && (!only || only.has(id))) total += await buildMapData(M, tilePak, webp);
+        else {   // 這次不產圖：總表已經在的話只換安全區那欄（不用為了它重產整張圖）
+            const f = path.join(OUT_DIR, 'm' + id + '.json');
+            if (fs.existsSync(f)) { const d = JSON.parse(fs.readFileSync(f, 'utf8')); d.zone = zoneRuns(M); fs.writeFileSync(f, JSON.stringify(d)); }
+        }
+        { const z = zoneRuns(M); if (z.length) console.log('[gen-townmap] 地圖 ' + id + ' 安全區／戰鬥區 ' + z.length / 5 + ' 個矩形'); }
     }
     await webp.close();
-    // towns.json：{ 村莊 id: { map 用戶端地圖, home 起點, npc { NPC 名字: 站的格子 }, spots 對不到的 NPC 用的空位 } }（地圖格座標）
+    // towns.json：{ 村莊 id: { map 用戶端地圖, home 起點, npc { NPC 名字: 站的格子 }, spots 對不到的 NPC 用的空位, back 回城點（見 townBack）} }（地圖格座標）
     fs.writeFileSync(path.join(OUT_DIR, 'towns.json'), JSON.stringify(townsOut));
-    // hunts.json：{ 狩獵地圖 id: { map, home 起點, spawns 重生點（格式見 placeHunt）} }
+    // hunts.json：{ 狩獵地圖 id: { map, home 起點, spawns 重生點（格式見 placeHunt）}, _mob: 怪物行為旗標（見 mobFlags）}
+    huntsOut._mob = mobFlags(db);
     fs.writeFileSync(path.join(OUT_DIR, 'hunts.json'), JSON.stringify(huntsOut));
     // portals.json：{ 用戶端地圖: [[起點 x, y, 目的地遊戲地圖, 終點 x, y], …] }（格式見 planPortals）
     fs.writeFileSync(path.join(OUT_DIR, 'portals.json'), JSON.stringify(planPortals(db, townsOut, huntsOut)));
