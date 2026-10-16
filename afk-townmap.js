@@ -293,6 +293,7 @@
         if (L.kind === 'class') { var a = L.at[dir]; return walk ? [a[0] + (k ? a[2 * k] : 0), a[1] + (k ? a[2 * k + 1] : 0)] : [a[8], a[9]]; }
         if (L.kind === 'anim') {
             var b = L.at[dir]; if (!walk) return [b[2], b[3]];
+            if (b[4] === 0) return [b[0], b[1]];   // 原地踏步的走路幀（卡司特等，hero.js 標 0）：不扣位移，不然每格往後滑再跳回來
             var d = DIRS[dir], f = k / L.walkN;
             return [b[0] + 24 * (d[0] + d[1]) * f, b[1] + 12 * (d[1] - d[0]) * f];
         }

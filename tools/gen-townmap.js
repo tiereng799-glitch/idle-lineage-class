@@ -684,19 +684,38 @@ function foot(file) {
 function anchor(dir, act) { return centroid(path.join(dir, act + '_s_0.png')) || foot(path.join(dir, act + '_0.png')); }
 // 寵物／怪物八方向動畫(assets/anim/<名>/d0..d7)：每方向 [走路第0幀落腳 x,y, 待機落腳 x,y]（沒走路幀就用待機的）
 //   這類走路幀一輪剛好走一格、每幀往前挪 1/N 格（量過哈士奇），afk-townmap 用等分位移扣掉，不必逐幀量。
+//   ⚠ 有些是原地踏步（卡司特：tools/gen-walk-anim 補的幀，身體一輪下來沒動）——照扣會每格往後滑再跳回來（玩家回報「走路怪怪的」）。
+//   量第 0 幀到最後一幀的影子（沒影子量腳底）往走路方向挪了多少，不到該挪的三成＝原地踏步 → 那個方向多一個 0：[x,y, x,y, 0]
+function walkMoves(dd, d) {
+    const fr = fs.existsSync(dd) ? fs.readdirSync(dd).filter(f => /^walk_\d+\.png$/.test(f)).length : 0;
+    if (fr < 2) return true;
+    const m = (k) => centroid(path.join(dd, 'walk_s_' + k + '.png')) || foot(path.join(dd, 'walk_' + k + '.png'));   // 沒影子量腳底（身體重心會跟著揮武器晃）
+    const a = m(0), b = m(fr - 1); if (!a || !b) return true;
+    const D = [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]][d], f = (fr - 1) / fr;
+    const ex = 24 * (D[0] + D[1]) * f, ey = 12 * (D[1] - D[0]) * f, len = Math.hypot(ex, ey);
+    return ((b[0] - a[0]) * ex + (b[1] - a[1]) * ey) / len > len * 0.3;
+}
 // 變身動畫(assets/morphanim/<名>{,2,F})：只有待機/攻擊沒有走路幀 → 每個資料夾 [待機落腳 x,y]
 function buildAnims() {
     const r1 = v => Math.round(v * 10) / 10;
-    const anim = {}, morph = {}, root = {};
+    const anim = {}, morph = {}, root = {}, inPlace = [];
     const aroot = path.join(REPO_ROOT, 'assets', 'anim');
     for (const n of fs.readdirSync(aroot)) {
         if (!fs.existsSync(path.join(aroot, n, 'd0'))) continue;
         const dirs = [0, 1, 2, 3, 4, 5, 6, 7].map(d => {
             const dd = path.join(aroot, n, 'd' + d), w0 = anchor(dd, 'walk'), i = anchor(dd, 'idle') || w0, w = w0 || i;   // 只有走路幀(tools/gen-walk-anim.js 補的)：待機落腳點用走路的
-            return (i && w) ? [r1(w[0]), r1(w[1]), r1(i[0]), r1(i[1])] : null;
+            if (!(i && w)) return null;
+            const row = [r1(w[0]), r1(w[1]), r1(i[0]), r1(i[1])];
+            if (w0 && !walkMoves(dd, d)) row.push(0);
+            return row;
         });
         if (!dirs.every(Boolean)) continue;
+        // 同一隻的八個方向是同一種做法：照多數決（5 個以上原地＝全部原地、3 個以下＝全部會走；個別方向是量測雜訊，像揮武器、腳底被裝飾擋住）
+        const nIn = dirs.filter(r => r[4] === 0).length;
+        if (nIn >= 5) dirs.forEach(r => { if (r.length === 4) r.push(0); });
+        else if (nIn <= 3) dirs.forEach(r => { if (r.length === 5) r.pop(); });
         anim[n] = dirs;
+        if (dirs.some(r => r[4] === 0)) inPlace.push(n);
         // 單方向的戰鬥動作（狩獵區原本那套：待機/攻擊/受傷/死亡，面向左邊）：各自的落腳點
         const r = {};
         for (const act of ['idle', 'attack', 'hurt', 'death']) { const a = anchor(path.join(aroot, n), act); if (a) r[act] = [r1(a[0]), r1(a[1])]; }
@@ -704,6 +723,7 @@ function buildAnims() {
     }
     const mroot = path.join(REPO_ROOT, 'assets', 'morphanim');
     for (const n of fs.readdirSync(mroot)) { const i = anchor(path.join(mroot, n), 'idle'); if (i) morph[n] = [r1(i[0]), r1(i[1])]; }
+    console.log('[gen-townmap] 原地踏步的走路幀 ' + inPlace.length + ' 個：' + inPlace.slice(0, 40).join('、') + (inPlace.length > 40 ? '…' : ''));
     return { anim, morph, root };
 }
 function buildHero() {
