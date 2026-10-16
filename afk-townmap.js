@@ -84,6 +84,14 @@
         '#battle-view.afk-hm #player-morph-sprite,#battle-view.afk-hm .party-sprite,#battle-view.afk-hm #pet-layer{opacity:0!important;pointer-events:none!important;}' +
         '.afk-tm-load > .afk-tm-bar{width:min(62%,340px);height:10px;padding:1px;border:1px solid #8a6a2c;border-radius:2px;background:#140f06;box-shadow:inset 0 0 4px #000,0 0 8px rgba(0,0,0,.7);}' +
         '.afk-tm-load > .afk-tm-bar > i{display:block;height:100%;width:0;background:linear-gradient(#f6dc8c,#c08a2c 55%,#8a5e18);}' +
+        // 小地圖（見 drawMinimap）：右上角；收起來只剩一顆小圓鈕
+        '.afk-tm-mm{position:absolute;right:6px;top:calc(var(--orig-bar-h,0px) + 96px);z-index:6;width:128px;height:96px;border:1px solid rgba(214,180,110,.75);border-radius:8px;background:rgba(6,8,10,.62);box-shadow:0 2px 8px rgba(0,0,0,.6);cursor:pointer;-webkit-tap-highlight-color:transparent;overflow:hidden;}' +
+        '.afk-tm-mm canvas{display:block;width:128px;height:96px;}' +
+        '.afk-tm-mm i{display:none;}' +
+        '.afk-tm-mm.off{width:34px;height:34px;border-radius:50%;}' +
+        '.afk-tm-mm.off canvas{display:none;}' +
+        '.afk-tm-mm.off i{display:flex;width:100%;height:100%;align-items:center;justify-content:center;color:#f0dca8;}' +
+        '.afk-tm-mm.off i svg{width:18px;height:18px;}' +
         // 地圖名旁邊：角色站的地方是安全區／一般區域／戰鬥區域（見 showZone）
         '#afk-tm-zone{font-style:normal;font-size:12px;font-weight:700;white-space:nowrap;color:#d6d3d1;}#afk-tm-zone.z1{color:#86efac;}#afk-tm-zone.z2{color:#fca5a5;}';
     (document.head || document.documentElement).appendChild(st);
@@ -754,6 +762,52 @@
         if (S.kind === 'hunt') huntOverlay(ctx, cam); else placeNpcs(cam);
         heroBars(ctx, cam);
         drawStick(ctx);
+        if (clock - (S.mmAt || 0) > 0.25) { S.mmAt = clock; try { drawMinimap(); } catch (e) {} }
+    }
+    // ── 小地圖（站長：點一下收起、再點展開）：右上角，角色附近能走的地方＋怪（紅）、寵物（藍）、傳送點（青）、NPC（黃）──────
+    //   跟主畫面同一個斜角方向（格子 (x,y) → 畫面 (x+y, (y−x)/2)），看起來才對得上；每 0.25 秒畫一次。收起來的狀態記在這台裝置
+    var MM_W = 128, MM_H = 96, MM_K = 1.25, MM_KEY = 'afk_tm_mm_off', mmEl = null;
+    function mmOff() { try { return localStorage.getItem(MM_KEY) === '1'; } catch (e) { return false; } }
+    function mmBox() {
+        if (mmEl && mmEl.parentNode === S.map) return mmEl;
+        if (!mmEl) {
+            mmEl = document.createElement('div'); mmEl.className = 'afk-tm-mm' + (mmOff() ? ' off' : '');
+            mmEl.innerHTML = '<canvas width="' + MM_W * 2 + '" height="' + MM_H * 2 + '"></canvas>' +
+                '<i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></i>';
+            mmEl.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+            mmEl.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var off = !mmEl.classList.contains('off'); mmEl.classList.toggle('off', off);
+                try { localStorage.setItem(MM_KEY, off ? '1' : '0'); } catch (x) {}
+                if (!off && S) { S.mmAt = 0; dirty = true; }
+            });
+        }
+        S.map.appendChild(mmEl);
+        return mmEl;
+    }
+    function drawMinimap() {
+        var box = mmBox(); if (box.classList.contains('off')) return;
+        var cv = box.firstChild, g = cv.getContext('2d'), me = S.me, d = S.t.d, cx = MM_W / 2, cy = MM_H / 2;
+        g.setTransform(2, 0, 0, 2, 0, 0); g.clearRect(0, 0, MM_W, MM_H);
+        var zone = d.zone, R = Math.ceil(MM_W / MM_K / 2) + 2;
+        // 地形：能走的格子畫成淡色（安全區偏綠）；載好的區才看得到
+        for (var dy = -R; dy <= R; dy++) for (var dx = -R; dx <= R; dx++) {
+            var px = cx + (dx + dy) * MM_K, py = cy + (dy - dx) * MM_K / 2;
+            if (px < 0 || py < 0 || px >= MM_W || py >= MM_H) continue;
+            var x = me.tx + dx, y = me.ty + dy; if (!pass(x, y)) continue;
+            g.fillStyle = zone && zoneAt(x, y) === 1 ? 'rgba(134,239,172,.45)' : 'rgba(214,200,160,.38)';
+            g.fillRect(px - MM_K, py - MM_K / 2, MM_K * 2, MM_K);   // 一格＝菱形的外框（只畫半格寬會變網點）
+        }
+        function dot(x, y, col, r) {
+            var px = cx + (x - me.tx + y - me.ty) * MM_K, py = cy + (y - me.ty - x + me.tx) * MM_K / 2;
+            if (px < -2 || py < -2 || px > MM_W + 2 || py > MM_H + 2) return;
+            g.fillStyle = col; g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2); g.fill();
+        }
+        for (var k in (S.portals || {})) { var p = S.portals[k]; dot(p[0], p[1], '#67e8f9', 1.8); }
+        if (S.kind === 'hunt') S.ents.forEach(function (e) { if (e.alive && e.placed) dot(e.tx, e.ty, e.uid ? '#f87171' : '#dc2626', e.uid ? 2 : 1.5); });
+        else (S.npcs || []).forEach(function (n) { dot(n.x, n.y, '#fde047', 1.8); });
+        S.pets.forEach(function (p) { dot(p.tx, p.ty, '#38bdf8', 1.6); });
+        dot(me.tx, me.ty, '#fff', 2.4);
     }
     // 角色頭上的體力（紅）、魔力（藍）條（站長要求）：貼著頭頂畫。頭頂高度照這個外型第一次量到的（揮武器、走路晃動不會跟著跳）
     var headCache = {};
@@ -946,6 +1000,7 @@
     function unmount(restoreBg) {
         if (!S) return;
         if (S.cv && S.cv.parentNode) S.cv.parentNode.removeChild(S.cv);
+        if (mmEl && mmEl.parentNode) mmEl.parentNode.removeChild(mmEl);   // 小地圖跟著地圖走（換回原本戰鬥畫面時不留著）
         if (restoreBg && S.bg != null) S.map.style.backgroundImage = S.bg;
         S.npcs && S.npcs.forEach(function (n) { n.el.style.removeProperty('left'); n.el.style.removeProperty('top'); });
         if (S.kind !== 'hunt' && S.map) S.map.classList.remove('afk-tm-live');
@@ -1133,8 +1188,10 @@
     }
     function heroZone() {
         if (typeof mapState === 'undefined' || !mapState || !mapState.current) return null;
-        if (S && S.ready && S.t && S.me && (S.kind === 'hunt' ? S.huntId : S.townId) === mapState.current) return zoneAt(S.me.tx, S.me.ty);
-        return mapState.current.indexOf('town_') === 0 ? 1 : 0;
+        // 村莊一律安全區（遊戲裡村莊本來就不會打架）：照模擬器的格子，走到村莊邊上、或落點不在模擬器畫的範圍裡會變一般區域（站長：為什麼村莊是一般區域）
+        if (mapState.current.indexOf('town_') === 0) return 1;
+        if (S && S.ready && S.t && S.me && S.kind === 'hunt' && S.huntId === mapState.current) return zoneAt(S.me.tx, S.me.ty);
+        return 0;
     }
     function showZone() {
         var host = document.getElementById('lmui-mapname'); if (!host) return;
