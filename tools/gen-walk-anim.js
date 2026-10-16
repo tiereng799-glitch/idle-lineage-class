@@ -23,10 +23,15 @@ const REPO = path.resolve(__dirname, '..');
 function arg(n) { const i = process.argv.indexOf('--' + n); return i > 0 ? process.argv[i + 1] : null; }
 const CLIENT = arg('client'), DB = arg('db'), ONLY = arg('only') ? new Set(arg('only').split(',')) : null;
 const MAIN = require.main === module;   // 被 tools/fix-walk-gfx.js 引用時只拿解檔函式，不跑
-if (MAIN && !CLIENT) { console.error('用法：node tools/gen-walk-anim.js --client <用戶端資料夾> [--db <l1jdb.sql>] [--only 名,名] [--gfx 名=編號,…]'); process.exit(1); }
+if (MAIN && !CLIENT) { console.error('用法：node tools/gen-walk-anim.js --client <用戶端資料夾> [--db <l1jdb.sql>] [--only 名,名] [--gfx 名=編號,…] [--walk 名=組,…]'); process.exit(1); }
 const BW = 24, BH = 23;
 // --gfx 名=編號：直接指定圖檔編號（tools/fix-walk-gfx.js 照長相找出來的；名字對到的編號抓錯隻時用）
-const GFX_FIX = Object.fromEntries((arg('gfx') || '').split(',').filter(Boolean).map(s => { const i = s.lastIndexOf('='); return [s.slice(0, i), +s.slice(i + 1)]; }));
+const kv = s => Object.fromEntries((s || '').split(',').filter(Boolean).map(s => { const i = s.lastIndexOf('='); return [s.slice(0, i), +s.slice(i + 1)]; }));
+const GFX_FIX = kv(arg('gfx'));
+// --walk 名=組：走路不在第 0 組（子檔 0~7）的圖檔，指定第幾組（子檔 組×8 ~ 組×8+7）。
+//   有些圖檔的動作順序是 攻擊、待機、受傷、死亡、出場、走路（石頭高崙 3914、骷髏 30、史巴托 145、巴風特 53 的走路都在第 5 組；巴蘭卡 3664 在第 1 組），
+//   照第 0 組抽就把攻擊（或出場）當走路，地圖上整路揮拳（站長 2026-10-16 回報石頭高崙）。抽完會檢查，跟原作別的動作同一張就警告
+const WALK_GRP = kv(arg('walk'));
 
 // ── 用戶端 idx/pak ───────────────────────────────
 const index = new Map(), fds = {};
@@ -200,22 +205,28 @@ function isShadow(body, sh) {
     for (const r of sh) if (r) for (let i = 0; i < r.rgba.length; i += 4) if (r.rgba[i + 3]) { const R = r.rgba[i], G = r.rgba[i + 1], B = r.rgba[i + 2]; if (Math.max(R, G, B) > 110 || Math.abs(R - G) > 16 || Math.abs(G - B) > 16) return false; }
     return true;
 }
-let done = 0, files = 0, bytes = 0; const miss = [], origins = {};
+let done = 0, files = 0, bytes = 0; const miss = [], origins = {}, warn = [];
 for (const t of todo) {
     const db = [...(byName[t.name] || [])], sg = [...(t.sigG || [])];
     const cands = GFX_FIX[t.name] ? [GFX_FIX[t.name]] : [...new Set([...sg.filter(g => db.includes(g)), ...sg, ...db])];
+    const W0 = (WALK_GRP[t.name] || 0) * 8;
     let g = null;
-    for (const c of cands) { let ok = 0; for (let d = 0; d < 8; d++) if (load(c, d)) ok++; if (ok >= 7) { g = c; break; } }
+    for (const c of cands) { let ok = 0; for (let d = 0; d < 8; d++) if (load(c, W0 + d)) ok++; if (ok >= 7) { g = c; break; } }
     if (g == null) { miss.push(t.name + (cands.length ? '（用戶端沒有八方向走路檔）' : '（找不到圖檔編號）')); continue; }
     // 基準點：.spr 每幀的小塊位置是相對「角色站的那一格中心」，裁成 PNG 後那一點在 (-minX, -minY)＝腳底落點。
     //   存進 tools/walk-origin.json { 名: [[x, y] ×8 方向] }，tools/gen-townmap.js 量落腳點時優先用它
     //   （沒影子的走路幀以前只能猜「最下面的像素」，骷髏的彎刀比腳低就猜錯，每轉一個方向就跳一下：玩家回報「骷髏跟史巴托圖檔怪怪的」）
     const origin = [];   // → origins（存 tools/walk-origin.json，見最後）
     for (let d = 0; d < 8; d++) {
-        let s = load(g, d), dd = d;
-        if (!s) { dd = (d + 7) % 8; s = load(g, dd); }   // 少數方向檔壞掉：借隔壁方向
+        let s = load(g, W0 + d), dd = d;
+        if (!s) { dd = (d + 7) % 8; s = load(g, W0 + dd); }   // 少數方向檔壞掉：借隔壁方向
         if (!s) continue;
-        const body = framesOf(s), ss = load(g + 1, dd), sh = ss ? framesOf(ss) : null, useSh = isShadow(body, sh);
+        const body = framesOf(s), ss = load(g + 1, W0 + dd), sh = ss ? framesOf(ss) : null, useSh = isShadow(body, sh);
+        if (d === 5) {   // 原作單方向圖＝第 5 方向：走路幀跟原作的攻擊／出場／受傷／死亡同一張 → 抓錯動作組（待機常常就是走路，不算）
+            const rs = new Map(); for (const f of fs.readdirSync(path.join(animRoot, t.name)).filter(f => /^(attack|spawn|hurt|death|skill)_\d+\.png$/.test(f))) { try { const { w, h, a } = alphaOf(fs.readFileSync(path.join(animRoot, t.name, f))); rs.set(sigOf(w, h, (x, y) => a[y * w + x]), f); } catch (e) {} }
+            const same = body.map(r => r && rs.get(sigOf(r.w, r.h, (x, y) => r.rgba[(y * r.w + x) * 4 + 3]))).filter(Boolean);
+            if (same.length) warn.push(t.name + '（' + g + ' 第 ' + W0 / 8 + ' 組＝原作 ' + same[0].replace(/_\d+\.png$/, '') + '，用 --walk ' + t.name + '=組 指定走路那組）');
+        }
         let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
         for (const r of body.concat(useSh ? sh : [])) if (r) { minX = Math.min(minX, r.minX); minY = Math.min(minY, r.minY); maxX = Math.max(maxX, r.minX + r.w); maxY = Math.max(maxY, r.minY + r.h); }
         minX--; minY--; maxX++; maxY++;
@@ -245,4 +256,5 @@ for (const t of todo) {
 }
 console.log('[gen-walk-anim] 完成 ' + done + ' / ' + todo.length + ' 個，' + files + ' 個檔，' + (bytes / 1e6).toFixed(1) + 'MB');
 if (miss.length) console.log('[gen-walk-anim] 略過：' + miss.join('、'));
+if (warn.length) console.log('[gen-walk-anim] ⚠ 走路可能抓錯動作：' + warn.join('、'));
 }
