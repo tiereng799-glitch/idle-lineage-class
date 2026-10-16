@@ -321,17 +321,20 @@
       '#lmui-whead button:active{background:linear-gradient(#8a3e30,#46201a);}',
       'html body.lmui-battle.lmui-tall.lmui-whead #lmui-whead{display:flex;}',
       /* 視窗＝浮在戰鬥畫面上（站長：開視窗戰鬥畫面不要跳、背景不要變暗、左右不要漏底色）：
-         戰鬥畫面大小一律不動（tick 開視窗時照樣維持精簡版面），視窗從頭像列下方到聊天輸入列上方；
-         場景（#col-center）用 evenodd 多邊形把視窗那塊挖掉，四周露出的就是原本的場景，往上捲的內容照樣被場景蓋住。
-         視窗的底＝#lmui-wframe（z:-1，墊在 #game-screen 下面，內容不夠長也不露底色）；外框＝#lmui-wborder（蓋在內容上面，內容再長下緣的框也看得到） */
+         戰鬥畫面大小一律不動（tick 開視窗時照樣維持精簡版面），整片留在下層、不裁切；視窗從頭像列下方到聊天輸入列上方。
+         視窗內容（#col-right）自己變成固定位置的捲動框：捲動只在視窗裡，不會捲到場景上，外層 #game-screen 不捲。
+         ⚠️ 不可以改用「場景蓋在上面、clip-path 多邊形挖洞露出視窗」：手機判斷手指在滑哪一塊時不看非長方形的裁切，
+            整片都當成場景 → 視窗完全滑不動（踩過）。
+         外框＝#lmui-wborder（蓋在內容上面，內容再長下緣的框也看得到）；#lmui-wframe 不畫東西，只給魔法書量視窗下緣 */
       'body{--lmui-wbot:calc(var(--lmui-mtop) - 6px);}',   /* 視窗下緣（聊天輸入列上方 6px）；掛 body 才吃得到精簡版面改過的 --lmui-mtop */
-      'html body.lmui-battle.lmui-tall.lmui-whead #col-center{clip-path:polygon(evenodd,0 0,100% 0,100% 100%,0 100%,0 0,6px calc(var(--lmui-ptop) - var(--orig-bar-h,0px)),6px calc(var(--lmui-wbot) - var(--orig-bar-h,0px)),calc(100% - 6px) calc(var(--lmui-wbot) - var(--orig-bar-h,0px)),calc(100% - 6px) calc(var(--lmui-ptop) - var(--orig-bar-h,0px)),6px calc(var(--lmui-ptop) - var(--orig-bar-h,0px)));}',
+      'html body.lmui-battle.lmui-tall.lmui-whead #col-center{clip-path:none;z-index:1;}',
+      'html body.lmui-battle.lmui-tall.lmui-whead #game-screen{overflow:hidden !important;}',
+      'html body.lmui-battle.lmui-tall.lmui-whead #col-right{position:fixed !important;left:6px !important;right:6px !important;top:calc(var(--lmui-ptop) + var(--lmui-whead-h)) !important;bottom:auto !important;height:calc(var(--lmui-wbot) - var(--lmui-ptop) - var(--lmui-whead-h)) !important;width:auto !important;max-width:none !important;margin:0 !important;padding:6px 6px 8px !important;box-sizing:border-box !important;overflow-x:hidden !important;overflow-y:auto !important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(#1f1813,#120d09);border-radius:0 0 6px 6px;z-index:2;}',
+      'html body.lmui-battle.lmui-tall.lmui-whead.lmui-ptabs #col-right{top:calc(var(--lmui-ptop) + var(--lmui-whead-h) + var(--lmui-ptabs-h)) !important;height:calc(var(--lmui-wbot) - var(--lmui-ptop) - var(--lmui-whead-h) - var(--lmui-ptabs-h)) !important;}',
       '#lmui-wframe,#lmui-wborder{display:none;position:fixed;left:6px;right:6px;top:var(--lmui-ptop);height:calc(var(--lmui-wbot) - var(--lmui-ptop));box-sizing:border-box;border-radius:6px;pointer-events:none;}',
-      '#lmui-wframe{z-index:-1;background:linear-gradient(#1f1813,#120d09);}',
+      '#lmui-wframe{z-index:-1;}',
       '#lmui-wborder{z-index:9549;border:1px solid #6b5a48;box-shadow:0 2px 8px rgba(0,0,0,.7);}',
       'html body.lmui-battle.lmui-tall.lmui-whead :is(#lmui-wframe,#lmui-wborder){display:block;}',
-      'html body.lmui-battle.lmui-tall.lmui-whead #game-screen{padding-top:calc(var(--lmui-ptop) + var(--lmui-whead-h) + 6px) !important;padding-bottom:calc(100dvh - var(--lmui-wbot) + 6px) !important;}',
-      'html body.lmui-battle.lmui-tall.lmui-whead.lmui-ptabs #game-screen{padding-top:calc(var(--lmui-ptop) + var(--lmui-whead-h) + var(--lmui-ptabs-h) + 6px) !important;}',
       'html body.lmui-battle.lmui-whead #lmui-bagtabs{top:calc(var(--lmui-ptop) + var(--lmui-whead-h));border-radius:0;border-top:0;}',
       /* 設定頁會捲：往上捲時補的固定上框（#lmui-pcap）改接在標題列下面；彈窗讓位也量它，一起讓開標題列 */
       'html body.lmui-battle.lmui-whead #lmui-pcap{top:calc(var(--lmui-ptop) + var(--lmui-whead-h));}',
@@ -351,9 +354,10 @@
       'body.lmui-battle.lmui-tall #lmui-vit{display:none !important;}',
       /* 開著功能頁（上方只露出一條場景）時，iPhone 不會畫「被裁切的 fixed 容器裡、用 multiply 混色的背景圖」→ 狩獵場上方變成一片黑
          （村莊用的 town-view 沒有混色所以正常）。這時改成不混色、另蓋一層半透明黑來壓暗，看起來跟混色差不多。 */
-      'html body.lmui-battle.lmui-tall #battle-view{background-blend-mode:normal !important;background-color:transparent !important;position:relative;}',
+      /*   視窗模式（lmui-whead）場景沒被裁切，照原本的混色就好，不套這兩條 */
+      'html body.lmui-battle.lmui-tall:not(.lmui-whead) #battle-view{background-blend-mode:normal !important;background-color:transparent !important;position:relative;}',
       /* 只蓋在靜態背景上（模擬原本的混色亮度）；狩獵區動態地圖本來就沒混色，蓋了反而整片變暗（站長回報視窗背景變暗） */
-      'html body.lmui-battle.lmui-tall #battle-view:not(.afk-hm)::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.62);pointer-events:none;z-index:0;}',
+      'html body.lmui-battle.lmui-tall:not(.lmui-whead) #battle-view:not(.afk-hm)::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.62);pointer-events:none;z-index:0;}',
       /* 面板上方的分頁列（背包：全部/裝備/道具/自動賣出；能力：能力/裝備/…）：樣式＝狩獵場的分頁（.lm-tabs），釘在頭像列正下方 */
       '#lmui-bagtabs{display:none;position:fixed;left:6px;right:6px;top:var(--lmui-ptop);height:var(--lmui-ptabs-h);box-sizing:border-box;z-index:9550;padding:3px 2px;background:linear-gradient(#1a1612,#0b0907);border:1px solid #4a3f30;border-radius:3px 3px 0 0;}',
       'body.lmui-ptabs #lmui-bagtabs{display:flex;}',
@@ -1716,7 +1720,10 @@
     }
     toggleCls('lmui-whead', !!title);
     if (h && title) setTxt(h.querySelector('b'), title);
+    if (title && title !== winTitle) { var cr = $('col-right'); if (cr) cr.scrollTop = 0; }   // 換視窗從頂端開始（內容捲動框是 #col-right，各視窗共用）
+    winTitle = title;
   }
+  var winTitle = '';
   function syncBag() {
     var game = document.body.classList.contains('lmui');
     var tab = game && document.body.classList.contains('mview-right') && !document.body.classList.contains('mlog-open') ? activeRightTab() : '';
