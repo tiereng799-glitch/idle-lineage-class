@@ -1301,7 +1301,7 @@ function openModal(item, isEq, slot) {
          desc += `<br><span class="text-yellow-400 mt-2 block">販賣價格: ${sellPrice} 金幣</span>`;
     }
     
-    document.getElementById('modal-item-desc').innerHTML = desc;
+    document.getElementById('modal-item-desc').innerHTML = desc.replace(/^(\s*<br\s*\/?>)+/, '');   // 開頭的換行（說明逐行 += '<br>…' 組出來的）不要，名稱下面才不會空一行
     
     let act = '';
     if (isEq) {
@@ -1328,18 +1328,19 @@ function openModal(item, isEq, slot) {
             else act += `<button class="col-span-2 w-full btn border-red-900 bg-red-950 text-red-400 py-3 text-lg font-bold cursor-not-allowed" disabled>無法裝備${d.reqAvatar ? `・僅限${d.reqAvatar}` : ''}</button>`;
         }
         
-        // 把販賣按鈕移出來，讓所有道具都可以賣
-        if (!item.lock) {
-            // 按鈕直接寫出會拿到多少金幣：賣出一件＝單價、全部賣出＝單價 × 持有數量（非堆疊物品 cnt 未定義＝1 件）
-            let _sellCnt = item.cnt || 1;
-            act += `<button class="btn border-orange-700 bg-orange-900 hover:bg-orange-800 py-2 text-base font-bold" onclick="sellItem('${item.uid}', 1, ${sellPrice})">賣出一件　${sellPrice.toLocaleString()} 金幣</button>
-                    <button class="btn border-orange-700 bg-orange-900 hover:bg-orange-800 py-2 text-base font-bold" onclick="sellItem('${item.uid}', ${item.cnt}, ${sellPrice})">全部賣出　${(sellPrice * _sellCnt).toLocaleString()} 金幣</button>`;
-        }
     }
 
     // 👇 修改：為武器、防具、飾品加入專屬的「強化」按鈕 (加入 !d.isArrow 防呆，箭矢不顯示強化按鈕)
+    //    2026-10-16 站長：道具視窗整理——主要動作（裝備／使用）＋強化排第一列，賣出排第二列
     if (((d.type === 'wpn' && !d.isArrow) || d.type === 'arm' || d.type === 'acc') && !isMaxEnhanced(item) && !d.noEnhance) {   // 🔧 已達淬鍊（強化上限）：隱藏強化按鈕；🏛️ 無法強化的裝備（古老系列）不顯示強化鈕
         act += `<button class="col-span-2 w-full btn border-purple-700 bg-purple-900 hover:bg-purple-800 text-purple-200 py-3 text-lg font-bold mt-2" onclick="showEnhanceOptions('${item.uid}', ${isEq})">強化</button>`;
+    }
+    // 把販賣按鈕移出來，讓所有道具都可以賣（價錢寫在上面的「販賣價格」，按鈕只寫動作；只有一件時不重複放「全部賣出」）
+    if (!isEq && !item.lock) {
+        let _sellCnt = item.cnt || 1;
+        if (act) act += `<div class="col-span-2 act-break" style="height:0"></div>`;   // 賣出另起一列（主要動作在上面）
+        act += `<button class="btn border-orange-700 bg-orange-900 hover:bg-orange-800 py-2 text-base font-bold" onclick="sellItem('${item.uid}', 1, ${sellPrice})">賣出一件</button>`;
+        if (_sellCnt > 1) act += `<button class="btn border-orange-700 bg-orange-900 hover:bg-orange-800 py-2 text-base font-bold" onclick="sellItem('${item.uid}', ${item.cnt}, ${sellPrice})">全部賣出（${_sellCnt.toLocaleString()}）</button>`;
     }
 
     // 廢品勾選（所有背包道具：武器/防具/飾品/藥水/卷軸/魔法書/技能書/材料/試煉道具等）：
@@ -1355,8 +1356,11 @@ function openModal(item, isEq, slot) {
     document.getElementById('modal-actions').innerHTML = act;
 
     // === 旁邊顯示「目前裝備中」對應欄位，方便比對（僅背包中的武器/防具/飾品，箭矢除外）===
+    //    2026-10-16 站長：道具視窗拿掉「與身上比較」→ 一律不顯示（SHOW_COMPARE 改 true 可恢復）
+    const SHOW_COMPARE = false;
     let _cmp = document.getElementById('modal-compare');
-    if(_cmp) {
+    if(_cmp && !SHOW_COMPARE) { _cmp.classList.add('hidden'); _cmp.innerHTML = ''; }
+    else if(_cmp) {
         const SLOT_LABEL = { wpn:'武器', offwpn:'副手武器', helm:'頭盔', armor:'盔甲', shield:'副手', cloak:'斗篷', tshirt:'內衣', gloves:'手套', boots:'鞋子', ring1:'戒指 1', ring2:'戒指 2', ring3:'戒指 3', ring4:'戒指 4', amulet:'項鍊', ear1:'耳環 1', ear2:'耳環 2', belt:'腰帶' };   // 🦴 v3.2.37 寵物裝備欄移除（改為每隻寵物於包武保管個別裝備）
         if(!isEq && !d.isArrow && d.slot !== 'petwpn' && d.slot !== 'petarm' && (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc')) {   // 🦴 v3.2.42 稽核修：寵物武器/防具非玩家可穿→不顯示「目前裝備中」比較卡（原顯示 petwpn 原字誤導可穿）
             let slots = (d.type === 'wpn') ? ['wpn'] : (d.slot === 'ring' ? ['ring1','ring2','ring3','ring4'] : (d.slot === 'ear' ? ['ear1','ear2'] : [d.slot]));

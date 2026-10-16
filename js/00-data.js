@@ -3106,6 +3106,28 @@ const ITEM_MIN_LV = {
 };
 for (const _id in ITEM_MIN_LV) if (DB.items[_id]) DB.items[_id].minLv = ITEM_MIN_LV[_id];
 
+// ===== ⏳ 技能冷卻（2026-10-16 站長：照模擬器 skills.reuseDelay，毫秒；照名字對到的才有，頭盔版「治盔：X」比照 X）=====
+// 每個技能各自的冷卻：施放成功後這段時間內不能再放同一招（手動、自動都一樣）；跟職業施法間隔（castLock）各算各的，取較長的
+const SKILL_CD_MS = {
+    "sk_abs_barrier": 12000, /* 絕對屏障 */ "sk_dark_stealth": 10000, /* 暗隱術 */ "sk_elf_earthshield": 10000, /* 大地屏障 */ "sk_mummy_curse": 10000, /* 木乃伊的詛咒 */
+    "sk_elf_seal": 9000, /* 封印禁地 */ "sk_shock_stun": 8000, /* 衝擊之暈 */ "sk_cancel": 5000, /* 魔法相消術 */ "sk_disintegrate": 5000, /* 究極光裂術 */
+    "sk_fire_prison": 5000, /* 火牢 */ "sk_seal": 5000, /* 魔法封印 */ "sk_spike_armor": 5000, /* 尖刺盔甲 */ "sk_break": 3000, /* 壞物術 */
+    "sk_dark_burn": 3000, /* 燃燒鬥志 */ "sk_elf_groundtrap": 3000, /* 地面障礙 */ "sk_elf_magicerase": 3000, /* 魔法消除 */ "sk_reduction_armor": 3000, /* 增幅防禦 */
+    "sk_solid_shield": 3000, /* 堅固防護 */ "sk_blizzard_storm": 2000, /* 冰雪颶風 */ "sk_chill": 2000, /* 寒冰氣息 */ "sk_elf_muddywater": 2000, /* 污濁之水 */
+    "sk_fire_storm": 2000, /* 火風暴 */ "sk_meteor": 2000, /* 流星雨 */ "sk_thunder": 2000, /* 極道落雷 */ "sk_thunder_storm": 2000, /* 雷霆風暴 */
+    "sk_tornado": 2000, /* 龍捲風 */ "sk_blizzard": 1500, /* 冰雪暴 */ "sk_holy_barrier": 1500, /* 聖結界 */ "sk_sleep_mist": 1500, /* 沉睡之霧 */
+    "sk_aurora": 1000, /* 極光雷電 */ "sk_blaze": 1000, /* 烈炎術 */ "sk_elf_preciseshot": 1000, /* 精準射擊 */ "sk_elf_soul": 1000, /* 魂體轉換 */
+    "sk_fireball": 1000, /* 燃燒的火球 */ "sk_ice_lance": 1000, /* 冰矛圍籬 */ "sk_ice_spike": 1000, /* 冰錐 */ "sk_quake": 1000, /* 震裂術 */
+    "sk_slow": 1000, /* 緩速術 */ "sk_summon": 1000, /* 召喚術 */ "sk_vampire": 1000, /* 吸血鬼之吻 */ "sk_cold_shiver": 500, /* 寒冷戰慄 */
+    "sk_dark_blind": 500, /* 闇盲咒術 */ "sk_firearrow": 500, /* 火箭 */ "sk_full_heal": 500, /* 全部治癒術 */ "sk_hell_fang": 500, /* 地獄之牙 */
+    "sk_helm_str2": 500, /* 力盔：無所遁形術 */ "sk_lightarrow": 500, /* 光箭 */ "sk_poison_curse": 500, /* 毒咒 */ "sk_regen": 500, /* 體力回復術 */
+    "sk_reveal": 500, /* 無所遁形術 */ "sk_weaken": 500, /* 弱化術 */ "sk_windblade": 500, /* 風刃 */ "sk_earthquake": 400, /* 地裂術 */
+    "sk_elf_mind": 400, /* 心靈轉換 */ "sk_elf_triple": 400, /* 三重矢 */ "sk_icearrow": 400, /* 冰箭 */ "sk_mana_drain": 400, /* 魔力奪取 */
+    "sk_heal2": 200, /* 高級治癒術 */ "sk_magic_shield": 100, /* 魔法屏障 */ "sk_heal1": 10, /* 初級治癒術 */ "sk_helm_heal1": 10, /* 治盔：初級治癒術 */
+    "sk_shield": 10, /* 保護罩 */ "sk_sunlight": 10, /* 日光術 */
+};
+for (const _id in SKILL_CD_MS) if (DB.skills[_id]) DB.skills[_id].cdMs = SKILL_CD_MS[_id];
+
 // ===== Lv51+ 頭目基礎 HP 曲線 =====
 // 只提高低於同級下限的頭目，不降低既有高血量；卡瑞維持原始 3,000 HP。
 (function normalizeHighLevelBossHp() {

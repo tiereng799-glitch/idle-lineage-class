@@ -596,13 +596,17 @@
          上緣沿用 afk-mobile 的 top:calc(8px + var(--orig-bar-h))（戰鬥時 --orig-bar-h 已換成場景下緣）；
          這裡只改寬度/高度/置中與內部密度。#modal-compare（裝備比對）照樣排在卡片上方，一起在卡片裡捲。 */
       'html body.lmui #item-modal:not(.hidden){top:var(--lmui-pop-top) !important;bottom:auto !important;left:var(--lmui-pop-side) !important;right:var(--lmui-pop-side) !important;width:auto !important;transform:none !important;height:auto !important;max-height:calc(100dvh - var(--lmui-pop-top) - var(--lmui-pop-bot)) !important;overflow-y:auto !important;flex-direction:column !important;align-items:stretch !important;gap:6px !important;padding:8px !important;background:linear-gradient(#1f1912,#0e0b08) !important;border:1px solid #8a6a3a !important;border-radius:10px !important;box-shadow:0 0 0 100vmax rgba(0,0,0,.55),0 10px 40px rgba(0,0,0,.9) !important;}',
+      /* 背包等視窗開著（標題列 #lmui-whead 在上面）：道具視窗從標題列下緣開始，原本道具名稱被標題列蓋掉一半（站長：道具視窗很亂） */
+      'html body.lmui-battle.lmui-tall.lmui-whead #item-modal:not(.hidden){top:calc(var(--lmui-ptop) + var(--lmui-whead-h) + 6px) !important;max-height:calc(100dvh - var(--lmui-ptop) - var(--lmui-whead-h) - 6px - var(--lmui-pop-bot)) !important;}',
       'html body.lmui #item-modal>.panel{min-width:0 !important;max-width:none !important;width:100% !important;max-height:none !important;padding:12px !important;margin:0 !important;box-shadow:none !important;}',
       'html body.lmui #modal-item-name{font-size:18px !important;margin-bottom:8px !important;padding-bottom:8px !important;}',
       'html body.lmui #modal-item-name img{width:28px !important;height:28px !important;}',
       'html body.lmui #modal-item-desc{font-size:15px !important;line-height:1.55 !important;min-height:0 !important;margin-bottom:10px !important;}',
       'html body.lmui #modal-item-desc .class-eq-icon{width:16px !important;height:16px !important;}',
-      'html body.lmui #modal-actions{grid-template-columns:1fr 1fr !important;gap:6px !important;}',
-      'html body.lmui #modal-actions>*{grid-column:auto !important;width:auto !important;min-height:0 !important;padding:7px 4px !important;font-size:15px !important;line-height:1.3 !important;}',
+      /* 按鈕兩顆一列、落單的撐滿整列；.act-break（js/10 openModal 插在主要動作和賣出之間）強制換列 */
+      'html body.lmui #modal-actions{display:flex !important;flex-wrap:wrap !important;gap:6px !important;}',
+      'html body.lmui #modal-actions>*{flex:1 1 40% !important;width:auto !important;min-height:0 !important;margin:0 !important;padding:9px 4px !important;font-size:15px !important;line-height:1.3 !important;}',
+      'html body.lmui #modal-actions>.act-break{flex:1 1 100% !important;height:0 !important;padding:0 !important;border:0 !important;}',
       'html body.lmui #item-modal .panel>button.mt-5{margin-top:8px !important;padding:7px !important;font-size:16px !important;}',
       'html body.lmui #item-modal>.panel{overflow:visible !important;height:auto !important;}',   // 整張卡片一起捲，不要卡片裡面各自再一條捲軸
       'html body.lmui #modal-compare{font-size:14px !important;}',
@@ -1540,7 +1544,7 @@
   var WIN_SEL = '#item-modal:not(.hidden),#warehouse-window-frame,.fixed.inset-0,.lmui-below,.lmui-below-c,' + MODAL_HOSTS;
   // 掛在 body 下、蓋到戰鬥場景的彈窗 → 推到下半。不碰：主畫面/我們自己的元件/橫幅(z 極大)/不吃點擊的特效層/提示框
   var KEEP_IDS = { 'app-stage': 1, 'creation-screen': 1, 'lmui-hud': 1, 'm-nav': 1, 'lmui-bagtabs': 1, 'lmui-pcap': 1, 'm-log-sheet': 1, 'm-logout-overlay': 1,
-    'lmui-hotpick': 1, 'lmui-mapdrops': 1, 'companion-overlay': 1, 'pet-revive-overlay': 1, 'my-mailbox': 1, 'my-qty': 1, 'afk-offres': 1, 'enh-window': 1, 'afk-updwin': 1 };   // 自己置中、自己限高的視窗：不要被搬到戰鬥畫面下方（會把標題列擠出畫面）
+    'lmui-hotpick': 1, 'lmui-mapdrops': 1, 'lmui-huntlog': 1, 'companion-overlay': 1, 'pet-revive-overlay': 1, 'my-mailbox': 1, 'my-qty': 1, 'afk-offres': 1, 'enh-window': 1, 'afk-updwin': 1 };   // 自己置中、自己限高的視窗：不要被搬到戰鬥畫面下方（會把標題列擠出畫面）
   // 場景下緣：平常＝#game-screen 頂端；功能頁模式 #game-screen 從畫面頂端開始（見 CSS 註解）→ 改量 #lmui-pcap（固定釘在場景下緣）
   function sceneBottom(gs) {
     var b = document.body.classList, cap = $('lmui-pcap');

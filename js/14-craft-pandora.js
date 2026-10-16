@@ -1830,6 +1830,7 @@ window.onload = () => {
         { let _costs = []; if(sk.hpCost) _costs.push('體力 '+sk.hpCost); if(sk.mp) _costs.push('魔力 '+sk.mp); if(sk.costItem){ let _ci = DB.items[sk.costItem.id]; _costs.push((_ci ? _ci.n : '材料')+'×'+(sk.costItem.qty||1)); } if(_costs.length) meta.push('消耗'+_costs.join('、')); }   // 🐉 同時消耗 HP＋MP 的技能(冥想/隱身/堅固防護等)：兩者並列顯示；🌀 costItem 為可選施法材料
         if(sk.dur) meta.push('持續 '+sk.dur+' 秒');
         if(sk.cd) meta.push('冷卻 '+(sk.cd/10)+' 秒');
+        else if(sk.cdMs >= 500) meta.push('冷卻 '+(Math.round(sk.cdMs / 100) / 10)+' 秒');   // ⏳ 照模擬器（js/00 SKILL_CD_MS）；0.5 秒以下比施法間隔還短，不寫
         if(meta.length) parts.push(`<div class="text-slate-300">${meta.join(' ・ ')}</div>`);
         let eff = [];
         // 🎲 2026-10-14 站長：說明不寫骰子式（3d8、INT…玩家看不懂）→ 一律換算成「最小～最大」的數字範圍

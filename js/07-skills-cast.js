@@ -239,6 +239,7 @@ function manualCast(skId) {
     }
     player.mp -= cost;
     player.manualCd[skId] = (sk.mEff === 'barrier') ? (sk.dur * 10 + 120) : getAutoCastInterval(player, isSupportSkill(sk), player.manualCd[skId]);   // 🛡️ 絕對屏障保留專屬長冷卻；其餘手動施法套用攻擊／輔助施法速度
+    player.manualCd[skId] = Math.max(player.manualCd[skId], skillCdTicks(sk));   // ⏳ 模擬器的技能冷卻（js/00 SKILL_CD_MS）比施法速度長就照它
     calcStats(); updateUI();
 }
 
@@ -312,8 +313,15 @@ function relicFlywingDouble(t) {
     calcStats(); updateUI();
     return swings > 0;
 }
+// ⏳ 技能各自的冷卻（2026-10-16 站長：照模擬器 reuseDelay，js/00 SKILL_CD_MS → DB.skills[].cdMs）：
+//    施放成功後 player.skillCd[技能] 記 tick 數（js/03 tick 每拍遞減）；冷卻中不能再放同一招（自動、手動都一樣）。
+//    跟職業施法間隔 castLock 各算各的：施法間隔管「多久能放下一個魔法」，這個管「同一招多久能再放」
+function skillCdTicks(sk) { return (sk && sk.cdMs) ? Math.ceil(sk.cdMs / 100) : 0; }
+function skillCdLeft(skId) { return (player && player.skillCd && player.skillCd[skId]) || 0; }
 function castSkill(skId) {
+    if (skillCdLeft(skId) > 0) return false;
     let r = castSkillInner(skId);
+    if (r && DB.skills[skId] && DB.skills[skId].cdMs) { if (!player.skillCd) player.skillCd = {}; player.skillCd[skId] = skillCdTicks(DB.skills[skId]); }
     if (r) { try { playSpellCast(DB.skills[skId] ? DB.skills[skId].n : null); } catch(e){} }   // 🔊 音效：施法成功才出聲（依技能名對應專屬施展音，查無→通用魔法音）
     if (r && typeof playSelfFx === 'function' && DB.skills[skId] && isSupportSkill(DB.skills[skId])) {   // 🙏 v2.7.48 自我增益特效：buff→玩家頭上(overHead)·heal→被治療目標身上（未註冊靜默略過）
         try {
@@ -831,7 +839,7 @@ function autoActions() {
     let potThr = parseInt(document.getElementById('set-hp-pot').value) || 0;
     
     let _duelNoPot = (typeof pvpArenaPotionBlocked === 'function') && pvpArenaPotionBlocked();   // 🚫 v3.7.17 決鬥中禁治癒藥水（連「自動購買」一併跳過，免得在場上狂買卻喝不到）
-    if (!_duelNoPot && hpPct <= potThr && player.cds.pot <= 0) {
+    if (!_duelNoPot && hpPct <= potThr && player.cds.pot <= 0 && (player.cds.potTick || 0) <= 0) {   // ⏳ 治癒藥水延遲改 tick 計（js/08 potTick·照模擬器）
         let item = player.inv.find(i => i.id === potId);
         if (item) useItem(item.uid, true);
         else if (document.getElementById('set-auto-buy-pot').checked) {

@@ -598,6 +598,8 @@ function tick() {
     _combatSrc = null;   // ⚔️ 戰鬥日誌來源：每 tick 起始重置（玩家攻擊/施法/DoT 等預設依顏色type推定；友方派發點會各自設定）
     _dpsAllyTurn = false; let _dpsPlayerSnap = _dpsSnap();   // 🎯 DPS：玩家階段起點快照（至怪物行動前的所有掉血＝玩家輸出·含自動施法/持續增益）
     for(let k in player.manualCd) if(player.manualCd[k] > 0) player.manualCd[k]--;
+    if ((player.cds && player.cds.potTick) > 0) player.cds.potTick--;   // ⏳ 治癒藥水延遲（js/08·照模擬器 0.5／1 秒）
+    if (player.skillCd) for (let k in player.skillCd) { if (player.skillCd[k] > 0) player.skillCd[k]--; if (!player.skillCd[k]) delete player.skillCd[k]; }   // ⏳ 技能各自的冷卻（js/07 skillCdTicks·照模擬器）
     
     let canAct = true;
     for(let k in player.statuses) {
