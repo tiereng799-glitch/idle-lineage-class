@@ -344,7 +344,10 @@
          ⚠️ 不可以改用「場景蓋在上面、clip-path 多邊形挖洞露出視窗」：手機判斷手指在滑哪一塊時不看非長方形的裁切，
             整片都當成場景 → 視窗完全滑不動（踩過）。
          外框＝#lmui-wborder（蓋在內容上面，內容再長下緣的框也看得到）；#lmui-wframe 不畫東西，只給魔法書量視窗下緣 */
-      ':root{--lmui-wbot:calc(100dvh - var(--m-nav-h,0px) - 46px - var(--lmui-btns) - 6px);}',
+      /* 視窗下緣＝精簡版面「快捷列＋聊天輸入列」上方 6px（94px＝body.lmui-compact 的 --lmui-stack；兩排快捷列 134px）。
+         原本只扣聊天輸入列 46px，精簡版面加了快捷列後背包最後一排被快捷列蓋住（站長 2026-10-16） */
+      ':root{--lmui-wbot:calc(100dvh - var(--m-nav-h,0px) - 94px - var(--lmui-btns) - 6px);}',
+      'body.lmui-hot2{--lmui-wbot:calc(100dvh - var(--m-nav-h,0px) - 134px - var(--lmui-btns) - 6px);}',
       'body.lmui-town{--lmui-wbot:calc(100dvh - var(--m-nav-h,0px) - var(--lmui-btns) - 6px);}',   /* 村莊下方沒有聊天輸入列：視窗拉到工具列上方 */   /* 視窗下緣＝精簡版面聊天輸入列上方 6px；寫死不跟 --lmui-mtop：角色死亡會切掉精簡版面，視窗不可以跟著縮 */
       'html body.lmui-battle.lmui-tall.lmui-whead #col-center{clip-path:none;z-index:1;}',
       'html body.lmui-battle.lmui-tall.lmui-whead #game-screen{overflow:hidden !important;}',
