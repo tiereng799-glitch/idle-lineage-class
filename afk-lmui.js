@@ -320,12 +320,17 @@
       '#lmui-whead button{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:32px;height:28px;padding:0;border:1px solid #8a6f52;border-radius:4px;background:linear-gradient(#6a3026,#2e140f);color:#fbe3d2;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;}',
       '#lmui-whead button:active{background:linear-gradient(#8a3e30,#46201a);}',
       'html body.lmui-battle.lmui-tall.lmui-whead #lmui-whead{display:flex;}',
-      /* 視窗後面露出遊戲畫面（站長：左右不要漏底色）：場景（#col-center）拉到整個畫面高、墊在視窗後面，用 evenodd 多邊形把視窗那塊挖掉，
-         四周 6px 與視窗下緣露出（被 lmui-tall 壓暗的）場景；往上捲的內容照樣被場景蓋住。視窗本身的底是 #lmui-wframe（z:-1，墊在 #game-screen 下面），內容不夠長也不露底色 */
-      'html body.lmui-battle.lmui-tall.lmui-whead #col-center{height:calc(100dvh - var(--orig-bar-h,0px) - var(--m-nav-h,0px)) !important;clip-path:polygon(evenodd,0 0,100% 0,100% 100%,0 100%,0 0,6px calc(var(--lmui-ptop) - var(--orig-bar-h,0px)),6px calc(100% - 6px),calc(100% - 6px) calc(100% - 6px),calc(100% - 6px) calc(var(--lmui-ptop) - var(--orig-bar-h,0px)),6px calc(var(--lmui-ptop) - var(--orig-bar-h,0px)));}',
-      '#lmui-wframe{display:none;position:fixed;left:6px;right:6px;top:var(--lmui-ptop);bottom:calc(var(--m-nav-h,0px) + 6px);z-index:-1;box-sizing:border-box;background:linear-gradient(#1f1813,#120d09);border:1px solid #4a3c29;border-radius:6px;pointer-events:none;}',
-      'html body.lmui-battle.lmui-tall.lmui-whead #lmui-wframe{display:block;}',
-      'html body.lmui-battle.lmui-tall.lmui-whead #game-screen{padding-top:calc(var(--lmui-ptop) + var(--lmui-whead-h) + 6px) !important;}',
+      /* 視窗＝浮在戰鬥畫面上（站長：開視窗戰鬥畫面不要跳、背景不要變暗、左右不要漏底色）：
+         戰鬥畫面大小一律不動（tick 開視窗時照樣維持精簡版面），視窗從頭像列下方到聊天輸入列上方；
+         場景（#col-center）用 evenodd 多邊形把視窗那塊挖掉，四周露出的就是原本的場景，往上捲的內容照樣被場景蓋住。
+         視窗的底＝#lmui-wframe（z:-1，墊在 #game-screen 下面，內容不夠長也不露底色）；外框＝#lmui-wborder（蓋在內容上面，內容再長下緣的框也看得到） */
+      'body{--lmui-wbot:calc(var(--lmui-mtop) - 6px);}',   /* 視窗下緣（聊天輸入列上方 6px）；掛 body 才吃得到精簡版面改過的 --lmui-mtop */
+      'html body.lmui-battle.lmui-tall.lmui-whead #col-center{clip-path:polygon(evenodd,0 0,100% 0,100% 100%,0 100%,0 0,6px calc(var(--lmui-ptop) - var(--orig-bar-h,0px)),6px calc(var(--lmui-wbot) - var(--orig-bar-h,0px)),calc(100% - 6px) calc(var(--lmui-wbot) - var(--orig-bar-h,0px)),calc(100% - 6px) calc(var(--lmui-ptop) - var(--orig-bar-h,0px)),6px calc(var(--lmui-ptop) - var(--orig-bar-h,0px)));}',
+      '#lmui-wframe,#lmui-wborder{display:none;position:fixed;left:6px;right:6px;top:var(--lmui-ptop);height:calc(var(--lmui-wbot) - var(--lmui-ptop));box-sizing:border-box;border-radius:6px;pointer-events:none;}',
+      '#lmui-wframe{z-index:-1;background:linear-gradient(#1f1813,#120d09);}',
+      '#lmui-wborder{z-index:9549;border:1px solid #6b5a48;box-shadow:0 2px 8px rgba(0,0,0,.7);}',
+      'html body.lmui-battle.lmui-tall.lmui-whead :is(#lmui-wframe,#lmui-wborder){display:block;}',
+      'html body.lmui-battle.lmui-tall.lmui-whead #game-screen{padding-top:calc(var(--lmui-ptop) + var(--lmui-whead-h) + 6px) !important;padding-bottom:calc(100dvh - var(--lmui-wbot) + 6px) !important;}',
       'html body.lmui-battle.lmui-tall.lmui-whead.lmui-ptabs #game-screen{padding-top:calc(var(--lmui-ptop) + var(--lmui-whead-h) + var(--lmui-ptabs-h) + 6px) !important;}',
       'html body.lmui-battle.lmui-whead #lmui-bagtabs{top:calc(var(--lmui-ptop) + var(--lmui-whead-h));border-radius:0;border-top:0;}',
       /* 設定頁會捲：往上捲時補的固定上框（#lmui-pcap）改接在標題列下面；彈窗讓位也量它，一起讓開標題列 */
@@ -347,7 +352,8 @@
       /* 開著功能頁（上方只露出一條場景）時，iPhone 不會畫「被裁切的 fixed 容器裡、用 multiply 混色的背景圖」→ 狩獵場上方變成一片黑
          （村莊用的 town-view 沒有混色所以正常）。這時改成不混色、另蓋一層半透明黑來壓暗，看起來跟混色差不多。 */
       'html body.lmui-battle.lmui-tall #battle-view{background-blend-mode:normal !important;background-color:transparent !important;position:relative;}',
-      'html body.lmui-battle.lmui-tall #battle-view::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.62);pointer-events:none;z-index:0;}',
+      /* 只蓋在靜態背景上（模擬原本的混色亮度）；狩獵區動態地圖本來就沒混色，蓋了反而整片變暗（站長回報視窗背景變暗） */
+      'html body.lmui-battle.lmui-tall #battle-view:not(.afk-hm)::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.62);pointer-events:none;z-index:0;}',
       /* 面板上方的分頁列（背包：全部/裝備/道具/自動賣出；能力：能力/裝備/…）：樣式＝狩獵場的分頁（.lm-tabs），釘在頭像列正下方 */
       '#lmui-bagtabs{display:none;position:fixed;left:6px;right:6px;top:var(--lmui-ptop);height:var(--lmui-ptabs-h);box-sizing:border-box;z-index:9550;padding:3px 2px;background:linear-gradient(#1a1612,#0b0907);border:1px solid #4a3f30;border-radius:3px 3px 0 0;}',
       'body.lmui-ptabs #lmui-bagtabs{display:flex;}',
@@ -1706,8 +1712,7 @@
       h.innerHTML = '<b></b><button type="button" aria-label="關閉">✕</button>';
       h.querySelector('button').addEventListener('click', function (e) { e.stopPropagation(); closeTool(); });
       document.body.appendChild(h);
-      var f = document.createElement('div'); f.id = 'lmui-wframe'; f.setAttribute('aria-hidden', 'true');
-      document.body.appendChild(f);
+      ['lmui-wframe', 'lmui-wborder'].forEach(function (id) { var f = document.createElement('div'); f.id = id; f.setAttribute('aria-hidden', 'true'); document.body.appendChild(f); });
     }
     toggleCls('lmui-whead', !!title);
     if (h && title) setTxt(h.querySelector('b'), title);
@@ -2111,7 +2116,8 @@
     // 精簡下方（站長要求）：狩獵場主畫面預設只留 地圖資訊／血條／聊天輸入框／分頁按鈕／等級，快捷列、聊天分頁、訊息都收起來、地圖往下長；
     //   按「聊天」才看訊息。村莊：NPC 站在動態地圖上點得到時才收 NPC 卡片（地圖沒載起來時卡片是唯一入口，不收）
     var bc = document.body.classList;
-    toggleCls('lmui-compact', !dead && bc.contains('mview-center') && !bc.contains('lmui-chatbig') && !bc.contains('lmui-maps') && !bc.contains('lmui-map') &&
+    //   開著魔法／背包／設定視窗也維持精簡（視窗浮在上面；切掉精簡會讓戰鬥畫面縮成一半＝站長說的「戰鬥畫面跳動」）
+    toggleCls('lmui-compact', !dead && (bc.contains('mview-center') || bc.contains('lmui-whead')) && !bc.contains('lmui-chatbig') && !bc.contains('lmui-maps') && !bc.contains('lmui-map') &&
       !bc.contains('lmui-townchat') && !bc.contains('lmui-npcwin') && (!town || !!document.querySelector('#town-npc-map > canvas.afk-tm-cv')));
     if (dead) { try { placeDeadBtn(); buildDeathWin(); renderDeathStats(); } catch (e) {} }
     else toggleCls('lmui-deathx', false);
@@ -2228,6 +2234,8 @@
       if (window.scrollY) { try { window.scrollTo(0, 0); } catch (e) {} }
     }
     var nav = $('m-nav'), bottom = nav && nav.getClientRects().length ? nav.getBoundingClientRect().top : window.innerHeight;
+    var wf = document.body.classList.contains('lmui-whead') && $('lmui-wframe');   // 視窗模式：量到視窗下緣
+    if (wf && wf.getClientRects().length) bottom = wf.getBoundingClientRect().bottom;
     var h = Math.floor(bottom - root.getBoundingClientRect().top - 8);
     if (h >= 320 && Math.abs((parseFloat(root.style.height) || 0) - h) > 2) { root.style.height = h + 'px'; skSyncSide(root.querySelector('.lsk2-scroll')); }
   }
