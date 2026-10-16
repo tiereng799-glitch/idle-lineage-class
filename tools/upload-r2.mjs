@@ -81,6 +81,11 @@ function plan(publicUrl) {
         objs.set(PREFIX + hn, { body: hb, type: TYPES['.json'] });
         remote.hunts = hn;
     }
+    if (fs.existsSync(path.join(SRC, 'portals.json'))) {   // 傳送點（樓梯、洞口、碼頭）
+        const pb = fs.readFileSync(path.join(SRC, 'portals.json')), pn = named('portals.json', pb);
+        objs.set(PREFIX + pn, { body: pb, type: TYPES['.json'] });
+        remote.portals = pn;
+    }
     return { objs, remote };
 }
 

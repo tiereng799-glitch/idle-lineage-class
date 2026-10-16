@@ -366,6 +366,31 @@ function placeHunt(M, p) {
     return { map: M.id, home, spawns, missing: missing.map(p.mobName), real };
 }
 
+// ── 傳送點（模擬器 dungeon 表：踩上去就傳送的格子，樓梯、洞口、碼頭）────────────
+// 起點、終點都在有動態地圖的用戶端地圖上才收。終點那張用戶端地圖上有好幾張遊戲地圖時（大陸＝各村莊＋各野外、說話之島…），
+//   挑起點（村莊起點／狩獵起點）離終點最近的那張；傲慢之塔「2~10 樓」這種合併的不挑，留給單層的。
+//   存成 { 用戶端地圖: [[起點 x, y, 目的地遊戲地圖, 終點 x, y], …] }（地圖格座標）
+function planPortals(db, towns, hunts) {
+    const box = new Map(db.mapids.map(m => [+m.mapid, { x0: +m.startX, y0: +m.startY, w: +m.endX - +m.startX + 1, h: +m.endY - +m.startY + 1 }]));
+    const games = {};
+    for (const id in towns) (games[towns[id].map] = games[towns[id].map] || []).push({ id, home: towns[id].home });
+    for (const id in hunts) (games[hunts[id].map] = games[hunts[id].map] || []).push({ id, home: hunts[id].home });
+    const out = {}, seen = new Set(); let n = 0;
+    for (const r of db.dungeon) {
+        const s = +r.src_mapid, dm = +r.new_mapid, sb = box.get(s), tb = box.get(dm);
+        if (!games[s] || !games[dm] || !sb || !tb) continue;
+        const sx = +r.src_x - sb.x0, sy = +r.src_y - sb.y0, dx = +r.new_x - tb.x0, dy = +r.new_y - tb.y0;
+        if (sx < 0 || sy < 0 || sx >= sb.w || sy >= sb.h || dx < 0 || dy < 0 || dx >= tb.w || dy >= tb.h) continue;
+        const k = s + ':' + sx + ',' + sy; if (seen.has(k)) continue; seen.add(k);   // 同一格重複列的取第一筆
+        let cand = games[dm].filter(g => !/^pride_\d+_\d+$/.test(g.id)); if (!cand.length) cand = games[dm];
+        const dist = g => Math.max(Math.abs(g.home[0] - dx), Math.abs(g.home[1] - dy));
+        const g = cand.reduce((a, b) => (dist(b) < dist(a) ? b : a));
+        (out[s] = out[s] || []).push([sx, sy, g.id, dx, dy]); n++;
+    }
+    console.log('[gen-townmap] 傳送點 ' + n + ' 個，分在 ' + Object.keys(out).length + ' 張地圖');
+    return out;
+}
+
 // ── 村莊 → 地圖、中心、NPC 位置 ───────────────────────────
 // 遊戲村莊的 NPC 名字去對模擬器 spawnlist_npc（npc 名稱或 location 欄）：對到最多的那張圖就是村莊所在，
 //   對到的位置取中位數當村莊中心；離中心 48 格外的同名 NPC（別的村莊的）不算。
@@ -730,7 +755,7 @@ if (!process.argv.includes('--hero-only')) {
     const client = arg('client'), emu = arg('emu');
     if (!client || !emu) { console.error('用法：node tools/gen-townmap.js --client <天堂用戶端資料夾> --emu <模擬器資料夾> [--maps 0,4]（或 --hero-only）'); process.exit(1); }
     const sql = fs.readFileSync(path.join(emu, 'db', 'l1jdb.sql'), 'utf8');
-    const db = { mapids: sqlTable(sql, 'mapids'), npc: sqlTable(sql, 'npc'), spawn: sqlTable(sql, 'spawnlist_npc'), spawnAll: sqlTable(sql, 'spawnlist') };
+    const db = { mapids: sqlTable(sql, 'mapids'), npc: sqlTable(sql, 'npc'), spawn: sqlTable(sql, 'spawnlist_npc'), spawnAll: sqlTable(sql, 'spawnlist'), dungeon: sqlTable(sql, 'dungeon') };
     const plan = planTowns(db), hplan = planHunts(db), only = arg('maps') ? new Set(arg('maps').split(',').map(Number)) : null;
     const tilePak = openPak(client, 'Tile'), townsOut = {}, huntsOut = {}, webp = await webpEncoder();
     let total = 0;
@@ -761,6 +786,8 @@ if (!process.argv.includes('--hero-only')) {
     fs.writeFileSync(path.join(OUT_DIR, 'towns.json'), JSON.stringify(townsOut));
     // hunts.json：{ 狩獵地圖 id: { map, home 起點, spawns 重生點（格式見 placeHunt）} }
     fs.writeFileSync(path.join(OUT_DIR, 'hunts.json'), JSON.stringify(huntsOut));
+    // portals.json：{ 用戶端地圖: [[起點 x, y, 目的地遊戲地圖, 終點 x, y], …] }（格式見 planPortals）
+    fs.writeFileSync(path.join(OUT_DIR, 'portals.json'), JSON.stringify(planPortals(db, townsOut, huntsOut)));
     // 舊版的檔案（只有說話之島的 talking*、.js 總表／PNG 拼圖）
     fs.rmSync(path.join(OUT_DIR, 'talking'), { recursive: true, force: true });
     for (const f of fs.readdirSync(OUT_DIR)) if (/^(talking(_\d+\.png|\.js)|towns\.js|m\d+\.js)$/.test(f)) fs.unlinkSync(path.join(OUT_DIR, f));

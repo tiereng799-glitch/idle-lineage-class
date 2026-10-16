@@ -17,6 +17,7 @@ node_modules/
 #   repo 只留 hero.js 跟入口 remote.json(tools/upload-r2.mjs 寫的)
 assets/townmap/towns.json
 assets/townmap/hunts.json
+assets/townmap/portals.json
 assets/townmap/m*.json
 assets/townmap/m*/
 # R2 上傳金鑰(tools/upload-r2.mjs 讀),絕不進版控
