@@ -63,7 +63,7 @@
   function injectCSS() {
     if ($('afk-lmui-style')) return;
     var B = 'body.lmui-battle ';
-    var STAND = 'var(--lmui-vit)';   // 場景往下鋪到血條後面（血條去背，站長），怪物/角色站在血條上緣
+    var STAND = 'var(--lmui-stand)';   // 場景往下鋪到血條（精簡版面再加聊天輸入列）後面（去背，站長），怪物/角色站在血條上緣
     var css = [
       /* 戰鬥場景只佔上半（玩家要求「縮到一半、下方留空間」）：下方 HUD 面板＝可用高度的一半扣掉 AUTO 那條 */
       ':root{--lmui-btns:0px;--lmui-vit:50px;--lmui-stack:calc((100dvh - var(--orig-bar-h,0px) - var(--m-nav-h,0px)) / 2 - var(--lmui-vit));--lmui-gold:#d9bf86;--lmui-line:rgba(214,190,140,.45);--lmui-glass:rgba(8,8,10,.42);}',
@@ -84,8 +84,11 @@
       B + '#pet-layer{top:0 !important;height:auto !important;bottom:' + STAND + ' !important;}',
       B + '#status-icon-bar{position:absolute !important;top:8px !important;right:6px !important;left:auto !important;max-width:62% !important;z-index:5;display:flex !important;flex-flow:row-reverse wrap !important;justify-content:flex-start !important;gap:3px;}',   // 右上角、地圖鈕下方，從右往左排
       /* 狀態（魔法）圖示放大：上游手機只有 ~12px，看不出是哪個魔法 */
-      B + '#status-icon-bar .status-icon{width:28px !important;height:28px !important;min-width:28px;border:1px solid rgba(0,0,0,.8);box-shadow:0 1px 3px #000;}',
+      B + '#status-icon-bar .status-icon{width:28px !important;height:28px !important;min-width:28px;border:0 !important;box-shadow:none !important;background:none !important;}',
       B + '#status-icon-bar .status-icon img{width:100% !important;height:100% !important;object-fit:cover;}',
+      /* 去背（站長）：圖檔本身是黑底，整排用 screen 疊在場景上＝黑色變透明、只留發亮的圖案。
+         ⚠ 要掛在 #status-icon-bar 本身：它有 z-index 自成一層，掛在裡面的圖示上只會跟透明的自己混，黑底照樣在 */
+      B + '#status-icon-bar{mix-blend-mode:screen;}',
       /* 點狀態圖示看名稱與剩餘時間（內容取自核心寫在圖示上的 title，每秒更新） */
       '#lmui-stip{position:fixed;z-index:2147483000;display:none;max-width:70vw;padding:6px 10px;border:1px solid #6b5636;border-radius:6px;background:rgba(20,16,12,.96);color:#f1e6cf;font-size:15px;line-height:1.4;box-shadow:0 4px 12px rgba(0,0,0,.6);pointer-events:none;white-space:nowrap;}',
       /* 戰鬥畫面不被視窗遮住：彈窗一律改放在「場景下緣以下」（蓋住按鈕/快捷列/聊天框，不蓋場景）。
@@ -216,6 +219,11 @@
       /* ── 下方堆疊：血條 → 快捷列 → 聊天框 ── */
       '#lmui-vit{position:absolute;left:0;right:0;top:calc(var(--lmui-mtop) - var(--lmui-vit) - var(--orig-bar-h,0px));height:var(--lmui-vit);padding:3px 4px 0;display:flex;flex-direction:column;justify-content:center;gap:2px;background:none;pointer-events:auto;z-index:3;}',   /* 去背（站長）：後面就是場景 */
       'body.lmui-compact{--lmui-stack:46px;--lmui-mtop:calc(100dvh - var(--m-nav-h,0px) - 46px - var(--lmui-btns));}',
+      /* 精簡版面：聊天輸入列也去背（站長），場景一路鋪到工具列上緣；怪物／角色站在血條上緣（--lmui-stand＝場景底下被 HUD 蓋住的高度） */
+      'body{--lmui-stand:var(--lmui-vit);}',
+      'body.lmui-compact{--lmui-stand:calc(var(--lmui-vit) + var(--lmui-stack));}',
+      'html body.lmui-compact.lmui-battle #col-center{height:calc(100dvh - var(--orig-bar-h,0px) - var(--m-nav-h,0px)) !important;}',
+      'body.lmui-compact #lmui-bottom{background:none !important;border-top:0 !important;box-shadow:none !important;}',
       'body.lmui-compact #lmui-hot,body.lmui-compact #lmui-tabs,body.lmui-compact #lmui-lines{display:none !important;}',
       'html body.lmui-compact.lmui-battle #lmui-bottom{display:flex !important;}',   /* 村莊預設會藏下方聊天框（給 NPC 卡片），精簡時只留輸入列 */
       'html body.lmui-compact.lmui-town #afk-npclist{display:none !important;}',
@@ -326,7 +334,7 @@
          ⚠️ 不可以改用「場景蓋在上面、clip-path 多邊形挖洞露出視窗」：手機判斷手指在滑哪一塊時不看非長方形的裁切，
             整片都當成場景 → 視窗完全滑不動（踩過）。
          外框＝#lmui-wborder（蓋在內容上面，內容再長下緣的框也看得到）；#lmui-wframe 不畫東西，只給魔法書量視窗下緣 */
-      'body{--lmui-wbot:calc(var(--lmui-mtop) - 6px);}',   /* 視窗下緣（聊天輸入列上方 6px）；掛 body 才吃得到精簡版面改過的 --lmui-mtop */
+      ':root{--lmui-wbot:calc(100dvh - var(--m-nav-h,0px) - 46px - var(--lmui-btns) - 6px);}',   /* 視窗下緣＝精簡版面聊天輸入列上方 6px；寫死不跟 --lmui-mtop：角色死亡會切掉精簡版面，視窗不可以跟著縮 */
       'html body.lmui-battle.lmui-tall.lmui-whead #col-center{clip-path:none;z-index:1;}',
       'html body.lmui-battle.lmui-tall.lmui-whead #game-screen{overflow:hidden !important;}',
       'html body.lmui-battle.lmui-tall.lmui-whead #col-right{position:fixed !important;left:6px !important;right:6px !important;top:calc(var(--lmui-ptop) + var(--lmui-whead-h)) !important;bottom:auto !important;height:calc(var(--lmui-wbot) - var(--lmui-ptop) - var(--lmui-whead-h)) !important;width:auto !important;max-width:none !important;margin:0 !important;padding:6px 6px 8px !important;box-sizing:border-box !important;overflow-x:hidden !important;overflow-y:auto !important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:linear-gradient(#1f1813,#120d09);border-radius:0 0 6px 6px;z-index:2;}',
