@@ -2447,10 +2447,22 @@
     if (alB.style.color !== alC) alB.style.color = alC;
     figStart();
   }
-  // 中間的角色：面向玩家（方向 5＝正南）的待機（呼吸）動作，變身就畫變身。外型與幀由 afk-townmap 提供（AFK_TM_HERO_IDLE）；
+  // 中間的角色：面向玩家的待機（呼吸）動作，變身就畫變身。外型與幀由 afk-townmap 提供（AFK_TM_HERO_IDLE）；
   //   拿不到（地圖外掛關掉、外型表還沒載）就畫頭像。只在裝備欄看得到時跑，每 80ms 看一次、換幀才重畫（省電）
-  var fig = { timer: 0, key: '', frame: -1, imgs: {} };
+  //   方向用 4：八方向裡肩膀正對鏡頭的那張（5 是程式裡的「正南」，畫面上其實往左轉；站長要「面向玩家」）
+  //   水平置中用「身體實際畫到的像素」的重心（落腳點是斜投影子的中心，人身會偏一邊）；腳的高度照落腳點，站在光圈正中間
+  var FIG_DIR = 4;
+  var fig = { timer: 0, key: '', frame: -1, imgs: {}, cx: null };
   function figImg(src) { var im = fig.imgs[src]; if (!im) { im = fig.imgs[src] = new Image(); im.src = src; } return im; }
+  function figMassX(im) {   // 不透明像素的平均 x（劍細、身體寬，平均會落在身上）；讀不到像素（file:// 等）回 null
+    try {
+      var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+      var x = c.getContext('2d'); x.drawImage(im, 0, 0);
+      var px = x.getImageData(0, 0, c.width, c.height).data, sum = 0, n = 0;
+      for (var i = 3, p = 0; i < px.length; i += 4, p++) if (px[i] > 128) { sum += p % c.width; n++; }
+      return n ? sum / n : null;
+    } catch (e) { return null; }
+  }
   function figStart() { if (!fig.timer) fig.timer = setTimeout(figTick, 0); }
   function figTick() {
     fig.timer = 0;
@@ -2460,9 +2472,9 @@
     var cv = d.querySelector('.ld2-fig'), W = cv.clientWidth, H = cv.clientHeight; if (!W || !H) return;
     var dpr = Math.max(1, Math.min(3, Math.round(window.devicePixelRatio || 1)));
     if (cv.width !== W * dpr || cv.height !== H * dpr) { cv.width = W * dpr; cv.height = H * dpr; fig.frame = -1; }
-    var A = null; try { A = (typeof window.AFK_TM_HERO_IDLE === 'function') ? window.AFK_TM_HERO_IDLE(5) : null; } catch (e) {}
+    var A = null; try { A = (typeof window.AFK_TM_HERO_IDLE === 'function') ? window.AFK_TM_HERO_IDLE(FIG_DIR) : null; } catch (e) {}
     var key = A ? A.key : 'face', k = A ? Math.floor(Date.now() / 1000 * A.fps) % A.n : 0;
-    if (key !== fig.key) { fig.key = key; fig.frame = -1; if (A) for (var i = 0; i < A.n; i++) figImg(A.src(i)); }
+    if (key !== fig.key) { fig.key = key; fig.frame = -1; fig.cx = null; if (A) for (var i = 0; i < A.n; i++) figImg(A.src(i)); }
     if (k === fig.frame) return;
     var body = A ? figImg(A.src(k)) : el.face, an = A ? A.anchor(k) : null;
     if (!body || !body.complete || !body.naturalWidth) return;   // 這幀還沒下載完：下一輪再畫
@@ -2476,7 +2488,9 @@
     ctx.restore();
     if (A && an) {
       ctx.imageSmoothingEnabled = false;   // 點陣圖放大不糊；倍率取 0.5 的倍數，像素才整齊
-      var s = Math.max(1, Math.min(3, Math.floor(H * 0.8 / Math.max(40, an[1]) * 2) / 2)), ox = fx - an[0] * s, oy = fy - an[1] * s;
+      if (fig.cx == null) fig.cx = figMassX(body);   // 每個外型量一次（同一套待機幀左右不會差太多，量一次人才不會跟著晃）
+      var cx = fig.cx != null ? fig.cx : an[0];
+      var s = Math.max(1, Math.min(3, Math.floor(H * 0.8 / Math.max(40, an[1]) * 2) / 2)), ox = fx - cx * s, oy = fy - an[1] * s;
       var sh = figImg(A.shadow(k));
       if (sh.complete && sh.naturalWidth) { ctx.globalAlpha = 0.55; ctx.drawImage(sh, ox, oy, sh.naturalWidth * s, sh.naturalHeight * s); ctx.globalAlpha = 1; }
       ctx.drawImage(body, ox, oy, body.naturalWidth * s, body.naturalHeight * s);
