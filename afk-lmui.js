@@ -547,9 +547,10 @@
       /* 魔法書自己有框 → 開魔法分頁時拿掉外層分頁面板的黑底與框，免得框外又一圈黑邊（lmui-sktab 由 tick 依目前分頁切） */
       'body.lmui-sktab #tab-content-panel{background:none !important;border-color:transparent !important;box-shadow:none !important;}',
       'body.lmui-sktab #tab-skill{background:transparent !important;}',
-      '.lsk2-tabs{display:flex;gap:4px;padding-left:44px;}',
-      '.lsk2-tabs button{flex:1;height:38px;border:1px solid #4d443b;border-bottom:0;border-radius:6px 6px 0 0;background:linear-gradient(#2c2824,#1a1715);color:#8f857a;font-size:17px;letter-spacing:.08em;}',
-      '.lsk2-tabs button.on{background:linear-gradient(#5a5047,#2f2a25);color:#f1e8da;border-color:#8a7b6a;text-shadow:0 1px 2px #000;}',
+      /* 書籤＝背包那排分頁的樣式（站長）：整條貼在書的最上緣（抵掉書的內距），按鈕同 .lm-tabs */
+      '.lsk2-tabs{display:flex;gap:2px;height:var(--lmui-ptabs-h);box-sizing:border-box;margin:-6px -6px 0;padding:3px 2px;background:linear-gradient(#1a1612,#0b0907);border-bottom:1px solid #4a3f30;border-radius:6px 6px 0 0;}',
+      '.lsk2-tabs button{flex:1 1 auto;min-width:0;padding:3px 4px;font-size:16px;white-space:nowrap;font-family:inherit;color:#c9b88f;background:linear-gradient(#3b3022,#1c160e);border:1px solid #4d3e29;border-radius:2px;}',
+      '.lsk2-tabs button.on{color:#fff6dc;background:linear-gradient(#7a5f35,#3f2f18);border-color:#b8955a;}',
       '.lsk2-body{flex:1 1 auto;min-height:0;display:flex;gap:6px;}',
       '.lsk2-side{flex:0 0 38px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;}',
       '.lsk2-side .gap{flex:0 0 8px;}',
@@ -1428,7 +1429,7 @@
   var WIN_SEL = '#item-modal:not(.hidden),#warehouse-window-frame,.fixed.inset-0,.lmui-below,.lmui-below-c,' + MODAL_HOSTS;
   // 掛在 body 下、蓋到戰鬥場景的彈窗 → 推到下半。不碰：主畫面/我們自己的元件/橫幅(z 極大)/不吃點擊的特效層/提示框
   var KEEP_IDS = { 'app-stage': 1, 'creation-screen': 1, 'lmui-hud': 1, 'm-nav': 1, 'lmui-bagtabs': 1, 'lmui-pcap': 1, 'm-log-sheet': 1, 'm-logout-overlay': 1,
-    'lmui-hotpick': 1, 'lmui-mapdrops': 1, 'companion-overlay': 1, 'pet-revive-overlay': 1, 'my-mailbox': 1, 'my-qty': 1, 'afk-offres': 1, 'enh-window': 1 };   // 自己置中、自己限高的視窗：不要被搬到戰鬥畫面下方（會把標題列擠出畫面）
+    'lmui-hotpick': 1, 'lmui-mapdrops': 1, 'companion-overlay': 1, 'pet-revive-overlay': 1, 'my-mailbox': 1, 'my-qty': 1, 'afk-offres': 1, 'enh-window': 1, 'afk-updwin': 1 };   // 自己置中、自己限高的視窗：不要被搬到戰鬥畫面下方（會把標題列擠出畫面）
   // 場景下緣：平常＝#game-screen 頂端；功能頁模式 #game-screen 從畫面頂端開始（見 CSS 註解）→ 改量 #lmui-pcap（固定釘在場景下緣）
   function sceneBottom(gs) {
     var b = document.body.classList, cap = $('lmui-pcap');
@@ -1744,7 +1745,7 @@
     var bag = group === 'items' && tab !== 'equip';   // 裝備欄掛在背包分頁列，但不是背包格子
     toggleCls('lmui-tall', !!group || tab === 'skill');
     toggleCls('lmui-ptabs', !!SUB_GROUPS[group]);
-    syncWinHead(tab === 'skill' ? '魔法' : tab === 'equip' ? '裝備' : group === 'items' ? '背包' : group === 'automation' ? '設定' : '');
+    syncWinHead(tab === 'skill' ? '魔法' : tab === 'equip' ? '裝備' : group === 'items' ? '背包' : group === 'automation' ? '設定' : group === 'stats' ? '能力' : '');
     toggleCls('lmui-bag', bag);
     toggleCls('lmui-bag-grid', bag && bagCat !== 'as');
     BAG_CATS.forEach(function (c) { toggleCls('lmui-cat-' + c, bag && bagCat === c); });

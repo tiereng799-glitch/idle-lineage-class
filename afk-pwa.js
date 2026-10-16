@@ -237,7 +237,11 @@
   //   每 3 分鐘、切回前景時讀一次 version.json(SW 不攔、走網路),code 跟這次開頁時讀到的不同＝網站換版了。
   //   重新載入＝跟關掉再開一樣:核心在 pagehide/beforeunload 會先把存檔寫好(js/13 _flushSaveNow、js/27 離線結算),這裡不碰存檔。
   //   開頁基準也取自 version.json(頁面沒有內嵌版本碼);讀不到(file://、離線)就整個不做,不打擾遊戲。
+  //   點按鈕先開「更新內容」視窗(changelog.json,根目錄、SW 不攔):列出開頁那版之後的每一筆,裡面再按「點此更新」。
+  //   changelog.json＝[{ at:'YYYY-MM-DD HH:MM', items:['玩家看得懂的一句', …] }, …] 新的在前;
+  //   發布時新增一筆,at 寫發布當下(介於上一版與這一版的 buildAt 之間即可),只寫玩家有感的、白話(同 CLAUDE.md「玩家看得到的字」)。
   var VER_POLL_MS = 3 * 60 * 1000;
+  var verBaseAt = '';   // 開頁那版的 buildAt:更新內容只列這之後的
   function watchNewVersion() {
     if (!/^https?:$/.test(location.protocol)) return;
     var base = null, shown = false, last = 0;
@@ -248,7 +252,7 @@
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (v) {
           var code = v && v.code; if (!code) return;
-          if (base == null) { base = code; return; }
+          if (base == null) { base = code; verBaseAt = v.buildAt || ''; return; }
           if (code !== base && !shown) { shown = true; showUpdateBtn(); }
         })
         .catch(function () {});
@@ -266,12 +270,60 @@
       'border-radius:999px;border:1px solid #e0b04a;background:linear-gradient(#5a3d12,#2a1b07);color:#ffe6a8;font-size:15px;font-weight:700;letter-spacing:1px;white-space:nowrap;' +
       'box-shadow:0 2px 10px rgba(0,0,0,.7),0 0 12px rgba(240,190,80,.45);cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:inherit;animation:afkUpdGlow 1.6s ease-in-out infinite;}' +
       '#afk-upd:active{filter:brightness(1.2);}' +
-      '@keyframes afkUpdGlow{50%{box-shadow:0 2px 10px rgba(0,0,0,.7),0 0 20px rgba(255,210,110,.85);}}';
+      '@keyframes afkUpdGlow{50%{box-shadow:0 2px 10px rgba(0,0,0,.7),0 0 20px rgba(255,210,110,.85);}}' +
+      // 更新內容視窗(樣式同遊戲內視窗:深棕底、金框、標題列右上角 ✕)
+      '#afk-updwin{position:fixed;inset:0;z-index:99991;display:flex;align-items:center;justify-content:center;padding:calc(var(--orig-bar-h,0px) + 16px) 14px 16px;background:rgba(0,0,0,.6);}' +
+      '#afk-updwin .box{width:min(100%,420px);max-height:100%;display:flex;flex-direction:column;background:linear-gradient(#1f1813,#120d09);border:1px solid #8a6a3a;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.9);overflow:hidden;color:#e9dcc0;}' +
+      '#afk-updwin .hd{position:relative;flex:none;height:40px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#4a4038,#221d19);border-bottom:1px solid #2a241e;font-size:17px;font-weight:700;letter-spacing:.2em;color:#f1e3c4;text-shadow:0 1px 2px #000;}' +
+      '#afk-updwin .hd button{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:32px;height:28px;padding:0;border:1px solid #8a6f52;border-radius:4px;background:linear-gradient(#6a3026,#2e140f);color:#fbe3d2;font-size:17px;line-height:1;cursor:pointer;}' +
+      '#afk-updwin .bd{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:10px 14px;}' +
+      '#afk-updwin .bd:empty{display:none;}' +
+      '#afk-updwin .day{margin:2px 0 4px;font-size:13px;color:#c9a463;}' +
+      '#afk-updwin ul{margin:0 0 10px;padding-left:20px;list-style:disc;}' +
+      '#afk-updwin li{margin:3px 0;font-size:15px;line-height:1.5;list-style:disc;}' +
+      '#afk-updwin li::marker{color:#c9a463;}' +
+      '#afk-updwin .ft{flex:none;padding:10px 14px 14px;display:flex;justify-content:center;}' +
+      '#afk-updwin .go{min-width:60%;padding:10px 18px;border-radius:6px;border:1px solid #e0b04a;background:linear-gradient(#7a5a1e,#3f2c0c);color:#ffe6a8;font-size:16px;font-weight:700;letter-spacing:1px;cursor:pointer;font-family:inherit;}' +
+      '#afk-updwin .go:active{filter:brightness(1.2);}';
     document.head.appendChild(st);
     var b = document.createElement('button');
     b.type = 'button'; b.id = 'afk-upd'; b.textContent = '🔄 有新版本・點此更新';
-    b.addEventListener('click', function () { b.disabled = true; b.textContent = '更新中…'; location.reload(); });
+    b.addEventListener('click', openUpdateWin);
     document.body.appendChild(b);
+  }
+  function escHtml(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function openUpdateWin() {
+    if (document.getElementById('afk-updwin')) return;
+    var w = document.createElement('div');
+    w.id = 'afk-updwin';
+    w.innerHTML = '<div class="box" role="dialog" aria-label="更新內容"><div class="hd">更新內容<button type="button" aria-label="關閉">✕</button></div>' +
+      '<div class="bd"></div><div class="ft"><button type="button" class="go">點此更新</button></div></div>';
+    document.body.appendChild(w);
+    function remove() { if (w.parentNode) w.parentNode.removeChild(w); }
+    var layer = window.AFK_UI ? AFK_UI.openLayer(remove) : null;   // 手機返回鍵 / ESC 可關
+    function close() { if (layer && window.AFK_UI) AFK_UI.closeLayer(layer); else remove(); }
+    w.addEventListener('click', function (e) { if (e.target === w) close(); });
+    w.querySelector('.hd button').addEventListener('click', close);
+    var go = w.querySelector('.go');
+    go.addEventListener('click', function () { go.disabled = true; go.textContent = '更新中…'; location.reload(); });
+    // 更新內容：讀不到就只留「點此更新」(不擋更新)
+    fetch('changelog.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (list) {
+        if (!Array.isArray(list) || !w.parentNode) return;
+        var news = list.filter(function (e) { return e && e.at && Array.isArray(e.items) && (!verBaseAt || e.at > verBaseAt); });
+        if (!news.length) news = list.slice(0, 1).filter(function (e) { return e && Array.isArray(e.items); });
+        var days = [], byDay = {};   // 同一天的併成一組（一天常發好幾次）
+        news.slice(0, 12).forEach(function (e) {
+          var d = String(e.at).slice(0, 10);
+          if (!byDay[d]) { byDay[d] = []; days.push(d); }
+          byDay[d] = byDay[d].concat(e.items);
+        });
+        w.querySelector('.bd').innerHTML = days.map(function (d) {
+          return '<div class="day">' + escHtml(d) + '</div><ul>' + byDay[d].map(function (t) { return '<li>' + escHtml(t) + '</li>'; }).join('') + '</ul>';
+        }).join('');
+      })
+      .catch(function () {});
   }
 
   function init() {
