@@ -1117,7 +1117,8 @@ function doEnhance(targetUid, isEq = true) {
 
     // 🏰 天堂經典衝裝規則（v3.0.76·機率單一真相 enhanceRollOutcome，見 js/01）：
     //   安定值內 100% 成功（祝福卷軸跳級到安定值以上也不套用失敗/爆裝——成功在加值前判定）；
-    //   超過安定值的機率 2026-10-16 起照模擬器（js/01 enhanceOdds）：武器 +9 前 52%、+9 起 25% 過＋26% 無事；防具／飾品照 (100+t×20)÷t 公式
+    //   武器超過安定值：+9 前 1/3 過、2/3 爆；+9 起 1/6 過、1/6 無事、4/6 爆
+    //   防具(安定值>0)：1/目前強化值；防具(安定值0)/飾品：+0 1/2、+1 以上 1/(強化值×2)；失敗即爆裝
     let _oc = enhanceRollOutcome(d, target.en);
     if (_oc === 'ok') success = true;
     else if (_oc === 'break') destroy = true;
