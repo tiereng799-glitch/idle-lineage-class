@@ -47,7 +47,7 @@
   'use strict';
   var FALLBACK = { owner: 'tiereng799-glitch', repo: 'idle-lineage-class' };
   var WORKFLOW = 'apply-sheet.yml';
-  var KEY = 'update_page_token';
+  var KEY = 'update_page_token';   // 跟遊戲同網域 → afk-fullsave.js 的 LOCAL_ONLY 把它排除在備份/轉移碼外;改名要兩邊一起改
   var m = location.hostname.match(/^([\w-]+)\.github\.io$/);
   var OWNER = m ? m[1] : FALLBACK.owner;
   var REPO = (m && location.pathname.split('/')[1]) || FALLBACK.repo;
