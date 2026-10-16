@@ -1522,15 +1522,15 @@
     var nb = navBtn('right'); if (nb) nb.click();
     var b = rightTabBtn(tab); if (b) b.click();
   }
-  // 順序照玩家給的參考圖：信封(聊天)・人形(素質)・星(魔法)・袋子(背包)・握手(隊伍)・扳手(設定)・門(離開)，最前面加戰鬥
+  // 順序照玩家給的參考圖：信封(聊天)・人形(素質)・星(魔法)・袋子(背包)・握手(隊伍)・扳手(設定)，最前面加戰鬥。
+  //   「離開」拿掉了（站長 2026-10-16：設定視窗最上排就有「回選角」）；死亡視窗照舊
   var TOOLS = [
     { id: 'battle', name: '狩獵場', run: function () { var b = navBtn('center'); if (b) b.click(); openMaps(); }, toggle: true },
     { id: 'chat', name: '聊天', run: openChat },
     { id: 'stats', name: '角色素質', label: '能力', run: function () { openTab('stats'); } },
     { id: 'skill', name: '魔法', run: function () { openTab('skill'); if (typeof refreshClassicSkillBookOnly === 'function') { try { refreshClassicSkillBookOnly(); } catch (e) {} } } },
     { id: 'items', name: '背包', run: function () { bagCat = 'all'; openTab('items'); } },   // 每次打開都從「全部」開始（停在「自動賣出」＝規則視窗開著、背景自動賣出暫停）
-    { id: 'automation', name: '設定', run: function () { openTab('automation'); } },
-    { id: 'exit', name: '離開', run: function () { buildDeathWin(); renderDeathStats(); document.body.classList.add('lmui-exitwin'); } }   // 天堂M：離開也是那個「重新開始/離開/取消＋狩獵紀錄」視窗
+    { id: 'automation', name: '設定', run: function () { openTab('automation'); } }
   ];
   // 線條圖示；畫兩次（黑色粗描邊＋銀色漸層細線）做出參考圖那種金屬浮雕感
   var SVG = {
@@ -1539,8 +1539,7 @@
     stats: '<circle cx="12" cy="5.5" r="2.8"/><path d="M8 21l1-7-3-1 1.5-4.5h9L18 13l-3 1 1 7"/>',
     skill: '<circle cx="12" cy="12" r="8.5"/><path d="M12 6l1.8 4 4.2.3-3.2 2.7 1 4.1L12 15l-3.8 2.1 1-4.1L6 10.3l4.2-.3z"/>',
     items: '<path d="M9 4.5h6l-1.5 3h-3z"/><path d="M10.5 7.5C6 9 4.5 13 5 16.5 5.5 19.5 8 20.5 12 20.5s6.5-1 7-4c.5-3.5-1-7.5-5.5-9"/>',
-    automation: '<path d="M14.5 4.5a4 4 0 0 0-4.9 5.2L4 15.3 6.7 18l5.6-5.6a4 4 0 0 0 5.2-4.9l-2.4 2.4-2.3-.6-.6-2.3z"/>',
-    exit: '<path d="M14 4H6v16h8"/><path d="M11 12h9M17 9l3 3-3 3"/>'
+    automation: '<path d="M14.5 4.5a4 4 0 0 0-4.9 5.2L4 15.3 6.7 18l5.6-5.6a4 4 0 0 0 5.2-4.9l-2.4 2.4-2.3-.6-.6-2.3z"/>'
   };
   function buildToolbar() {
     var n = $('m-nav'); if (!n || $('lmui-nav')) return;
@@ -1558,12 +1557,7 @@
         // 可開關的（狩獵場）：已經開著就只收起來
         if (t.toggle && document.body.classList.contains('lmui-maps')) { closeAllWindows(); try { syncToolbar(); } catch (e) {} return; }
         // 再點一次同一顆＝關掉它開的畫面、回到戰鬥畫面（這些頁面本身沒有關閉鈕；狩獵場另有上面那條「開關地圖清單」）
-        var again = (t.id === 'exit') ? document.body.classList.contains('lmui-exitwin') : (t.id !== 'battle' && currentTool() === t.id);
-        if (again) {
-          if (t.id === 'exit') { closeAllWindows(); try { syncBag(); syncToolbar(); } catch (e) {} }
-          else closeTool();
-          return;
-        }
+        if (t.id !== 'battle' && currentTool() === t.id) { closeTool(); return; }
         closeAllWindows();
         try { t.run(); } catch (e) { console.warn('[AFK-lmui] 工具列「' + t.name + '」失敗', e); }
         try { syncBag(); syncToolbar(); } catch (e) {}   // 立刻更新子分頁列/亮燈，不等下一個 tick（否則切換後有一瞬間空白）
