@@ -1218,6 +1218,11 @@
   var npcLayoutSig = '';
   function layoutTownNpcs() {
     var map = $('town-npc-map'); if (!map) return;
+    if (map.classList.contains('afk-tm-live')) {   // 動態村莊地圖：NPC 站在地圖上的位置，不重排（重排的 !important 會把他們排成一排）
+      var placed = map.querySelectorAll('.town-npc[data-lmui-slot]');
+      for (var pi = 0; pi < placed.length; pi++) placed[pi].removeAttribute('data-lmui-slot');
+      npcLayoutSig = ''; return;
+    }
     var W = map.clientWidth, H = map.clientHeight; if (!W || !H) return;
     // 只排看得到的（被本檔或其他外掛藏起來的 NPC，例如黑市潘朵拉，量不到大小、也不該佔位）
     var all = Array.prototype.slice.call(map.querySelectorAll('.town-npc:not(.lmui-npc-off)')).filter(function (e) { return e.offsetParent !== null; });
@@ -2132,8 +2137,10 @@
     //   按「聊天」才看訊息。村莊：NPC 站在動態地圖上點得到時才收 NPC 卡片（地圖沒載起來時卡片是唯一入口，不收）
     var bc = document.body.classList;
     //   開著魔法／背包／設定視窗也維持精簡（視窗浮在上面；切掉精簡會讓戰鬥畫面縮成一半＝站長說的「戰鬥畫面跳動」）
+    //   NPC 對話視窗是浮動視窗，開著也維持精簡（切掉會讓村莊地圖縮一半＝站長說的「NPC 視窗一出來畫面就跳走」）。
+    //   村莊要等動態地圖真的載好（NPC 站上地圖、afk-townmap 掛 .afk-tm-live）才收 NPC 卡片：載入中或失敗時卡片是唯一入口
     toggleCls('lmui-compact', !dead && (bc.contains('mview-center') || bc.contains('lmui-whead')) && !bc.contains('lmui-chatbig') && !bc.contains('lmui-maps') && !bc.contains('lmui-map') &&
-      !bc.contains('lmui-townchat') && !bc.contains('lmui-npcwin') && (!town || !!document.querySelector('#town-npc-map > canvas.afk-tm-cv')));
+      !bc.contains('lmui-townchat') && (!town || !!document.querySelector('#town-npc-map.afk-tm-live')));
     if (dead) { try { placeDeadBtn(); buildDeathWin(); renderDeathStats(); } catch (e) {} }
     else toggleCls('lmui-deathx', false);
     try { pushWindowsBelow(); } catch (e) {}
