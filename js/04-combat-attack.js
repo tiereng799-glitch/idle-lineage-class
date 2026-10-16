@@ -1640,22 +1640,23 @@ function killPlayer() {
     if (!_duelDeath) pvpChaoticDeathItemLoss();   // ⚔️ 決鬥落敗不噴裝（即使是紅名）
     let msg = "你的角色已經死亡。（死亡不損失經驗值。）";
     let _siegeDeath = (typeof isSiegeArea === 'function' && typeof mapState !== 'undefined' && mapState && isSiegeArea(mapState.current));
-    // 🎮 經典模式：死亡損失「該等級最大經驗」的 5%（v3.0.15 由 10% 調降·per-level 進度，最多扣到該等級 0% → 不會降等）
+    // 🎮 死亡損失「該等級最大經驗」的 5%（v3.0.15 由 10% 調降·per-level 進度，最多扣到該等級 0% → 不會降等）。
+    //   原本經典模式限定；2026-10-16 站長：一般模式也扣（攻城區／決鬥／時空裂痕照舊不扣；離線結算死亡兩模式都不扣）
     if (_duelDeath) {
         msg = '你在決鬥中倒下了。<span class="text-emerald-300">（決鬥落敗：不損失經驗、不掉落裝備、不影響性向值）</span>';
-    } else if (player.classicMode && !_siegeDeath) {
+    } else if (!_siegeDeath) {
         let _lossCap = Math.floor((getExpReq(player.lv) || 0) * 0.05);
         let _before = player.exp;
         player.exp = Math.max(0, player.exp - _lossCap);
         let _actualLoss = _before - player.exp;
-        msg = `你的角色已經死亡。<span class="text-red-300">（經典模式：損失了 ${_actualLoss} 點經驗）</span>`;
-        // 🕊️ 死亡紀錄（聖使阿卡塔·亞丁·經典限定）：只記「實際扣掉的經驗」（下限夾 0 後的差額）——當級 0% 死亡損失 0 → 不建檔，杜絕買回沒失去的經驗；上限 10 筆，滿了淘汰最舊；隨 player 入存檔（逐角色獨立）
+        msg = `你的角色已經死亡。<span class="text-red-300">（損失了 ${_actualLoss} 點經驗）</span>`;
+        // 🕊️ 死亡紀錄（聖使阿卡塔·亞丁）：只記「實際扣掉的經驗」（下限夾 0 後的差額）——當級 0% 死亡損失 0 → 不建檔，杜絕買回沒失去的經驗；上限 10 筆，滿了淘汰最舊；隨 player 入存檔（逐角色獨立）
         if (_actualLoss > 0) {
             if (!Array.isArray(player.deathLog)) player.deathLog = [];
             player.deathLog.push({ lv: player.lv, loss: _actualLoss, t: Date.now() });
             while (player.deathLog.length > 10) player.deathLog.shift();
         }
-    } else if (player.classicMode && _siegeDeath) {
+    } else {
         msg = '你的角色已經死亡。<span class="text-amber-300">（攻城區：死亡不損失經驗值。）</span>';
     }
 

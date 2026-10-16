@@ -1551,7 +1551,7 @@ function renderDantesGate(div) {
             <p class="text-xs text-slate-500 pt-1">挑戰吉爾塔斯時若身上持有 完整的召喚球：戰敗回村將消耗 1 顆，吉爾塔斯的 HP 會保持不變（暫停回血）直到你再次進入；沒有完整的召喚球則重新進入將是全新的吉爾塔斯。</p>
         </div>`;
 }
-// 🕊️ v3.4.73 聖使阿卡塔（亞丁·經典限定）：死亡經驗買回。
+// 🕊️ v3.4.73 聖使阿卡塔（亞丁）：死亡經驗買回（原經典限定；2026-10-16 一般模式也扣經驗後兩模式都開放）。
 //   ・killPlayer（js/04）只在「實際損失 > 0」時記 player.deathLog:{lv,loss,t}（上限 10 筆·滿了淘汰最舊·逐角色隨存檔）——當級 0% 死亡不建檔，無法買回沒失去的經驗。
 //   ・買回：花費 死亡時等級×等級×1000 金幣 → 取回該筆「實際損失經驗」的 50%（floor），紀錄即銷毀；回灌走 player.exp += n + checkLvUp()（可正常升級）。
 function renderArkataBuyback(el) {
@@ -1592,10 +1592,10 @@ function renderArkataBuyback(el) {
             <div class="text-sky-300 font-bold text-sm border-b border-sky-900/60 pb-1">裝備贖回</div>
             <div class="text-xs text-slate-400">邪惡狀態下死亡遺失的裝備會被記錄：${lost.length} / 5（滿 5 件後新的遺失會擠掉最舊的一筆）・持有龍之鑽石：<span class="text-sky-300">${dia.toLocaleString()}</span></div>
             ${itemRows || '<div class="text-slate-500 text-sm bg-slate-800/40 border border-slate-700 rounded p-4 text-center">目前沒有遺失的裝備紀錄。</div>'}
-            ${player.classicMode ? `
+
             <div class="text-amber-300 font-bold text-sm border-b border-amber-900/60 pb-1 mt-2">死亡經驗買回</div>
             <div class="text-xs text-slate-400">每筆死亡紀錄可花費「死亡時等級×等級×1000」金幣，取回實際損失經驗的一半。死亡紀錄：${log.length} / 10（滿 10 筆後新的死亡會擠掉最舊的一筆）・持有金幣：<span class="text-yellow-300">${(player.gold || 0).toLocaleString()}</span></div>
-            ${rows || '<div class="text-slate-500 text-sm bg-slate-800/40 border border-slate-700 rounded p-4 text-center">目前沒有死亡紀錄。願聖光持續眷顧你。</div>'}` : ''}
+            ${rows || '<div class="text-slate-500 text-sm bg-slate-800/40 border border-slate-700 rounded p-4 text-center">目前沒有死亡紀錄。願聖光持續眷顧你。</div>'}
         </div>`;
 }
 const ARKATA_REDEEM_COST = 1000;   // 🕊️ v3.6.84 裝備贖回費用（龍之鑽石）
@@ -1623,7 +1623,7 @@ function arkataRedeemItem(i) {
     if (host) renderArkataBuyback(host);
 }
 function arkataBuyback(i) {
-    if (!player || !player.classicMode) return;   // 🕊️ 經典限定（縱深防護）
+    if (!player || !player.cls) return;   // 🕊️ 2026-10-16 起一般模式也會扣經驗 → 兩模式都能買回
     let log = Array.isArray(player.deathLog) ? player.deathLog : [];
     let r = log[i];
     if (!r) return;
