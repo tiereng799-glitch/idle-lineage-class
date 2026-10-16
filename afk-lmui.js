@@ -323,6 +323,8 @@
       'html body.lmui-battle.lmui-tall.lmui-whead #game-screen{padding-top:calc(var(--lmui-ptop) + var(--lmui-whead-h) + 6px) !important;}',
       'html body.lmui-battle.lmui-tall.lmui-whead.lmui-ptabs #game-screen{padding-top:calc(var(--lmui-ptop) + var(--lmui-whead-h) + var(--lmui-ptabs-h) + 6px) !important;}',
       'html body.lmui-battle.lmui-whead #lmui-bagtabs{top:calc(var(--lmui-ptop) + var(--lmui-whead-h));border-radius:0;border-top:0;}',
+      /* 設定頁會捲：往上捲時補的固定上框（#lmui-pcap）改接在標題列下面；彈窗讓位也量它，一起讓開標題列 */
+      'html body.lmui-battle.lmui-whead #lmui-pcap{top:calc(var(--lmui-ptop) + var(--lmui-whead-h));}',
       /* ⚠️ #game-screen 本身要從畫面頂端開始、用 padding 把內容推到頭像列下方，不能直接把 top 拉低：
          iPhone 會把「可捲動容器」裡的 fixed 子元素裁在容器範圍內 → 內容一長到要捲（設定/背包/能力），#col-center 那條場景整個被裁掉、只剩底色
          （魔法頁不用捲所以沒事）。內容往上捲時改由 #col-center（z:3，已裁成頭像列那一條）蓋住，不會捲進場景區。 */
@@ -1710,7 +1712,7 @@
     var bag = group === 'items' && tab !== 'equip';   // 裝備欄掛在背包分頁列，但不是背包格子
     toggleCls('lmui-tall', !!group || tab === 'skill');
     toggleCls('lmui-ptabs', !!SUB_GROUPS[group]);
-    syncWinHead(tab === 'skill' ? '魔法' : tab === 'equip' ? '裝備' : group === 'items' ? '背包' : '');
+    syncWinHead(tab === 'skill' ? '魔法' : tab === 'equip' ? '裝備' : group === 'items' ? '背包' : group === 'automation' ? '設定' : '');
     toggleCls('lmui-bag', bag);
     toggleCls('lmui-bag-grid', bag && bagCat !== 'as');
     BAG_CATS.forEach(function (c) { toggleCls('lmui-cat-' + c, bag && bagCat === c); });
