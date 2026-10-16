@@ -9,7 +9,8 @@
  * 設計原則:
  *   - 離線戰鬥直接跑核心 tick()/killMob() 管線,平衡/掉落與在線一致。
  *   - 撞死即停、結算到死亡前(不做不死,避免無敵 exploit);存活則結算後接回原狩獵圖續掛。
- *   - per-slot 心跳:多分頁掛不同角色用各自的 afk_ts_<slot>,互不干擾。
+ *   - per-slot 心跳:每格角色各自的 afk_ts_<slot>。2026-10-16 起「同帳號一次只掛一隻」:進別隻時先結算還在掛的那隻、
+ *     再用 afk_end_<slot> 把它停掉(見 otherHangers / chainSettle)。
  *   - 時間切片 + 進度遮罩,長補跑不凍結頁面。
  *   - 💾 分段檢查點:結算每 ~CKPT_MS 就 saveGame 並把錨點推進到「已結算到的時間點」——
  *     結算中被關頁/重整/系統殺掉,下次載入只補剩下沒算的,整晚收益不再無聲蒸發。
@@ -112,6 +113,26 @@
   // 遺忘之島旅程:原作 saveGame 不存 state.oblivion(且 loadGame 一律回村),同攀登由外掛自己記一份,
   //   登入後還原並接回島上續掛。島/途中地圖(oblivion_island/oblivion_travel)非選單地圖,走 enterOblivionMap 進場(不能用 gotoMap)。
   function readObl()    { try { var s = localStorage.getItem(oblKey()); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+  // ----- 同帳號一次只掛一隻（2026-10-16 站長）--------------------------------------
+  //   原本每格角色各有錨點、互不干擾＝切到 B 玩的時候 A 還在背景算離線收益（好幾隻同時離線掛機）。
+  //   現在：進 B 時，若還有別隻在離線掛機（有錨點、沒被停掉、離開超過 1 分鐘）→ 先載入那隻把離線收益結算掉
+  //   （跳結果視窗、存檔），再把它標成「停了」，最後才進 B（chainSettle）。好幾隻都在掛（改版前留下的）就結算最近那隻、其餘直接停。
+  //   停＝寫 afk_end_<格>＝停的時間：之後那隻再登入，離線只算到停的時候（maybeCatchup）；登入時清掉。
+  //   ⚠ 停的時間早於錨點＝之後又上線過（例：兩個分頁各開一隻），不算停。建立新角色（startGame）不切去結算，只把別隻停掉
+  function endKey(n)    { return 'afk_end_' + n; }
+  function readEndOf(n) { try { return +localStorage.getItem(endKey(n)) || 0; } catch (e) { return 0; } }
+  function stopHang(n, at) { try { localStorage.setItem(endKey(n), String(at || Date.now())); } catch (e) {} }
+  function otherHangers(except) {
+    var out = [], max = (typeof SAVE_SLOT_MAX !== 'undefined' && SAVE_SLOT_MAX) || 16;
+    for (var n = 1; n <= max; n++) {
+      if (n === except) continue;
+      var ts = 0; try { ts = +localStorage.getItem(TS_PREFIX + n) || 0; } catch (e) {}
+      if (!ts) continue;
+      var end = readEndOf(n); if (end && end >= ts) continue;
+      out.push({ slot: n, ts: ts });
+    }
+    return out.sort(function (a, b) { return b.ts - a.ts; });   // 最近離開的在前
+  }
   // 蓋時間戳(=現在),順手記下「即時所在地圖」(changeMap 不會存檔,光看存檔 blob 會誤判還在村莊)。
   // ⚠ 結算期間(catchingUp)一律跳過:錨點只能由檢查點以「已結算到的時間點」推進——
   //   否則心跳/存檔/落點 changeMap 把錨點蓋成「現在」,結算一被中斷整段離線時間就此蒸發(2026-07-10 修)。
@@ -552,10 +573,12 @@
     (document.head || document.documentElement).appendChild(st);
   }
   // d = { ms, capped, map, gold, exp, lv, kills, items:[{id,n,d}], died, err }
+  var _popQueue = [];   // 同帳號一次只掛一隻：前一隻的結果視窗還開著時，下一隻的排隊，前一張按確認才顯示（不互相蓋掉）
   function showResultPopup(d) {
     try {
+      if (!d.who) { try { d.who = (player && player.name) || ''; } catch (e) {} }   // 哪一隻的收益（切角色時會連跳兩隻）
       var old = document.getElementById('afk-offres');
-      if (old && old.parentNode) old.parentNode.removeChild(old);
+      if (old && old.parentNode) { _popQueue.push(d); return true; }
       injectResultCSS();
       var stats = '';
       function stat(lbl, cls, v) { stats += '<div class="or-stat"><span>' + lbl + '</span><b class="' + cls + '">' + v + '</b></div>'; }
@@ -576,7 +599,7 @@
       box.id = 'afk-offres';
       box.innerHTML =
         '<div class="or-card" role="dialog" aria-modal="true" aria-label="離線掛機結果">' +
-          '<div class="or-head"><div class="or-title">離線掛機結果</div>' +
+          '<div class="or-head"><div class="or-title">' + (d.who ? escH(d.who) + ' 的' : '') + '離線掛機結果</div>' +
             '<div class="or-sub"><b>' + escH(fmtDur(d.ms)) + '</b>' + (d.capped ? '<span class="or-cap">已達 ' + CAP_HOURS + ' 小時上限</span>' : '') +
             '　在 <b>' + escH(d.map || '?') + '</b></div></div>' +
           '<div class="or-body">' +
@@ -589,7 +612,7 @@
           '<div class="or-foot"><button type="button" class="or-ok">確認</button></div>' +
         '</div>';
       var layer = null;
-      function hide() { if (box.parentNode) box.parentNode.removeChild(box); layer = null; }
+      function hide() { if (box.parentNode) box.parentNode.removeChild(box); layer = null; if (_popQueue.length) { var nx = _popQueue.shift(); setTimeout(function () { showResultPopup(nx); }, 0); } }
       function close() { if (layer && window.AFK_UI && AFK_UI.closeLayer) AFK_UI.closeLayer(layer); else hide(); }
       box.querySelector('.or-ok').addEventListener('click', close);
       document.body.appendChild(box);
@@ -628,6 +651,7 @@
 
   // ----- 離線補跑(時間切片) ----------------------------------------------
   var catchingUp = false;
+  var _lastCatchup = null;   // 最近一次 runCatchup 的 Promise（chainSettle 等前一隻結算完才進下一隻）
   var _gbBlocked = 0;      // 🏴 本次結算擋掉幾次 NPC 血盟群戰(供結算摘要提示玩家)
   var _gbPossible = false; // 本次結算的玩家是否真的處於「會被開團」的處境(每次結算只判一次,見 runCatchup)
   var _settleSeq = 0;   // 本次頁面開啟後跑過幾次結算(連續切角色會累積,用來檢驗「越後面越慢」)
@@ -1549,7 +1573,7 @@
   // 載入後決定要不要結算離線。preMap/preTs 由 loadGame 開頭的 offlinePreLoad() 在「回村甦醒之前」擷取——
   // 因為 loadGame 會在村莊甦醒(內部呼叫 changeMap → offlineStamp),會把 afk_map/afk_ts 覆寫成
   // 現在(村莊),晚讀就拿不到真正的離線狀態。
-  function maybeCatchup(preMap, preTs, prePride, preObl) {
+  function maybeCatchup(preMap, preTs, prePride, preObl, preEnd) {
     if (!validSlot() || !state || !state.running) return;
     var last = preTs;
     var savedMap = preMap;   // afk_map 缺值的後備讀圖已在 offlinePreLoad 做掉(必須趁 blob 未被回村甦醒的存檔蓋掉前讀,這裡太晚)
@@ -1557,6 +1581,7 @@
     var isObl = !!(preObl && preObl.phase && typeof enterOblivionMap === 'function');   // 🏝️ 上次在遺忘之島旅程中(島/途中):同攀登,還原旅程並接回島上續掛
     if (isObl && !savedMap) savedMap = (preObl.phase === 'island') ? 'oblivion_island' : 'oblivion_travel';   // afk_map 缺值時用旅程階段推地圖
     var now = Date.now();
+    if (preEnd && last && preEnd >= last) now = Math.min(now, preEnd);   // 同帳號一次只掛一隻：被別隻接手停掉的，只算到停的時候（見 otherHangers）
     // ⚠ 這裡「不可」先 stamp:結算完成前錨點必須停在 closeTs——先蓋成「現在」的話,結算一被中斷
     //   (關頁/重整/PWA 被系統殺)整段離線時間就此蒸發(2026-07-10 修)。略過結算的情況由 5 秒心跳自然接手蓋新錨點。
     if (prePride && prePride.climb && prePride.ranked) {
@@ -1635,7 +1660,7 @@
     var ms = Math.min(gap, CAP_MS);
     var ticks = Math.floor(ms / TICK_MS);
     if (ticks <= 0 && !isClimb && !isObl) return;   // 一般圖 gap≈0 直接 no-op;攀登/遺忘之島 gap≈0 仍要回到原地(ticks=0 補跑空轉,落點會 enterPrideFloor/enterOblivionMap)
-    runCatchup(Math.max(0, ticks), ticks > OVERLAY_MIN_TICK, savedMap, prePride, preObl, { closeTs: last, loginTs: now });   // timing → 供寫離線歷史紀錄(done>0 才會真的記)
+    _lastCatchup = runCatchup(Math.max(0, ticks), ticks > OVERLAY_MIN_TICK, savedMap, prePride, preObl, { closeTs: last, loginTs: now });   // timing → 供寫離線歷史紀錄(done>0 才會真的記)；_lastCatchup 給 chainSettle 等結算完
   }
 
   // ----- 核心掛點(loadGame / saveGame / changeMap 直呼;2026-07-10 起不再 monkey-patch) -------
@@ -1655,12 +1680,13 @@
         map = (_pj && _pj.ms && _pj.ms.current) || '';
       } catch (e) {}
     }
-    return { map: map, ts: readTs(), pride: readPride(), obl: readObl() };
+    var end = 0; try { end = readEndOf(currentSlot); localStorage.removeItem(endKey(currentSlot)); } catch (e) {}   // 被別隻接手停掉的時間（見 otherHangers）；這隻上線了就清掉
+    return { map: map, ts: readTs(), pride: readPride(), obl: readObl(), end: end };
   };
   // js/13 loadGame 成功載入(state.running=true 之後)呼叫:決定要不要結算離線
   window.offlineAfterLoad = function (pre) {
     if (!pre) return;
-    try { maybeCatchup(pre.map, pre.ts, pre.pride, pre.obl); } catch (e) { console.warn('[AFK] offlineAfterLoad error:', e); }
+    try { maybeCatchup(pre.map, pre.ts, pre.pride, pre.obl, pre.end); } catch (e) { console.warn('[AFK] offlineAfterLoad error:', e); }
   };
 
   // 📜⚡ 擊殺/獲得計數:js/05 killMob、js/08 gainItem 直接讀 window.__afkKillTally/__afkGainTally
@@ -1848,12 +1874,41 @@
       };
     }
     if (typeof loadGame === 'function') {
-      var _load = loadGame;
+      var _load = loadGame, _chain = false;
       window.loadGame = function () {
+        // 同帳號一次只掛一隻（見 otherHangers）：別隻還在離線掛機 → 先載入它結算、存檔、停掉，再回來進這隻
+        if (!_chain && validSlot()) {
+          var target = +currentSlot, now = Date.now(), first = null;
+          otherHangers(target).forEach(function (h) {
+            var sum = null; try { sum = (typeof slotSummary === 'function') ? slotSummary(h.slot) : null; } catch (e) {}
+            if (!first && sum && !sum.removed && now - h.ts >= 60000) first = h;   // 離開不到 1 分鐘的、存檔沒了／職業停用的：直接停
+            else stopHang(h.slot, now);
+          });
+          if (first) { chainSettle(first.slot, target); return; }
+        }
         var pre = null; try { pre = window.offlinePreLoad(); } catch (e) {}   // ⚠ 必須在原 loadGame(回村甦醒會蓋 afk_map)之前擷取
         var r = _load.apply(this, arguments);
         try { window.offlineAfterLoad(pre); } catch (e) { try { console.warn('[AFK] offlineAfterLoad error:', e); } catch (_) {} }
         return r;
+      };
+      // 先載入前一隻（照一般登入流程結算離線、跳結果視窗），結算完存檔、標成停了，再載入玩家選的那隻。
+      //   結果視窗疊在最上層，進到新角色後還在，按確認才關（新角色自己的結果排在後面，見 _popQueue）
+      function chainSettle(prev, target) {
+        _chain = true; _lastCatchup = null;
+        try { currentSlot = prev; window.loadGame(); } catch (e) { console.warn('[AFK] 先結算前一隻角色失敗:', e); }
+        Promise.resolve(_lastCatchup).catch(function () {}).then(function () {
+          try { if (player && player.cls && +currentSlot === prev && typeof saveGame === 'function') saveGame(); } catch (e) {}   // 只存「真的載進來的那隻」
+          stopHang(prev, Date.now() + 1);   // 比結算完蓋的錨點晚 → 算停了
+          _chain = false;
+          try { currentSlot = target; window.loadGame(); } catch (e) { console.warn('[AFK] 進入選的角色失敗:', e); }
+        });
+      }
+    }
+    if (typeof startGame === 'function') {   // 建立新角色：不切去結算（會打斷建角流程），別隻直接停在現在，收益下次登入那隻時結算
+      var _sg = startGame;
+      window.startGame = function () {
+        try { var me = +currentSlot, t = Date.now(); otherHangers(me).forEach(function (h) { stopHang(h.slot, t); }); } catch (e) {}
+        return _sg.apply(this, arguments);
       };
     }
     if (typeof killMob === 'function') {
