@@ -252,11 +252,18 @@
     //   每個外型量一次它的原始待機圖（資料夾根目錄 idle_0，核心戰鬥畫面用的那套）：半透明像素過半是暗的、不透明的部分幾乎沒有暗色 → 改用 screen 畫。
     //   ⚠ 不能量地圖當下畫的那張：八方向走路幀（tools/gen-walk-anim）把光暈存成不透明的深藍色，量了會認不出來。screen 畫時深色幾乎看不見，兩套都適用。
     //   數字分不乾淨的幾隻照名字指定（熔岩高崙的岩石身體就是半透明深色；火精靈王光暈比例低但也是發光的）。量小張的離屏畫布
-    var GLOW_FIX = { '熔岩高崙': false, '火精靈王': true, '夢幻之島火精靈王': true, '強力火屬性精靈': true }, glowOf = {};
+    //   ⚡ 平常不在遊戲裡量：tools/gen-townmap.js 產資料時照同一套算法量好，存在 hero.js 的 TOWNMAP_GLOW。
+    //     現場量要等那張圖下載完，之前先照一般畫 → 手機上剛進地圖一陣子整群鬼火都是黑邊（站長 2026-10-16「黑邊過一下就不見」）。下面現場量只在舊的 hero.js 沒有這份清單時用
+    var GLOW_FIX = { '熔岩高崙': false, '火精靈王': true, '夢幻之島火精靈王': true, '強力火屬性精靈': true }, glowOf = {}, glowSet = null;
     function glowLook(L) {
         if (!L || L.kind === 'class') return false;
         var k = L.name; if (k in glowOf) return glowOf[k];
         if (k in GLOW_FIX) return (glowOf[k] = GLOW_FIX[k]);
+        var G = window.TOWNMAP_GLOW;
+        if (G) {
+            if (!glowSet) { glowSet = { anim: {}, morph: {} }; (G.anim || []).forEach(function (n) { glowSet.anim[n] = 1; }); (G.morph || []).forEach(function (n) { glowSet.morph[n] = 1; }); }
+            return (glowOf[k] = !!(L.kind === 'morph' ? glowSet.morph[k] : glowSet.anim[k]));
+        }
         var base = (L.kind === 'anim' || L.kind === 'root' ? 'assets/anim/' : 'assets/morphanim/') + k, pf = null;
         ['idle_', 'attack_', 'walk_'].some(function (p) { return mf(base, p) && (pf = p); });
         if (!pf) return (glowOf[k] = false);

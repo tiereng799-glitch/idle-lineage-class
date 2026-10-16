@@ -52,7 +52,7 @@ const OFF = 64;               // 物件相對座標加的偏移（存成無號�
 function arg(name) { const i = process.argv.indexOf('--' + name); return i > 0 ? process.argv[i + 1] : null; }
 
 // ── PNG（量角色落腳點用）──────────────────────────
-function decodePNG(buf) {   // 8bit、不交錯；回傳 { w, h, a: Uint8Array(每像素不透明度) }
+function decodePNG(buf, withRGB) {   // 8bit、不交錯；回傳 { w, h, a: Uint8Array(每像素不透明度) }；withRGB 另回 rgb: Uint8Array(每像素 r,g,b)
     let p = 8, w = 0, h = 0, depth = 8, ct = 6, inter = 0, pal = null, trns = null; const idat = [];
     while (p < buf.length) {
         const len = buf.readUInt32BE(p), type = buf.toString('ascii', p + 4, p + 8), d = buf.subarray(p + 8, p + 8 + len);
@@ -79,7 +79,14 @@ function decodePNG(buf) {   // 8bit、不交錯；回傳 { w, h, a: Uint8Array(�
         else if (ct === 3) al[i] = trns && img[i] < trns.length ? trns[img[i]] : 255;
         else al[i] = 255;
     }
-    return { w, h, a: al };
+    if (!withRGB) return { w, h, a: al };
+    const rgb = new Uint8Array(w * h * 3);
+    for (let i = 0; i < w * h; i++) {
+        if (ct === 6 || ct === 2) { const o = i * bpp; rgb[i * 3] = img[o]; rgb[i * 3 + 1] = img[o + 1]; rgb[i * 3 + 2] = img[o + 2]; }
+        else if (ct === 3) { const k = img[i] * 3; rgb[i * 3] = pal[k]; rgb[i * 3 + 1] = pal[k + 1]; rgb[i * 3 + 2] = pal[k + 2]; }
+        else { const g = img[i * bpp]; rgb[i * 3] = rgb[i * 3 + 1] = rgb[i * 3 + 2] = g; }
+    }
+    return { w, h, a: al, rgb };
 }
 
 // ── .til / .s32 ──────────────────────────────────
@@ -821,6 +828,23 @@ function alignRoot(rootDir, dirs) {
     best.sameCanvas = act => pngSize(path.join(rootDir, act + '_0.png')) === size0;
     return best;
 }
+// 發光的怪（鬼火、閃電球、火炎蛋…）：地圖上要用 screen（加亮）畫，不然暗色光暈畫成一團黑邊。
+//   原本遊戲裡現場量（afk-townmap glowLook）：量的那張圖還沒下載完之前先照一般畫 → 手機上剛進地圖一陣子都是黑邊（站長 2026-10-16 回報「黑邊過一下就不見」）。
+//   改成產資料時先量好（算法同 glowLook：資料夾根目錄 idle_0／attack_0／walk_0 第一張有的，只看左上 256×256）
+function isGlow(dir) {
+    const f = ['idle_0.png', 'attack_0.png', 'walk_0.png'].map(x => path.join(dir, x)).find(x => fs.existsSync(x));
+    if (!f) return false;
+    let im; try { im = decodePNG(fs.readFileSync(f), true); } catch (e) { return false; }
+    const W = Math.min(im.w, 256), H = Math.min(im.h, 256);
+    let vis = 0, semiDark = 0, opq = 0, opqDark = 0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const i = y * im.w + x, a = im.a[i]; if (a < 8) continue;
+        const hi = Math.max(im.rgb[i * 3], im.rgb[i * 3 + 1], im.rgb[i * 3 + 2]);
+        vis++;
+        if (a < 230) { if (hi < 110) semiDark++; } else { opq++; if (hi < 90) opqDark++; }
+    }
+    return vis > 50 && semiDark / vis > 0.5 && (!opq || opqDark / opq < 0.2);
+}
 // 變身動畫(assets/morphanim/<名>{,2,F})：只有待機/攻擊沒有走路幀 → 每個資料夾 [待機落腳 x,y]
 function buildAnims() {
     const r1 = v => Math.round(v * 10) / 10;
@@ -865,7 +889,10 @@ function buildAnims() {
     const mroot = path.join(REPO_ROOT, 'assets', 'morphanim');
     for (const n of fs.readdirSync(mroot)) { const i = anchor(path.join(mroot, n), 'idle'); if (i) morph[n] = [r1(i[0]), r1(i[1])]; }
     console.log('[gen-townmap] 原地踏步的走路幀 ' + inPlace.length + ' 個：' + inPlace.slice(0, 40).join('、') + (inPlace.length > 40 ? '…' : ''));
-    return { anim, morph, root };
+    const glow = { anim: Object.keys(anim).concat(Object.keys(root)).filter((n, i, a) => a.indexOf(n) === i && isGlow(path.join(aroot, n))).sort(),
+        morph: Object.keys(morph).filter(n => isGlow(path.join(mroot, n))).sort() };
+    console.log('[gen-townmap] 發光的怪 ' + glow.anim.length + ' 個、變身 ' + glow.morph.length + ' 個：' + glow.anim.slice(0, 30).join('、') + (glow.anim.length > 30 ? '…' : ''));
+    return { anim, morph, root, glow };
 }
 function buildHero() {
     const root = path.join(REPO_ROOT, 'assets', 'classanim');
@@ -891,7 +918,7 @@ function buildHero() {
             out[av][wk] = dirs.every(Boolean) ? dirs : null;
         }
     }
-    const { anim, morph, root: animRoot } = buildAnims();
+    const { anim, morph, root: animRoot, glow } = buildAnims();
     const js = '// 🤖 自動生成·勿手改 —— node tools/gen-townmap.js --hero-only 重生（掃 assets/classanim、anim、morphanim 的影子幀量落腳點）\n' +
         '// TOWNMAP_HERO[職業][武器] → 八方向（西北起順時針）各 [走路第0幀影子重心x,y, 第1~3幀相對位移 dx,dy ×3, 待機影子重心x,y]\n' +
         'window.TOWNMAP_HERO = ' + JSON.stringify(out) + ';\n' +
@@ -900,7 +927,9 @@ function buildHero() {
         '// TOWNMAP_MORPH[assets/morphanim 資料夾] → [待機落腳x,y]（沒有走路幀的變身）\n' +
         'window.TOWNMAP_MORPH = ' + JSON.stringify(morph) + ';\n' +
         '// TOWNMAP_ANIMROOT[assets/anim 資料夾] → { idle/attack/hurt/death: [落腳x,y] }（單方向的戰鬥動作，狩獵區在地圖上打怪用）\n' +
-        'window.TOWNMAP_ANIMROOT = ' + JSON.stringify(animRoot) + ';\n';
+        'window.TOWNMAP_ANIMROOT = ' + JSON.stringify(animRoot) + ';\n' +
+        '// TOWNMAP_GLOW → 發光的怪（anim＝assets/anim 資料夾、morph＝assets/morphanim 資料夾）：地圖上用 screen 畫\n' +
+        'window.TOWNMAP_GLOW = ' + JSON.stringify(glow) + ';\n';
     const f = path.join(OUT_DIR, 'hero.js');
     fs.writeFileSync(f, js);
     console.log('[gen-townmap] ' + path.relative(REPO_ROOT, f) + '  ' + avatars.length + ' 個職業外型、' + Object.keys(anim).length + ' 個八方向怪物/寵物、' + Object.keys(morph).length + ' 個變身資料夾');
