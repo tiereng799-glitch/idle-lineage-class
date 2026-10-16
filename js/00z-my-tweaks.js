@@ -365,9 +365,11 @@
     });
     setInterval(updateMailButton, 1000);   // 改名、回主選單、天堂M介面重建時跟著更新
   }
-  // 登入畫面「記住帳號密碼」：勾著＝帳密存在本機、下次自動填回；取消勾＝連同存起來的帳密一起刪掉。
-  //   ⚠️ 目前沒有帳號系統，帳密只是先存著；之後接上真正的登入（伺服器）時，改成存「登入憑證」而不是明文密碼，
-  //      而且 github.io 同一個帳號底下的網站共用 localStorage，明文密碼不能留到那時候。
+  // 登入畫面「記住帳號」：勾著＝帳號名稱存在本機、下次自動填回；取消勾＝連同存起來的帳號一起刪掉。
+  //   🚨 只記帳號、絕不存密碼：玩家可能隨手打了別處也在用的密碼，而 github.io 同一個帳號底下的網站共用 localStorage，
+  //      明文放進去等於給那些網站看。記密碼交給瀏覽器內建的密碼管理員（輸入框已標 autocomplete="username"/"current-password"）。
+  //   舊版存的是 { a: 帳號, p: 明文密碼 } → 載入時把 p 拿掉重寫，只留帳號。
+  //   CRED_KEY 也被 afk-fullsave.js 的 LOCAL_ONLY 排除在備份/轉移碼之外，改名要兩邊一起改。
   var REMEMBER_KEY = 'lineage_login_remember', CRED_KEY = 'lineage_login_saved';
   // 走遊戲自己的儲存函式（打包桌面版存在檔案、網頁版存 localStorage）；沒有就直接用 localStorage
   function lsGet(k) { return typeof _lsGet === 'function' ? _lsGet(k) : localStorage.getItem(k); }
@@ -379,19 +381,21 @@
     if (!cb || !acc || !pw) return;
     try {
       cb.checked = lsGet(REMEMBER_KEY) === '1';
-      var saved = cb.checked ? JSON.parse(lsGet(CRED_KEY) || 'null') : null;
-      if (saved) { acc.value = saved.a || ''; pw.value = saved.p || ''; }
+      var saved = null;
+      try { saved = JSON.parse(lsGet(CRED_KEY) || 'null'); } catch (e) {}
+      // 不管有沒有勾都清：舊版存過密碼的玩家，這一版第一次開就清掉
+      if (saved && typeof saved === 'object' && 'p' in saved) lsSet(CRED_KEY, JSON.stringify({ a: saved.a || '' }));
+      if (cb.checked && saved) acc.value = saved.a || '';
     } catch (e) {}
     function store() {
       try {
-        if (cb.checked) { lsSet(REMEMBER_KEY, '1'); lsSet(CRED_KEY, JSON.stringify({ a: acc.value, p: pw.value })); }
+        if (cb.checked) { lsSet(REMEMBER_KEY, '1'); lsSet(CRED_KEY, JSON.stringify({ a: acc.value })); }
         else { lsSet(REMEMBER_KEY, '0'); lsRm(CRED_KEY); }
       } catch (e) {}
     }
     rememberStore = store;
     cb.addEventListener('change', store);
     acc.addEventListener('input', function () { if (cb.checked) store(); });
-    pw.addEventListener('input', function () { if (cb.checked) store(); });
     var go = document.getElementById('btn-start-menu');
     if (go) go.addEventListener('click', store);
     [acc, pw].forEach(function (el) {   // 在輸入框按 Enter＝按登錄
