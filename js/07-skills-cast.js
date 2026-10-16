@@ -889,7 +889,7 @@ function autoActions() {
     {
         let tChk = document.getElementById('set-teleport');
         let _huntBoss = !!(window.AFK_BOSSRING && window.AFK_BOSSRING.huntActive && window.AFK_BOSSRING.huntActive());   // 🔌 加掛版補丁:外掛「自動找BOSS」進行中→抑制逃離(否則剛召來的王立刻被瞬移走);外掛未載入=false 照常
-        if (tChk && tChk.checked && !_huntBoss && mapState.mobs.some(m => m && m.boss && !m.noAutoTeleport) && !isSiegeArea(mapState.current) && !PURE_BOSS_MAPS.includes(mapState.current) && !state.prideClimb && !state.oblivion && !state.riftRun && (state._manualTpUntil == null || (state.ticks || 0) >= state._manualTpUntil)) {   // 🕒 手動瞬移後 5 秒內不自動瞬移/自動購買；攻城區與純BOSS房(安塔瑞斯/法利昂/巴拉卡斯)：BOSS為目標，不自動瞬移；🔧 卡瑞(noAutoTeleport)不觸發自動瞬移；🗼 傲慢之塔攀登中不自動瞬移；🌀 時空裂痕不自動瞬移逃離頭目
+        if (tChk && tChk.checked && !_huntBoss && !(typeof autoHuntOff === 'function' && autoHuntOff()) && mapState.mobs.some(m => m && m.boss && !m.noAutoTeleport) && !isSiegeArea(mapState.current) && !PURE_BOSS_MAPS.includes(mapState.current) && !state.prideClimb && !state.oblivion && !state.riftRun && (state._manualTpUntil == null || (state.ticks || 0) >= state._manualTpUntil)) {   // 🕒 手動瞬移後 5 秒內不自動瞬移/自動購買；攻城區與純BOSS房(安塔瑞斯/法利昂/巴拉卡斯)：BOSS為目標，不自動瞬移；🔧 卡瑞(noAutoTeleport)不觸發自動瞬移；🗼 傲慢之塔攀登中不自動瞬移；🌀 時空裂痕不自動瞬移逃離頭目
             let item = player.inv.find(i => i.id === 'scroll_teleport');
             if (!item) {
                 let _tpCost = shopPrice(DB.items.scroll_teleport.p);   // 攻城獲勝 8 折亦適用
@@ -965,7 +965,7 @@ function autoCastSpells() {
     let atkSk = document.getElementById('sel-atk-skill').value;
     let atkThr = parseInt(document.getElementById('set-mp-atk').value) || 0;
     let atkTarget = getTarget();
-    if(atkSk && mpPct >= atkThr && atkTarget && (player.cds.castLock || 0) <= 0) {   // 🔮 天堂職業施法冷卻下限：castLock 未歸零前不自動施放攻擊魔法（法師快·王族/黑妖慢）
+    if(atkSk && mpPct >= atkThr && atkTarget && (player.cds.castLock || 0) <= 0 && !(typeof autoHuntHold === 'function' && autoHuntHold())) {   // ⏸ AUTO 關：不自動放攻擊魔法（自己點的怪照放·js/03 autoHuntHold）   // 🔮 天堂職業施法冷卻下限：castLock 未歸零前不自動施放攻擊魔法（法師快·王族/黑妖慢）
         // 標籤型即死技能（起死回生術→不死、釋放元素→元素）：
         //   僅在「目標具備對應標籤且非 BOSS」時才自動施放，避免對多羅等無效目標空放、浪費 MP 與冷卻。
         let skDef = DB.skills[atkSk];

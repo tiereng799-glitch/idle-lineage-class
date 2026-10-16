@@ -541,6 +541,15 @@ function mobAtkTicks(m, slowAdd) {   // 下一次一般攻擊的間隔 tick，�
     m._atkW = t / base;
     return t;
 }
+// ⏸ AUTO 關閉（天堂M介面的 AUTO 鈕；afk-lmui 每拍寫 window.AFK_AUTO_OFF）：只關「自動打怪」——不自動普攻、不自動放攻擊魔法、不自動瞬移逃王；
+//   遊戲照常進行（怪物照打、回血、增益倒數、喝水、補增益都照常·站長 2026-10-16「關閉只是關閉自動掛機，不要暫停任何東西」）。
+//   玩家自己點的怪照打：地圖模式點怪鎖定，afk-townmap 寫 window.AFK_MANUAL_UID＝那隻的 uid。沒載入外掛＝兩個都沒有＝照舊自動打
+function autoHuntOff() { return typeof window !== 'undefined' && !!window.AFK_AUTO_OFF; }
+function autoHuntHold() {   // true＝這拍不要自動出手（AUTO 關、目標也不是玩家自己點的）
+    if (!autoHuntOff()) return false;
+    let t = (typeof getTarget === 'function') ? getTarget() : null;
+    return !(t && window.AFK_MANUAL_UID != null && t.uid === window.AFK_MANUAL_UID);
+}
 function mobAtkDelayTicks(m, ticks) { return Math.max(1, Math.round(ticks * Math.min(1, (m && m.atkItvMul) || 1))); }   // 延後怪物出手（鈍擊）：照比例縮，每秒延後的總量不變
 // 🔌 加掛版補丁(apply-core-patches)：出怪排程抽成具名函式，供 afk-offline 離線快速結算與 tick() 共用同一份排程。
 function maybeSpawnMobs() {
@@ -768,6 +777,8 @@ function tick() {
         if ((state._killPause || 0) > 0) {   // ⏸ 剛打死目標：停格中不出手（進度最多存滿一刀，停完馬上打）
             state._killPause--;
             if (state.pDmgTick > aspdTicks) state.pDmgTick = aspdTicks;
+        } else if(state.pDmgTick >= aspdTicks && autoHuntHold()) {
+            state.pDmgTick = aspdTicks;   // ⏸ AUTO 關、目標不是自己點的：不自動出手，進度停在「下一拍就出手」（點了怪馬上打）
         } else if(state.pDmgTick >= aspdTicks) {
             if (!bindSelfBlocked(player)) playerAttack();   // 🕸️ v3.7.75 束縛：非遠距離武器時打不出一般攻擊（攻擊節奏照跑·施法/技能不受影響）
             state.pDmgTick = Math.max(0, state.pDmgTick - aspdTicks);   // 保留小數餘額，長期平均攻速才正確

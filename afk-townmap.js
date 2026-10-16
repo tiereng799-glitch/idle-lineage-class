@@ -1478,9 +1478,10 @@
     }
     function face(e) { var k = dirTo(S.me.tx, S.me.ty, e.tx, e.ty); if (k >= 0 && !S.me.walking) S.me.dir = k; }
     // 角色：自己找最近的怪走過去打；方向鍵／按住＝玩家自己走；點地面＝走過去，到了停 2 秒再自己找怪
-    function heroAI(idle) {
+    // idle＝不自動找怪（AUTO 關，或遊戲主迴圈沒在跑）；world＝主迴圈沒在跑（角色死亡等）——這時連點了的怪也不開打
+    function heroAI(idle, world) {
         var me = S.me;
-        if (!player || player.dead) { S.path = []; return; }
+        if (!player || player.dead) { S.path = []; window.AFK_MANUAL_UID = null; return; }
         if (!pass(me.tx, me.ty) && regionReadyAt(me.tx, me.ty)) {   // 瞬移到牆裡：拉到旁邊能站的地方
             var c = nearestWalkable(me.tx, me.ty); if (c) { me.fx = me.sx = me.tx = c[0]; me.fy = me.sy = me.ty = c[1]; }
         }
@@ -1492,7 +1493,8 @@
         // 玩家點的那隻怪（S.prefer）最優先：原本「現在的目標打得到就站著打」排在前面，點別隻完全沒反應（站長回報）
         var pref = lk || ((S.prefer && S.prefer.alive && S.prefer.placed) ? S.prefer : null);
         if (!S.prefer || !S.prefer.alive || !S.prefer.placed) S.prefer = null;
-        if (idle && !pref) { if (S.goal) { S.path = []; S.goal = null; } return; }   // 自動暫停：玩家自己走，不自動找怪（點了怪就走到牠旁邊）
+        window.AFK_MANUAL_UID = (pref && pref.uid) || null;   // 玩家自己點的那隻：AUTO 關著也照打（核心 js/03 autoHuntHold）
+        if (idle && !pref) { if (S.goal) { S.path = []; S.goal = null; } return; }   // AUTO 關：玩家自己走，不自動找怪（點了怪就走過去打）
         if (!pref && S.ht < (S.autoAt || 0)) return;
         var range = heroRange(), tgt = (typeof getTarget === 'function') ? getTarget() : null, te = tgt && S.entByUid[tgt.uid];
         if (!pref && te && canHit(me.tx, me.ty, te.tx, te.ty, range)) { S.path = []; face(te); return; }   // 打得到（隔牆不算）：站著打
@@ -1513,9 +1515,9 @@
         if (!e) { roam(); return; }
         S.roaming = false;
         if (canHit(me.tx, me.ty, e.tx, e.ty, range)) {
-            if (idle) { S.prefer = null; S.path = []; face(e); return; }   // 暫停中不開打：走到旁邊面向牠
+            if (world) { S.path = []; face(e); return; }   // 主迴圈沒在跑：走到旁邊面向牠
             var fresh = !e.uid;
-            if (engage(e)) { var idx = slotOf(e.uid); if (idx >= 0 && mapState.targetIdx !== idx && typeof setTarget === 'function') setTarget(idx); S.prefer = null; if (fresh) callFamily(e); }
+            if (engage(e)) { var idx = slotOf(e.uid); if (idx >= 0 && mapState.targetIdx !== idx && typeof setTarget === 'function') setTarget(idx); if (!idle) S.prefer = null; if (fresh) callFamily(e); if (idle) window.AFK_MANUAL_UID = e.uid; }
             S.path = []; face(e); return;
         }
         if (S.goal !== e || S.ht >= (S.repath || 0) || !S.path.length) {   // 怪會動：每 0.5 秒重找一次路
@@ -1563,7 +1565,7 @@
             else { var k = dirTo(e.tx, e.ty, me.tx, me.ty); if (k >= 0) e.dir = k; }
             return;
         }
-        if (!idle && player && !player.dead && dist <= AGGRO && wantsHero(e)) {   // 自動暫停時不算戰鬥：主動怪也只閒晃；變身、隱身、同族互助見 wantsHero
+        if (!idle && player && !player.dead && dist <= AGGRO && wantsHero(e)) {   // 主迴圈沒在跑時不算戰鬥（idle＝huntTick 的 world）；AUTO 關著照樣開打；變身、隱身、同族互助見 wantsHero
             if (canHit(e.tx, e.ty, me.tx, me.ty, mobRange(e)) && engage(e)) return;
             if (freeSlot() < 0 && dist <= 2) { var k2 = dirTo(e.tx, e.ty, me.tx, me.ty); if (k2 >= 0) e.dir = k2; return; }   // 戰鬥格子滿了（一般狩獵同時 3 隻）：在外圈等，不貼上來站著不打
             if (S.ht >= e.next) { chase(e, 0.7); e.next = S.ht + 1; }
@@ -1585,15 +1587,16 @@
         return false;
     }
     function placeNear() { S.ents.forEach(placeEnt); }
-    // idle＝自動戰鬥暫停（遊戲主迴圈不跑）：由下面的小計時器推動，怪物照常閒晃、玩家可以自己走，只是不開打
+    // 主迴圈沒在跑（角色死亡等）：由下面的小計時器推動，怪物照常閒晃、玩家可以自己走，只是不開打
     function huntActors() { var out = [S.me].concat(S.pets); S.ents.forEach(function (e) { if (e.placed) out.push(e); }); return out; }
-    function huntTick(idle) {
+    // idle＝角色不自動找怪（AUTO 關或主迴圈沒在跑）；world＝主迴圈沒在跑（角色死亡等）：怪物也不開打、只閒晃
+    function huntTick(idle, world) {
         var now = performance.now(), gap = now - (S.lastLogicMs || now);
         if (gap > 40 && gap < 600) S.tickMs = (S.tickMs || 100) * 0.7 + gap * 0.3;   // 遊戲主迴圈實際多久跑一次（手機忙時常常 >0.1 秒）
         S.ht++; S.lastLogicMs = now;
         // 畫面插值：起點＝這一刻畫面上的位置（接得上、不跳），終點＝這次邏輯算完的位置，下一拍之前畫面從起點滑到終點
         huntActors().forEach(function (a) { a.p0x = a.fx; a.p0y = a.fy; a.pt0 = a.vt != null ? a.vt : a.t; a.pcell = a.tx + ',' + a.ty; a.w0 = a.walking && a.t < 1; });
-        huntTickLogic(idle);
+        huntTickLogic(idle, world);
         huntActors().forEach(function (a) {
             var mv = a.walking && a.t < 1, lx = mv ? a.sx + (a.tx - a.sx) * a.t : a.tx, ly = mv ? a.sy + (a.ty - a.sy) * a.t : a.ty;
             if (a.p0x == null || Math.abs(lx - a.p0x) + Math.abs(ly - a.p0y) > 3) { a.p0x = lx; a.p0y = ly; }   // 剛放上地圖／重生／瞬移：直接到位，不要滑過整張圖
@@ -1601,21 +1604,21 @@
             a.stopped = a.w0 && !mv;   // 就是這一拍走完那一步停下來（畫面補播走路幀只限這一拍）
         });
     }
-    function huntTickLogic(idle) {
-        if (!idle) syncEngaged();
-        heroAI(idle);
+    function huntTickLogic(idle, world) {
+        if (!world) syncEngaged();
+        heroAI(idle, world);
         tick(0.1);   // 角色、寵物走路（同村莊那套）
         var me = S.me;
         for (var i = 0; i < S.ents.length; i++) {
             var e = S.ents[i]; if (e.gone) continue;
             if (!e.alive || !e.placed) { placeEnt(e); continue; }
             if (!e.uid && cheb(e.tx, e.ty, me.tx, me.ty) > 40) continue;   // 離角色遠的先不動
-            entAI(e, idle);
+            entAI(e, world);   // 怪物只看主迴圈：AUTO 關著主動怪照樣追過來打（站長：關閉只是關閉自動掛機）
         }
     }
-    // 遊戲主迴圈超過 0.3 秒沒跑（自動戰鬥暫停、角色死亡等）：改由這裡每 0.1 秒推動地圖
+    // 遊戲主迴圈超過 0.3 秒沒跑（角色死亡等）：改由這裡每 0.1 秒推動地圖
     setInterval(function () {
-        try { if (huntActive() && performance.now() - (S.lastCoreTick || 0) > 300) huntTick(true); } catch (e) {}
+        try { if (huntActive() && performance.now() - (S.lastCoreTick || 0) > 300) huntTick(true, true); } catch (e) {}
     }, 100);
     function huntTeleport() {   // 瞬移卷軸／自動瞬移：跳到隨機一個重生點
         var sp = S.hunt.spawns[Math.floor(Math.random() * S.hunt.spawns.length)], me = S.me, x = sp[2], y = sp[3];
@@ -1752,11 +1755,11 @@
     function wrapCore(name, make) { if (typeof window[name] === 'function') window[name] = make(window[name]); }
     wrapCore('tick', function (orig) {
         return function () {
-            try { huntMaybeMount(); if (huntActive() && state.running && !player.dead) { S.lastCoreTick = performance.now(); huntTick(); } } catch (e) { try { console.warn('[AFK-townmap] 狩獵區地圖模式出錯：', e); } catch (x) {} }
+            try { huntMaybeMount(); if (huntActive() && state.running && !player.dead) { S.lastCoreTick = performance.now(); huntTick(!!window.AFK_AUTO_OFF, false); } } catch (e) { try { console.warn('[AFK-townmap] 狩獵區地圖模式出錯：', e); } catch (x) {} }
             return orig.apply(this, arguments);
         };
     });
-    // 換成地圖模式不能只靠 tick：AUTO 暫停時 tick 整個不跑（afk-lmui 包在外層），離線結算又是主迴圈停著時把角色送回獵場（changeMap 那時 liveLoop 不成立）
+    // 換成地圖模式不能只靠 tick：角色死亡等主迴圈停著時 tick 不跑，離線結算又是主迴圈停著時把角色送回獵場（changeMap 那時 liveLoop 不成立）
     //   → 重開遊戲＋暫停中會一直停在舊的戰鬥畫面（玩家回報）。另外每半秒自己對一次，沒事時第一行就返回
     setInterval(function () { try { huntMaybeMount(); } catch (e) {} try { showZone(); } catch (e) {} }, 500);
     wrapCore('maybeSpawnMobs', function (orig) { return function () { if (huntOwns()) return; return orig.apply(this, arguments); }; });

@@ -786,9 +786,11 @@
   }
 
   // ── 按鈕動作（全部是遊戲既有功能）──────────────────────
-  // ── AUTO＝暫停／繼續 ──────────────────────────────────
-  // 暫停＝核心 tick 整個不跑（怪物、回血、增益倒數一起凍結；只有手動動作的冷卻照走，見 pausedCooldowns），不是「人站著被打」。
-  //   狀態按角色存 localStorage（my_autopause_<slot>）→ 重開遊戲照樣暫停；
+  // ── AUTO＝自動打怪 開／關 ──────────────────────────────
+  // 關＝只關「自動打怪」（站長 2026-10-16：關閉只是關閉自動掛機，不要暫停任何東西）：遊戲照常進行——怪物照打、回血、增益倒數、喝水、補增益都照常；
+  //   角色不自動普攻、不自動放攻擊魔法、不自動找怪、不自動瞬移逃王，自己點的怪才打（核心 js/03 autoHuntOff／autoHuntHold 讀 window.AFK_AUTO_OFF）。
+  //   ⚠ 以前是「核心 tick 整個不跑」：怪物不會攻擊、冷卻不倒數（瞬移卡在冷卻中），站長回報後改掉。
+  //   狀態按角色存 localStorage（my_autopause_<slot>）→ 重開遊戲照樣是關的；
   //   afk-offline 讀同一個鍵（且本外掛開著）時不結算離線收益——暫停中關掉瀏覽器不該還在掛機賺。
   //   本外掛被關掉時 wrapper 透明放行，暫停自然失效（按鈕也不在了，不能留一個解不開的暫停）。
   // AUTO 鈕圖示：上下兩道順時針箭頭夾著 AUTO 字（顏色跟 currentColor）
@@ -878,20 +880,12 @@
     draw(); timer = setInterval(draw, 1000);
   }
   function hookPause() {
-    if (typeof window.tick !== 'function') { console.warn('[AFK-lmui] 找不到核心 tick，AUTO 暫停停用。'); return; }
+    if (typeof window.tick !== 'function') { console.warn('[AFK-lmui] 找不到核心 tick，AUTO 開關停用。'); return; }
     var _origTick = window.tick;
     window.tick = function () {
-      if (on() && hasP() && isPaused()) { pausedCooldowns(); return; }
+      window.AFK_AUTO_OFF = !!(on() && hasP() && isPaused());   // 核心照跑，只告訴它「不要自動打怪」（見上方說明）
       return _origTick.apply(this, arguments);
     };
-    // 暫停時只讓「手動動作的冷卻」照走（同核心 tick 開頭那三行）：不然 AUTO 關著放一次傳送術、喝一次水，
-    //   冷卻就永遠停在那裡、一直「技能冷卻中」（站長 2026-10-16「瞬移魔法卡住」：地圖上關 AUTO 自己走時最常遇到）。增益、怪物照樣凍結
-    function pausedCooldowns() {
-      if (player.dead) return;
-      var m = player.manualCd; if (m) for (var k in m) if (m[k] > 0) m[k]--;
-      if (player.cds && player.cds.potTick > 0) player.cds.potTick--;
-      var s = player.skillCd; if (s) for (var j in s) { if (s[j] > 0) s[j]--; if (!s[j]) delete s[j]; }
-    }
     // 玩家自己換到另一個獵場 → AUTO 先關，到了再按開始；回村、復活、載入（force）不動
     if (typeof window.changeMap === 'function') {
       var _origCM = window.changeMap;
