@@ -1541,9 +1541,17 @@
     });
     wrapCore('_pmCasterRect', function (orig) { return function () { return heroRect() || orig.apply(this, arguments); }; });
     wrapCore('_partyMemberRect', function (orig) { return function () { return heroRect() || orig.apply(this, arguments); }; });
+    // 角色的戰鬥動作照核心：攻擊、施法，以及被打（核心 HP 一掉就叫 'hurt'；原本漏接 → 地圖上被打完全沒反應，看起來像「不太會被打到」，玩家回報）。
+    //   權重同核心 hurt＞skill＞attack：受傷那一下播完前，攻擊不打斷它
+    var HURT_MS = 260;
     wrapCore('_playerMorphTrigger', function (orig) {
         return function (k) {
-            try { if (huntActive() && S.me.act !== 'death' && (k === 'attack' || k === 'skill')) { S.me.act = k; S.me.actT = performance.now(); } } catch (e) {}
+            try {
+                if (huntActive() && S.me.act !== 'death' && (k === 'attack' || k === 'skill' || k === 'hurt')) {
+                    var hurting = S.me.act === 'hurt' && performance.now() - S.me.actT < HURT_MS;
+                    if (!hurting || k === 'hurt') { S.me.act = k; S.me.actT = performance.now(); }
+                }
+            } catch (e) {}
             return orig.apply(this, arguments);
         };
     });
