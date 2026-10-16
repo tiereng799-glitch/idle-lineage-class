@@ -507,16 +507,17 @@ function readMap(id, b, clientDir, emuDir) {
         if (walk && ghost / walk > 0.02) console.log('[gen-townmap] 地圖 ' + id + ' 模擬器 maps/' + id + '.txt 跟用戶端不是同一版（' + ghost + ' 格畫面上是牆卻能走），改照用戶端');
         else { console.log('[gen-townmap] 地圖 ' + id + ' 能不能走照模擬器 maps/' + id + '.txt（跟用戶端換算差 ' + diff + ' 格）'); pass = p; zone = z; }
     }
-    fillGround(ground, W, H);
-    return { id, W, H, gameX0: b.startX, gameY0: b.startY, ground, pass, zone, objs, blocks };
+    const zeroGround = fillGround(ground, W, H);
+    return { id, W, H, gameX0: b.startX, gameY0: b.startY, ground, pass, zone, objs, blocks, zeroGround };
 }
 // 第 0 組地磚＝這格沒有地板（海音地監 1 樓整張都是 0、地板全靠貼地物件畫）。當成一般地磚畫出來就是一塊塊橘色的（站長回報「地板怪怪的」）。
 //   → 用 3 格內最近、同一半（左／右半格）的真地板補；附近都沒有就留空（EMPTY_G，畫透明）
 const EMPTY_G = 0xFFFFFFFF;
 function fillGround(ground, W, H) {
-    const src = ground.slice(), W2 = W * 2;
+    const src = ground.slice(), W2 = W * 2; let n = 0;
     for (let y = 0; y < H; y++) for (let hx = 0; hx < W2; hx++) {
         const i = y * W2 + hx; if ((src[i] >> 8) !== 0) continue;
+        n++;
         const x = hx >> 1, half = hx & 1;
         let v = EMPTY_G;
         for (let r = 1; r <= 3 && v === EMPTY_G; r++) for (let yy = y - r; yy <= y + r && v === EMPTY_G; yy++) {
@@ -528,6 +529,7 @@ function fillGround(ground, W, H) {
         }
         ground[i] = v;
     }
+    return n;   // 原本沒有地板的半格數（有就要重產這張圖）
 }
 // 安全區／戰鬥區（afk-townmap 地圖名旁邊顯示角色站的地方）：一列一列的連續段，上下列一樣的併成矩形，
 //   攤平成 [x 起, y 起, x 迄, y 迄, 1 安全區／2 戰鬥區, …]（一般區域不記；大陸逐列存 113KB、併成矩形小很多）

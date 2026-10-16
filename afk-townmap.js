@@ -300,7 +300,15 @@
         var n = mf('assets/anim/' + name, 'idle_'); if (!n) return null;
         return { key: 'r:' + name, kind: 'root', name: name, walkN: 0, idleN: n };
     }
-    function mobLook(name) { return animLook(name) || rootLook(name) || morphLook(name); }
+    // 八方向走路圖抓錯隻的（tools/gen-walk-anim 照名字找到別隻：石頭高崙走路是淺色大隻、底比斯巴斯走路是另一隻、高等蜥蜴人混進法術特效…）：
+    //   用戶端裡找不到對的那隻（tools/fix-walk-gfx 照長相比過也沒有），地圖上改畫原作的單方向圖（長相對、只是走路沒有腳步）。站長 2026-10-16 回報
+    //   同一隻怪有別的資料夾走路圖是對的：直接借那套（火蜥蜴＝夢幻之島火蜥蜴那隻紅蜥蜴；石頭高崙＝象牙塔石頭高崙的褐色那隻）
+    var WRONG_WALK = { '底比斯 巴斯': 1, '底比斯 斯芬克斯': 1, '底比斯 曼陀羅草': 1, '底比斯 聖甲蟲': 1, '白面金毛九尾狐・殺生石': 1, '高等蜥蜴人': 1 };
+    var WALK_ALIAS = { '火蜥蜴': '夢幻之島火蜥蜴', '石頭高崙': '象牙塔石頭高崙' };
+    function mobLook(name) {
+        if (WALK_ALIAS[name]) { var al = animLook(WALK_ALIAS[name]); if (al) return al; }
+        return WRONG_WALK[name] ? (rootLook(name) || animLook(name)) : (animLook(name) || rootLook(name) || morphLook(name));
+    }
     function morphFolder(L, dir) { return L.name + (L.three ? SFX3[dir] : ''); }
     function frameSrc(L, dir, act, k, shadow) {
         var s = (shadow ? '_s_' : '_') + k + '.png';
